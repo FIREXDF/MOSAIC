@@ -1385,6 +1385,37 @@
       </h2>
 
       <div class="settings-group-title">
+        <i class="bi bi-file-earmark-code"></i>
+        <span data-i18n="settings.debugReport">Debug report</span>
+      </div>
+      <div class="settings-section">
+        <label class="settings-label" data-i18n="settings.exportDebugReport"
+          >Export diagnostic report</label
+        >
+        <button class="settings-btn-action" id="export-debug-report-btn">
+          <i class="bi bi-file-earmark-arrow-down"></i>
+          <div class="settings-btn-action-content">
+            <span
+              class="settings-btn-action-title"
+              data-i18n="settings.exportDebugReport"
+              >Export diagnostic report</span
+            >
+            <span
+              class="settings-btn-action-desc"
+              data-i18n="settings.exportDebugReportDesc"
+              >Save app, system, mods, and plugins information to a JSON
+              file</span
+            >
+          </div>
+          <i class="bi bi-arrow-right"></i>
+        </button>
+        <p class="settings-hint" data-i18n="settings.exportDebugReportHint">
+          Includes configured library folder paths. Passwords and game or
+          emulator paths are not included.
+        </p>
+      </div>
+
+      <div class="settings-group-title">
         <i class="bi bi-exclamation-triangle"></i>
         <span data-i18n="settings.conflicts">Conflicts</span>
       </div>

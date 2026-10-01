@@ -199,15 +199,6 @@ export default class PluginUpdateInstaller {
         fs.mkdirSync(pluginDir, { recursive: true });
       }
 
-      if (fs.existsSync(finalPluginPath)) {
-        const backupPath = finalPluginPath + '.backup';
-        if (fs.existsSync(backupPath)) {
-          fs.unlinkSync(backupPath);
-        }
-        fs.copyFileSync(finalPluginPath, backupPath);
-        fs.unlinkSync(finalPluginPath);
-      }
-
       fs.copyFileSync(nroFilePath, finalPluginPath);
 
       if (fs.existsSync(downloadedFilePath)) {

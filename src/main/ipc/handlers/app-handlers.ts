@@ -1,5 +1,190 @@
-import { app, IpcMain } from 'electron';
+import { app, BrowserWindow, dialog, IpcMain } from 'electron';
+import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import ModUtils, { Mod } from '../../mod-utils';
+import PluginUtils, { SimplePlugin } from '../../plugin-utils';
+import store from '../../store';
+import downloadsStore from '../../store-downloads';
 import { BaseHandlerArg, GenericHandler } from '../../types/common';
+
+const getPluginSourceUrl = (repository: string | null | undefined) => {
+  if (!repository) return null;
+  if (/^https?:\/\//i.test(repository)) return repository;
+
+  const gameBananaMatch = repository.match(/^GameBanana\/(\d+)$/i);
+  if (gameBananaMatch) {
+    return `https://gamebanana.com/mods/${gameBananaMatch[1]}`;
+  }
+
+  return `https://github.com/${repository.replace(/^\/+|\/+$/g, '')}`;
+};
+
+const buildDebugReport = () => {
+  const modsPath = (store.get('modsPath') as string | null) || null;
+  const pluginsPath = (store.get('pluginsPath') as string | null) || null;
+  const pluginVersions = (store.get('pluginVersions') || {}) as Record<
+    string,
+    string
+  >;
+  const pluginRepoMappings = (store.get('pluginRepoMappings') || {}) as Record<
+    string,
+    string
+  >;
+  const modDownloadLinks = (downloadsStore.get('downloads') || {}) as Record<
+    string,
+    string
+  >;
+
+  let mods: ReturnType<typeof ModUtils.readAllMods> = {
+    activeMods: [],
+    disabledMods: [],
+  };
+  let modsScanError: string | null = null;
+  if (modsPath) {
+    try {
+      mods = ModUtils.readAllMods(modsPath);
+    } catch (error) {
+      modsScanError = error.message || String(error);
+    }
+  }
+
+  let plugins: ReturnType<typeof PluginUtils.readAllPlugins> = {
+    activePlugins: [],
+    disabledPlugins: [],
+  };
+  let pluginsScanError: string | null = null;
+  if (pluginsPath) {
+    try {
+      plugins = PluginUtils.readAllPlugins(pluginsPath);
+    } catch (error) {
+      pluginsScanError = error.message || String(error);
+    }
+  }
+
+  const formatMod = (mod: Mod, status: 'active' | 'disabled') => {
+    let info: ReturnType<typeof ModUtils.readModInfo> = null;
+    try {
+      info = ModUtils.readModInfo(mod.path);
+    } catch {
+      // Keep the mod in the report even when its optional metadata is unreadable.
+    }
+
+    return {
+      name: info?.display_name || mod.name,
+      folderName: mod.folderName || mod.name,
+      status,
+      version: info?.version || null,
+      authors: info?.authors || null,
+      category: info?.category || null,
+      sourceUrl:
+        info?.url ||
+        modDownloadLinks[
+          crypto
+            .createHash('sha256')
+            .update(mod.folderName || mod.name)
+            .digest('hex')
+            .substring(0, 12)
+        ] ||
+        null,
+    };
+  };
+
+  const formatPlugin = (
+    plugin: SimplePlugin,
+    status: 'active' | 'disabled',
+  ) => {
+    const pluginId = path.basename(plugin.name, path.extname(plugin.name));
+    const repository =
+      pluginRepoMappings[pluginId] || pluginRepoMappings[plugin.name] || null;
+
+    return {
+      name: plugin.name,
+      status,
+      size: plugin.size,
+      version: pluginVersions[pluginId] || null,
+      repository,
+      sourceUrl: getPluginSourceUrl(repository),
+    };
+  };
+
+  return {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    app: {
+      name: app.getName(),
+      version: app.getVersion(),
+      electronVersion: process.versions.electron,
+      chromeVersion: process.versions.chrome,
+      nodeVersion: process.versions.node,
+    },
+    system: {
+      platform: process.platform,
+      architecture: process.arch,
+      osRelease: os.release(),
+      totalMemoryBytes: os.totalmem(),
+      cpuCount: os.cpus().length,
+      locale: app.getLocale(),
+    },
+    configuration: {
+      runMode: store.get('appRunMode') || 'emulator',
+      emulatorType: store.get('emulatorType') || null,
+      modsPath,
+      pluginsPath,
+    },
+    libraries: {
+      mods: {
+        configured: Boolean(modsPath),
+        activeCount: mods.activeMods.length,
+        disabledCount: mods.disabledMods.length,
+        scanError: modsScanError,
+        items: [
+          ...mods.activeMods.map((mod) => formatMod(mod, 'active')),
+          ...mods.disabledMods.map((mod) => formatMod(mod, 'disabled')),
+        ],
+      },
+      plugins: {
+        configured: Boolean(pluginsPath),
+        activeCount: plugins.activePlugins.length,
+        disabledCount: plugins.disabledPlugins.length,
+        scanError: pluginsScanError,
+        items: [
+          ...plugins.activePlugins.map((plugin) =>
+            formatPlugin(plugin, 'active'),
+          ),
+          ...plugins.disabledPlugins.map((plugin) =>
+            formatPlugin(plugin, 'disabled'),
+          ),
+        ],
+      },
+    },
+  };
+};
+
+const exportDebugReport = async (common: BaseHandlerArg) => {
+  const win = BrowserWindow.fromWebContents(common.event.sender);
+  if (!win) return { success: false, error: 'No application window found' };
+
+  const date = new Date().toISOString().slice(0, 10);
+  const result = await dialog.showSaveDialog(win, {
+    title: 'Export diagnostic report',
+    defaultPath: `mosaic-debug-${date}.json`,
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+
+  if (result.canceled || !result.filePath) {
+    return { success: false, canceled: true };
+  }
+
+  try {
+    const report = buildDebugReport();
+    fs.writeFileSync(result.filePath, JSON.stringify(report, null, 2), 'utf8');
+    return { success: true, filePath: result.filePath };
+  } catch (error) {
+    return { success: false, error: error.message || String(error) };
+  }
+};
 
 export type AppHandlers = typeof AppHandlers;
 
@@ -13,6 +198,8 @@ const AppHandlers = {
       chromeVersion: process.versions.chrome,
     };
   },
+
+  ['export-debug-report']: exportDebugReport,
 
   ['relaunch-app']: async (common: BaseHandlerArg) => {
     app.relaunch();

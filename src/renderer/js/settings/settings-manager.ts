@@ -1020,6 +1020,42 @@ class SettingsManager {
       console.log('Clear temp files button listener attached');
     }
 
+    const exportDebugReportBtn = document.querySelector<HTMLButtonElement>(
+      '#export-debug-report-btn',
+    );
+    if (
+      exportDebugReportBtn &&
+      !exportDebugReportBtn.dataset.listenerAttached
+    ) {
+      exportDebugReportBtn.addEventListener('click', async () => {
+        exportDebugReportBtn.disabled = true;
+        try {
+          const result = await window.electronAPI.exportDebugReport();
+          if (result.success) {
+            this.showToast(
+              this.translate('settings.debugReportExported'),
+              'success',
+            );
+          } else if (!result.canceled) {
+            this.showToast(
+              result.error ||
+                this.translate('settings.debugReportExportFailed'),
+              'error',
+            );
+          }
+        } catch (error) {
+          console.error('Failed to export debug report:', error);
+          this.showToast(
+            this.translate('settings.debugReportExportFailed'),
+            'error',
+          );
+        } finally {
+          exportDebugReportBtn.disabled = false;
+        }
+      });
+      exportDebugReportBtn.dataset.listenerAttached = 'true';
+    }
+
     const exportConfigBackupBtn = document.querySelector<HTMLButtonElement>(
       '#export-config-backup-btn',
     );

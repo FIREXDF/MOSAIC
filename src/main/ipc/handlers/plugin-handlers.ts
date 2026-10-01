@@ -524,15 +524,6 @@ const PluginHandlers = {
       const pluginFileName = path.basename(pluginSourcePath);
       const pluginDestPath = path.join(resolvedPluginsPath, pluginFileName);
 
-      if (fs.existsSync(pluginDestPath)) {
-        const backupPath = `${pluginDestPath}.backup`;
-        if (fs.existsSync(backupPath)) {
-          fs.unlinkSync(backupPath);
-        }
-        fs.copyFileSync(pluginDestPath, backupPath);
-        fs.unlinkSync(pluginDestPath);
-      }
-
       fs.copyFileSync(pluginSourcePath, pluginDestPath);
 
       const installedMods: string[] = [];
@@ -647,15 +638,6 @@ const PluginHandlers = {
 
       const pluginFileName = path.basename(pluginSourcePath);
       const pluginDestPath = path.join(resolvedPluginsPath, pluginFileName);
-
-      if (fs.existsSync(pluginDestPath)) {
-        const backupPath = `${pluginDestPath}.backup`;
-        if (fs.existsSync(backupPath)) {
-          fs.unlinkSync(backupPath);
-        }
-        fs.copyFileSync(pluginDestPath, backupPath);
-        fs.unlinkSync(pluginDestPath);
-      }
 
       fs.copyFileSync(pluginSourcePath, pluginDestPath);
 
