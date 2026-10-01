@@ -5,6 +5,7 @@ import * as os from 'os';
 import * as path from 'path';
 import ModUtils, { Mod } from '../../mod-utils';
 import PluginUtils, { SimplePlugin } from '../../plugin-utils';
+import { resolveVirtualPath } from '../../utils/virtual-paths';
 import store from '../../store';
 import downloadsStore from '../../store-downloads';
 import { BaseHandlerArg, GenericHandler } from '../../types/common';
@@ -19,6 +20,86 @@ const getPluginSourceUrl = (repository: string | null | undefined) => {
   }
 
   return `https://github.com/${repository.replace(/^\/+|\/+$/g, '')}`;
+};
+
+const collectOtherFiles = (
+  library: 'mods' | 'plugins',
+  status: 'active' | 'disabled',
+  folderPath: string,
+  excludedPaths: string[],
+) => {
+  const resolvedFolderPath = resolveVirtualPath(folderPath);
+  if (!fs.existsSync(resolvedFolderPath)) return [];
+
+  const resolvedExcludedPaths = excludedPaths.map((excludedPath) =>
+    path.resolve(excludedPath),
+  );
+  const isExcluded = (candidatePath: string) =>
+    resolvedExcludedPaths.some((excludedPath) => {
+      const relativePath = path.relative(excludedPath, candidatePath);
+      return (
+        relativePath === '' ||
+        (relativePath !== '..' &&
+          !relativePath.startsWith(`..${path.sep}`) &&
+          !path.isAbsolute(relativePath))
+      );
+    });
+
+  const files: Array<{
+    library: 'mods' | 'plugins';
+    status: 'active' | 'disabled';
+    name: string;
+    relativePath: string;
+    sizeBytes: number;
+  }> = [];
+  const pendingDirectories = [resolvedFolderPath];
+
+  while (pendingDirectories.length > 0) {
+    const currentDirectory = pendingDirectories.pop();
+    if (!currentDirectory || isExcluded(currentDirectory)) continue;
+
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(currentDirectory, { withFileTypes: true });
+    } catch (error) {
+      console.warn('[DebugReport] Failed to scan for other files:', {
+        folderPath: currentDirectory,
+        error: error.message || String(error),
+      });
+      continue;
+    }
+
+    for (const entry of entries) {
+      const filePath = path.join(currentDirectory, entry.name);
+      if (isExcluded(filePath)) continue;
+
+      if (entry.isDirectory()) {
+        pendingDirectories.push(filePath);
+      } else if (entry.isFile()) {
+        try {
+          files.push({
+            library,
+            status,
+            name: entry.name,
+            relativePath: path
+              .relative(resolvedFolderPath, filePath)
+              .split(path.sep)
+              .join('/'),
+            sizeBytes: fs.statSync(filePath).size,
+          });
+        } catch {
+          // Skip files that disappear or become inaccessible during the scan.
+        }
+      }
+    }
+  }
+
+  return files.sort((a, b) =>
+    a.relativePath.localeCompare(b.relativePath, undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    }),
+  );
 };
 
 const buildDebugReport = () => {
@@ -109,6 +190,41 @@ const buildDebugReport = () => {
     };
   };
 
+  const otherFiles = [
+    ...(modsPath
+      ? collectOtherFiles(
+          'mods',
+          'active',
+          modsPath,
+          mods.activeMods.map((mod) => mod.path),
+        )
+      : []),
+    ...(modsPath
+      ? collectOtherFiles(
+          'mods',
+          'disabled',
+          ModUtils.getDisabledModsFolder(modsPath),
+          mods.disabledMods.map((mod) => mod.path),
+        )
+      : []),
+    ...(pluginsPath
+      ? collectOtherFiles(
+          'plugins',
+          'active',
+          pluginsPath,
+          plugins.activePlugins.map((plugin) => plugin.path),
+        )
+      : []),
+    ...(pluginsPath
+      ? collectOtherFiles(
+          'plugins',
+          'disabled',
+          PluginUtils.getDisabledPluginsFolder(pluginsPath),
+          plugins.disabledPlugins.map((plugin) => plugin.path),
+        )
+      : []),
+  ];
+
   return {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
@@ -158,6 +274,14 @@ const buildDebugReport = () => {
           ),
         ],
       },
+      ...(otherFiles.length > 0
+        ? {
+            otherFiles: {
+              count: otherFiles.length,
+              items: otherFiles,
+            },
+          }
+        : {}),
     },
   };
 };
