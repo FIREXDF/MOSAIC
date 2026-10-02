@@ -2219,6 +2219,69 @@ function ensureCharacterModMetadata(modRootPath: string) {
   }
 }
 
+/** Collect saved editor data without importing, converting, or rewriting files. */
+export function getCharacterCssDebugReport() {
+  const dataDir = path.join(app.getPath('userData'), 'data');
+  const files = [
+    PERSISTED_SOURCE_MANIFEST_FILE,
+    PERSISTED_CHARA_JSON_FILE,
+    PERSISTED_LAYOUT_JSON_FILE,
+    PERSISTED_MSG_NAME_JSON_FILE,
+    PERSISTED_MSG_NAME_FILE,
+  ].map((name) => {
+    const filePath = path.join(dataDir, name);
+    const result = {
+      name,
+      exists: false,
+      sizeBytes: null as number | null,
+      modifiedAt: null as string | null,
+      data: null as unknown,
+      rawText: null as string | null,
+      error: null as string | null,
+    };
+    try {
+      const stat = fs.statSync(filePath);
+      result.exists = true;
+      result.sizeBytes = stat.size;
+      result.modifiedAt = stat.mtime.toISOString();
+      if (name.endsWith('.json')) {
+        const text = fs.readFileSync(filePath, 'utf8');
+        try {
+          result.data = JSON.parse(text);
+        } catch (error) {
+          // Preserve broken input too: it is often the reason for a debug export.
+          result.rawText = text;
+          result.error = error.message || String(error);
+        }
+      }
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        result.error = error.message || String(error);
+      }
+    }
+    return result;
+  });
+
+  const imported = files.every((file) => file.exists);
+  let layout: CharacterCssLayoutData | null = null;
+  let layoutError: string | null = null;
+  if (imported) {
+    try {
+      layout = getCharacterCssLayoutData();
+    } catch (error) {
+      layoutError = error.message || String(error);
+    }
+  }
+
+  return {
+    scope: 'persisted-data',
+    imported,
+    files,
+    layout,
+    layoutError,
+  };
+}
+
 export function getCharacterCssLayoutData(): CharacterCssLayoutData {
   const currentChara = readCurrentCharaJson();
   const msgNameJson = readCurrentMsgNameJson();

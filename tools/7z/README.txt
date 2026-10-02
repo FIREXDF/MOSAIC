@@ -1,7 +1,7 @@
 Bundled 7-Zip command-line binaries
 ===================================
 
-FightPlanner distributes platform-specific 7-Zip command-line binaries from:
+MOSAIC distributes platform-specific 7-Zip command-line binaries from:
 https://www.7-zip.org/
 
 Bundled versions:

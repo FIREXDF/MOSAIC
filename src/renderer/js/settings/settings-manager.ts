@@ -1028,7 +1028,20 @@ class SettingsManager {
       !exportDebugReportBtn.dataset.listenerAttached
     ) {
       exportDebugReportBtn.addEventListener('click', async () => {
+        if (exportDebugReportBtn.disabled) return;
+        const icon = exportDebugReportBtn.querySelector<HTMLElement>('i');
+        const title = exportDebugReportBtn.querySelector<HTMLElement>(
+          '.settings-btn-action-title',
+        );
+        const originalIconClass = icon?.className;
         exportDebugReportBtn.disabled = true;
+        exportDebugReportBtn.classList.add('is-loading');
+        exportDebugReportBtn.setAttribute('aria-busy', 'true');
+        if (icon) icon.className = 'bi bi-arrow-clockwise';
+        if (title) {
+          title.dataset.i18n = 'settings.debugReportExporting';
+          title.textContent = this.translate('settings.debugReportExporting');
+        }
         try {
           const result = await window.electronAPI.exportDebugReport();
           if (result.success) {
@@ -1051,6 +1064,15 @@ class SettingsManager {
           );
         } finally {
           exportDebugReportBtn.disabled = false;
+          exportDebugReportBtn.classList.remove('is-loading');
+          exportDebugReportBtn.removeAttribute('aria-busy');
+          if (icon && originalIconClass !== undefined) {
+            icon.className = originalIconClass;
+          }
+          if (title) {
+            title.dataset.i18n = 'settings.exportDebugReport';
+            title.textContent = this.translate('settings.exportDebugReport');
+          }
         }
       });
       exportDebugReportBtn.dataset.listenerAttached = 'true';

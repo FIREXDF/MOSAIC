@@ -581,6 +581,24 @@
   transform: none;
 }
 
+#export-debug-report-btn.is-loading {
+  cursor: progress;
+}
+
+#export-debug-report-btn.is-loading > i:first-child {
+  animation: spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #export-debug-report-btn.is-loading > i:first-child {
+    animation: none;
+  }
+}
+
+body.no-animations #export-debug-report-btn.is-loading > i:first-child {
+  animation: none;
+}
+
 .settings-btn-action-danger {
   background: rgba(255, 90, 90, 0.08);
   border-color: rgba(255, 90, 90, 0.24);

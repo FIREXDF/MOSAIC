@@ -8,6 +8,7 @@ import PluginUtils, { SimplePlugin } from '../../plugin-utils';
 import { resolveVirtualPath } from '../../utils/virtual-paths';
 import store from '../../store';
 import downloadsStore from '../../store-downloads';
+import { getCharacterCssDebugReport } from '../../characters/character-css-service';
 import { BaseHandlerArg, GenericHandler } from '../../types/common';
 
 const getPluginSourceUrl = (repository: string | null | undefined) => {
@@ -249,6 +250,7 @@ const buildDebugReport = () => {
       modsPath,
       pluginsPath,
     },
+    cssEditor: getCharacterCssDebugReport(),
     libraries: {
       mods: {
         configured: Boolean(modsPath),
