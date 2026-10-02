@@ -268,7 +268,7 @@ class TutorialManager {
         kind: 'spotlight',
         title: '1-click install links',
         description:
-          'Open a GameBanana mod in your browser, then click a fightplanner: 1-click install link. MOSAIC will wait here until the install modal appears.',
+          'Open a GameBanana mod in your browser, then click its 1-click install link for MOSAIC. MOSAIC will wait here until the install modal appears.',
         requiredVisible: '#install-confirm-modal',
         target: '#install-confirm-modal .modal-btn-primary',
         placement: 'top',

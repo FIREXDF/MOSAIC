@@ -3309,7 +3309,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const rawAppName =
         typeof versionInfo?.name === 'string' ? versionInfo.name.trim() : '';
       const appName = /^fightplanner$/i.test(rawAppName)
-        ? 'FightPlanner'
+        ? 'MOSAIC'
         : /^mosaic$/i.test(rawAppName)
           ? 'MOSAIC'
           : rawAppName || 'MOSAIC';

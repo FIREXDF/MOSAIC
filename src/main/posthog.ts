@@ -62,7 +62,7 @@ export function identifyUser(): void {
                 arch: process.arch,
                 os_version: os.release(),
                 locale: app.getLocale(),
-                app_name: 'FightPlanner',
+                app_name: 'MOSAIC',
             },
         });
 
