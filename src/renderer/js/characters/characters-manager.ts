@@ -1,4 +1,10 @@
 import { Mod } from '../../../main/mod-utils';
+import type {
+  UmcCompatibilityDto as UmcCompatibilityResult,
+  UmcGroupCompatibilityDto,
+} from '../../../main/ipc/handlers/umc-handlers';
+
+const UMC_MAX_SELECTION = 10;
 
 type CharacterModStatus = 'active' | 'disabled' | 'conflict';
 
@@ -37,14 +43,6 @@ interface UmcMoveset {
   releaseState?: string | null;
   cardModders?: string[] | null;
   modders?: string[] | null;
-}
-
-interface UmcCompatibilityResult {
-  compatibleCount?: number;
-  incompatibleCount?: number;
-  severity?: 'compatible' | 'warning' | 'predicted-incompat' | 'incompatible';
-  conflictingHookIds?: number[];
-  conflictingArticleIds?: number[];
 }
 
 interface CharacterCssEntry {
@@ -125,10 +123,9 @@ class CharactersManager {
   umcMovesetsLoading: boolean;
   umcMovesetsError: string | null;
   umcSearchQuery: string;
-  umcSelectedMovesetOneId: number | null;
-  umcSelectedMovesetTwoId: number | null;
+  umcSelectedMovesetIds: Set<number>;
   umcCheckingCompatibility: boolean;
-  umcCompatibilityResult: UmcCompatibilityResult | null;
+  umcCompatibilityResult: UmcGroupCompatibilityDto | null;
   umcCompatibilityError: string | null;
   umcCompatibilityRequestId: number;
 
@@ -166,8 +163,7 @@ class CharactersManager {
     this.umcMovesetsLoading = false;
     this.umcMovesetsError = null;
     this.umcSearchQuery = '';
-    this.umcSelectedMovesetOneId = null;
-    this.umcSelectedMovesetTwoId = null;
+    this.umcSelectedMovesetIds = new Set();
     this.umcCheckingCompatibility = false;
     this.umcCompatibilityResult = null;
     this.umcCompatibilityError = null;
@@ -426,6 +422,27 @@ class CharactersManager {
         const movesetId = Number(card?.dataset.umcMovesetId);
         if (Number.isSafeInteger(movesetId)) {
           this.selectUmcMoveset(movesetId);
+        }
+      });
+    }
+
+    const umcSelection = document.querySelector<HTMLElement>(
+      '#character-umc-selection',
+    );
+    if (umcSelection && umcSelection.dataset.umcListenersAttached !== 'true') {
+      umcSelection.dataset.umcListenersAttached = 'true';
+      umcSelection.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const chip = target.closest<HTMLButtonElement>('[data-umc-remove-id]');
+        if (!chip) return;
+        const id = Number(chip.dataset.umcRemoveId);
+        const restoreFocus = document.activeElement === chip;
+        this.selectUmcMoveset(id);
+        if (restoreFocus) {
+          document
+            .querySelector<HTMLButtonElement>(`[data-umc-moveset-id="${id}"]`)
+            ?.focus();
         }
       });
     }
@@ -1554,25 +1571,14 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
       const availableIds = new Set(
         this.umcMovesets.map((moveset) => moveset.movesetId),
       );
-      const previousOneId = this.umcSelectedMovesetOneId;
-      const previousTwoId = this.umcSelectedMovesetTwoId;
-      if (
-        this.umcSelectedMovesetOneId !== null &&
-        !availableIds.has(this.umcSelectedMovesetOneId)
-      ) {
-        this.umcSelectedMovesetOneId = null;
-      }
-      if (
-        this.umcSelectedMovesetTwoId !== null &&
-        !availableIds.has(this.umcSelectedMovesetTwoId)
-      ) {
-        this.umcSelectedMovesetTwoId = null;
-      }
-      if (
-        previousOneId !== this.umcSelectedMovesetOneId ||
-        previousTwoId !== this.umcSelectedMovesetTwoId
-      ) {
+      const previousSelectionSize = this.umcSelectedMovesetIds.size;
+      this.umcSelectedMovesetIds = new Set(
+        [...this.umcSelectedMovesetIds].filter((id) => availableIds.has(id)),
+      );
+      if (previousSelectionSize !== this.umcSelectedMovesetIds.size) {
         this.resetUmcCompatibility();
+        if (this.umcSelectedMovesetIds.size >= 2)
+          void this.checkUmcCompatibility();
       }
     } catch (error) {
       this.umcMovesetsError =
@@ -1699,16 +1705,14 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
 
     grid.innerHTML = movesets
       .map((moveset) => {
-        const selected =
-          moveset.movesetId === this.umcSelectedMovesetOneId ||
-          moveset.movesetId === this.umcSelectedMovesetTwoId;
+        const selected = this.umcSelectedMovesetIds.has(moveset.movesetId);
         const imageUrl = this.getUmcImageUrl(moveset.thumbhImageUrl);
         const metadata = [
           moveset.vanillaCharDisplayName,
           moveset.seriesName,
         ].filter((value): value is string => Boolean(value?.trim()));
         return `
-<button class="character-umc-card" type="button" data-umc-moveset-id="${moveset.movesetId}" aria-pressed="${selected}" aria-label="${this.escapeHtml(moveset.moddedCharName)}${metadata.length ? ` · ${this.escapeHtml(metadata.join(' · '))}` : ''}">
+<button class="character-umc-card" type="button" data-umc-moveset-id="${moveset.movesetId}" aria-pressed="${selected}" aria-label="${this.escapeHtml(moveset.moddedCharName)}${metadata.length ? ` · ${this.escapeHtml(metadata.join(' · '))}` : ''}" ${!selected && this.umcSelectedMovesetIds.size >= UMC_MAX_SELECTION ? 'disabled' : ''}>
   <span class="character-umc-card-image">
     ${imageUrl ? `<img src="${this.escapeHtml(imageUrl)}" alt="${this.escapeHtml(moveset.moddedCharName)}" loading="lazy">` : '<i class="bi bi-controller" aria-hidden="true"></i>'}
   </span>
@@ -1739,38 +1743,48 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
   }
 
   renderUmcSelection() {
-    const selectedOne = this.umcMovesets.find(
-      (moveset) => moveset.movesetId === this.umcSelectedMovesetOneId,
+    const selected = this.umcMovesets.filter((moveset) =>
+      this.umcSelectedMovesetIds.has(moveset.movesetId),
     );
-    const selectedTwo = this.umcMovesets.find(
-      (moveset) => moveset.movesetId === this.umcSelectedMovesetTwoId,
+    const pairCount = (selected.length * (selected.length - 1)) / 2;
+    const count = document.querySelector<HTMLElement>(
+      '#character-umc-selected-count',
     );
-    const selectionOne = document.querySelector<HTMLElement>(
-      '#character-umc-selection-one',
-    );
-    const selectionTwo = document.querySelector<HTMLElement>(
-      '#character-umc-selection-two',
-    );
-
-    if (selectionOne) {
-      selectionOne.textContent =
-        selectedOne?.moddedCharName ||
-        this.t('characters.umcChooseFirst', 'Choose a moveset');
+    if (count) {
+      count.textContent = this.t(
+        'characters.umcSelectedCount',
+        `${selected.length} selected · ${pairCount} pairs`,
+        {
+          count: String(selected.length),
+          pairs: String(pairCount),
+        },
+      );
     }
-    if (selectionTwo) {
-      selectionTwo.textContent =
-        selectedTwo?.moddedCharName ||
-        this.t('characters.umcChooseSecond', 'Choose another moveset');
+    const selection = document.querySelector<HTMLElement>(
+      '#character-umc-selection',
+    );
+    if (selection) {
+      selection.innerHTML = selected.length
+        ? selected
+            .map((moveset) => {
+              const label = this.t(
+                'characters.umcDeselect',
+                `Deselect ${moveset.moddedCharName}`,
+                { name: moveset.moddedCharName },
+              );
+              return `<button class="character-umc-selection-chip" type="button" data-umc-remove-id="${moveset.movesetId}" aria-label="${this.escapeHtml(label).replace(/"/g, '&quot;')}"><span>${this.escapeHtml(moveset.moddedCharName)}</span><i class="bi bi-x-lg" aria-hidden="true"></i></button>`;
+            })
+            .join('')
+        : `<span class="character-umc-selection-empty">${this.escapeHtml(this.t('characters.umcChooseMultiple', 'Choose at least two movesets in the grid.'))}</span>`;
     }
 
     document
       .querySelectorAll<HTMLButtonElement>('[data-umc-moveset-id]')
       .forEach((card) => {
         const id = Number(card.dataset.umcMovesetId);
-        const isSelected =
-          id === this.umcSelectedMovesetOneId ||
-          id === this.umcSelectedMovesetTwoId;
+        const isSelected = this.umcSelectedMovesetIds.has(id);
         card.setAttribute('aria-pressed', String(isSelected));
+        card.disabled = !isSelected && selected.length >= UMC_MAX_SELECTION;
       });
 
     const result = document.querySelector<HTMLElement>('#character-umc-result');
@@ -1802,15 +1816,71 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
       return;
     }
 
+    const group = this.umcCompatibilityResult;
+    const verdict = this.formatUmcCompatibility({
+      severity: group.overallSeverity,
+      compatibleCount: group.pairs.reduce(
+        (total, pair) => total + (pair.compatibleCount || 0),
+        0,
+      ),
+      incompatibleCount: group.pairs.reduce(
+        (total, pair) => total + (pair.incompatibleCount || 0),
+        0,
+      ),
+    });
+    if (!group.overallSeverity) {
+      verdict.title = this.t(
+        'characters.umcGroupPredictionUnavailable',
+        'UMC prediction unavailable for this selection.',
+      );
+    }
+    const ranks = {
+      'is-incompatible': 3,
+      'is-warning': 2,
+      'is-neutral': 1,
+      'is-compatible': 0,
+    };
+    const pairs = group.pairs
+      .map((pair) => ({ pair, ...this.formatUmcCompatibility(pair) }))
+      .sort((a, b) => ranks[b.resultStyle] - ranks[a.resultStyle]);
+    const needsAttention = pairs.some(
+      (pair) => pair.resultStyle !== 'is-compatible',
+    );
+    const names = new Map(
+      this.umcMovesets.map((moveset) => [
+        moveset.movesetId,
+        moveset.moddedCharName,
+      ]),
+    );
+    const pairRows = pairs
+      .map(
+        ({ pair, title, resultStyle, details }) =>
+          `<li><div class="character-umc-pair-heading"><strong>${this.escapeHtml(names.get(pair.moveset1Id) || `#${pair.moveset1Id}`)} + ${this.escapeHtml(names.get(pair.moveset2Id) || `#${pair.moveset2Id}`)}</strong><span class="${resultStyle}">${this.escapeHtml(title)}</span></div><div class="character-umc-pair-details">${details.map((detail) => this.escapeHtml(detail)).join('<br>')}</div></li>`,
+      )
+      .join('');
+    result.className = `character-umc-result ${verdict.resultStyle}`;
+    result.hidden = false;
+    result.innerHTML = `<strong>${this.escapeHtml(verdict.title)}</strong><details class="character-umc-pairs" ${needsAttention || pairCount === 1 ? 'open' : ''}><summary>${this.escapeHtml(this.t('characters.umcPairDetails', `Details of ${pairs.length} pairs`, { count: String(pairs.length) }))}</summary><ul class="character-umc-pair-list">${pairRows}</ul></details>`;
+  }
+
+  formatUmcCompatibility(compatibility: UmcCompatibilityResult): {
+    title: string;
+    resultStyle:
+      | 'is-incompatible'
+      | 'is-warning'
+      | 'is-compatible'
+      | 'is-neutral';
+    details: string[];
+  } {
     const compatibleCount = Math.max(
       0,
-      Number(this.umcCompatibilityResult.compatibleCount) || 0,
+      Number(compatibility.compatibleCount) || 0,
     );
     const incompatibleCount = Math.max(
       0,
-      Number(this.umcCompatibilityResult.incompatibleCount) || 0,
+      Number(compatibility.incompatibleCount) || 0,
     );
-    const severity = this.umcCompatibilityResult.severity;
+    const severity = compatibility.severity;
     const hasReports = compatibleCount > 0 || incompatibleCount > 0;
     const titles = {
       compatible: this.t(
@@ -1856,18 +1926,14 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
           'characters.umcConflictCounts',
           'Shared hooks: {{hooks}} · Shared articles: {{articles}}',
           {
-            hooks: String(
-              this.umcCompatibilityResult.conflictingHookIds?.length || 0,
-            ),
-            articles: String(
-              this.umcCompatibilityResult.conflictingArticleIds?.length || 0,
-            ),
+            hooks: String(compatibility.conflictingHookIds?.length || 0),
+            articles: String(compatibility.conflictingArticleIds?.length || 0),
           },
         ),
       );
     }
     details.push(
-      this.umcCompatibilityResult.compatibleCount === undefined
+      compatibility.compatibleCount === undefined
         ? this.t(
             'characters.umcReportsUnavailable',
             'Community reports unavailable.',
@@ -1886,9 +1952,7 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
               'No community reports for this pair yet.',
             ),
     );
-    result.className = `character-umc-result ${resultStyle}`;
-    result.hidden = false;
-    result.innerHTML = `<strong>${this.escapeHtml(title)}</strong><br>${details.map((detail) => this.escapeHtml(detail)).join('<br>')}`;
+    return { title, resultStyle, details };
   }
 
   selectUmcMoveset(movesetId: number) {
@@ -1896,28 +1960,22 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
       return;
     }
 
-    if (this.umcSelectedMovesetOneId === movesetId) {
-      this.umcSelectedMovesetOneId = null;
-    } else if (this.umcSelectedMovesetTwoId === movesetId) {
-      this.umcSelectedMovesetTwoId = null;
-    } else if (this.umcSelectedMovesetOneId === null) {
-      this.umcSelectedMovesetOneId = movesetId;
+    if (this.umcSelectedMovesetIds.has(movesetId)) {
+      this.umcSelectedMovesetIds.delete(movesetId);
     } else {
-      this.umcSelectedMovesetTwoId = movesetId;
+      if (this.umcSelectedMovesetIds.size >= UMC_MAX_SELECTION) return;
+      this.umcSelectedMovesetIds.add(movesetId);
     }
 
     this.resetUmcCompatibility();
     this.renderUmcSelection();
-    if (
-      this.umcSelectedMovesetOneId !== null &&
-      this.umcSelectedMovesetTwoId !== null
-    ) {
+    if (this.umcSelectedMovesetIds.size >= 2) {
       void this.checkUmcCompatibility();
     }
   }
 
   resetUmcCompatibility() {
-    // Ignore responses for a pair that the user has already changed.
+    // Ignore responses for a selection that the user has already changed.
     this.umcCompatibilityRequestId++;
     this.umcCheckingCompatibility = false;
     this.umcCompatibilityResult = null;
@@ -1925,14 +1983,8 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
   }
 
   async checkUmcCompatibility() {
-    const movesetOneId = this.umcSelectedMovesetOneId;
-    const movesetTwoId = this.umcSelectedMovesetTwoId;
-    if (
-      movesetOneId === null ||
-      movesetTwoId === null ||
-      movesetOneId === movesetTwoId ||
-      this.umcCheckingCompatibility
-    ) {
+    const movesetIds = [...this.umcSelectedMovesetIds];
+    if (movesetIds.length < 2 || this.umcCheckingCompatibility) {
       return;
     }
 
@@ -1943,16 +1995,16 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
     this.renderUmcSelection();
 
     try {
-      const response = await window.electronAPI.getUmcCompatibility(
-        movesetOneId,
-        movesetTwoId,
-      );
+      // Let rapid selection changes settle before requesting all pairs.
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 180));
+      if (requestId !== this.umcCompatibilityRequestId) return;
+      const response = await window.electronAPI.getUmcCompatibility(movesetIds);
       if (requestId !== this.umcCompatibilityRequestId) {
         return;
       }
       if (!response.success) {
         throw new Error(
-          response.error || 'UMC could not check this moveset pair.',
+          response.error || 'UMC could not check this moveset selection.',
         );
       }
       this.umcCompatibilityResult = response.compatibility;

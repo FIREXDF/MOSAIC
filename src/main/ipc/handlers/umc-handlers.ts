@@ -8,6 +8,7 @@ import {
 
 const UMC_API_BASE_URL = 'https://ultimatemovesetcompatibility.onrender.com';
 const UMC_REQUEST_TIMEOUT_MS = 20_000;
+const UMC_MAX_SELECTION = 10;
 
 export interface UmcMovesetDto {
   movesetId: number;
@@ -28,7 +29,24 @@ export interface UmcCompatibilityDto {
   conflictingArticleIds?: number[];
 }
 
+export interface UmcPairCompatibilityDto extends UmcCompatibilityDto {
+  moveset1Id: number;
+  moveset2Id: number;
+}
+
+export interface UmcGroupCompatibilityDto {
+  pairs: UmcPairCompatibilityDto[];
+  overallSeverity?: UmcCompatibilityDto['severity'];
+}
+
+interface UmcReportSummaryDto {
+  movesetId: number;
+  compatibleCount: number;
+  incompatibleCount: number;
+}
+
 interface UmcPredictionDto {
+  overallSeverity: NonNullable<UmcCompatibilityDto['severity']>;
   pairs: Array<{
     moveset1: { movesetId: number };
     moveset2: { movesetId: number };
@@ -36,6 +54,89 @@ interface UmcPredictionDto {
     conflictingHookIds: number[];
     conflictingArticleIds: number[];
   }>;
+}
+
+function umcPairKey(one: number, two: number) {
+  return one < two ? `${one}:${two}` : `${two}:${one}`;
+}
+
+function validateUmcPrediction(data: UmcPredictionDto, ids: number[]) {
+  const severities = [
+    'compatible',
+    'warning',
+    'predicted-incompat',
+    'incompatible',
+  ];
+  const selectedIds = new Set(ids);
+  const pairs = new Map<string, UmcPredictionDto['pairs'][number]>();
+  if (
+    !Array.isArray(data?.pairs) ||
+    !severities.includes(data.overallSeverity)
+  ) {
+    throw new Error('UMC returned an unexpected compatibility prediction.');
+  }
+  for (const pair of data.pairs) {
+    const one = pair?.moveset1?.movesetId;
+    const two = pair?.moveset2?.movesetId;
+    const key = umcPairKey(one, two);
+    if (
+      !selectedIds.has(one) ||
+      !selectedIds.has(two) ||
+      one === two ||
+      pairs.has(key) ||
+      !severities.includes(pair.severity) ||
+      !Array.isArray(pair.conflictingHookIds) ||
+      !Array.isArray(pair.conflictingArticleIds) ||
+      ![...pair.conflictingHookIds, ...pair.conflictingArticleIds].every(
+        Number.isSafeInteger,
+      )
+    ) {
+      throw new Error('UMC returned an unexpected compatibility prediction.');
+    }
+    pairs.set(key, pair);
+  }
+  if (pairs.size !== (ids.length * (ids.length - 1)) / 2) {
+    throw new Error('UMC returned an incomplete compatibility prediction.');
+  }
+  const overallSeverity = [
+    data.overallSeverity,
+    ...data.pairs.map((pair) => pair.severity),
+  ].sort((a, b) => severities.indexOf(b) - severities.indexOf(a))[0];
+  return { pairs, overallSeverity };
+}
+
+async function getUmcReportSummaries(ids: number[]) {
+  const summaries = new Map<number, UmcReportSummaryDto[]>();
+  // One summary covers all votes involving that moveset. Limit concurrent requests.
+  for (let offset = 0; offset < ids.length - 1; offset += 3) {
+    const batch = ids.slice(offset, Math.min(offset + 3, ids.length - 1));
+    const results = await Promise.allSettled(
+      batch.map(async (id) => {
+        const data = await requestUmc<UmcReportSummaryDto[]>(
+          `/api/compatibility/summary?${new URLSearchParams({ moveset: String(id) })}`,
+        );
+        if (
+          !Array.isArray(data) ||
+          data.some(
+            (report) =>
+              !Number.isSafeInteger(report?.movesetId) ||
+              !Number.isSafeInteger(report?.compatibleCount) ||
+              report.compatibleCount < 0 ||
+              !Number.isSafeInteger(report?.incompatibleCount) ||
+              report.incompatibleCount < 0,
+          )
+        ) {
+          throw new Error('UMC returned unexpected compatibility reports.');
+        }
+        return data;
+      }),
+    );
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled')
+        summaries.set(batch[index], result.value);
+    });
+  }
+  return summaries;
 }
 
 async function requestUmc<T>(path: string): Promise<T> {
@@ -81,85 +182,66 @@ const UmcHandlers = {
 
   ['get-umc-compatibility']: async (
     _common: BaseHandlerArg,
-    moveset1: number,
-    moveset2: number,
-  ): HandlerResponse<{ compatibility: UmcCompatibilityDto }> => {
+    movesetIds: number[],
+  ): HandlerResponse<{ compatibility: UmcGroupCompatibilityDto }> => {
     if (
-      !Number.isSafeInteger(moveset1) ||
-      !Number.isSafeInteger(moveset2) ||
-      moveset1 <= 0 ||
-      moveset2 <= 0 ||
-      moveset1 === moveset2
+      !Array.isArray(movesetIds) ||
+      movesetIds.length < 2 ||
+      movesetIds.length > UMC_MAX_SELECTION ||
+      new Set(movesetIds).size !== movesetIds.length ||
+      !movesetIds.every((id) => Number.isSafeInteger(id) && id > 0)
     ) {
-      return { success: false, error: 'Choose two different movesets.' };
+      return {
+        success: false,
+        error: 'Choose between 2 and 10 different movesets.',
+      };
     }
 
     try {
-      const query = new URLSearchParams({
-        moveset1: String(moveset1),
-        moveset2: String(moveset2),
-      });
-      // UMC votes and conflict predictions are independent sources.
-      const [reports, prediction] = await Promise.allSettled([
-        requestUmc<UmcCompatibilityDto>(
-          `/api/compatibility?${query.toString()}`,
-        ).then((data) => {
-          if (
-            !Number.isSafeInteger(data?.compatibleCount) ||
-            !Number.isSafeInteger(data?.incompatibleCount) ||
-            data.compatibleCount! < 0 ||
-            data.incompatibleCount! < 0
-          ) {
-            throw new Error('UMC returned unexpected compatibility reports.');
-          }
-          return {
-            compatibleCount: data.compatibleCount,
-            incompatibleCount: data.incompatibleCount,
-          };
-        }),
+      const ids = [...movesetIds];
+      const [prediction, reports] = await Promise.allSettled([
         requestUmc<UmcPredictionDto>(
-          `/api/compatibility/predict?${new URLSearchParams({ movesets: `${moveset1},${moveset2}` })}`,
-        ).then((data) => {
-          const pair = data?.pairs?.find(
-            (item) =>
-              (item.moveset1?.movesetId === moveset1 &&
-                item.moveset2?.movesetId === moveset2) ||
-              (item.moveset1?.movesetId === moveset2 &&
-                item.moveset2?.movesetId === moveset1),
-          );
-          if (
-            !pair ||
-            ![
-              'compatible',
-              'warning',
-              'predicted-incompat',
-              'incompatible',
-            ].includes(pair.severity) ||
-            !Array.isArray(pair.conflictingHookIds) ||
-            !Array.isArray(pair.conflictingArticleIds) ||
-            ![...pair.conflictingHookIds, ...pair.conflictingArticleIds].every(
-              Number.isSafeInteger,
-            )
-          ) {
-            throw new Error(
-              'UMC returned an unexpected compatibility prediction.',
-            );
-          }
-          return {
-            severity: pair.severity,
-            conflictingHookIds: pair.conflictingHookIds,
-            conflictingArticleIds: pair.conflictingArticleIds,
-          };
-        }),
+          `/api/compatibility/predict?${new URLSearchParams({ movesets: ids.join(',') })}`,
+        ).then((data) => validateUmcPrediction(data, ids)),
+        getUmcReportSummaries(ids),
       ]);
 
-      if (reports.status === 'rejected' && prediction.status === 'rejected') {
+      const summaries =
+        reports.status === 'fulfilled'
+          ? reports.value
+          : new Map<number, UmcReportSummaryDto[]>();
+      if (prediction.status === 'rejected' && summaries.size === 0) {
         throw prediction.reason;
       }
-      const compatibility: UmcCompatibilityDto = {
-        ...(reports.status === 'fulfilled' ? reports.value : {}),
-        ...(prediction.status === 'fulfilled' ? prediction.value : {}),
-      };
+      const compatibility: UmcGroupCompatibilityDto = { pairs: [] };
+      if (prediction.status === 'fulfilled') {
+        compatibility.overallSeverity = prediction.value.overallSeverity;
+      }
+      for (let one = 0; one < ids.length; one++) {
+        for (let two = one + 1; two < ids.length; two++) {
+          const pair: UmcPairCompatibilityDto = {
+            moveset1Id: ids[one],
+            moveset2Id: ids[two],
+          };
+          const predicted =
+            prediction.status === 'fulfilled'
+              ? prediction.value.pairs.get(umcPairKey(ids[one], ids[two]))
+              : undefined;
+          if (predicted) {
+            pair.severity = predicted.severity;
+            pair.conflictingHookIds = predicted.conflictingHookIds;
+            pair.conflictingArticleIds = predicted.conflictingArticleIds;
+          }
+          const summary = summaries.get(ids[one]) ?? summaries.get(ids[two]);
+          if (summary) {
+            const otherId = summaries.has(ids[one]) ? ids[two] : ids[one];
+            const report = summary.find((item) => item.movesetId === otherId);
+            pair.compatibleCount = report?.compatibleCount ?? 0;
+            pair.incompatibleCount = report?.incompatibleCount ?? 0;
+          }
+          compatibility.pairs.push(pair);
+        }
+      }
 
       return { success: true, compatibility };
     } catch (error) {

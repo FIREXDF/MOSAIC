@@ -153,25 +153,16 @@
               Compare movesets
             </h3>
             <p data-i18n="characters.umcCompareHint">
-              Select two movesets to check automatically. Click again to deselect.
+              Select 2 to 10 movesets to check automatically. Click again to deselect.
             </p>
           </div>
+          <span class="character-umc-selected-count" id="character-umc-selected-count" aria-live="polite"></span>
         </div>
 
-        <div class="character-umc-selection">
-          <div class="character-umc-selection-slot">
-            <span data-i18n="characters.umcMovesetOne">Moveset 1</span>
-            <strong id="character-umc-selection-one">
-              Choose a moveset
-            </strong>
-          </div>
-          <i class="bi bi-plus-lg" aria-hidden="true"></i>
-          <div class="character-umc-selection-slot">
-            <span data-i18n="characters.umcMovesetTwo">Moveset 2</span>
-            <strong id="character-umc-selection-two">
-              Choose another moveset
-            </strong>
-          </div>
+        <div class="character-umc-selection" id="character-umc-selection" role="group" aria-label="Selected movesets">
+          <span class="character-umc-selection-empty" data-i18n="characters.umcChooseMultiple">
+            Choose at least two movesets in the grid.
+          </span>
         </div>
         <div
           class="character-umc-result"
