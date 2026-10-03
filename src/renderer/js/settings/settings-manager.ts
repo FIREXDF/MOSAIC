@@ -1601,7 +1601,6 @@ class SettingsManager {
 
           if (window.electronAPI && window.electronAPI.setUpdateChannel) {
             await window.electronAPI.setUpdateChannel(value);
-            await window.electronAPI.store.set('updateChannel', value);
             console.log('Update channel set to:', value);
 
             if (window.toastManager) {
@@ -4212,7 +4211,8 @@ class SettingsManager {
     );
     if (updateChannelSelect && window.electronAPI) {
       try {
-        const channel = 'public-beta';
+        const channel =
+          (await window.electronAPI.getUpdateChannel?.()) || 'beta';
         const selectedValue =
           updateChannelSelect.querySelector<HTMLElement>('.selected-value');
         const options = updateChannelSelect.querySelectorAll<HTMLElement>(

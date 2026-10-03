@@ -59,7 +59,8 @@
       {
         "provider": "github",
         "owner": "FIREXDF",
-        "repo": "MOSAIC"
+        "repo": "MOSAIC",
+        "channel": "latest"
       }
     ],
     "extraResources": [

@@ -3,6 +3,9 @@ import { app, BrowserWindow } from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import store from './store';
 
+type UpdateChannel = 'alpha' | 'beta' | 'stable';
+const DEFAULT_UPDATE_CHANNEL: UpdateChannel = 'beta';
+
 export interface UpdateEvents {
   'update-checking': {};
 
@@ -45,7 +48,7 @@ class AutoUpdater {
   isDownloading: boolean;
   updateDownloaded: boolean;
   autoCheckEnabled: boolean;
-  updateChannel: string;
+  updateChannel: UpdateChannel;
   forceUpdateAvailable: boolean;
   ignoreUpdateCertErrors: boolean;
   disableUpdateSignatureCheck: boolean;
@@ -58,7 +61,7 @@ class AutoUpdater {
     this.updateDownloaded = false;
     this.autoCheckEnabled = store.get('autoCheckForUpdates', true) as boolean;
     this.updateChannel = this.normalizeUpdateChannel(
-      store.get('updateChannel', 'public-beta') as string,
+      store.get('updateChannel', DEFAULT_UPDATE_CHANNEL) as string,
     );
     store.set('updateChannel', this.updateChannel);
     this.forceUpdateAvailable = store.get(
@@ -98,12 +101,7 @@ class AutoUpdater {
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
     }
 
-    autoUpdater.allowPrerelease = this.updateChannel === 'public-beta';
-    // electron-updater treats "beta6" and "beta7" as different custom
-    // channels. Pinning the public-beta setting to the shared "beta" channel
-    // keeps both legacy and correctly formatted beta versions on one feed.
-    autoUpdater.channel = 'beta';
-    autoUpdater.allowDowngrade = false;
+    this.configureUpdateChannel();
     this.setupEventHandlers();
   }
 
@@ -297,18 +295,30 @@ class AutoUpdater {
   setUpdateChannel(channel: string) {
     this.updateChannel = this.normalizeUpdateChannel(channel);
     store.set('updateChannel', this.updateChannel);
-
-    autoUpdater.allowPrerelease = this.updateChannel === 'public-beta';
-    autoUpdater.channel = 'beta';
-    autoUpdater.allowDowngrade = false;
+    this.configureUpdateChannel();
   }
 
   getUpdateChannel() {
     return this.updateChannel;
   }
 
-  private normalizeUpdateChannel(_channel: string) {
-    return 'public-beta';
+  private normalizeUpdateChannel(channel: string): UpdateChannel {
+    if (channel === 'alpha' || channel === 'beta' || channel === 'stable') {
+      return channel;
+    }
+
+    // Keep existing installs on their previous beta feed.
+    return DEFAULT_UPDATE_CHANNEL;
+  }
+
+  private configureUpdateChannel() {
+    const isPrereleaseChannel = this.updateChannel !== 'stable';
+    autoUpdater.allowPrerelease = isPrereleaseChannel;
+    // electron-builder names stable metadata latest.yml; prereleases use
+    // alpha.yml and beta.yml from their SemVer prerelease identifiers.
+    autoUpdater.channel =
+      this.updateChannel === 'stable' ? 'latest' : this.updateChannel;
+    autoUpdater.allowDowngrade = false;
   }
 
   getUpdateInfo() {

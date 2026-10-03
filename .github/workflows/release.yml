@@ -16,6 +16,7 @@ on:
         options:
           - alpha
           - beta
+          - stable
           - custom
       custom_version:
         description: 'Custom Version (only if Type is custom)'
@@ -57,11 +58,14 @@ jobs:
       - name: Calculate and set version
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         shell: bash
+        env:
+          VERSION_TYPE: ${{ github.event.inputs.version_type }}
+          CUSTOM_VERSION: ${{ github.event.inputs.custom_version }}
         run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
+          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
             node scripts/bump-version.js alpha
           else
-            node scripts/bump-version.js ${{ github.event.inputs.version_type }} ${{ github.event.inputs.custom_version }}
+            node scripts/bump-version.js "$VERSION_TYPE" "$CUSTOM_VERSION"
           fi
 
       - name: Build and publish (Windows)

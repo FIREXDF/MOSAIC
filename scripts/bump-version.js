@@ -28,7 +28,7 @@ if (type === 'tag' && custom) {
   }
 } else if (type === 'custom' && custom) {
   nextVersion = custom.replace(/^v/, '');
-} else if (type === 'alpha' || type === 'beta') {
+} else if (type === 'alpha' || type === 'beta' || type === 'stable') {
   const current = semver.parse(pkg.version);
   if (!current) {
     throw new Error(
@@ -61,35 +61,103 @@ if (type === 'tag' && custom) {
     // this fix. The following beta run advances to 4.0.1-beta.1.
     nextVersion = `${currentBase}-latest.1`;
   } else {
-    const baseVersion =
-      currentPrerelease && currentPrerelease[0] === type
-        ? currentBase
-        : semver.inc(current, 'patch');
+    const releaseVersions = tags
+      .map((tag) => semver.parse(tag.replace(/^v/, '')))
+      .filter((version) => {
+        if (!version) {
+          return false;
+        }
+        if (version.prerelease.length === 0) {
+          return true;
+        }
 
-    if (!baseVersion) {
-      throw new Error(`Unable to calculate the next ${type} version`);
-    }
+        const channel = String(version.prerelease[0]);
+        return (
+          ['alpha', 'beta', 'latest'].includes(channel) &&
+          version.prerelease.length === 2 &&
+          Number.isInteger(version.prerelease[1])
+        );
+      });
+    releaseVersions.push(current);
+    releaseVersions.sort(semver.rcompare);
 
-    let maxNum = 0;
-    for (const tag of tags) {
-      const match = tag.match(
-        new RegExp(`^v?${baseVersion.replace(/\./g, '\\.')}-${type}\\.(\\d+)$`),
+    const latestRelease = releaseVersions[0];
+    const latestPrerelease = semver.prerelease(latestRelease);
+    const latestChannel = latestPrerelease
+      ? String(latestPrerelease[0])
+      : null;
+    const latestBase = `${latestRelease.major}.${latestRelease.minor}.${latestRelease.patch}`;
+    const nextPatchBase = latestPrerelease
+      ? `${latestRelease.major}.${latestRelease.minor}.${latestRelease.patch + 1}`
+      : semver.inc(latestRelease, 'patch');
+    let baseVersion;
+
+    if (type === 'stable') {
+      const hasLatestStableRelease = tags.some((tag) => {
+        const version = semver.parse(tag.replace(/^v/, ''));
+        return (
+          version &&
+          version.prerelease.length === 0 &&
+          `${version.major}.${version.minor}.${version.patch}` === latestBase
+        );
+      });
+      const canPromotePrerelease = ['alpha', 'beta', 'latest'].includes(
+        latestChannel,
       );
-      if (match) {
-        maxNum = Math.max(maxNum, Number.parseInt(match[1], 10));
-      }
-    }
 
-    nextVersion = `${baseVersion}-${type}.${maxNum + 1}`;
+      nextVersion =
+        canPromotePrerelease && !hasLatestStableRelease
+          ? latestBase
+          : semver.inc(latestRelease, 'patch');
+    } else {
+      const canPromoteAlphaToBeta =
+        type === 'beta' && latestChannel === 'alpha';
+      const continuesCurrentChannel = latestChannel === type;
+      baseVersion =
+        continuesCurrentChannel || canPromoteAlphaToBeta
+          ? latestBase
+          : nextPatchBase;
+
+      if (!baseVersion) {
+        throw new Error(`Unable to calculate the next ${type} version`);
+      }
+
+      let maxNum = 0;
+      for (const tag of tags) {
+        const match = tag.match(
+          new RegExp(
+            `^v?${baseVersion.replace(/\./g, '\\.')}-${type}\\.(\\d+)$`,
+          ),
+        );
+        if (match) {
+          maxNum = Math.max(maxNum, Number.parseInt(match[1], 10));
+        }
+      }
+
+      nextVersion = `${baseVersion}-${type}.${maxNum + 1}`;
+    }
   }
 } else {
   throw new Error(
-    'Usage: bump-version.js <alpha|beta|custom|tag> [custom-version-or-tag]',
+    'Usage: bump-version.js <alpha|beta|stable|custom|tag> [custom-version-or-tag]',
   );
 }
 
 if (!semver.valid(nextVersion)) {
   throw new Error(`Invalid semantic version: "${nextVersion}"`);
+}
+
+const nextPrerelease = semver.prerelease(nextVersion);
+const requestedUpdateChannel = nextPrerelease
+  ? String(nextPrerelease[0])
+  : 'latest';
+const updateChannel = ['alpha', 'beta'].includes(requestedUpdateChannel)
+  ? requestedUpdateChannel
+  : 'latest';
+for (const publisher of pkg.build?.publish ?? []) {
+  if (publisher.provider === 'github') {
+    publisher.channel = updateChannel;
+  }
 }
 
 if (!dryRun) {
