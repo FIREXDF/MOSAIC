@@ -25,7 +25,7 @@ class UmcHttpError extends Error {
 
 interface UmcMovesetImageDto {
   slottedId?: string | null;
-  thumbhImageUrl?: string | null;
+  movesetHeroImageUrl?: string | null;
   releaseState?: { releaseStateName?: string | null } | null;
 }
 
@@ -192,11 +192,11 @@ function getUmcCharacterImage(slottedId: string): Promise<string | null> {
       if (
         moveset?.slottedId?.trim().toLowerCase() !== slottedId ||
         moveset.releaseState?.releaseStateName !== 'Released' ||
-        typeof moveset.thumbhImageUrl !== 'string'
+        typeof moveset.movesetHeroImageUrl !== 'string'
       ) {
         return null;
       }
-      const url = new URL(moveset.thumbhImageUrl);
+      const url = new URL(moveset.movesetHeroImageUrl);
       return url.protocol === 'https:' && !url.username && !url.password
         ? url.href
         : null;
