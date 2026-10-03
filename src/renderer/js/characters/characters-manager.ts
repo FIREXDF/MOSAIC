@@ -108,6 +108,7 @@ class CharactersManager {
   cssPanelMode: 'prc' | 'msbt';
   cssSelectedSlotIndex: number;
   cssCharacterUpdates: Map<string, any>;
+  cssImageLookupTimers = new WeakMap<CharacterCssEntry, number>();
   cssPrefetchedLayout: any | null;
   cssPrefetchPromise: Promise<void> | null;
   cssSourcePrcPath: string | null;
@@ -2826,12 +2827,101 @@ Add to CSS
 
   hydrateCssCharacter(character: CharacterCssEntry) {
     const info = window.SSBU_CHARACTERS?.[character.nameId];
-    return {
+    const hydrated = {
       ...character,
       displayName: character.displayName || info?.name || character.nameId,
       number: info?.number || character.number || '',
       imageUrl: this.getCssCharacterImage(character.nameId),
     };
+    this.scheduleCssCharacterImageLookup(hydrated);
+    return hydrated;
+  }
+
+  getCssCharacterLookupId(character: CharacterCssEntry) {
+    return String(
+      this.cssCharacterUpdates.get(character.id)?.uiCharaId ?? character.id,
+    ).trim();
+  }
+
+  scheduleCssCharacterImageLookup(character: CharacterCssEntry) {
+    const previousTimer = this.cssImageLookupTimers.get(character);
+    if (previousTimer !== undefined) window.clearTimeout(previousTimer);
+    character.imageUrl = this.getCssCharacterImage(character.nameId);
+    if (character.imageUrl || character.isRandom || character.isGroup) return;
+
+    // Wait for typing to settle; hydration also finishes before the lookup starts.
+    const timer = window.setTimeout(async () => {
+      this.cssImageLookupTimers.delete(character);
+      if (this.findCssCharacter(character.id) !== character) return;
+      const characterId = this.getCssCharacterLookupId(character);
+      const nameId = character.nameId;
+      try {
+        const result =
+          await window.electronAPI.getUmcCharacterImage(characterId);
+        if (
+          !result.success ||
+          !result.imageUrl ||
+          this.findCssCharacter(character.id) !== character ||
+          this.getCssCharacterLookupId(character) !== characterId ||
+          character.nameId !== nameId
+        )
+          return;
+        character.imageUrl = result.imageUrl;
+        this.refreshCssCharacterImage(character);
+      } catch {
+        // A missing UMC entry or connection keeps the normal CSS placeholder.
+      }
+    }, 350);
+    this.cssImageLookupTimers.set(character, timer);
+  }
+
+  refreshCssCharacterImage(character: CharacterCssEntry) {
+    // Replace images only: keep inspector inputs, focus and unsaved edits intact.
+    const thumbnail = character.imageUrl
+      ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${this.escapeHtml(character.displayName)}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>`
+      : '<i class="bi bi-person-circle"></i>';
+    document
+      .querySelectorAll<HTMLElement>('.character-css-cell')
+      .forEach((cell) => {
+        if (cell.dataset.characterId !== character.id) return;
+        const frame = cell.querySelector<HTMLElement>(
+          '.character-css-image-frame',
+        );
+        const updatedFrame = this.createCssCharacterCell(
+          character,
+        ).querySelector<HTMLElement>('.character-css-image-frame');
+        if (frame && updatedFrame) frame.replaceWith(updatedFrame);
+      });
+    if (this.cssSelectedCharacterId === character.id) {
+      const thumb = document.querySelector<HTMLElement>(
+        '#character-css-inspector .character-css-inspector-thumb',
+      );
+      if (thumb) thumb.innerHTML = thumbnail;
+    }
+    document
+      .querySelectorAll<HTMLElement>('.character-css-hidden-row')
+      .forEach((row) => {
+        if (row.dataset.characterId !== character.id) return;
+        const thumb = row.querySelector<HTMLElement>(
+          '.character-css-hidden-thumb',
+        );
+        if (thumb) thumb.innerHTML = thumbnail;
+      });
+    document
+      .querySelectorAll<HTMLElement>('.character-css-preview-tile')
+      .forEach((tile) => {
+        if (tile.dataset.previewCharacterId !== character.id) return;
+        const template = document.createElement('template');
+        template.innerHTML = this.renderCssPreviewTile(character);
+        tile
+          .querySelectorAll('img, .character-css-preview-placeholder')
+          .forEach((image) => image.remove());
+        tile.prepend(
+          ...template.content.querySelectorAll(
+            'img, .character-css-preview-placeholder',
+          ),
+        );
+      });
   }
 
   hydrateCssGroups(groups: Record<string, CharacterCssEntry[]> | undefined) {
@@ -2952,7 +3042,7 @@ Add to CSS
     const escapedName = this.escapeHtml(character.displayName);
     const imageMarkup =
       !character.isGroup && character.imageUrl
-        ? `<img src="${character.imageUrl}" alt="${escapedName}" class="character-css-image" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
+        ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${escapedName}" class="character-css-image" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
         : '';
     const groupSize = this.cssGroups.get(character.id)?.length || 0;
 
@@ -3055,7 +3145,7 @@ ${label}
     inspector.innerHTML = `
 <div class="character-css-inspector-header">
 <div class="character-css-inspector-thumb">
-${character.imageUrl ? `<img src="${character.imageUrl}" alt="${escapedName}">` : '<i class="bi bi-person-circle"></i>'}
+${character.imageUrl ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>` : '<i class="bi bi-person-circle"></i>'}
 </div>
 <div>
 <strong>${escapedName}</strong>
@@ -3265,7 +3355,7 @@ ${options
 
     return `
 <div class="character-css-form">
-${field('Character ID', 'uiCharaId', character.id)}
+${field('Character ID', 'uiCharaId', this.getCssCharacterLookupId(character))}
 ${field('CSS Display Name', 'displayName', character.displayName)}
 ${field('Series ID', 'uiSeriesId', character.uiSeriesId)}
 ${field('Name ID', 'nameId', character.nameId)}
@@ -3521,6 +3611,8 @@ ${field('nam_stage_name', 'namStageName', slot.namStageName, true)}
       return;
     }
 
+    const previousImageLookupId = this.getCssCharacterLookupId(character);
+    const previousNameId = character.nameId;
     if (key === 'nameId') {
       character.nameId = String(value);
     } else if (key in character) {
@@ -3531,6 +3623,14 @@ ${field('nam_stage_name', 'namStageName', slot.namStageName, true)}
       this.setCssCharacterUpdate(character.id, key, String(value));
     } else {
       this.setCssCharacterUpdate(character.id, key, value);
+    }
+    if (
+      (key === 'uiCharaId' &&
+        this.getCssCharacterLookupId(character) !== previousImageLookupId) ||
+      (key === 'nameId' && character.nameId !== previousNameId)
+    ) {
+      this.scheduleCssCharacterImageLookup(character);
+      this.refreshCssCharacterImage(character);
     }
   }
 
@@ -4024,7 +4124,7 @@ Duplicate
 <div class="character-modal-body character-css-remove-body">
 <div class="character-css-remove-preview">
 <div class="character-css-hidden-thumb">
-${character.imageUrl ? `<img src="${character.imageUrl}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
+${character.imageUrl ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
 </div>
 <div>
 <strong>${this.escapeHtml(character.displayName)}</strong>
@@ -4295,7 +4395,7 @@ Remove
             (character, index) => `
 <div class="character-css-hidden-row character-css-group-row" data-character-id="${this.escapeHtml(character.id)}">
   <div class="character-css-hidden-thumb">
-    ${character.imageUrl ? `<img src="${character.imageUrl}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
+    ${character.imageUrl ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
   </div>
   <button class="character-css-group-character" type="button" data-action="select">${this.escapeHtml(character.displayName)}</button>
   <div class="character-css-group-actions">
@@ -4450,7 +4550,7 @@ ${
       return `
 <div class="character-css-hidden-row" data-character-id="${this.escapeHtml(character.id)}">
 <div class="character-css-hidden-thumb">
-${imageUrl ? `<img src="${imageUrl}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
+${imageUrl ? `<img src="${this.escapeHtml(imageUrl)}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
 </div>
 <span>${this.escapeHtml(character.displayName)}</span>
 <button class="input-btn" type="button" data-action="unhide-character">
@@ -4737,7 +4837,7 @@ ${this.renderCssPreviewRows(visibleCharacters, 13, 13)}
   renderCssPreviewTile(character: CharacterCssEntry) {
     const escapedName = this.escapeHtml(character.displayName);
     const image = character.imageUrl
-      ? `<img src="${character.imageUrl}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
+      ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
       : '';
 
     return `

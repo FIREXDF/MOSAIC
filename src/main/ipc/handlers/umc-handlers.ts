@@ -9,6 +9,25 @@ import {
 const UMC_API_BASE_URL = 'https://ultimatemovesetcompatibility.onrender.com';
 const UMC_REQUEST_TIMEOUT_MS = 20_000;
 const UMC_MAX_SELECTION = 10;
+const UMC_IMAGE_CACHE_TTL_MS = 5 * 60_000;
+const umcImageCache = new Map<
+  string,
+  { expiresAt: number; image: Promise<string | null> }
+>();
+const umcImageRequestLanes = Array.from({ length: 3 }, () => Promise.resolve());
+let umcNextImageRequestLane = 0;
+
+class UmcHttpError extends Error {
+  constructor(public readonly status: number) {
+    super(`UMC API returned HTTP ${status}.`);
+  }
+}
+
+interface UmcMovesetImageDto {
+  slottedId?: string | null;
+  thumbhImageUrl?: string | null;
+  releaseState?: { releaseStateName?: string | null } | null;
+}
 
 export interface UmcMovesetDto {
   movesetId: number;
@@ -150,7 +169,7 @@ async function requestUmc<T>(path: string): Promise<T> {
     });
 
     if (!response.ok) {
-      throw new Error(`UMC API returned HTTP ${response.status}.`);
+      throw new UmcHttpError(response.status);
     }
 
     return (await response.json()) as T;
@@ -159,7 +178,73 @@ async function requestUmc<T>(path: string): Promise<T> {
   }
 }
 
+function getUmcCharacterImage(slottedId: string): Promise<string | null> {
+  const cached = umcImageCache.get(slottedId);
+  if (cached && cached.expiresAt > Date.now()) return cached.image;
+
+  // Share lookups across CSS reloads and limit requests while hydrating duplicates.
+  const lane = umcNextImageRequestLane++ % umcImageRequestLanes.length;
+  const image = umcImageRequestLanes[lane].then(async () => {
+    try {
+      const moveset = await requestUmc<UmcMovesetImageDto>(
+        `/api/movesets/${encodeURIComponent(slottedId)}`,
+      );
+      if (
+        moveset?.slottedId?.trim().toLowerCase() !== slottedId ||
+        moveset.releaseState?.releaseStateName !== 'Released' ||
+        typeof moveset.thumbhImageUrl !== 'string'
+      ) {
+        return null;
+      }
+      const url = new URL(moveset.thumbhImageUrl);
+      return url.protocol === 'https:' && !url.username && !url.password
+        ? url.href
+        : null;
+    } catch (error) {
+      if (error instanceof UmcHttpError && error.status === 404) return null;
+      umcImageCache.delete(slottedId);
+      throw error;
+    }
+  });
+  umcImageRequestLanes[lane] = image.then(
+    () => undefined,
+    () => undefined,
+  );
+  if (umcImageCache.size >= 256) {
+    umcImageCache.delete(umcImageCache.keys().next().value!);
+  }
+  umcImageCache.set(slottedId, {
+    expiresAt: Date.now() + UMC_IMAGE_CACHE_TTL_MS,
+    image,
+  });
+  return image;
+}
+
 const UmcHandlers = {
+  ['get-umc-character-image']: async (
+    _common: BaseHandlerArg,
+    characterId: string,
+  ): HandlerResponse<{ imageUrl: string | null }> => {
+    const slottedId =
+      typeof characterId === 'string'
+        ? characterId
+            .trim()
+            .toLowerCase()
+            .replace(/^ui_chara_/, '')
+        : '';
+    if (!/^[a-z][a-z0-9_-]{0,127}$/.test(slottedId)) {
+      return { success: true, imageUrl: null };
+    }
+    try {
+      return { success: true, imageUrl: await getUmcCharacterImage(slottedId) };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+
   ['get-umc-movesets']: async (
     _common: BaseHandlerArg,
   ): HandlerResponse<{ movesets: UmcMovesetDto[] }> => {
