@@ -28,6 +28,25 @@ interface CharacterMovesetGroup {
   mods: CharacterMovesetMod[];
 }
 
+interface UmcMoveset {
+  movesetId: number;
+  moddedCharName: string;
+  thumbhImageUrl?: string | null;
+  vanillaCharDisplayName?: string | null;
+  seriesName?: string | null;
+  releaseState?: string | null;
+  cardModders?: string[] | null;
+  modders?: string[] | null;
+}
+
+interface UmcCompatibilityResult {
+  compatibleCount?: number;
+  incompatibleCount?: number;
+  severity?: 'compatible' | 'warning' | 'predicted-incompat' | 'incompatible';
+  conflictingHookIds?: number[];
+  conflictingArticleIds?: number[];
+}
+
 interface CharacterCssEntry {
   id: string;
   nameId: string;
@@ -101,6 +120,17 @@ class CharactersManager {
   incrementalRefreshPromise: Promise<void> | null;
   staleMovesetModPaths: Set<string>;
   isRefreshingMovesets: boolean;
+  umcMovesets: UmcMoveset[];
+  umcMovesetsLoaded: boolean;
+  umcMovesetsLoading: boolean;
+  umcMovesetsError: string | null;
+  umcSearchQuery: string;
+  umcSelectedMovesetOneId: number | null;
+  umcSelectedMovesetTwoId: number | null;
+  umcCheckingCompatibility: boolean;
+  umcCompatibilityResult: UmcCompatibilityResult | null;
+  umcCompatibilityError: string | null;
+  umcCompatibilityRequestId: number;
 
   constructor() {
     this.characters = new Map();
@@ -131,12 +161,25 @@ class CharactersManager {
     this.incrementalRefreshPromise = null;
     this.staleMovesetModPaths = new Set();
     this.isRefreshingMovesets = false;
+    this.umcMovesets = [];
+    this.umcMovesetsLoaded = false;
+    this.umcMovesetsLoading = false;
+    this.umcMovesetsError = null;
+    this.umcSearchQuery = '';
+    this.umcSelectedMovesetOneId = null;
+    this.umcSelectedMovesetTwoId = null;
+    this.umcCheckingCompatibility = false;
+    this.umcCompatibilityResult = null;
+    this.umcCompatibilityError = null;
+    this.umcCompatibilityRequestId = 0;
 
     window.addEventListener('mods-library-updated', (event) => {
-      const detail = (event as CustomEvent<{
-        changedPaths?: string[];
-        addedPaths?: string[];
-      }>).detail;
+      const detail = (
+        event as CustomEvent<{
+          changedPaths?: string[];
+          addedPaths?: string[];
+        }>
+      ).detail;
       if (detail?.changedPaths) {
         void this.detectMovesetLibraryChanges(
           detail.changedPaths,
@@ -316,6 +359,74 @@ class CharactersManager {
       movesetsButton.parentNode?.replaceChild(replacement, movesetsButton);
       replacement.addEventListener('click', () => {
         this.openMovesetTracker();
+      });
+    }
+
+    const umcButton = document.querySelector<HTMLButtonElement>(
+      '#character-moveset-compatibility-btn',
+    );
+    if (umcButton) {
+      const replacement = umcButton.cloneNode(true) as HTMLButtonElement;
+      umcButton.parentNode?.replaceChild(replacement, umcButton);
+      replacement.addEventListener('click', () => {
+        this.openUmcCompatibility();
+      });
+    }
+
+    const umcBackButton = document.querySelector<HTMLButtonElement>(
+      '#character-umc-back-btn',
+    );
+    if (umcBackButton) {
+      const replacement = umcBackButton.cloneNode(true) as HTMLButtonElement;
+      umcBackButton.parentNode?.replaceChild(replacement, umcBackButton);
+      replacement.addEventListener('click', () => {
+        this.closeUmcCompatibility();
+      });
+    }
+
+    const umcRefreshButton = document.querySelector<HTMLButtonElement>(
+      '#character-umc-refresh-btn',
+    );
+    if (umcRefreshButton) {
+      const replacement = umcRefreshButton.cloneNode(true) as HTMLButtonElement;
+      umcRefreshButton.parentNode?.replaceChild(replacement, umcRefreshButton);
+      replacement.addEventListener('click', () => {
+        void this.loadUmcMovesets(true);
+      });
+    }
+
+    const umcSearch = document.querySelector<HTMLInputElement>(
+      '#character-umc-search',
+    );
+    if (umcSearch) {
+      const replacement = umcSearch.cloneNode(true) as HTMLInputElement;
+      umcSearch.parentNode?.replaceChild(replacement, umcSearch);
+      replacement.value = this.umcSearchQuery;
+      replacement.addEventListener('input', () => {
+        this.umcSearchQuery = replacement.value.trim().toLowerCase();
+        this.renderUmcMovesetGrid();
+      });
+    }
+
+    const umcGrid = document.querySelector<HTMLElement>('#character-umc-grid');
+    if (umcGrid && umcGrid.dataset.umcListenersAttached !== 'true') {
+      umcGrid.dataset.umcListenersAttached = 'true';
+      umcGrid.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) {
+          return;
+        }
+
+        if (target.closest('[data-umc-retry]')) {
+          void this.loadUmcMovesets(true);
+          return;
+        }
+
+        const card = target.closest<HTMLButtonElement>('[data-umc-moveset-id]');
+        const movesetId = Number(card?.dataset.umcMovesetId);
+        if (Number.isSafeInteger(movesetId)) {
+          this.selectUmcMoveset(movesetId);
+        }
       });
     }
 
@@ -1371,6 +1482,506 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
     this.switchCharacterView(movesetsView, browserView, 'back');
   }
 
+  openUmcCompatibility() {
+    const umcView = document.querySelector<HTMLElement>(
+      '#character-moveset-compatibility-view',
+    );
+    if (!umcView) {
+      return;
+    }
+
+    this.switchCharacterView(
+      this.getActiveCharacterSubview(),
+      umcView,
+      'forward',
+    );
+
+    if (this.umcMovesetsLoaded) {
+      this.renderUmcCompatibility();
+    } else {
+      void this.loadUmcMovesets();
+    }
+  }
+
+  closeUmcCompatibility() {
+    const browserView = document.querySelector<HTMLElement>(
+      '#characters-browser-view',
+    );
+    const umcView = document.querySelector<HTMLElement>(
+      '#character-moveset-compatibility-view',
+    );
+
+    if (!browserView || !umcView) {
+      return;
+    }
+
+    this.switchCharacterView(umcView, browserView, 'back');
+  }
+
+  async loadUmcMovesets(force = false) {
+    if (this.umcMovesetsLoading) {
+      return;
+    }
+    if (this.umcMovesetsLoaded && !force) {
+      this.renderUmcCompatibility();
+      return;
+    }
+
+    this.umcMovesetsLoading = true;
+    this.umcMovesetsError = null;
+    this.renderUmcCompatibility();
+
+    try {
+      if (!window.electronAPI?.getUmcMovesets) {
+        throw new Error('UMC API is unavailable in this app version.');
+      }
+
+      const response = await window.electronAPI.getUmcMovesets();
+      if (!response.success) {
+        throw new Error(response.error || 'UMC could not load movesets.');
+      }
+
+      this.umcMovesets = response.movesets.filter(
+        (moveset) =>
+          Number.isSafeInteger(moveset?.movesetId) &&
+          moveset.movesetId > 0 &&
+          typeof moveset.moddedCharName === 'string' &&
+          moveset.moddedCharName.trim().length > 0 &&
+          moveset.releaseState?.trim().toLowerCase() === 'released',
+      );
+      this.umcMovesetsLoaded = true;
+
+      const availableIds = new Set(
+        this.umcMovesets.map((moveset) => moveset.movesetId),
+      );
+      const previousOneId = this.umcSelectedMovesetOneId;
+      const previousTwoId = this.umcSelectedMovesetTwoId;
+      if (
+        this.umcSelectedMovesetOneId !== null &&
+        !availableIds.has(this.umcSelectedMovesetOneId)
+      ) {
+        this.umcSelectedMovesetOneId = null;
+      }
+      if (
+        this.umcSelectedMovesetTwoId !== null &&
+        !availableIds.has(this.umcSelectedMovesetTwoId)
+      ) {
+        this.umcSelectedMovesetTwoId = null;
+      }
+      if (
+        previousOneId !== this.umcSelectedMovesetOneId ||
+        previousTwoId !== this.umcSelectedMovesetTwoId
+      ) {
+        this.resetUmcCompatibility();
+      }
+    } catch (error) {
+      this.umcMovesetsError =
+        error instanceof Error ? error.message : String(error);
+    } finally {
+      this.umcMovesetsLoading = false;
+      this.renderUmcCompatibility();
+    }
+  }
+
+  renderUmcCompatibility() {
+    const count = document.querySelector<HTMLElement>('#character-umc-count');
+    if (count) {
+      count.textContent = this.t(
+        'characters.umcMovesetCount',
+        '{{count}} movesets',
+        { count: String(this.umcMovesets.length) },
+      );
+    }
+
+    const refreshButton = document.querySelector<HTMLButtonElement>(
+      '#character-umc-refresh-btn',
+    );
+    if (refreshButton) {
+      refreshButton.disabled = this.umcMovesetsLoading;
+      refreshButton.classList.toggle('is-loading', this.umcMovesetsLoading);
+      refreshButton.title = this.t(
+        'characters.umcRefreshTitle',
+        'Refresh UMC movesets',
+      );
+      refreshButton.setAttribute('aria-label', refreshButton.title);
+      refreshButton.setAttribute('aria-busy', String(this.umcMovesetsLoading));
+    }
+
+    const refreshState = document.querySelector<HTMLElement>(
+      '#character-umc-refresh-state',
+    );
+    if (refreshState) {
+      const hasCachedList =
+        this.umcMovesetsLoaded && this.umcMovesets.length > 0;
+      refreshState.hidden =
+        !hasCachedList || (!this.umcMovesetsLoading && !this.umcMovesetsError);
+      refreshState.textContent = this.umcMovesetsLoading
+        ? this.t('characters.umcRefreshing', 'Refreshing...')
+        : this.t(
+            'characters.umcRefreshFailed',
+            'Refresh failed. Showing the last loaded list.',
+          );
+    }
+
+    this.renderUmcMovesetGrid();
+    this.renderUmcSelection();
+  }
+
+  renderUmcMovesetGrid() {
+    const grid = document.querySelector<HTMLElement>('#character-umc-grid');
+    if (!grid) {
+      return;
+    }
+
+    if (this.umcMovesetsLoading && this.umcMovesets.length === 0) {
+      grid.innerHTML = `
+<div class="character-umc-state" role="status" aria-live="polite">
+  <i class="bi bi-arrow-repeat character-umc-spinner" aria-hidden="true"></i>
+  <p>${this.escapeHtml(this.t('characters.umcLoading', 'Loading UMC movesets...'))}</p>
+</div>`;
+      return;
+    }
+
+    if (this.umcMovesetsError && this.umcMovesets.length === 0) {
+      grid.innerHTML = `
+<div class="character-umc-state" role="status" aria-live="polite">
+  <i class="bi bi-cloud-slash" aria-hidden="true"></i>
+  <p><strong>${this.escapeHtml(this.t('characters.umcLoadError', 'Could not load UMC movesets.'))}</strong><br>${this.escapeHtml(this.umcMovesetsError)}</p>
+  <button class="input-btn" type="button" data-umc-retry>${this.escapeHtml(this.t('characters.umcRetry', 'Retry'))}</button>
+</div>`;
+      return;
+    }
+
+    const normalizedQuery = this.umcSearchQuery;
+    const movesets = [...this.umcMovesets]
+      .filter((moveset) => {
+        if (!normalizedQuery) {
+          return true;
+        }
+        const modders = moveset.cardModders?.length
+          ? moveset.cardModders
+          : moveset.modders || [];
+        return [
+          moveset.moddedCharName,
+          moveset.vanillaCharDisplayName || '',
+          moveset.seriesName || '',
+          ...modders,
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalizedQuery);
+      })
+      .sort((a, b) => {
+        const unnamedA = /^\?+$/.test(a.moddedCharName.trim());
+        const unnamedB = /^\?+$/.test(b.moddedCharName.trim());
+        return (
+          Number(unnamedA) - Number(unnamedB) ||
+          a.moddedCharName.localeCompare(b.moddedCharName, undefined, {
+            sensitivity: 'base',
+          })
+        );
+      });
+
+    if (movesets.length === 0) {
+      const emptyMessage = this.umcMovesets.length
+        ? this.t('characters.umcSearchEmpty', 'No movesets found.')
+        : this.t(
+            'characters.umcEmpty',
+            'No released movesets available on UMC.',
+          );
+      grid.innerHTML = `
+<div class="character-umc-state" role="status" aria-live="polite">
+  <i class="bi bi-search" aria-hidden="true"></i>
+  <p>${this.escapeHtml(emptyMessage)}</p>
+</div>`;
+      return;
+    }
+
+    grid.innerHTML = movesets
+      .map((moveset) => {
+        const selected =
+          moveset.movesetId === this.umcSelectedMovesetOneId ||
+          moveset.movesetId === this.umcSelectedMovesetTwoId;
+        const imageUrl = this.getUmcImageUrl(moveset.thumbhImageUrl);
+        const metadata = [
+          moveset.vanillaCharDisplayName,
+          moveset.seriesName,
+        ].filter((value): value is string => Boolean(value?.trim()));
+        return `
+<button class="character-umc-card" type="button" data-umc-moveset-id="${moveset.movesetId}" aria-pressed="${selected}" aria-label="${this.escapeHtml(moveset.moddedCharName)}${metadata.length ? ` · ${this.escapeHtml(metadata.join(' · '))}` : ''}">
+  <span class="character-umc-card-image">
+    ${imageUrl ? `<img src="${this.escapeHtml(imageUrl)}" alt="${this.escapeHtml(moveset.moddedCharName)}" loading="lazy">` : '<i class="bi bi-controller" aria-hidden="true"></i>'}
+  </span>
+  <span class="character-umc-card-name">${this.escapeHtml(moveset.moddedCharName)}</span>
+  <span class="character-umc-card-meta">${this.escapeHtml(metadata.join(' · ') || this.t('characters.umcUnknownFighter', 'Fighter not specified'))}</span>
+</button>`;
+      })
+      .join('');
+
+    grid
+      .querySelectorAll<HTMLImageElement>('.character-umc-card-image img')
+      .forEach((image) => {
+        image.addEventListener(
+          'error',
+          () => {
+            const frame = image.parentElement;
+            image.remove();
+            if (frame && !frame.querySelector('i')) {
+              const fallback = document.createElement('i');
+              fallback.className = 'bi bi-controller';
+              fallback.setAttribute('aria-hidden', 'true');
+              frame.appendChild(fallback);
+            }
+          },
+          { once: true },
+        );
+      });
+  }
+
+  renderUmcSelection() {
+    const selectedOne = this.umcMovesets.find(
+      (moveset) => moveset.movesetId === this.umcSelectedMovesetOneId,
+    );
+    const selectedTwo = this.umcMovesets.find(
+      (moveset) => moveset.movesetId === this.umcSelectedMovesetTwoId,
+    );
+    const selectionOne = document.querySelector<HTMLElement>(
+      '#character-umc-selection-one',
+    );
+    const selectionTwo = document.querySelector<HTMLElement>(
+      '#character-umc-selection-two',
+    );
+
+    if (selectionOne) {
+      selectionOne.textContent =
+        selectedOne?.moddedCharName ||
+        this.t('characters.umcChooseFirst', 'Choose a moveset');
+    }
+    if (selectionTwo) {
+      selectionTwo.textContent =
+        selectedTwo?.moddedCharName ||
+        this.t('characters.umcChooseSecond', 'Choose another moveset');
+    }
+
+    document
+      .querySelectorAll<HTMLButtonElement>('[data-umc-moveset-id]')
+      .forEach((card) => {
+        const id = Number(card.dataset.umcMovesetId);
+        const isSelected =
+          id === this.umcSelectedMovesetOneId ||
+          id === this.umcSelectedMovesetTwoId;
+        card.setAttribute('aria-pressed', String(isSelected));
+      });
+
+    const result = document.querySelector<HTMLElement>('#character-umc-result');
+    if (!result) {
+      return;
+    }
+    result.setAttribute('aria-busy', String(this.umcCheckingCompatibility));
+
+    if (this.umcCheckingCompatibility) {
+      result.className = 'character-umc-result is-neutral';
+      result.hidden = false;
+      result.textContent = this.t(
+        'characters.umcChecking',
+        'Checking compatibility...',
+      );
+      return;
+    }
+
+    if (this.umcCompatibilityError) {
+      result.className = 'character-umc-result is-error';
+      result.hidden = false;
+      result.innerHTML = `<strong>${this.escapeHtml(this.t('characters.umcCheckError', 'Could not check compatibility.'))}</strong> ${this.escapeHtml(this.umcCompatibilityError)}<br>${this.escapeHtml(this.t('characters.umcRetrySelection', 'Select a different pair to try again.'))}`;
+      return;
+    }
+
+    if (!this.umcCompatibilityResult) {
+      result.hidden = true;
+      result.replaceChildren();
+      return;
+    }
+
+    const compatibleCount = Math.max(
+      0,
+      Number(this.umcCompatibilityResult.compatibleCount) || 0,
+    );
+    const incompatibleCount = Math.max(
+      0,
+      Number(this.umcCompatibilityResult.incompatibleCount) || 0,
+    );
+    const severity = this.umcCompatibilityResult.severity;
+    const hasReports = compatibleCount > 0 || incompatibleCount > 0;
+    const titles = {
+      compatible: this.t(
+        'characters.umcPredictedCompatible',
+        'No conflicts detected (UMC prediction)',
+      ),
+      warning: this.t(
+        'characters.umcWarning',
+        'Compatibility warnings (UMC prediction)',
+      ),
+      'predicted-incompat': this.t(
+        'characters.umcPredictedIncompatible',
+        'Likely incompatible (UMC prediction)',
+      ),
+      incompatible: this.t(
+        'characters.umcPredictedConflict',
+        'Conflicts detected (UMC prediction)',
+      ),
+    };
+    const title = severity
+      ? titles[severity]
+      : hasReports
+        ? this.t(
+            'characters.umcReportsOnly',
+            'Community reports only; prediction unavailable',
+          )
+        : this.t(
+            'characters.umcPredictionUnavailable',
+            'UMC prediction unavailable. No community reports for this pair.',
+          );
+    const resultStyle =
+      severity === 'incompatible' || severity === 'predicted-incompat'
+        ? 'is-incompatible'
+        : severity === 'warning' || incompatibleCount > 0
+          ? 'is-warning'
+          : severity === 'compatible'
+            ? 'is-compatible'
+            : 'is-neutral';
+    const details: string[] = [];
+    if (severity) {
+      details.push(
+        this.t(
+          'characters.umcConflictCounts',
+          'Shared hooks: {{hooks}} · Shared articles: {{articles}}',
+          {
+            hooks: String(
+              this.umcCompatibilityResult.conflictingHookIds?.length || 0,
+            ),
+            articles: String(
+              this.umcCompatibilityResult.conflictingArticleIds?.length || 0,
+            ),
+          },
+        ),
+      );
+    }
+    details.push(
+      this.umcCompatibilityResult.compatibleCount === undefined
+        ? this.t(
+            'characters.umcReportsUnavailable',
+            'Community reports unavailable.',
+          )
+        : hasReports
+          ? this.t(
+              'characters.umcCounts',
+              'Community votes: {{compatible}} compatible · {{incompatible}} incompatible',
+              {
+                compatible: String(compatibleCount),
+                incompatible: String(incompatibleCount),
+              },
+            )
+          : this.t(
+              'characters.umcNoReports',
+              'No community reports for this pair yet.',
+            ),
+    );
+    result.className = `character-umc-result ${resultStyle}`;
+    result.hidden = false;
+    result.innerHTML = `<strong>${this.escapeHtml(title)}</strong><br>${details.map((detail) => this.escapeHtml(detail)).join('<br>')}`;
+  }
+
+  selectUmcMoveset(movesetId: number) {
+    if (!this.umcMovesets.some((moveset) => moveset.movesetId === movesetId)) {
+      return;
+    }
+
+    if (this.umcSelectedMovesetOneId === movesetId) {
+      this.umcSelectedMovesetOneId = null;
+    } else if (this.umcSelectedMovesetTwoId === movesetId) {
+      this.umcSelectedMovesetTwoId = null;
+    } else if (this.umcSelectedMovesetOneId === null) {
+      this.umcSelectedMovesetOneId = movesetId;
+    } else {
+      this.umcSelectedMovesetTwoId = movesetId;
+    }
+
+    this.resetUmcCompatibility();
+    this.renderUmcSelection();
+    if (
+      this.umcSelectedMovesetOneId !== null &&
+      this.umcSelectedMovesetTwoId !== null
+    ) {
+      void this.checkUmcCompatibility();
+    }
+  }
+
+  resetUmcCompatibility() {
+    // Ignore responses for a pair that the user has already changed.
+    this.umcCompatibilityRequestId++;
+    this.umcCheckingCompatibility = false;
+    this.umcCompatibilityResult = null;
+    this.umcCompatibilityError = null;
+  }
+
+  async checkUmcCompatibility() {
+    const movesetOneId = this.umcSelectedMovesetOneId;
+    const movesetTwoId = this.umcSelectedMovesetTwoId;
+    if (
+      movesetOneId === null ||
+      movesetTwoId === null ||
+      movesetOneId === movesetTwoId ||
+      this.umcCheckingCompatibility
+    ) {
+      return;
+    }
+
+    this.umcCheckingCompatibility = true;
+    const requestId = ++this.umcCompatibilityRequestId;
+    this.umcCompatibilityResult = null;
+    this.umcCompatibilityError = null;
+    this.renderUmcSelection();
+
+    try {
+      const response = await window.electronAPI.getUmcCompatibility(
+        movesetOneId,
+        movesetTwoId,
+      );
+      if (requestId !== this.umcCompatibilityRequestId) {
+        return;
+      }
+      if (!response.success) {
+        throw new Error(
+          response.error || 'UMC could not check this moveset pair.',
+        );
+      }
+      this.umcCompatibilityResult = response.compatibility;
+    } catch (error) {
+      if (requestId === this.umcCompatibilityRequestId) {
+        this.umcCompatibilityError =
+          error instanceof Error ? error.message : String(error);
+      }
+    } finally {
+      if (requestId === this.umcCompatibilityRequestId) {
+        this.umcCheckingCompatibility = false;
+        this.renderUmcSelection();
+      }
+    }
+  }
+
+  getUmcImageUrl(value?: string | null) {
+    if (!value) {
+      return null;
+    }
+
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' ? url.toString() : null;
+    } catch {
+      return null;
+    }
+  }
+
   switchCharacterView(
     fromView: HTMLElement | null,
     toView: HTMLElement,
@@ -1383,7 +1994,7 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
 
     document
       .querySelectorAll<HTMLElement>(
-        '#characters-browser-view, #character-movesets-view, #character-css-editor',
+        '#characters-browser-view, #character-movesets-view, #character-moveset-compatibility-view, #character-css-editor',
       )
       .forEach((view) => {
         if (view !== fromView && view !== toView) {
@@ -1448,7 +2059,7 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
   getActiveCharacterSubview() {
     return (
       document.querySelector<HTMLElement>(
-        '#characters-browser-view:not([hidden]), #character-movesets-view:not([hidden]), #character-css-editor:not([hidden])',
+        '#characters-browser-view:not([hidden]), #character-movesets-view:not([hidden]), #character-moveset-compatibility-view:not([hidden]), #character-css-editor:not([hidden])',
       ) || null
     );
   }
@@ -2338,7 +2949,10 @@ ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</spa
 
     if (saving) {
       const activeElement = document.activeElement;
-      if (activeElement instanceof HTMLElement && inspector.contains(activeElement)) {
+      if (
+        activeElement instanceof HTMLElement &&
+        inspector.contains(activeElement)
+      ) {
         activeElement.blur();
       }
       inspector.setAttribute('aria-busy', 'true');
@@ -4098,7 +4712,10 @@ ${image}
       const renamedCharacters = Object.fromEntries(this.cssRenamedCharacters);
       const characterUpdates = Object.fromEntries(this.cssCharacterUpdates);
       const charactersById = new Map(
-        this.getAllCssCharacters().map((character) => [character.id, character]),
+        this.getAllCssCharacters().map((character) => [
+          character.id,
+          character,
+        ]),
       );
       const result = await window.electronAPI.saveCharacterCssLayout({
         visibleCharacterIds: this.cssVisibleCharacters.map(
@@ -4130,7 +4747,8 @@ ${image}
       let layoutRefreshed = false;
 
       try {
-        const refreshedLayout = await window.electronAPI.getCharacterCssLayout();
+        const refreshedLayout =
+          await window.electronAPI.getCharacterCssLayout();
         if (!refreshedLayout.success) {
           throw new Error(
             refreshedLayout.error || 'Failed to refresh character CSS layout',
@@ -4177,7 +4795,10 @@ ${image}
       this.cssRenamedCharacters.clear();
       this.cssCharacterUpdates.clear();
       this.cssCreatedGroups.clear();
-      window.toastManager?.success?.('Character CSS Layout saved as .prc.', 3500);
+      window.toastManager?.success?.(
+        'Character CSS Layout saved as .prc.',
+        3500,
+      );
       if (result.stderr?.includes('MSBT changes')) {
         window.toastManager?.warning?.(
           'Layout saved, but MSBT names need dotnet to be regenerated.',
@@ -4244,7 +4865,9 @@ ${image}
 <p id="characters-loading-status" style="font-size: 13px; color: var(--text-muted); margin-top: 8px;"></p>
 </div>
 `;
-      const videoContainer = document.getElementById('characters-loading-video');
+      const videoContainer = document.getElementById(
+        'characters-loading-video',
+      );
       if (videoContainer) {
         window.mountLoadingVideo(videoContainer);
       }

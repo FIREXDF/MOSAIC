@@ -19,6 +19,7 @@ import { registerCharacterCssHandlers } from './handlers/character-css-handlers'
 import { registerModProfileHandlers } from './handlers/mod-profile-handlers';
 import { registerConfigBackupHandlers } from './handlers/config-backup-handlers';
 import { registerFeedbackHandlers } from './handlers/feedback-handlers';
+import { registerUmcHandlers } from './handlers/umc-handlers';
 import DiscordRPCManager from '../discord-rpc';
 
 /**
@@ -50,4 +51,5 @@ export function registerAllHandlers(
   registerModProfileHandlers(ipcMain);
   registerConfigBackupHandlers(ipcMain);
   registerFeedbackHandlers(ipcMain);
+  registerUmcHandlers(ipcMain);
 }

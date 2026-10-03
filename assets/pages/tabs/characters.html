@@ -31,6 +31,14 @@
         <i class="bi bi-controller"></i>
         Movesets
       </button>
+      <button
+        class="input-btn"
+        id="character-moveset-compatibility-btn"
+        type="button"
+      >
+        <i class="bi bi-shuffle"></i>
+        <span data-i18n="characters.umcCompatibility">Compatibility</span>
+      </button>
       <button class="input-btn" id="edit-character-css-btn" type="button">
         <i class="bi bi-grid-3x3-gap-fill"></i>
         Edit CSS
@@ -99,6 +107,103 @@
       </div>
 
       <div class="character-movesets-list" id="character-movesets-list"></div>
+    </div>
+
+    <div
+      class="character-umc-view"
+      id="character-moveset-compatibility-view"
+      hidden
+    >
+      <div class="character-umc-toolbar">
+        <button
+          class="input-btn"
+          id="character-umc-back-btn"
+          type="button"
+        >
+          <i class="bi bi-arrow-left"></i>
+          <span data-i18n="characters.umcBack">Back</span>
+        </button>
+        <div class="character-umc-title">
+          <strong data-i18n="characters.umcTitle">Moveset compatibility</strong>
+          <span id="character-umc-count" aria-live="polite">0 movesets</span>
+          <span
+            class="character-umc-refreshing"
+            id="character-umc-refresh-state"
+            role="status"
+            aria-live="polite"
+            hidden
+          ></span>
+        </div>
+        <button
+          class="input-btn"
+          id="character-umc-refresh-btn"
+          type="button"
+          title="Refresh UMC movesets"
+          aria-label="Refresh UMC movesets"
+        >
+          <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+          <span data-i18n="characters.umcRefresh">Refresh</span>
+        </button>
+      </div>
+
+      <section class="character-umc-comparison" aria-labelledby="character-umc-title">
+        <div class="character-umc-comparison-heading">
+          <div>
+            <h3 id="character-umc-title" data-i18n="characters.umcCompareTitle">
+              Compare movesets
+            </h3>
+            <p data-i18n="characters.umcCompareHint">
+              Select two movesets to check automatically. Click again to deselect.
+            </p>
+          </div>
+        </div>
+
+        <div class="character-umc-selection">
+          <div class="character-umc-selection-slot">
+            <span data-i18n="characters.umcMovesetOne">Moveset 1</span>
+            <strong id="character-umc-selection-one">
+              Choose a moveset
+            </strong>
+          </div>
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>
+          <div class="character-umc-selection-slot">
+            <span data-i18n="characters.umcMovesetTwo">Moveset 2</span>
+            <strong id="character-umc-selection-two">
+              Choose another moveset
+            </strong>
+          </div>
+        </div>
+        <div
+          class="character-umc-result"
+          id="character-umc-result"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></div>
+      </section>
+
+      <div class="character-umc-list-toolbar">
+        <label class="visually-hidden" for="character-umc-search" data-i18n="characters.umcSearchLabel">
+          Search UMC movesets
+        </label>
+        <input
+          class="character-umc-search"
+          id="character-umc-search"
+          type="search"
+          placeholder="Search movesets..."
+          data-i18n="characters.umcSearch"
+          data-i18n-placeholder
+          autocomplete="off"
+        />
+        <span data-i18n="characters.umcSource">Released movesets from UMC</span>
+      </div>
+
+      <div
+        class="character-umc-grid"
+        id="character-umc-grid"
+        role="region"
+        aria-label="UMC movesets"
+      ></div>
     </div>
 
     <div class="character-css-editor" id="character-css-editor" hidden>
