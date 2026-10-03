@@ -186,7 +186,14 @@
           data-i18n-placeholder
           autocomplete="off"
         />
-        <span data-i18n="characters.umcSource">Released movesets from UMC</span>
+        <a
+          class="character-umc-source"
+          href="https://lilylavender.github.io/UltimateMovesetCompatibility/#/"
+          target="_blank"
+          rel="noopener noreferrer"
+          onclick="window.electronAPI.openUrl(this.href); return false;"
+          data-i18n="characters.umcSource"
+        >Provided by UMC</a>
       </div>
 
       <div

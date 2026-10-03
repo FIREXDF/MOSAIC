@@ -1240,7 +1240,7 @@
     "umcChecking": "Checking...",
     "umcSearchLabel": "Search UMC movesets",
     "umcSearch": "Search movesets...",
-    "umcSource": "Released movesets from UMC",
+    "umcSource": "Provided by UMC",
     "umcLoading": "Loading UMC movesets...",
     "umcLoadError": "Could not load UMC movesets.",
     "umcRetry": "Retry",

@@ -1716,8 +1716,8 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
 <button class="character-umc-card" type="button" data-umc-moveset-id="${moveset.movesetId}" aria-pressed="${selected}" aria-label="${this.escapeHtml(moveset.moddedCharName)}${metadata.length ? ` · ${this.escapeHtml(metadata.join(' · '))}` : ''}" ${!selected && this.umcSelectedMovesetIds.size >= UMC_MAX_SELECTION ? 'disabled' : ''}>
   <span class="character-umc-card-image">
     ${imageUrl ? `<img src="${this.escapeHtml(imageUrl)}" alt="${this.escapeHtml(moveset.moddedCharName)}" loading="lazy">` : '<i class="bi bi-controller" aria-hidden="true"></i>'}
+    <span class="character-umc-card-name" title="${this.escapeHtml(moveset.moddedCharName).replace(/"/g, '&quot;')}">${this.escapeHtml(moveset.moddedCharName)}</span>
   </span>
-  <span class="character-umc-card-name">${this.escapeHtml(moveset.moddedCharName)}</span>
   <span class="character-umc-card-meta">${this.escapeHtml(metadata.join(' · ') || this.t('characters.umcUnknownFighter', 'Fighter not specified'))}</span>
 </button>`;
       })
