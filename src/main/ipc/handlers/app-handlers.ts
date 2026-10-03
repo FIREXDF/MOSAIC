@@ -288,7 +288,41 @@ const buildDebugReport = () => {
   };
 };
 
-const exportDebugReport = async (common: BaseHandlerArg) => {
+const anonymizeHomeDirectory = (value: unknown): unknown => {
+  const homeDirectory = os.homedir();
+  if (!homeDirectory) return value;
+
+  const escapedHomeDirectory = homeDirectory
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/[\\/]/g, '[\\\\/]');
+  const homeDirectoryPattern = new RegExp(
+    `${escapedHomeDirectory}(?=[\\\\/]|$)`,
+    process.platform === 'win32' ? 'gi' : 'g',
+  );
+  const redactString = (text: string) => text.replace(homeDirectoryPattern, '~');
+
+  const anonymize = (nestedValue: unknown): unknown => {
+    if (typeof nestedValue === 'string') return redactString(nestedValue);
+    if (Array.isArray(nestedValue)) return nestedValue.map(anonymize);
+    if (nestedValue && typeof nestedValue === 'object') {
+      return Object.fromEntries(
+        Object.entries(nestedValue).map(([key, childValue]) => [
+          redactString(key),
+          anonymize(childValue),
+        ]),
+      );
+    }
+
+    return nestedValue;
+  };
+
+  return anonymize(value);
+};
+
+const exportDebugReport = async (
+  common: BaseHandlerArg,
+  anonymizeUserPaths = true,
+) => {
   const win = BrowserWindow.fromWebContents(common.event.sender);
   if (!win) return { success: false, error: 'No application window found' };
 
@@ -305,7 +339,14 @@ const exportDebugReport = async (common: BaseHandlerArg) => {
 
   try {
     const report = buildDebugReport();
-    fs.writeFileSync(result.filePath, JSON.stringify(report, null, 2), 'utf8');
+    const exportReport = anonymizeUserPaths
+      ? anonymizeHomeDirectory(report)
+      : report;
+    fs.writeFileSync(
+      result.filePath,
+      JSON.stringify(exportReport, null, 2),
+      'utf8',
+    );
     return { success: true, filePath: result.filePath };
   } catch (error) {
     return { success: false, error: error.message || String(error) };

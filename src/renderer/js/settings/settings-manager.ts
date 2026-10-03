@@ -530,6 +530,46 @@ class SettingsManager {
       });
   }
 
+  askDebugReportAnonymization(): Promise<boolean | null> {
+    const message = this.translate('settings.debugReportAnonymizeQuestion');
+    if (!window.modalManager?.showCustomModal) {
+      return Promise.resolve(window.confirm(message));
+    }
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (choice: boolean | null) => {
+        if (settled) return;
+        settled = true;
+        resolve(choice);
+      };
+
+      window.modalManager.showCustomModal({
+        id: 'debug-report-anonymization-modal',
+        title: this.translate('settings.debugReportAnonymizeTitle'),
+        body: `<p>${message}</p>`,
+        buttons: [
+          {
+            text: this.translate('common.cancel'),
+            type: 'cancel',
+            onClick: () => finish(null),
+          },
+          {
+            text: this.translate('settings.debugReportKeepPaths'),
+            type: 'secondary',
+            onClick: () => finish(false),
+          },
+          {
+            text: this.translate('settings.debugReportAnonymize'),
+            type: 'primary',
+            onClick: () => finish(true),
+          },
+        ],
+        onClose: () => finish(null),
+      });
+    });
+  }
+
   setupEventListeners() {
     this.organizeSettingsLayout();
     this.initializeFeedbackUI();
@@ -1035,15 +1075,21 @@ class SettingsManager {
         );
         const originalIconClass = icon?.className;
         exportDebugReportBtn.disabled = true;
-        exportDebugReportBtn.classList.add('is-loading');
-        exportDebugReportBtn.setAttribute('aria-busy', 'true');
-        if (icon) icon.className = 'bi bi-arrow-clockwise';
-        if (title) {
-          title.dataset.i18n = 'settings.debugReportExporting';
-          title.textContent = this.translate('settings.debugReportExporting');
-        }
         try {
-          const result = await window.electronAPI.exportDebugReport();
+          const anonymizeUserPaths = await this.askDebugReportAnonymization();
+          if (anonymizeUserPaths === null) return;
+
+          exportDebugReportBtn.classList.add('is-loading');
+          exportDebugReportBtn.setAttribute('aria-busy', 'true');
+          if (icon) icon.className = 'bi bi-arrow-clockwise';
+          if (title) {
+            title.dataset.i18n = 'settings.debugReportExporting';
+            title.textContent = this.translate('settings.debugReportExporting');
+          }
+
+          const result = await window.electronAPI.exportDebugReport(
+            anonymizeUserPaths,
+          );
           if (result.success) {
             this.showToast(
               this.translate('settings.debugReportExported'),
