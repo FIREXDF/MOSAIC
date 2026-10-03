@@ -51,6 +51,7 @@ interface CharacterCssEntry {
   displayName: string;
   number: string;
   imageUrl: string | null;
+  imageSource?: 'umc';
   order: number;
   hidden: boolean;
   canSelect: boolean;
@@ -109,6 +110,10 @@ class CharactersManager {
   cssSelectedSlotIndex: number;
   cssCharacterUpdates: Map<string, any>;
   cssImageLookupTimers = new WeakMap<CharacterCssEntry, number>();
+  cssUmcImagesEnabled = true;
+  cssUmcImageExclusions = new Set<string>();
+  cssUmcImagePreferencesPromise: Promise<void> | null = null;
+  cssUmcImageRevision = 0;
   cssPrefetchedLayout: any | null;
   cssPrefetchPromise: Promise<void> | null;
   cssSourcePrcPath: string | null;
@@ -169,6 +174,28 @@ class CharactersManager {
     this.umcCompatibilityResult = null;
     this.umcCompatibilityError = null;
     this.umcCompatibilityRequestId = 0;
+
+    window.addEventListener('css-umc-images-setting-changed', (event) => {
+      const enabled = (event as CustomEvent<{ enabled: boolean }>).detail
+        ?.enabled;
+      if (typeof enabled !== 'boolean') return;
+      this.cssUmcImageRevision++;
+      this.cssUmcImagesEnabled = enabled;
+      this.getAllCssCharacters().forEach((character) => {
+        if (enabled) {
+          this.scheduleCssCharacterImageLookup(character);
+        } else {
+          const timer = this.cssImageLookupTimers.get(character);
+          if (timer !== undefined) window.clearTimeout(timer);
+          this.cssImageLookupTimers.delete(character);
+          if (character.imageSource === 'umc') {
+            character.imageUrl = this.getCssCharacterImage(character.nameId);
+            character.imageSource = undefined;
+          }
+        }
+        this.refreshCssCharacterImage(character);
+      });
+    });
 
     window.addEventListener('mods-library-updated', (event) => {
       const detail = (
@@ -2832,6 +2859,7 @@ Add to CSS
       displayName: character.displayName || info?.name || character.nameId,
       number: info?.number || character.number || '',
       imageUrl: this.getCssCharacterImage(character.nameId),
+      imageSource: undefined,
     };
     this.scheduleCssCharacterImageLookup(hydrated);
     return hydrated;
@@ -2843,30 +2871,133 @@ Add to CSS
     ).trim();
   }
 
+  getCssUmcImageKey(character: CharacterCssEntry) {
+    return this.getCssCharacterLookupId(character)
+      .toLowerCase()
+      .replace(/^ui_chara_/, '');
+  }
+
+  loadCssUmcImagePreferences() {
+    if (!this.cssUmcImagePreferencesPromise) {
+      const revision = this.cssUmcImageRevision;
+      this.cssUmcImagePreferencesPromise = (async () => {
+        const [enabled, exclusions] = await Promise.all([
+          window.electronAPI.store.get('cssUmcImagesEnabled'),
+          window.electronAPI.store.get('cssUmcImageExclusions'),
+        ]);
+        if (revision === this.cssUmcImageRevision)
+          this.cssUmcImagesEnabled = enabled !== false;
+        this.cssUmcImageExclusions = new Set(
+          Array.isArray(exclusions)
+            ? exclusions.filter((id): id is string => typeof id === 'string')
+            : [],
+        );
+      })().catch((error) => {
+        this.cssUmcImagePreferencesPromise = null;
+        throw error;
+      });
+    }
+    return this.cssUmcImagePreferencesPromise;
+  }
+
+  refreshCssUmcImageControls(character: CharacterCssEntry) {
+    if (this.cssSelectedCharacterId !== character.id) return;
+    const controls = document.querySelector<HTMLElement>(
+      '[data-css-umc-image-controls]',
+    );
+    if (!controls) return;
+    const fromUmc =
+      character.imageSource === 'umc' && Boolean(character.imageUrl);
+    const removed =
+      !character.imageUrl &&
+      this.cssUmcImageExclusions.has(this.getCssUmcImageKey(character));
+    controls.hidden = !fromUmc && !(removed && this.cssUmcImagesEnabled);
+    controls.innerHTML = fromUmc
+      ? `<span>${this.escapeHtml(this.t('characters.umcImageSource', 'Image from UMC'))}</span><button class="input-btn" type="button" data-css-umc-image-action="remove">${this.escapeHtml(this.t('characters.umcImageRemove', 'Remove image'))}</button>`
+      : removed && this.cssUmcImagesEnabled
+        ? `<button class="input-btn" type="button" data-css-umc-image-action="restore">${this.escapeHtml(this.t('characters.umcImageRestore', 'Restore UMC image'))}</button>`
+        : '';
+    controls
+      .querySelector<HTMLButtonElement>('[data-css-umc-image-action]')
+      ?.addEventListener('click', (event) => {
+        void this.setCssUmcImageRemoved(
+          character,
+          fromUmc,
+          event.currentTarget as HTMLButtonElement,
+        );
+      });
+  }
+
+  async setCssUmcImageRemoved(
+    character: CharacterCssEntry,
+    removed: boolean,
+    button: HTMLButtonElement,
+  ) {
+    button.disabled = true;
+    const key = this.getCssUmcImageKey(character);
+    try {
+      await this.loadCssUmcImagePreferences();
+      if (removed) this.cssUmcImageExclusions.add(key);
+      else this.cssUmcImageExclusions.delete(key);
+      const result = await window.electronAPI.store.set(
+        'cssUmcImageExclusions',
+        [...this.cssUmcImageExclusions],
+      );
+      if (!result.success)
+        throw new Error('Failed to save UMC image preference');
+      if (
+        this.findCssCharacter(character.id) !== character ||
+        this.getCssUmcImageKey(character) !== key
+      )
+        return;
+      this.scheduleCssCharacterImageLookup(character);
+      this.refreshCssCharacterImage(character);
+    } catch {
+      if (removed) this.cssUmcImageExclusions.delete(key);
+      else this.cssUmcImageExclusions.add(key);
+      window.toastManager?.error('toasts.failedToSaveSetting', 4000);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
   scheduleCssCharacterImageLookup(character: CharacterCssEntry) {
     const previousTimer = this.cssImageLookupTimers.get(character);
     if (previousTimer !== undefined) window.clearTimeout(previousTimer);
     character.imageUrl = this.getCssCharacterImage(character.nameId);
+    character.imageSource = undefined;
     if (character.imageUrl || character.isRandom || character.isGroup) return;
 
     // Wait for typing to settle; hydration also finishes before the lookup starts.
     const timer = window.setTimeout(async () => {
       this.cssImageLookupTimers.delete(character);
-      if (this.findCssCharacter(character.id) !== character) return;
-      const characterId = this.getCssCharacterLookupId(character);
-      const nameId = character.nameId;
       try {
+        await this.loadCssUmcImagePreferences();
+        if (this.findCssCharacter(character.id) !== character) return;
+        this.refreshCssUmcImageControls(character);
+        const characterId = this.getCssCharacterLookupId(character);
+        const nameId = character.nameId;
+        const revision = this.cssUmcImageRevision;
+        if (
+          !this.cssUmcImagesEnabled ||
+          this.cssUmcImageExclusions.has(this.getCssUmcImageKey(character))
+        )
+          return;
         const result =
           await window.electronAPI.getUmcCharacterImage(characterId);
         if (
           !result.success ||
           !result.imageUrl ||
+          !this.cssUmcImagesEnabled ||
+          revision !== this.cssUmcImageRevision ||
+          this.cssUmcImageExclusions.has(this.getCssUmcImageKey(character)) ||
           this.findCssCharacter(character.id) !== character ||
           this.getCssCharacterLookupId(character) !== characterId ||
           character.nameId !== nameId
         )
           return;
         character.imageUrl = result.imageUrl;
+        character.imageSource = 'umc';
         this.refreshCssCharacterImage(character);
       } catch {
         // A missing UMC entry or connection keeps the normal CSS placeholder.
@@ -2877,6 +3008,7 @@ Add to CSS
 
   refreshCssCharacterImage(character: CharacterCssEntry) {
     // Replace images only: keep inspector inputs, focus and unsaved edits intact.
+    this.refreshCssUmcImageControls(character);
     const thumbnail = character.imageUrl
       ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${this.escapeHtml(character.displayName)}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>`
       : '<i class="bi bi-person-circle"></i>';
@@ -3052,6 +3184,7 @@ ${imageMarkup}
 <div class="character-css-placeholder" ${imageMarkup ? 'hidden' : ''}>
 <i class="bi ${character.isGroup ? 'bi-collection-fill' : 'bi-person-circle'}"></i>
 </div>
+${character.imageSource === 'umc' && imageMarkup ? `<span class="character-css-image-source">${this.escapeHtml(this.t('characters.umcImageSource', 'Image from UMC'))}</span>` : ''}
 </div>
 <div class="character-css-name">${escapedName}</div>
 ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</span>` : character.number ? `<span class="character-css-number">#${this.escapeHtml(character.number)}</span>` : ''}
@@ -3152,6 +3285,7 @@ ${character.imageUrl ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="$
 <span>${this.escapeHtml(character.id)}</span>
 </div>
 </div>
+<div class="character-css-umc-image-controls" data-css-umc-image-controls hidden></div>
 <div class="character-css-inspector-actions">
 <button class="input-btn" type="button" data-css-action="duplicate-character">
 <i class="bi bi-copy"></i>
@@ -3169,6 +3303,8 @@ ${tabButton('msbt', 'MSBT Names')}
 </div>
 ${this.cssPanelMode === 'prc' ? this.renderCssPrcPanel(character) : this.renderCssMsbtPanel(character, slot)}
 `;
+
+    this.refreshCssUmcImageControls(character);
 
     inspector
       .querySelectorAll<HTMLButtonElement>('[data-css-panel-mode]')

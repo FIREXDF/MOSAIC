@@ -1,4 +1,5 @@
 import { IpcMain } from 'electron';
+import store from '../../store';
 
 import {
   BaseHandlerArg,
@@ -186,6 +187,10 @@ function getUmcCharacterImage(slottedId: string): Promise<string | null> {
   const lane = umcNextImageRequestLane++ % umcImageRequestLanes.length;
   const image = umcImageRequestLanes[lane].then(async () => {
     try {
+      if (store.get('cssUmcImagesEnabled') === false) {
+        umcImageCache.delete(slottedId);
+        return null;
+      }
       const moveset = await requestUmc<UmcMovesetImageDto>(
         `/api/movesets/${encodeURIComponent(slottedId)}`,
       );
@@ -225,6 +230,9 @@ const UmcHandlers = {
     _common: BaseHandlerArg,
     characterId: string,
   ): HandlerResponse<{ imageUrl: string | null }> => {
+    if (store.get('cssUmcImagesEnabled') === false) {
+      return { success: true, imageUrl: null };
+    }
     const slottedId =
       typeof characterId === 'string'
         ? characterId

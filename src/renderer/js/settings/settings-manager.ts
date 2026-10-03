@@ -46,6 +46,7 @@ class SettingsManager {
       disableAllModsOnDownload: false,
       autoUseGameBananaModName: false,
       reviewSlotChangesBeforeApply: true,
+      cssUmcImagesEnabled: true,
       devMode: false,
       devShowModHash: false,
       theme: 'dark',
@@ -833,6 +834,38 @@ class SettingsManager {
         }
       });
       enhancedStatusBarToggle.dataset.listenerAttached = 'true';
+    }
+
+    const cssUmcImagesToggle = document.querySelector<HTMLInputElement>(
+      '#css-umc-images-enabled',
+    );
+    if (cssUmcImagesToggle && !cssUmcImagesToggle.dataset.listenerAttached) {
+      cssUmcImagesToggle.addEventListener('change', async () => {
+        const enabled = cssUmcImagesToggle.checked;
+        cssUmcImagesToggle.disabled = true;
+        try {
+          await this.readyPromise;
+          const result = await window.electronAPI.store.set(
+            'cssUmcImagesEnabled',
+            enabled,
+          );
+          if (!result.success)
+            throw new Error('Failed to save UMC image setting');
+          this.settings.cssUmcImagesEnabled = enabled;
+          window.dispatchEvent(
+            new CustomEvent('css-umc-images-setting-changed', {
+              detail: { enabled },
+            }),
+          );
+        } catch {
+          cssUmcImagesToggle.checked =
+            this.settings.cssUmcImagesEnabled !== false;
+          this.showToast(this.translate('toasts.failedToSaveSetting'), 'error');
+        } finally {
+          cssUmcImagesToggle.disabled = false;
+        }
+      });
+      cssUmcImagesToggle.dataset.listenerAttached = 'true';
     }
 
     const browseMods = document.querySelector<HTMLElement>(
@@ -2010,6 +2043,8 @@ class SettingsManager {
     this.updateAutoUseGameBananaModNameUI();
     this.updateReviewSlotChangesUI();
     this.updateEnhancedStatusBarUI();
+    if (cssUmcImagesToggle)
+      cssUmcImagesToggle.checked = this.settings.cssUmcImagesEnabled !== false;
     this.updateStartupSplashUI();
     this.updateStartupSplashSoundUI();
     this.updateAppSoundsUI();
@@ -4684,6 +4719,9 @@ class SettingsManager {
       const reviewSlotChangesBeforeApply = await window.electronAPI.store.get(
         'reviewSlotChangesBeforeApply',
       );
+      const cssUmcImagesEnabled = await window.electronAPI.store.get(
+        'cssUmcImagesEnabled',
+      );
       const startupSplashEnabled = await window.electronAPI.store.get(
         'startupSplashEnabled',
       );
@@ -4757,6 +4795,7 @@ class SettingsManager {
         disableAllModsOnDownload: disableAllModsOnDownload || false,
         autoUseGameBananaModName: autoUseGameBananaModName === true,
         reviewSlotChangesBeforeApply: reviewSlotChangesBeforeApply !== false,
+        cssUmcImagesEnabled: cssUmcImagesEnabled !== false,
         startupSplashEnabled: startupSplashEnabled !== false,
         startupSplashSoundEnabled: startupSplashSoundEnabled !== false,
         startupSplashSoundPath:
@@ -4817,6 +4856,7 @@ class SettingsManager {
         disableAllModsOnDownload: false,
         autoUseGameBananaModName: false,
         reviewSlotChangesBeforeApply: true,
+        cssUmcImagesEnabled: true,
         startupSplashEnabled: true,
         startupSplashSoundEnabled: true,
         startupSplashSoundPath: null,
@@ -4966,6 +5006,10 @@ class SettingsManager {
       await window.electronAPI.store.set(
         'reviewSlotChangesBeforeApply',
         this.settings.reviewSlotChangesBeforeApply !== false,
+      );
+      await window.electronAPI.store.set(
+        'cssUmcImagesEnabled',
+        this.settings.cssUmcImagesEnabled !== false,
       );
       await window.electronAPI.store.set(
         'startupSplashEnabled',
