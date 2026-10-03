@@ -968,13 +968,16 @@
       </h2>
 
       <div class="settings-section">
-        <label class="settings-label" for="css-umc-images-enabled" data-i18n="settings.cssUmcImages">
+        <div class="settings-label" data-i18n="settings.cssUmcImages">
           UMC images in the CSS editor
-        </label>
+        </div>
         <div class="settings-input-group">
           <label class="settings-switch">
             <input type="checkbox" id="css-umc-images-enabled" aria-describedby="css-umc-images-hint" checked />
             <span class="settings-switch-slider"></span>
+          </label>
+          <label for="css-umc-images-enabled" style="margin-left: 12px; color: var(--text-secondary)" data-i18n="settings.enableCssUmcImages">
+            Enable automatic UMC images
           </label>
         </div>
         <p class="settings-hint" id="css-umc-images-hint" data-i18n="settings.cssUmcImagesHint">

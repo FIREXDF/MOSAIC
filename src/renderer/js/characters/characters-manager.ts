@@ -51,7 +51,7 @@ interface CharacterCssEntry {
   displayName: string;
   number: string;
   imageUrl: string | null;
-  imageSource?: 'umc';
+  imageSource?: 'umc' | 'custom';
   order: number;
   hidden: boolean;
   canSelect: boolean;
@@ -112,6 +112,8 @@ class CharactersManager {
   cssImageLookupTimers = new WeakMap<CharacterCssEntry, number>();
   cssUmcImagesEnabled = true;
   cssUmcImageExclusions = new Set<string>();
+  cssCustomImages = new Map<string, string>();
+  cssCustomImageBusy = false;
   cssUmcImagePreferencesPromise: Promise<void> | null = null;
   cssUmcImageRevision = 0;
   cssPrefetchedLayout: any | null;
@@ -182,17 +184,7 @@ class CharactersManager {
       this.cssUmcImageRevision++;
       this.cssUmcImagesEnabled = enabled;
       this.getAllCssCharacters().forEach((character) => {
-        if (enabled) {
-          this.scheduleCssCharacterImageLookup(character);
-        } else {
-          const timer = this.cssImageLookupTimers.get(character);
-          if (timer !== undefined) window.clearTimeout(timer);
-          this.cssImageLookupTimers.delete(character);
-          if (character.imageSource === 'umc') {
-            character.imageUrl = this.getCssCharacterImage(character.nameId);
-            character.imageSource = undefined;
-          }
-        }
+        this.scheduleCssCharacterImageLookup(character);
         this.refreshCssCharacterImage(character);
       });
     });
@@ -2881,10 +2873,14 @@ Add to CSS
     if (!this.cssUmcImagePreferencesPromise) {
       const revision = this.cssUmcImageRevision;
       this.cssUmcImagePreferencesPromise = (async () => {
-        const [enabled, exclusions] = await Promise.all([
+        const [enabled, exclusions, customImages] = await Promise.all([
           window.electronAPI.store.get('cssUmcImagesEnabled'),
           window.electronAPI.store.get('cssUmcImageExclusions'),
+          window.electronAPI.getCssCharacterImages(),
         ]);
+        if (!customImages.success)
+          throw new Error(customImages.error || 'Failed to load custom images');
+        this.cssCustomImages = new Map(Object.entries(customImages.images));
         if (revision === this.cssUmcImageRevision)
           this.cssUmcImagesEnabled = enabled !== false;
         this.cssUmcImageExclusions = new Set(
@@ -2911,21 +2907,83 @@ Add to CSS
     const removed =
       !character.imageUrl &&
       this.cssUmcImageExclusions.has(this.getCssUmcImageKey(character));
-    controls.hidden = !fromUmc && !(removed && this.cssUmcImagesEnabled);
-    controls.innerHTML = fromUmc
-      ? `<span>${this.escapeHtml(this.t('characters.umcImageSource', 'Image from UMC'))}</span><button class="input-btn" type="button" data-css-umc-image-action="remove">${this.escapeHtml(this.t('characters.umcImageRemove', 'Remove image'))}</button>`
-      : removed && this.cssUmcImagesEnabled
-        ? `<button class="input-btn" type="button" data-css-umc-image-action="restore">${this.escapeHtml(this.t('characters.umcImageRestore', 'Restore UMC image'))}</button>`
-        : '';
+    const custom = character.imageSource === 'custom';
+    const button = (action: string, key: string, fallback: string) =>
+      `<button class="input-btn" type="button" data-css-image-action="${action}" ${this.cssCustomImageBusy || this.cssSaving ? 'disabled' : ''}>${this.escapeHtml(this.t(key, fallback))}</button>`;
+    controls.hidden = character.isRandom || character.isGroup;
+    controls.innerHTML = `
+${fromUmc ? `<span>${this.escapeHtml(this.t('characters.umcImageSource', 'Image from UMC'))}</span>` : custom ? `<span>${this.escapeHtml(this.t('characters.customImageSource', 'Custom image'))}</span>` : ''}
+<div class="character-css-image-buttons">
+${button('choose', custom ? 'characters.customImageChange' : 'characters.customImageChoose', custom ? 'Change image' : 'Add image')}
+${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custom image') : fromUmc ? button('remove-umc', 'characters.umcImageRemove', 'Remove image') : removed && this.cssUmcImagesEnabled ? button('restore-umc', 'characters.umcImageRestore', 'Restore UMC image') : ''}
+</div>`;
     controls
-      .querySelector<HTMLButtonElement>('[data-css-umc-image-action]')
-      ?.addEventListener('click', (event) => {
-        void this.setCssUmcImageRemoved(
-          character,
-          fromUmc,
-          event.currentTarget as HTMLButtonElement,
-        );
+      .querySelectorAll<HTMLButtonElement>('[data-css-image-action]')
+      .forEach((button) =>
+        button.addEventListener('click', () => {
+          const action = button.dataset.cssImageAction;
+          if (action === 'choose' || action === 'remove-custom') {
+            void this.changeCssCustomImage(
+              character,
+              action === 'remove-custom',
+            );
+          } else {
+            void this.setCssUmcImageRemoved(
+              character,
+              action === 'remove-umc',
+              button,
+            );
+          }
+        }),
+      );
+  }
+
+  applyCssCharacterImage(character: CharacterCssEntry) {
+    const customImage = this.cssCustomImages.get(
+      this.getCssUmcImageKey(character),
+    );
+    character.imageUrl =
+      customImage || this.getCssCharacterImage(character.nameId);
+    character.imageSource = customImage ? 'custom' : undefined;
+  }
+
+  async changeCssCustomImage(character: CharacterCssEntry, remove: boolean) {
+    if (this.cssCustomImageBusy || this.cssSaving) return;
+    this.cssCustomImageBusy = true;
+    this.refreshCssUmcImageControls(character);
+    const characterId = this.getCssCharacterLookupId(character);
+    const key = this.getCssUmcImageKey(character);
+    try {
+      await this.loadCssUmcImagePreferences();
+      if (remove) {
+        const result =
+          await window.electronAPI.removeCssCharacterImage(characterId);
+        if (!result.success)
+          throw new Error(result.error || 'Failed to remove image');
+        this.cssCustomImages.delete(key);
+      } else {
+        const result =
+          await window.electronAPI.selectCssCharacterImage(characterId);
+        if (!result.success)
+          throw new Error(result.error || 'Failed to import image');
+        if (result.canceled || !result.imageUrl) return;
+        this.cssCustomImages.set(key, result.imageUrl);
+      }
+      this.getAllCssCharacters()
+        .filter((entry) => this.getCssUmcImageKey(entry) === key)
+        .forEach((entry) => {
+          this.scheduleCssCharacterImageLookup(entry);
+          this.refreshCssCharacterImage(entry);
+        });
+    } catch (error) {
+      window.toastManager?.error('characters.customImageFailed', 4000, {
+        error: error.message || 'Unknown error',
       });
+    } finally {
+      this.cssCustomImageBusy = false;
+      const selected = this.findCssCharacter(this.cssSelectedCharacterId || '');
+      if (selected) this.refreshCssUmcImageControls(selected);
+    }
   }
 
   async setCssUmcImageRemoved(
@@ -2964,9 +3022,8 @@ Add to CSS
   scheduleCssCharacterImageLookup(character: CharacterCssEntry) {
     const previousTimer = this.cssImageLookupTimers.get(character);
     if (previousTimer !== undefined) window.clearTimeout(previousTimer);
-    character.imageUrl = this.getCssCharacterImage(character.nameId);
-    character.imageSource = undefined;
-    if (character.imageUrl || character.isRandom || character.isGroup) return;
+    this.applyCssCharacterImage(character);
+    if (character.isRandom || character.isGroup) return;
 
     // Wait for typing to settle; hydration also finishes before the lookup starts.
     const timer = window.setTimeout(async () => {
@@ -2974,11 +3031,21 @@ Add to CSS
       try {
         await this.loadCssUmcImagePreferences();
         if (this.findCssCharacter(character.id) !== character) return;
+        const previousImage = character.imageUrl;
+        const previousSource = character.imageSource;
+        this.applyCssCharacterImage(character);
+        if (
+          previousImage !== character.imageUrl ||
+          previousSource !== character.imageSource
+        ) {
+          this.refreshCssCharacterImage(character);
+        }
         this.refreshCssUmcImageControls(character);
         const characterId = this.getCssCharacterLookupId(character);
         const nameId = character.nameId;
         const revision = this.cssUmcImageRevision;
         if (
+          character.imageUrl ||
           !this.cssUmcImagesEnabled ||
           this.cssUmcImageExclusions.has(this.getCssUmcImageKey(character))
         )
@@ -2988,6 +3055,7 @@ Add to CSS
         if (
           !result.success ||
           !result.imageUrl ||
+          this.cssCustomImages.has(this.getCssUmcImageKey(character)) ||
           !this.cssUmcImagesEnabled ||
           revision !== this.cssUmcImageRevision ||
           this.cssUmcImageExclusions.has(this.getCssUmcImageKey(character)) ||

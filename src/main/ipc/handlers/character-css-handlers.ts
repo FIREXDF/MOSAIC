@@ -25,10 +25,66 @@ import {
   ErrorCodes,
   handleError,
 } from '../../utils/error-handler';
+import {
+  cssCharacterImageKey,
+  getCssCharacterImages,
+  saveCssCharacterImage,
+  removeCssCharacterImage,
+} from '../../characters/character-css-images';
 
 export type CharacterCssHandlers = typeof CharacterCssHandlers;
 
 const CharacterCssHandlers = {
+  ['get-css-character-images']: async (
+    _common: BaseHandlerArg,
+  ): HandlerResponse<{ images: Record<string, string> }> => {
+    try {
+      return { success: true, images: await getCssCharacterImages() };
+    } catch (error) {
+      return createErrorResponse(ErrorCodes.FILE_READ_ERROR, error.message);
+    }
+  },
+
+  ['select-css-character-image']: async (
+    common: BaseHandlerArg,
+    characterId: string,
+  ): HandlerResponse<{ imageUrl?: string; canceled?: boolean }> => {
+    try {
+      cssCharacterImageKey(characterId);
+      const win = BrowserWindow.fromWebContents(common.event.sender);
+      const result = await dialog.showOpenDialog(win!, {
+        title: 'Choose a character image',
+        properties: ['openFile'],
+        filters: [
+          {
+            name: 'Images',
+            extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'],
+          },
+        ],
+      });
+      if (result.canceled || !result.filePaths.length)
+        return { success: true, canceled: true };
+      return {
+        success: true,
+        imageUrl: await saveCssCharacterImage(characterId, result.filePaths[0]),
+      };
+    } catch (error) {
+      return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
+    }
+  },
+
+  ['remove-css-character-image']: async (
+    _common: BaseHandlerArg,
+    characterId: string,
+  ): HandlerResponse<Record<never, never>> => {
+    try {
+      await removeCssCharacterImage(characterId);
+      return { success: true };
+    } catch (error) {
+      return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
+    }
+  },
+
   ['get-character-css-layout']: async (
     common: BaseHandlerArg,
   ): HandlerResponse<ReturnType<typeof getCharacterCssLayoutData>> => {
@@ -46,7 +102,9 @@ const CharacterCssHandlers = {
   ['import-character-css-source-files']: async (
     common: BaseHandlerArg,
     payload: CharacterCssSourceImportPayload,
-  ): HandlerResponse<Awaited<ReturnType<typeof importCharacterCssSourceFiles>>> => {
+  ): HandlerResponse<
+    Awaited<ReturnType<typeof importCharacterCssSourceFiles>>
+  > => {
     try {
       return await importCharacterCssSourceFiles(payload);
     } catch (error) {
@@ -78,7 +136,10 @@ const CharacterCssHandlers = {
       });
 
       if (result.canceled || result.filePaths.length === 0) {
-        return createErrorResponse(ErrorCodes.UNKNOWN_ERROR, 'No file selected');
+        return createErrorResponse(
+          ErrorCodes.UNKNOWN_ERROR,
+          'No file selected',
+        );
       }
 
       return { success: true, filePath: result.filePaths[0] };
