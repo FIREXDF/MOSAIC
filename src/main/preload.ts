@@ -241,6 +241,7 @@ const electronAPI = {
   restoreConfigBackup: invokeConfigBackupHandler('restore-config-backup'),
   submitFeedback: invokeFeedbackHandler('submit-feedback'),
   getUmcMovesets: invokeUmcHandler('get-umc-movesets'),
+  getUmcMovesetsByGameBanana: invokeUmcHandler('get-umc-movesets-by-gamebanana'),
   getUmcCharacterImage: invokeUmcHandler('get-umc-character-image'),
   getUmcCompatibility: invokeUmcHandler('get-umc-compatibility'),
 

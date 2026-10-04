@@ -7,6 +7,116 @@ import {
   HandlerResponse,
 } from '../../types/common';
 
+export interface UmcGameBananaMoveset {
+  id: number;
+  name: string;
+  imageUrl: string;
+  heroImageUrl: string;
+  fighterId: string;
+  fighterName: string;
+  series: string;
+  releaseState: string;
+  releaseDate: string;
+  authors: string[];
+  slottedId: string;
+  replacementId: string;
+  slotsStart: number | null;
+  slotsEnd: number | null;
+  dependencies: { name: string; url: string }[];
+  sourceUrl: string;
+  wikiUrl: string;
+  detailsAvailable: boolean;
+}
+
+const cache = new Map<string, { data: unknown; expires: number }>();
+const pending = new Map<string, Promise<any>>();
+let activeRequests = 0;
+const queue: (() => void)[] = [];
+
+function httpUrl(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  try {
+    const url = new URL(value);
+    return ['https:', 'http:'].includes(url.protocol) ? url.href : '';
+  } catch {
+    return '';
+  }
+}
+
+function text(value: unknown): string {
+  return typeof value === 'string' ? value.slice(0, 2000) : '';
+}
+
+async function getJson(endpoint: string): Promise<any> {
+  const cached = cache.get(endpoint);
+  if (cached && cached.expires > Date.now()) return cached.data;
+  const existing = pending.get(endpoint);
+  if (existing) return existing;
+
+  const request = (async () => {
+    // Transfer a concurrency slot directly to the next queued request.
+    if (activeRequests >= 4)
+      await new Promise<void>((resolve) => queue.push(resolve));
+    else activeRequests++;
+    try {
+      const data = await requestUmc<unknown>(`/api${endpoint}`);
+      if (cache.size >= 300) cache.delete(cache.keys().next().value!);
+      cache.set(endpoint, { data, expires: Date.now() + 10 * 60_000 });
+      return data;
+    } finally {
+      const next = queue.shift();
+      if (next) next();
+      else activeRequests--;
+    }
+  })();
+  pending.set(endpoint, request);
+  try {
+    return await request;
+  } finally {
+    pending.delete(endpoint);
+  }
+}
+
+function normalize(summary: any, detail?: any): UmcGameBananaMoveset {
+  const slot = (value: unknown) =>
+    Number.isInteger(value) && Number(value) >= 0 ? Number(value) : null;
+  return {
+    id: summary.movesetId,
+    name: text(detail?.moddedCharName || summary.moddedCharName),
+    imageUrl: httpUrl(detail?.thumbhImageUrl || summary.thumbhImageUrl),
+    heroImageUrl: httpUrl(detail?.movesetHeroImageUrl),
+    fighterId: text(detail?.vanillaCharInternalName || summary.vanillaCharName),
+    fighterName: text(
+      detail?.vanillaChar?.displayName || summary.vanillaCharDisplayName,
+    ),
+    series: text(detail?.series?.seriesName || summary.seriesName),
+    releaseState: text(
+      detail?.releaseState?.releaseStateName || summary.releaseState,
+    ),
+    releaseDate: text(detail?.releaseDate || summary.releaseDate),
+    authors: Array.isArray(summary.modders)
+      ? summary.modders
+          .filter((name: unknown) => typeof name === 'string')
+          .map(text)
+      : [],
+    slottedId: text(detail?.slottedId),
+    replacementId: text(detail?.replacementId),
+    slotsStart: slot(detail?.slotsStart),
+    slotsEnd: slot(detail?.slotsEnd),
+    dependencies: Array.isArray(detail?.movesetDependencies)
+      ? detail.movesetDependencies
+          .map((entry: any) => ({
+            name: text(entry?.dependency?.name),
+            url: httpUrl(entry?.dependency?.downloadLink),
+          }))
+          .filter((entry: { name: string }) => entry.name)
+      : [],
+    sourceUrl: httpUrl(detail?.sourceCode),
+    wikiUrl: httpUrl(detail?.modsWikiLink),
+    detailsAvailable: Boolean(detail),
+  };
+}
+
 const UMC_API_BASE_URL = 'https://ultimatemovesetcompatibility.onrender.com';
 const UMC_REQUEST_TIMEOUT_MS = 20_000;
 const UMC_MAX_SELECTION = 10;
@@ -226,6 +336,43 @@ function getUmcCharacterImage(slottedId: string): Promise<string | null> {
 }
 
 const UmcHandlers = {
+  'get-umc-movesets-by-gamebanana': async (
+    _common: BaseHandlerArg,
+    modId: number,
+    includeDetails = false,
+  ): HandlerResponse<{ movesets: UmcGameBananaMoveset[] }> => {
+    if (!Number.isInteger(modId) || modId <= 0 || modId > 2147483647) {
+      return { success: false as const, error: 'Invalid GameBanana mod ID' };
+    }
+    try {
+      const data = await getJson(`/movesets/by-gamebanana/${modId}`);
+      if (!Array.isArray(data)) throw new Error('Invalid UMC moveset list');
+      const summaries = data.filter(
+        (entry: any) =>
+          entry && Number.isInteger(entry.movesetId) && entry.movesetId > 0,
+      );
+      const movesets = await Promise.all(
+        summaries.map(async (summary: any) => {
+          if (!includeDetails) return normalize(summary);
+          try {
+            const detail = await getJson(`/movesets/${summary.movesetId}`);
+            if (detail?.movesetId !== summary.movesetId) throw new Error('Invalid UMC moveset details');
+            return normalize(summary, detail);
+          } catch {
+            // Keep the summary usable if the richer detail request fails.
+            return normalize(summary);
+          }
+        }),
+      );
+      return { success: true as const, movesets };
+    } catch (error) {
+      return {
+        success: false as const,
+        error: error instanceof Error ? error.message : 'UMC unavailable',
+      };
+    }
+  },
+
   ['get-umc-character-image']: async (
     _common: BaseHandlerArg,
     characterId: string,

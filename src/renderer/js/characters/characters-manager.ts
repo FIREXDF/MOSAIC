@@ -1,5 +1,6 @@
 import { Mod } from '../../../main/mod-utils';
 import type {
+  UmcGameBananaMoveset,
   UmcCompatibilityDto as UmcCompatibilityResult,
   UmcGroupCompatibilityDto,
 } from '../../../main/ipc/handlers/umc-handlers';
@@ -26,12 +27,22 @@ interface CharacterMovesetMod {
   category: string;
   description: string;
   slots: string[];
+  gameBananaId: number | null;
 }
 
 interface CharacterMovesetGroup {
   id: string;
   info: { name: string; number: string };
   mods: CharacterMovesetMod[];
+}
+
+interface MovesetCssOptions {
+  sourceCharacterId: string;
+  newUiCharaId: string;
+  newNameId: string;
+  newDisplayName: string;
+  colorStartIndex: number;
+  colorCount: number;
 }
 
 interface UmcMoveset {
@@ -91,6 +102,10 @@ interface CharacterCssSlot {
 }
 
 class CharactersManager {
+  private umcMovesetRequests = new Map<
+    string,
+    { expires: number; request: Promise<UmcGameBananaMoveset[]> }
+  >();
   characters: Map<string, Character>;
   movesetCharacters: Map<string, CharacterMovesetGroup>;
   allCharacters: any[];
@@ -834,6 +849,7 @@ class CharactersManager {
           category: modInfo?.category || '',
           description: modInfo?.description || '',
           slots: [],
+          gameBananaId: this.getGameBananaModId(modInfo?.url),
         };
         const slotsByFighterId = this.getSlotsByResolvedFighterId(
           scanModResult.data.pathData,
@@ -2187,6 +2203,12 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
       .map((character) => this.renderMovesetCharacterGroup(character))
       .join('');
 
+    list
+      .querySelectorAll<HTMLElement>('.character-moveset-group')
+      .forEach((element, index) => {
+        void this.loadMovesetImages(movesetGroups[index], element);
+      });
+
     list.querySelectorAll<HTMLElement>('[data-mod-path]').forEach((item) => {
       item.addEventListener('click', () => {
         this.openModInToolsTab(item.dataset.modPath);
@@ -2279,6 +2301,119 @@ ${category}
 `;
   }
 
+  getGameBananaModId(value: unknown): number | null {
+    if (typeof value !== 'string') return null;
+    try {
+      const url = new URL(value.trim());
+      if (
+        !['https:', 'http:'].includes(url.protocol) ||
+        !['gamebanana.com', 'www.gamebanana.com'].includes(url.hostname)
+      )
+        return null;
+      const match = url.pathname.match(/^\/mods\/(\d+)\/?$/);
+      const id = match ? Number(match[1]) : 0;
+      return Number.isInteger(id) && id > 0 && id <= 2147483647 ? id : null;
+    } catch {
+      return null;
+    }
+  }
+
+  getUmcMovesets(
+    modId: number,
+    includeDetails = false,
+  ): Promise<UmcGameBananaMoveset[]> {
+    const key = `${modId}:${includeDetails ? 'details' : 'summary'}`;
+    const cached = this.umcMovesetRequests.get(key);
+    if (cached && cached.expires > Date.now()) return cached.request;
+    const entry = {
+      expires: Date.now() + 10 * 60_000,
+      request: Promise.resolve([] as UmcGameBananaMoveset[]),
+    };
+    entry.request = (async () => {
+      try {
+        const result = await window.electronAPI.getUmcMovesetsByGameBanana(
+          modId,
+          includeDetails,
+        );
+        if (result.success) return result.movesets;
+      } catch (error) {
+        console.warn('[CharactersManager] UMC image lookup failed:', error);
+      }
+      entry.expires = Date.now() + 20_000;
+      return [];
+    })();
+    if (this.umcMovesetRequests.size >= 300) {
+      this.umcMovesetRequests.delete(
+        this.umcMovesetRequests.keys().next().value!,
+      );
+    }
+    this.umcMovesetRequests.set(key, entry);
+    return entry.request;
+  }
+
+  async loadMovesetImages(
+    character: CharacterMovesetGroup,
+    element: HTMLElement,
+  ) {
+    const rows = Array.from(
+      element.querySelectorAll<HTMLElement>('.character-moveset-mod'),
+    );
+    const matches = await Promise.all(
+      character.mods.map(async (mod, index) => {
+        if (!mod.gameBananaId) return null;
+        const movesets = await this.getUmcMovesets(mod.gameBananaId);
+        if (
+          !element.isConnected ||
+          this.movesetCharacters.get(character.id) !== character
+        )
+          return null;
+        const moveset = movesets.find((entry) => {
+          const fighterId = window.resolveFolderName
+            ? window.resolveFolderName(entry.fighterId)
+            : entry.fighterId.toLowerCase();
+          return fighterId === character.id && entry.imageUrl;
+        });
+        if (!moveset || !rows[index]) return null;
+        const image = new Image();
+        image.className = 'character-moveset-umc-thumbnail';
+        image.alt = moveset.name;
+        image.title = this.t('characters.umcImage', 'Image from UMC');
+        image.onload = () => {
+          if (
+            !rows[index].isConnected ||
+            this.movesetCharacters.get(character.id) !== character
+          )
+            return;
+          rows[index].prepend(image);
+          rows[index].classList.add('has-umc-image');
+        };
+        image.src = moveset.imageUrl;
+        return moveset;
+      }),
+    );
+    const firstMatch = matches.find((entry) => entry !== null);
+    const frame = element.querySelector<HTMLElement>(
+      '.character-moveset-image-frame',
+    );
+    if (!firstMatch || !frame || !element.isConnected) return;
+    const image = new Image();
+    image.alt = firstMatch.name;
+    image.title = this.t('characters.umcImage', 'Image from UMC');
+    image.onload = () => {
+      if (
+        !element.isConnected ||
+        this.movesetCharacters.get(character.id) !== character
+      )
+        return;
+      frame.replaceChildren(image);
+      element
+        .querySelector('.character-moveset-character')
+        ?.classList.add('has-umc-image');
+    };
+    // The vanilla image stays visible until the UMC image has loaded successfully.
+    image.src = firstMatch.imageUrl;
+  }
+
   async openAddMovesetToCssFlow(characterId: string) {
     if (this.cssSaving) {
       return;
@@ -2312,6 +2447,8 @@ ${category}
         newUiCharaId: duplicateOptions.newUiCharaId,
         newNameId: duplicateOptions.newNameId,
         newDisplayName: duplicateOptions.newDisplayName,
+        colorStartIndex: duplicateOptions.colorStartIndex,
+        colorCount: duplicateOptions.colorCount,
       });
 
       if (!result.success) {
@@ -2333,7 +2470,10 @@ ${category}
       this.cssCharacterUpdates.clear();
       this.cssDirty = true;
       window.toastManager?.success?.(
-        'Moveset character added to CSS. Edit slots, then Apply Layout.',
+        this.t(
+          'characters.movesetCss.added',
+          'Moveset character added to CSS. Review settings, then Apply Layout.',
+        ),
         4500,
       );
       await this.openCssEditor();
@@ -2349,22 +2489,17 @@ ${category}
     }
   }
 
-  openAddMovesetToCssModal(movesetCharacter: CharacterMovesetGroup): Promise<{
-    sourceCharacterId: string;
-    newUiCharaId: string;
-    newNameId: string;
-    newDisplayName: string;
-  } | null> {
+  openAddMovesetToCssModal(
+    movesetCharacter: CharacterMovesetGroup,
+  ): Promise<MovesetCssOptions | null> {
     return new Promise((resolve) => {
-      const existingModal = document.querySelector<HTMLElement>(
-        '.character-css-add-moveset-modal-overlay',
-      );
-      existingModal?.remove();
-
+      document
+        .querySelector('.character-css-add-moveset-modal-overlay')
+        ?.dispatchEvent(new Event('cancel-add-moveset'));
       const cssCharacters = [
         ...this.cssVisibleCharacters,
         ...this.cssHiddenCharacters,
-      ].filter((character) => !character.isRandom);
+      ].filter((character) => !character.isRandom && !character.isGroup);
       const preferredSource =
         cssCharacters.find(
           (character) =>
@@ -2374,122 +2509,288 @@ ${category}
       const suggestedNameId = this.getUniqueCssNameId(
         `${movesetCharacter.id}_moveset`,
       );
+      const modIds = [
+        ...new Set(
+          movesetCharacter.mods
+            .map((mod) => mod.gameBananaId)
+            .filter((id): id is number => typeof id === 'number' && id > 0),
+        ),
+      ];
+      const escape = (value: string) =>
+        this.escapeHtml(value).replace(/"/g, '&quot;');
+      const text = (
+        key: string,
+        fallback: string,
+        params: Record<string, string> = {},
+      ) => this.t(`characters.movesetCss.${key}`, fallback, params);
+      const label = (key: string, fallback: string) =>
+        escape(text(key, fallback));
       const sourceOptions = cssCharacters
         .map(
-          (character) => `
-<option value="${this.escapeHtml(character.id)}" ${character.id === preferredSource?.id ? 'selected' : ''}>
-${this.escapeHtml(character.displayName)} (${this.escapeHtml(character.id)})
-</option>`,
+          (character) =>
+            `<option value="${escape(character.id)}" ${character.id === preferredSource?.id ? 'selected' : ''}>${escape(character.displayName)} (${escape(character.id)})</option>`,
         )
         .join('');
-
       const modal = document.createElement('div');
       modal.className =
         'character-modal-overlay character-css-add-moveset-modal-overlay';
       modal.innerHTML = `
 <div class="character-modal character-css-duplicate-modal">
 <div class="character-modal-header">
-<h2>Add ${this.escapeHtml(movesetCharacter.info.name)} to CSS</h2>
-<button class="character-modal-close" type="button">
-<i class="bi bi-x-lg"></i>
-</button>
+<h2>${escape(text('title', 'Add {{name}} to CSS', { name: movesetCharacter.info.name }))}</h2>
+<button class="character-modal-close" type="button" aria-label="${label('cancel', 'Cancel')}"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
 </div>
 <form class="character-modal-body character-css-duplicate-form">
-<label class="character-css-field">
-<span>Duplicate CSS Character</span>
-<select name="sourceCharacterId">${sourceOptions}</select>
+<label class="character-css-field" data-umc-picker ${modIds.length ? '' : 'hidden'}>
+<span>${label('moveset', 'Moveset from UMC')}</span>
+<select name="umcMoveset" disabled><option>UMC</option></select>
 </label>
-<label class="character-css-field">
-<span>New Character ID</span>
-<input name="newUiCharaId" value="ui_chara_${this.escapeHtml(suggestedNameId)}" autocomplete="off">
-</label>
-<label class="character-css-field">
-<span>New Name ID</span>
-<input name="newNameId" value="${this.escapeHtml(suggestedNameId)}" autocomplete="off">
-</label>
-<label class="character-css-field">
-<span>Display Name</span>
-<input name="newDisplayName" value="${this.escapeHtml(movesetCharacter.info.name)}" autocomplete="off">
-</label>
-<div class="character-css-duplicate-error" hidden></div>
+<p class="character-css-umc-suggestion" data-umc-status role="status" aria-live="polite">${modIds.length ? label('loading', 'Loading UMC suggestions…') : label('manual', 'Enter the moveset IDs and costume range.')}</p>
+<label class="character-css-field"><span>${label('base', 'Base fighter')}</span><select name="sourceCharacterId" required>${sourceOptions}</select></label>
+<label class="character-css-field"><span>${label('characterId', 'New Character ID')}</span><input name="newUiCharaId" value="ui_chara_${escape(suggestedNameId)}" required autocomplete="off"></label>
+<label class="character-css-field"><span>${label('nameId', 'New Name ID')}</span><input name="newNameId" value="${escape(suggestedNameId)}" required autocomplete="off"></label>
+<label class="character-css-field"><span>${label('displayName', 'Display Name')}</span><input name="newDisplayName" value="${escape(movesetCharacter.info.name)}" autocomplete="off"></label>
+<div class="character-css-moveset-colors">
+<label class="character-css-field"><span>${label('start', 'Color Start')}</span><input name="colorStartIndex" type="number" min="0" max="255" step="1" value="${Number(preferredSource?.colorStartIndex) || 0}" required></label>
+<label class="character-css-field"><span>${label('count', 'Colors')}</span><input name="colorCount" type="number" min="1" max="255" step="1" value="${Number(preferredSource?.colorNum) || 8}" required></label>
+</div>
+<div class="character-css-duplicate-error" role="alert" hidden></div>
 <div class="character-css-duplicate-actions">
-<button class="input-btn" type="button" data-action="cancel">Cancel</button>
-<button class="input-btn character-css-save-btn" type="submit">
-<i class="bi bi-plus-square"></i>
-Add to CSS
-</button>
+<button class="input-btn" type="button" data-action="cancel">${label('cancel', 'Cancel')}</button>
+<button class="input-btn character-css-save-btn" type="submit"><i class="bi bi-plus-square" aria-hidden="true"></i>${label('add', 'Add to CSS')}</button>
 </div>
 </form>
-</div>
-`;
-
+</div>`;
       document.body.appendChild(modal);
-
-      const form = modal.querySelector<HTMLFormElement>(
-        '.character-css-duplicate-form',
-      )!;
+      const form = modal.querySelector<HTMLFormElement>('form')!;
       const errorEl = modal.querySelector<HTMLElement>(
         '.character-css-duplicate-error',
       )!;
-      const close = (
-        value: {
-          sourceCharacterId: string;
-          newUiCharaId: string;
-          newNameId: string;
-          newDisplayName: string;
-        } | null,
-      ) => {
-        this.closeCharacterModal(modal);
+      const status = modal.querySelector<HTMLElement>('[data-umc-status]')!;
+      const selector = form.elements.namedItem(
+        'umcMoveset',
+      ) as HTMLSelectElement;
+      const touchedFields = new Set<string>();
+      let closed = false;
+      let suggestions: UmcGameBananaMoveset[] = [];
+      let hasUmcRange = false;
+      const input = (name: string) =>
+        form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement;
+      const fail = (message: string) => {
+        errorEl.textContent = message;
+        errorEl.hidden = false;
+      };
+      const close = (value: MovesetCssOptions | null) => {
+        if (closed) return;
+        closed = true;
+        this.closeCharacterModal(modal, escapeHandler);
         resolve(value);
       };
-
+      const escapeHandler = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') close(null);
+      };
+      document.addEventListener('keydown', escapeHandler);
+      modal.addEventListener('cancel-add-moveset', () => close(null));
       modal
-        .querySelector<HTMLElement>('.character-modal-close')
+        .querySelector('.character-modal-close')
         ?.addEventListener('click', () => close(null));
       modal
-        .querySelector<HTMLElement>('[data-action="cancel"]')
+        .querySelector('[data-action="cancel"]')
         ?.addEventListener('click', () => close(null));
       this.bindBackdropClose(modal, () => close(null));
-
+      form.addEventListener('input', (event) => {
+        const field = event.target as HTMLInputElement;
+        if (field.name) touchedFields.add(field.name);
+        errorEl.hidden = true;
+      });
+      input('sourceCharacterId').addEventListener('change', () => {
+        touchedFields.add('sourceCharacterId');
+        const source = cssCharacters.find(
+          (entry) => entry.id === input('sourceCharacterId').value,
+        );
+        if (!source || hasUmcRange) return;
+        if (!touchedFields.has('colorStartIndex'))
+          input('colorStartIndex').value = source.colorStartIndex;
+        if (!touchedFields.has('colorCount'))
+          input('colorCount').value = source.colorNum;
+      });
+      const applySuggestion = (
+        moveset: UmcGameBananaMoveset,
+        preserveEdits: boolean,
+      ) => {
+        const set = (name: string, value: string) => {
+          if (!preserveEdits || !touchedFields.has(name))
+            input(name).value = value;
+        };
+        const fighterId = window.resolveFolderName
+          ? window.resolveFolderName(moveset.fighterId)
+          : moveset.fighterId.toLowerCase();
+        const source = cssCharacters.find(
+          (entry) =>
+            entry.nameId === fighterId || entry.id === `ui_chara_${fighterId}`,
+        );
+        if (source) set('sourceCharacterId', source.id);
+        const slottedId = moveset.slottedId.trim().replace(/^ui_chara_/, '');
+        const hasId = /^[a-z][a-z0-9_-]{0,127}$/i.test(slottedId);
+        if (hasId) {
+          set('newUiCharaId', `ui_chara_${slottedId}`);
+          set('newNameId', slottedId);
+        } else {
+          set('newUiCharaId', `ui_chara_${suggestedNameId}`);
+          set('newNameId', suggestedNameId);
+        }
+        if (moveset.name) set('newDisplayName', moveset.name);
+        const start = moveset.slotsStart;
+        const end = moveset.slotsEnd;
+        hasUmcRange =
+          start !== null &&
+          end !== null &&
+          Number.isInteger(start) &&
+          Number.isInteger(end) &&
+          start >= 0 &&
+          end >= start &&
+          end <= 255 &&
+          end - start + 1 <= 255;
+        if (hasUmcRange) {
+          set('colorStartIndex', String(start));
+          set('colorCount', String(end! - start! + 1));
+        } else if (source) {
+          set('colorStartIndex', source.colorStartIndex);
+          set('colorCount', String(Number(source.colorNum) || 8));
+        }
+        if (!preserveEdits) touchedFields.clear();
+        status.textContent =
+          hasId && hasUmcRange && moveset.detailsAvailable
+            ? text(
+                'prefilled',
+                'UMC suggestions applied. You can edit every field before adding.',
+              )
+            : text(
+                'partial',
+                'Some UMC information is missing. Check the IDs and costume range.',
+              );
+        errorEl.hidden = true;
+        if (
+          this.getAllCssCharacters().some(
+            (entry) => entry.id === input('newUiCharaId').value,
+          )
+        ) {
+          fail(
+            text(
+              'existingId',
+              'This Character ID already exists in the CSS. Choose another ID.',
+            ),
+          );
+        }
+      };
+      selector.addEventListener('change', () => {
+        const selected = suggestions.find(
+          (entry) => String(entry.id) === selector.value,
+        );
+        if (selected) applySuggestion(selected, false);
+      });
+      if (modIds.length) {
+        void Promise.all(
+          modIds.map((modId) => this.getUmcMovesets(modId, true)),
+        ).then((results) => {
+          if (closed || !modal.isConnected) return;
+          suggestions = [
+            ...new Map(
+              results
+                .flat()
+                .filter((entry) => {
+                  const fighterId = window.resolveFolderName
+                    ? window.resolveFolderName(entry.fighterId)
+                    : entry.fighterId.toLowerCase();
+                  return fighterId === movesetCharacter.id;
+                })
+                .map((entry) => [entry.id, entry]),
+            ).values(),
+          ];
+          if (!suggestions.length) {
+            modal.querySelector<HTMLElement>('[data-umc-picker]')!.hidden =
+              true;
+            status.textContent = text(
+              'unavailable',
+              'No UMC information available. Enter the moveset IDs and costume range.',
+            );
+            return;
+          }
+          selector.replaceChildren(
+            ...suggestions.map((moveset) => {
+              const option = document.createElement('option');
+              option.value = String(moveset.id);
+              option.textContent = moveset.slottedId
+                ? `${moveset.name} (${moveset.slottedId})`
+                : moveset.name;
+              return option;
+            }),
+          );
+          selector.disabled = false;
+          applySuggestion(suggestions[0], true);
+        }).catch(() => {
+          if (closed || !modal.isConnected) return;
+          modal.querySelector<HTMLElement>('[data-umc-picker]')!.hidden = true;
+          status.textContent = text('unavailable', 'No UMC information available. Enter the moveset IDs and costume range.');
+        });
+      }
       form.addEventListener('submit', (event) => {
         event.preventDefault();
-        const data = new FormData(form);
-        const sourceCharacterId = String(
-          data.get('sourceCharacterId') || '',
-        ).trim();
-        const newUiCharaId = String(data.get('newUiCharaId') || '').trim();
-        const newNameId = String(data.get('newNameId') || '').trim();
-        const newDisplayName = String(data.get('newDisplayName') || '').trim();
-
-        if (!sourceCharacterId) {
-          errorEl.textContent = 'Choose the CSS character to duplicate.';
-          errorEl.hidden = false;
-          return;
-        }
-
-        if (!newUiCharaId.startsWith('ui_chara_')) {
-          errorEl.textContent = 'Character ID must start with ui_chara_.';
-          errorEl.hidden = false;
-          return;
-        }
-
-        if (!newNameId) {
-          errorEl.textContent = 'Name ID cannot be empty.';
-          errorEl.hidden = false;
-          return;
-        }
-
+        const sourceCharacterId = input('sourceCharacterId').value.trim();
+        const newUiCharaId = input('newUiCharaId').value.trim();
+        const newNameId = input('newNameId').value.trim();
+        const newDisplayName = input('newDisplayName').value.trim();
+        const colorStartIndex = Number(input('colorStartIndex').value);
+        const colorCount = Number(input('colorCount').value);
+        if (!sourceCharacterId)
+          return fail(
+            text('chooseBase', 'Choose the CSS character to duplicate.'),
+          );
+        if (
+          !newUiCharaId.startsWith('ui_chara_') ||
+          newUiCharaId.length <= 'ui_chara_'.length
+        )
+          return fail(
+            text(
+              'invalidId',
+              'Character ID must start with ui_chara_ and include a name.',
+            ),
+          );
+        if (
+          this.getAllCssCharacters().some((entry) => entry.id === newUiCharaId)
+        )
+          return fail(
+            text(
+              'existingId',
+              'This Character ID already exists in the CSS. Choose another ID.',
+            ),
+          );
+        if (!newNameId)
+          return fail(text('emptyName', 'Name ID cannot be empty.'));
+        if (
+          !Number.isInteger(colorStartIndex) ||
+          !Number.isInteger(colorCount) ||
+          colorStartIndex < 0 ||
+          colorCount < 1 ||
+          colorCount > 255 ||
+          colorStartIndex + colorCount > 256
+        )
+          return fail(
+            text(
+              'invalidRange',
+              'Choose a costume range between c00 and c255.',
+            ),
+          );
         close({
           sourceCharacterId,
           newUiCharaId,
           newNameId,
           newDisplayName: newDisplayName || newNameId,
+          colorStartIndex,
+          colorCount,
         });
       });
-
-      form
-        .querySelector<HTMLSelectElement>('select[name="sourceCharacterId"]')
-        ?.focus();
+      input('sourceCharacterId').focus();
     });
   }
 

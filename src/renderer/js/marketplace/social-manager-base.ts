@@ -36,6 +36,13 @@ class SocialManagerBase {
   gameBananaSearchQuery: string;
   gameBananaSearchDebounce: ReturnType<typeof setTimeout> | null;
   gameBananaModsRequestId: number;
+  gameBananaDetailRequestId = 0;
+  gameBananaUmcState: {
+    key: string;
+    modId: number;
+    status: 'loading' | 'ready' | 'error';
+    movesets: import('../../../main/ipc/handlers/umc-handlers').UmcGameBananaMoveset[];
+  } | null = null;
   gameBananaSearchListenerBound: boolean;
   gameBananaSubmissionCache: Map<string, GameBananaTopSubmission>;
   gameBananaDownloadCountCache: Map<string, number | null>;

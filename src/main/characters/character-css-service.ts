@@ -161,6 +161,8 @@ export interface DuplicateCharacterCssPayload {
   newUiCharaId: string;
   newNameId?: string | null;
   newDisplayName?: string | null;
+  colorStartIndex?: number;
+  colorCount?: number;
 }
 
 export interface RemoveCharacterCssPayload {
@@ -2340,6 +2342,19 @@ export function getCharacterCssLayoutData(): CharacterCssLayoutData {
 export function duplicateCharacterCssEntry(
   payload: DuplicateCharacterCssPayload,
 ) {
+  const hasColorRange =
+    payload.colorStartIndex !== undefined || payload.colorCount !== undefined;
+  if (
+    hasColorRange &&
+    (!Number.isInteger(payload.colorStartIndex) ||
+      !Number.isInteger(payload.colorCount) ||
+      payload.colorStartIndex! < 0 ||
+      payload.colorCount! < 1 ||
+      payload.colorCount! > 255 ||
+      payload.colorStartIndex! + payload.colorCount! > 256)
+  ) {
+    throw new Error('Choose a valid color range between c00 and c255.');
+  }
   const newUiCharaId = payload.newUiCharaId.trim();
   if (!newUiCharaId || !newUiCharaId.startsWith('ui_chara_')) {
     throw new Error('The new Character ID must start with ui_chara_');
@@ -2460,6 +2475,51 @@ export function duplicateCharacterCssEntry(
     newNameId,
     payload.newDisplayName,
   );
+  if (hasColorRange) {
+    ensureHashText(
+      duplicatedEntry,
+      'byte',
+      'color_start_index',
+      String(payload.colorStartIndex),
+    );
+    ensureHashText(
+      duplicatedEntry,
+      'byte',
+      'color_num',
+      String(payload.colorCount),
+    );
+    const displayName = payload.newDisplayName?.trim() || newNameId;
+    for (let index = 0; index < payload.colorCount!; index++) {
+      const key = String(index).padStart(2, '0');
+      ensureHashText(duplicatedEntry, 'byte', `c${key}_index`, String(index));
+      ensureHashText(duplicatedEntry, 'byte', `n${key}_index`, String(index));
+      const callLabel =
+        getHashText(sourceEntry, 'hash40', `characall_label_c${key}`, '') ||
+        getHashText(sourceEntry, 'hash40', 'characall_label_c00', '');
+      if (callLabel)
+        ensureHashText(
+          duplicatedEntry,
+          'hash40',
+          `characall_label_c${key}`,
+          callLabel,
+        );
+      for (const prefix of [
+        'nam_chr0',
+        'nam_chr1',
+        'nam_chr2',
+        'nam_chr3',
+        'nam_stage_name',
+      ]) {
+        setMsgValue(
+          msgNameJson,
+          `${prefix}_${key}_${newNameId}`,
+          ['nam_chr2', 'nam_chr3'].includes(prefix)
+            ? displayName.toUpperCase()
+            : displayName,
+        );
+      }
+    }
+  }
   writePersistedCharacterCssData(charaJson, msgNameJson, layoutJson);
 
   return getCharacterCssLayoutData();

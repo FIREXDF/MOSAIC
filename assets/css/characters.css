@@ -240,6 +240,52 @@
   display: none;
 }
 
+.character-moveset-character.has-umc-image {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.character-moveset-character.has-umc-image .character-moveset-image-frame {
+  width: 100%;
+  aspect-ratio: auto;
+}
+
+.character-moveset-character.has-umc-image .character-moveset-image-frame img {
+  display: block;
+  height: auto;
+}
+
+.character-moveset-mod.has-umc-image {
+  grid-template-columns: minmax(64px, 104px) auto minmax(0, 1fr) minmax(
+      90px,
+      auto
+    ) auto auto;
+}
+
+.character-moveset-mod.has-umc-image > .mod-status-dot {
+  grid-column: 2;
+}
+.character-moveset-mod.has-umc-image > .character-moveset-mod-main {
+  grid-column: 3;
+}
+.character-moveset-mod.has-umc-image > .character-moveset-slots {
+  grid-column: 4;
+}
+.character-moveset-mod.has-umc-image > .character-moveset-category {
+  grid-column: 5;
+}
+.character-moveset-mod.has-umc-image > i {
+  grid-column: 6;
+  grid-row: 1;
+}
+
+.character-moveset-umc-thumbnail {
+  width: 100%;
+  height: auto;
+  max-height: 64px;
+  object-fit: contain;
+  border-radius: 5px;
+}
+
 .character-moveset-character strong,
 .character-moveset-character span {
   display: block;
@@ -1669,6 +1715,23 @@ body.no-animations .character-css-slots-table td.is-conflict {
   gap: 12px;
 }
 
+.character-css-add-moveset-modal-overlay [hidden] {
+  display: none;
+}
+
+.character-css-umc-suggestion {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.character-css-moveset-colors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .character-css-duplicate-error {
   padding: 10px 12px;
   border: 1px solid rgba(255, 95, 95, 0.35);
@@ -1802,6 +1865,23 @@ body.no-animations .character-css-slots-table td.is-conflict {
 
   .character-moveset-mod {
     grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .character-moveset-mod.has-umc-image {
+    grid-template-columns: 72px auto minmax(0, 1fr) auto;
+  }
+
+  .character-moveset-mod.has-umc-image > .character-moveset-slots,
+  .character-moveset-mod.has-umc-image > .character-moveset-category {
+    grid-column: 3 / -1;
+  }
+
+  .character-moveset-mod.has-umc-image > i {
+    grid-column: 4;
+  }
+
+  .character-moveset-character.has-umc-image .character-moveset-image-frame {
+    max-width: 280px;
   }
 
   .character-moveset-slots,
