@@ -28,6 +28,49 @@ if (type === 'tag' && custom) {
   }
 } else if (type === 'custom' && custom) {
   nextVersion = custom.replace(/^v/, '');
+} else if (
+  custom &&
+  (type === 'alpha' || type === 'beta' || type === 'stable')
+) {
+  const requestedBase = semver.parse(custom.replace(/^v/, ''));
+  if (!requestedBase || requestedBase.prerelease.length > 0) {
+    throw new Error(
+      `Invalid base version "${custom}". Use a stable semantic version such as "4.1.0".`,
+    );
+  }
+
+  const baseVersion =
+    `${requestedBase.major}.${requestedBase.minor}.${requestedBase.patch}`;
+  const tags = execSync('git tag -l', { encoding: 'utf8' }).split(/\r?\n/);
+
+  if (type === 'stable') {
+    const alreadyReleased = tags.some((tag) => {
+      const version = semver.parse(tag.replace(/^v/, ''));
+      return (
+        version &&
+        version.prerelease.length === 0 &&
+        `${version.major}.${version.minor}.${version.patch}` === baseVersion
+      );
+    });
+    if (alreadyReleased) {
+      throw new Error(
+        `Stable version "${baseVersion}" already has a release tag.`,
+      );
+    }
+    nextVersion = baseVersion;
+  } else {
+    const escapedBase = baseVersion.replace(/\./g, '\\.');
+    let maxNum = 0;
+    for (const tag of tags) {
+      const match = tag.match(
+        new RegExp(`^v?${escapedBase}-${type}\\.(\\d+)$`),
+      );
+      if (match) {
+        maxNum = Math.max(maxNum, Number.parseInt(match[1], 10));
+      }
+    }
+    nextVersion = `${baseVersion}-${type}.${maxNum + 1}`;
+  }
 } else if (type === 'alpha' || type === 'beta' || type === 'stable') {
   const current = semver.parse(pkg.version);
   if (!current) {
