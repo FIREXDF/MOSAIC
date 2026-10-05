@@ -1,4 +1,11 @@
 import { Mod } from '../../../main/mod-utils';
+import type {
+  UmcGameBananaMoveset,
+  UmcCompatibilityDto as UmcCompatibilityResult,
+  UmcGroupCompatibilityDto,
+} from '../../../main/ipc/handlers/umc-handlers';
+
+const UMC_MAX_SELECTION = 10;
 
 type CharacterModStatus = 'active' | 'disabled' | 'conflict';
 
@@ -20,6 +27,7 @@ interface CharacterMovesetMod {
   category: string;
   description: string;
   slots: string[];
+  gameBananaId: number | null;
 }
 
 interface CharacterMovesetGroup {
@@ -28,12 +36,33 @@ interface CharacterMovesetGroup {
   mods: CharacterMovesetMod[];
 }
 
+interface MovesetCssOptions {
+  sourceCharacterId: string;
+  newUiCharaId: string;
+  newNameId: string;
+  newDisplayName: string;
+  colorStartIndex: number;
+  colorCount: number;
+}
+
+interface UmcMoveset {
+  movesetId: number;
+  moddedCharName: string;
+  thumbhImageUrl?: string | null;
+  vanillaCharDisplayName?: string | null;
+  seriesName?: string | null;
+  releaseState?: string | null;
+  cardModders?: string[] | null;
+  modders?: string[] | null;
+}
+
 interface CharacterCssEntry {
   id: string;
   nameId: string;
   displayName: string;
   number: string;
   imageUrl: string | null;
+  imageSource?: 'umc' | 'custom';
   order: number;
   hidden: boolean;
   canSelect: boolean;
@@ -73,6 +102,10 @@ interface CharacterCssSlot {
 }
 
 class CharactersManager {
+  private umcMovesetRequests = new Map<
+    string,
+    { expires: number; request: Promise<UmcGameBananaMoveset[]> }
+  >();
   characters: Map<string, Character>;
   movesetCharacters: Map<string, CharacterMovesetGroup>;
   allCharacters: any[];
@@ -91,6 +124,13 @@ class CharactersManager {
   cssPanelMode: 'prc' | 'msbt';
   cssSelectedSlotIndex: number;
   cssCharacterUpdates: Map<string, any>;
+  cssImageLookupTimers = new WeakMap<CharacterCssEntry, number>();
+  cssUmcImagesEnabled = true;
+  cssUmcImageExclusions = new Set<string>();
+  cssCustomImages = new Map<string, string>();
+  cssCustomImageBusy = false;
+  cssUmcImagePreferencesPromise: Promise<void> | null = null;
+  cssUmcImageRevision = 0;
   cssPrefetchedLayout: any | null;
   cssPrefetchPromise: Promise<void> | null;
   cssSourcePrcPath: string | null;
@@ -101,6 +141,16 @@ class CharactersManager {
   incrementalRefreshPromise: Promise<void> | null;
   staleMovesetModPaths: Set<string>;
   isRefreshingMovesets: boolean;
+  umcMovesets: UmcMoveset[];
+  umcMovesetsLoaded: boolean;
+  umcMovesetsLoading: boolean;
+  umcMovesetsError: string | null;
+  umcSearchQuery: string;
+  umcSelectedMovesetIds: Set<number>;
+  umcCheckingCompatibility: boolean;
+  umcCompatibilityResult: UmcGroupCompatibilityDto | null;
+  umcCompatibilityError: string | null;
+  umcCompatibilityRequestId: number;
 
   constructor() {
     this.characters = new Map();
@@ -131,12 +181,36 @@ class CharactersManager {
     this.incrementalRefreshPromise = null;
     this.staleMovesetModPaths = new Set();
     this.isRefreshingMovesets = false;
+    this.umcMovesets = [];
+    this.umcMovesetsLoaded = false;
+    this.umcMovesetsLoading = false;
+    this.umcMovesetsError = null;
+    this.umcSearchQuery = '';
+    this.umcSelectedMovesetIds = new Set();
+    this.umcCheckingCompatibility = false;
+    this.umcCompatibilityResult = null;
+    this.umcCompatibilityError = null;
+    this.umcCompatibilityRequestId = 0;
+
+    window.addEventListener('css-umc-images-setting-changed', (event) => {
+      const enabled = (event as CustomEvent<{ enabled: boolean }>).detail
+        ?.enabled;
+      if (typeof enabled !== 'boolean') return;
+      this.cssUmcImageRevision++;
+      this.cssUmcImagesEnabled = enabled;
+      this.getAllCssCharacters().forEach((character) => {
+        this.scheduleCssCharacterImageLookup(character);
+        this.refreshCssCharacterImage(character);
+      });
+    });
 
     window.addEventListener('mods-library-updated', (event) => {
-      const detail = (event as CustomEvent<{
-        changedPaths?: string[];
-        addedPaths?: string[];
-      }>).detail;
+      const detail = (
+        event as CustomEvent<{
+          changedPaths?: string[];
+          addedPaths?: string[];
+        }>
+      ).detail;
       if (detail?.changedPaths) {
         void this.detectMovesetLibraryChanges(
           detail.changedPaths,
@@ -316,6 +390,95 @@ class CharactersManager {
       movesetsButton.parentNode?.replaceChild(replacement, movesetsButton);
       replacement.addEventListener('click', () => {
         this.openMovesetTracker();
+      });
+    }
+
+    const umcButton = document.querySelector<HTMLButtonElement>(
+      '#character-moveset-compatibility-btn',
+    );
+    if (umcButton) {
+      const replacement = umcButton.cloneNode(true) as HTMLButtonElement;
+      umcButton.parentNode?.replaceChild(replacement, umcButton);
+      replacement.addEventListener('click', () => {
+        this.openUmcCompatibility();
+      });
+    }
+
+    const umcBackButton = document.querySelector<HTMLButtonElement>(
+      '#character-umc-back-btn',
+    );
+    if (umcBackButton) {
+      const replacement = umcBackButton.cloneNode(true) as HTMLButtonElement;
+      umcBackButton.parentNode?.replaceChild(replacement, umcBackButton);
+      replacement.addEventListener('click', () => {
+        this.closeUmcCompatibility();
+      });
+    }
+
+    const umcRefreshButton = document.querySelector<HTMLButtonElement>(
+      '#character-umc-refresh-btn',
+    );
+    if (umcRefreshButton) {
+      const replacement = umcRefreshButton.cloneNode(true) as HTMLButtonElement;
+      umcRefreshButton.parentNode?.replaceChild(replacement, umcRefreshButton);
+      replacement.addEventListener('click', () => {
+        void this.loadUmcMovesets(true);
+      });
+    }
+
+    const umcSearch = document.querySelector<HTMLInputElement>(
+      '#character-umc-search',
+    );
+    if (umcSearch) {
+      const replacement = umcSearch.cloneNode(true) as HTMLInputElement;
+      umcSearch.parentNode?.replaceChild(replacement, umcSearch);
+      replacement.value = this.umcSearchQuery;
+      replacement.addEventListener('input', () => {
+        this.umcSearchQuery = replacement.value.trim().toLowerCase();
+        this.renderUmcMovesetGrid();
+      });
+    }
+
+    const umcGrid = document.querySelector<HTMLElement>('#character-umc-grid');
+    if (umcGrid && umcGrid.dataset.umcListenersAttached !== 'true') {
+      umcGrid.dataset.umcListenersAttached = 'true';
+      umcGrid.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) {
+          return;
+        }
+
+        if (target.closest('[data-umc-retry]')) {
+          void this.loadUmcMovesets(true);
+          return;
+        }
+
+        const card = target.closest<HTMLButtonElement>('[data-umc-moveset-id]');
+        const movesetId = Number(card?.dataset.umcMovesetId);
+        if (Number.isSafeInteger(movesetId)) {
+          this.selectUmcMoveset(movesetId);
+        }
+      });
+    }
+
+    const umcSelection = document.querySelector<HTMLElement>(
+      '#character-umc-selection',
+    );
+    if (umcSelection && umcSelection.dataset.umcListenersAttached !== 'true') {
+      umcSelection.dataset.umcListenersAttached = 'true';
+      umcSelection.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const chip = target.closest<HTMLButtonElement>('[data-umc-remove-id]');
+        if (!chip) return;
+        const id = Number(chip.dataset.umcRemoveId);
+        const restoreFocus = document.activeElement === chip;
+        this.selectUmcMoveset(id);
+        if (restoreFocus) {
+          document
+            .querySelector<HTMLButtonElement>(`[data-umc-moveset-id="${id}"]`)
+            ?.focus();
+        }
       });
     }
 
@@ -686,6 +849,7 @@ class CharactersManager {
           category: modInfo?.category || '',
           description: modInfo?.description || '',
           slots: [],
+          gameBananaId: this.getGameBananaModId(modInfo?.url),
         };
         const slotsByFighterId = this.getSlotsByResolvedFighterId(
           scanModResult.data.pathData,
@@ -1371,6 +1535,541 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
     this.switchCharacterView(movesetsView, browserView, 'back');
   }
 
+  openUmcCompatibility() {
+    const umcView = document.querySelector<HTMLElement>(
+      '#character-moveset-compatibility-view',
+    );
+    if (!umcView) {
+      return;
+    }
+
+    this.switchCharacterView(
+      this.getActiveCharacterSubview(),
+      umcView,
+      'forward',
+    );
+
+    if (this.umcMovesetsLoaded) {
+      this.renderUmcCompatibility();
+    } else {
+      void this.loadUmcMovesets();
+    }
+  }
+
+  closeUmcCompatibility() {
+    const browserView = document.querySelector<HTMLElement>(
+      '#characters-browser-view',
+    );
+    const umcView = document.querySelector<HTMLElement>(
+      '#character-moveset-compatibility-view',
+    );
+
+    if (!browserView || !umcView) {
+      return;
+    }
+
+    this.switchCharacterView(umcView, browserView, 'back');
+  }
+
+  async loadUmcMovesets(force = false) {
+    if (this.umcMovesetsLoading) {
+      return;
+    }
+    if (this.umcMovesetsLoaded && !force) {
+      this.renderUmcCompatibility();
+      return;
+    }
+
+    this.umcMovesetsLoading = true;
+    this.umcMovesetsError = null;
+    this.renderUmcCompatibility();
+
+    try {
+      if (!window.electronAPI?.getUmcMovesets) {
+        throw new Error('UMC API is unavailable in this app version.');
+      }
+
+      const response = await window.electronAPI.getUmcMovesets();
+      if (!response.success) {
+        throw new Error(response.error || 'UMC could not load movesets.');
+      }
+
+      this.umcMovesets = response.movesets.filter(
+        (moveset) =>
+          Number.isSafeInteger(moveset?.movesetId) &&
+          moveset.movesetId > 0 &&
+          typeof moveset.moddedCharName === 'string' &&
+          moveset.moddedCharName.trim().length > 0 &&
+          moveset.releaseState?.trim().toLowerCase() === 'released',
+      );
+      this.umcMovesetsLoaded = true;
+
+      const availableIds = new Set(
+        this.umcMovesets.map((moveset) => moveset.movesetId),
+      );
+      const previousSelectionSize = this.umcSelectedMovesetIds.size;
+      this.umcSelectedMovesetIds = new Set(
+        [...this.umcSelectedMovesetIds].filter((id) => availableIds.has(id)),
+      );
+      if (previousSelectionSize !== this.umcSelectedMovesetIds.size) {
+        this.resetUmcCompatibility();
+        if (this.umcSelectedMovesetIds.size >= 2)
+          void this.checkUmcCompatibility();
+      }
+    } catch (error) {
+      this.umcMovesetsError =
+        error instanceof Error ? error.message : String(error);
+    } finally {
+      this.umcMovesetsLoading = false;
+      this.renderUmcCompatibility();
+    }
+  }
+
+  renderUmcCompatibility() {
+    const count = document.querySelector<HTMLElement>('#character-umc-count');
+    if (count) {
+      count.textContent = this.t(
+        'characters.umcMovesetCount',
+        '{{count}} movesets',
+        { count: String(this.umcMovesets.length) },
+      );
+    }
+
+    const refreshButton = document.querySelector<HTMLButtonElement>(
+      '#character-umc-refresh-btn',
+    );
+    if (refreshButton) {
+      refreshButton.disabled = this.umcMovesetsLoading;
+      refreshButton.classList.toggle('is-loading', this.umcMovesetsLoading);
+      refreshButton.title = this.t(
+        'characters.umcRefreshTitle',
+        'Refresh UMC movesets',
+      );
+      refreshButton.setAttribute('aria-label', refreshButton.title);
+      refreshButton.setAttribute('aria-busy', String(this.umcMovesetsLoading));
+    }
+
+    const refreshState = document.querySelector<HTMLElement>(
+      '#character-umc-refresh-state',
+    );
+    if (refreshState) {
+      const hasCachedList =
+        this.umcMovesetsLoaded && this.umcMovesets.length > 0;
+      refreshState.hidden =
+        !hasCachedList || (!this.umcMovesetsLoading && !this.umcMovesetsError);
+      refreshState.textContent = this.umcMovesetsLoading
+        ? this.t('characters.umcRefreshing', 'Refreshing...')
+        : this.t(
+            'characters.umcRefreshFailed',
+            'Refresh failed. Showing the last loaded list.',
+          );
+    }
+
+    this.renderUmcMovesetGrid();
+    this.renderUmcSelection();
+  }
+
+  renderUmcMovesetGrid() {
+    const grid = document.querySelector<HTMLElement>('#character-umc-grid');
+    if (!grid) {
+      return;
+    }
+
+    if (this.umcMovesetsLoading && this.umcMovesets.length === 0) {
+      grid.innerHTML = `
+<div class="character-umc-state" role="status" aria-live="polite">
+  <i class="bi bi-arrow-repeat character-umc-spinner" aria-hidden="true"></i>
+  <p>${this.escapeHtml(this.t('characters.umcLoading', 'Loading UMC movesets...'))}</p>
+</div>`;
+      return;
+    }
+
+    if (this.umcMovesetsError && this.umcMovesets.length === 0) {
+      grid.innerHTML = `
+<div class="character-umc-state" role="status" aria-live="polite">
+  <i class="bi bi-cloud-slash" aria-hidden="true"></i>
+  <p><strong>${this.escapeHtml(this.t('characters.umcLoadError', 'Could not load UMC movesets.'))}</strong><br>${this.escapeHtml(this.umcMovesetsError)}</p>
+  <button class="input-btn" type="button" data-umc-retry>${this.escapeHtml(this.t('characters.umcRetry', 'Retry'))}</button>
+</div>`;
+      return;
+    }
+
+    const normalizedQuery = this.umcSearchQuery;
+    const movesets = [...this.umcMovesets]
+      .filter((moveset) => {
+        if (!normalizedQuery) {
+          return true;
+        }
+        const modders = moveset.cardModders?.length
+          ? moveset.cardModders
+          : moveset.modders || [];
+        return [
+          moveset.moddedCharName,
+          moveset.vanillaCharDisplayName || '',
+          moveset.seriesName || '',
+          ...modders,
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalizedQuery);
+      })
+      .sort((a, b) => {
+        const unnamedA = /^\?+$/.test(a.moddedCharName.trim());
+        const unnamedB = /^\?+$/.test(b.moddedCharName.trim());
+        return (
+          Number(unnamedA) - Number(unnamedB) ||
+          a.moddedCharName.localeCompare(b.moddedCharName, undefined, {
+            sensitivity: 'base',
+          })
+        );
+      });
+
+    if (movesets.length === 0) {
+      const emptyMessage = this.umcMovesets.length
+        ? this.t('characters.umcSearchEmpty', 'No movesets found.')
+        : this.t(
+            'characters.umcEmpty',
+            'No released movesets available on UMC.',
+          );
+      grid.innerHTML = `
+<div class="character-umc-state" role="status" aria-live="polite">
+  <i class="bi bi-search" aria-hidden="true"></i>
+  <p>${this.escapeHtml(emptyMessage)}</p>
+</div>`;
+      return;
+    }
+
+    grid.innerHTML = movesets
+      .map((moveset) => {
+        const selected = this.umcSelectedMovesetIds.has(moveset.movesetId);
+        const imageUrl = this.getUmcImageUrl(moveset.thumbhImageUrl);
+        const metadata = [
+          moveset.vanillaCharDisplayName,
+          moveset.seriesName,
+        ].filter((value): value is string => Boolean(value?.trim()));
+        return `
+<button class="character-umc-card" type="button" data-umc-moveset-id="${moveset.movesetId}" aria-pressed="${selected}" aria-label="${this.escapeHtml(moveset.moddedCharName)}${metadata.length ? ` · ${this.escapeHtml(metadata.join(' · '))}` : ''}" ${!selected && this.umcSelectedMovesetIds.size >= UMC_MAX_SELECTION ? 'disabled' : ''}>
+  <span class="character-umc-card-image">
+    ${imageUrl ? `<img src="${this.escapeHtml(imageUrl)}" alt="${this.escapeHtml(moveset.moddedCharName)}" loading="lazy">` : '<i class="bi bi-controller" aria-hidden="true"></i>'}
+    <span class="character-umc-card-name" title="${this.escapeHtml(moveset.moddedCharName).replace(/"/g, '&quot;')}">${this.escapeHtml(moveset.moddedCharName)}</span>
+  </span>
+  <span class="character-umc-card-meta">${this.escapeHtml(metadata.join(' · ') || this.t('characters.umcUnknownFighter', 'Fighter not specified'))}</span>
+</button>`;
+      })
+      .join('');
+
+    grid
+      .querySelectorAll<HTMLImageElement>('.character-umc-card-image img')
+      .forEach((image) => {
+        image.addEventListener(
+          'error',
+          () => {
+            const frame = image.parentElement;
+            image.remove();
+            if (frame && !frame.querySelector('i')) {
+              const fallback = document.createElement('i');
+              fallback.className = 'bi bi-controller';
+              fallback.setAttribute('aria-hidden', 'true');
+              frame.appendChild(fallback);
+            }
+          },
+          { once: true },
+        );
+      });
+  }
+
+  renderUmcSelection() {
+    const selected = this.umcMovesets.filter((moveset) =>
+      this.umcSelectedMovesetIds.has(moveset.movesetId),
+    );
+    const pairCount = (selected.length * (selected.length - 1)) / 2;
+    const count = document.querySelector<HTMLElement>(
+      '#character-umc-selected-count',
+    );
+    if (count) {
+      count.textContent = this.t(
+        'characters.umcSelectedCount',
+        `${selected.length} selected · ${pairCount} pairs`,
+        {
+          count: String(selected.length),
+          pairs: String(pairCount),
+        },
+      );
+    }
+    const selection = document.querySelector<HTMLElement>(
+      '#character-umc-selection',
+    );
+    if (selection) {
+      selection.innerHTML = selected.length
+        ? selected
+            .map((moveset) => {
+              const label = this.t(
+                'characters.umcDeselect',
+                `Deselect ${moveset.moddedCharName}`,
+                { name: moveset.moddedCharName },
+              );
+              return `<button class="character-umc-selection-chip" type="button" data-umc-remove-id="${moveset.movesetId}" aria-label="${this.escapeHtml(label).replace(/"/g, '&quot;')}"><span>${this.escapeHtml(moveset.moddedCharName)}</span><i class="bi bi-x-lg" aria-hidden="true"></i></button>`;
+            })
+            .join('')
+        : `<span class="character-umc-selection-empty">${this.escapeHtml(this.t('characters.umcChooseMultiple', 'Choose at least two movesets in the grid.'))}</span>`;
+    }
+
+    document
+      .querySelectorAll<HTMLButtonElement>('[data-umc-moveset-id]')
+      .forEach((card) => {
+        const id = Number(card.dataset.umcMovesetId);
+        const isSelected = this.umcSelectedMovesetIds.has(id);
+        card.setAttribute('aria-pressed', String(isSelected));
+        card.disabled = !isSelected && selected.length >= UMC_MAX_SELECTION;
+      });
+
+    const result = document.querySelector<HTMLElement>('#character-umc-result');
+    if (!result) {
+      return;
+    }
+    result.setAttribute('aria-busy', String(this.umcCheckingCompatibility));
+
+    if (this.umcCheckingCompatibility) {
+      result.className = 'character-umc-result is-neutral';
+      result.hidden = false;
+      result.textContent = this.t(
+        'characters.umcChecking',
+        'Checking compatibility...',
+      );
+      return;
+    }
+
+    if (this.umcCompatibilityError) {
+      result.className = 'character-umc-result is-error';
+      result.hidden = false;
+      result.innerHTML = `<strong>${this.escapeHtml(this.t('characters.umcCheckError', 'Could not check compatibility.'))}</strong> ${this.escapeHtml(this.umcCompatibilityError)}<br>${this.escapeHtml(this.t('characters.umcRetrySelection', 'Select a different pair to try again.'))}`;
+      return;
+    }
+
+    if (!this.umcCompatibilityResult) {
+      result.hidden = true;
+      result.replaceChildren();
+      return;
+    }
+
+    const group = this.umcCompatibilityResult;
+    const verdict = this.formatUmcCompatibility({
+      severity: group.overallSeverity,
+      compatibleCount: group.pairs.reduce(
+        (total, pair) => total + (pair.compatibleCount || 0),
+        0,
+      ),
+      incompatibleCount: group.pairs.reduce(
+        (total, pair) => total + (pair.incompatibleCount || 0),
+        0,
+      ),
+    });
+    if (!group.overallSeverity) {
+      verdict.title = this.t(
+        'characters.umcGroupPredictionUnavailable',
+        'UMC prediction unavailable for this selection.',
+      );
+    }
+    const ranks = {
+      'is-incompatible': 3,
+      'is-warning': 2,
+      'is-neutral': 1,
+      'is-compatible': 0,
+    };
+    const pairs = group.pairs
+      .map((pair) => ({ pair, ...this.formatUmcCompatibility(pair) }))
+      .sort((a, b) => ranks[b.resultStyle] - ranks[a.resultStyle]);
+    const needsAttention = pairs.some(
+      (pair) => pair.resultStyle !== 'is-compatible',
+    );
+    const names = new Map(
+      this.umcMovesets.map((moveset) => [
+        moveset.movesetId,
+        moveset.moddedCharName,
+      ]),
+    );
+    const pairRows = pairs
+      .map(
+        ({ pair, title, resultStyle, details }) =>
+          `<li><div class="character-umc-pair-heading"><strong>${this.escapeHtml(names.get(pair.moveset1Id) || `#${pair.moveset1Id}`)} + ${this.escapeHtml(names.get(pair.moveset2Id) || `#${pair.moveset2Id}`)}</strong><span class="${resultStyle}">${this.escapeHtml(title)}</span></div><div class="character-umc-pair-details">${details.map((detail) => this.escapeHtml(detail)).join('<br>')}</div></li>`,
+      )
+      .join('');
+    result.className = `character-umc-result ${verdict.resultStyle}`;
+    result.hidden = false;
+    result.innerHTML = `<strong>${this.escapeHtml(verdict.title)}</strong><details class="character-umc-pairs" ${needsAttention || pairCount === 1 ? 'open' : ''}><summary>${this.escapeHtml(this.t('characters.umcPairDetails', `Details of ${pairs.length} pairs`, { count: String(pairs.length) }))}</summary><ul class="character-umc-pair-list">${pairRows}</ul></details>`;
+  }
+
+  formatUmcCompatibility(compatibility: UmcCompatibilityResult): {
+    title: string;
+    resultStyle:
+      | 'is-incompatible'
+      | 'is-warning'
+      | 'is-compatible'
+      | 'is-neutral';
+    details: string[];
+  } {
+    const compatibleCount = Math.max(
+      0,
+      Number(compatibility.compatibleCount) || 0,
+    );
+    const incompatibleCount = Math.max(
+      0,
+      Number(compatibility.incompatibleCount) || 0,
+    );
+    const severity = compatibility.severity;
+    const hasReports = compatibleCount > 0 || incompatibleCount > 0;
+    const titles = {
+      compatible: this.t(
+        'characters.umcPredictedCompatible',
+        'No conflicts detected (UMC prediction)',
+      ),
+      warning: this.t(
+        'characters.umcWarning',
+        'Compatibility warnings (UMC prediction)',
+      ),
+      'predicted-incompat': this.t(
+        'characters.umcPredictedIncompatible',
+        'Likely incompatible (UMC prediction)',
+      ),
+      incompatible: this.t(
+        'characters.umcPredictedConflict',
+        'Conflicts detected (UMC prediction)',
+      ),
+    };
+    const title = severity
+      ? titles[severity]
+      : hasReports
+        ? this.t(
+            'characters.umcReportsOnly',
+            'Community reports only; prediction unavailable',
+          )
+        : this.t(
+            'characters.umcPredictionUnavailable',
+            'UMC prediction unavailable. No community reports for this pair.',
+          );
+    const resultStyle =
+      severity === 'incompatible' || severity === 'predicted-incompat'
+        ? 'is-incompatible'
+        : severity === 'warning' || incompatibleCount > 0
+          ? 'is-warning'
+          : severity === 'compatible'
+            ? 'is-compatible'
+            : 'is-neutral';
+    const details: string[] = [];
+    if (severity) {
+      details.push(
+        this.t(
+          'characters.umcConflictCounts',
+          'Shared hooks: {{hooks}} · Shared articles: {{articles}}',
+          {
+            hooks: String(compatibility.conflictingHookIds?.length || 0),
+            articles: String(compatibility.conflictingArticleIds?.length || 0),
+          },
+        ),
+      );
+    }
+    details.push(
+      compatibility.compatibleCount === undefined
+        ? this.t(
+            'characters.umcReportsUnavailable',
+            'Community reports unavailable.',
+          )
+        : hasReports
+          ? this.t(
+              'characters.umcCounts',
+              'Community votes: {{compatible}} compatible · {{incompatible}} incompatible',
+              {
+                compatible: String(compatibleCount),
+                incompatible: String(incompatibleCount),
+              },
+            )
+          : this.t(
+              'characters.umcNoReports',
+              'No community reports for this pair yet.',
+            ),
+    );
+    return { title, resultStyle, details };
+  }
+
+  selectUmcMoveset(movesetId: number) {
+    if (!this.umcMovesets.some((moveset) => moveset.movesetId === movesetId)) {
+      return;
+    }
+
+    if (this.umcSelectedMovesetIds.has(movesetId)) {
+      this.umcSelectedMovesetIds.delete(movesetId);
+    } else {
+      if (this.umcSelectedMovesetIds.size >= UMC_MAX_SELECTION) return;
+      this.umcSelectedMovesetIds.add(movesetId);
+    }
+
+    this.resetUmcCompatibility();
+    this.renderUmcSelection();
+    if (this.umcSelectedMovesetIds.size >= 2) {
+      void this.checkUmcCompatibility();
+    }
+  }
+
+  resetUmcCompatibility() {
+    // Ignore responses for a selection that the user has already changed.
+    this.umcCompatibilityRequestId++;
+    this.umcCheckingCompatibility = false;
+    this.umcCompatibilityResult = null;
+    this.umcCompatibilityError = null;
+  }
+
+  async checkUmcCompatibility() {
+    const movesetIds = [...this.umcSelectedMovesetIds];
+    if (movesetIds.length < 2 || this.umcCheckingCompatibility) {
+      return;
+    }
+
+    this.umcCheckingCompatibility = true;
+    const requestId = ++this.umcCompatibilityRequestId;
+    this.umcCompatibilityResult = null;
+    this.umcCompatibilityError = null;
+    this.renderUmcSelection();
+
+    try {
+      // Let rapid selection changes settle before requesting all pairs.
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 180));
+      if (requestId !== this.umcCompatibilityRequestId) return;
+      const response = await window.electronAPI.getUmcCompatibility(movesetIds);
+      if (requestId !== this.umcCompatibilityRequestId) {
+        return;
+      }
+      if (!response.success) {
+        throw new Error(
+          response.error || 'UMC could not check this moveset selection.',
+        );
+      }
+      this.umcCompatibilityResult = response.compatibility;
+    } catch (error) {
+      if (requestId === this.umcCompatibilityRequestId) {
+        this.umcCompatibilityError =
+          error instanceof Error ? error.message : String(error);
+      }
+    } finally {
+      if (requestId === this.umcCompatibilityRequestId) {
+        this.umcCheckingCompatibility = false;
+        this.renderUmcSelection();
+      }
+    }
+  }
+
+  getUmcImageUrl(value?: string | null) {
+    if (!value) {
+      return null;
+    }
+
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' ? url.toString() : null;
+    } catch {
+      return null;
+    }
+  }
+
   switchCharacterView(
     fromView: HTMLElement | null,
     toView: HTMLElement,
@@ -1383,7 +2082,7 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
 
     document
       .querySelectorAll<HTMLElement>(
-        '#characters-browser-view, #character-movesets-view, #character-css-editor',
+        '#characters-browser-view, #character-movesets-view, #character-moveset-compatibility-view, #character-css-editor',
       )
       .forEach((view) => {
         if (view !== fromView && view !== toView) {
@@ -1448,7 +2147,7 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
   getActiveCharacterSubview() {
     return (
       document.querySelector<HTMLElement>(
-        '#characters-browser-view:not([hidden]), #character-movesets-view:not([hidden]), #character-css-editor:not([hidden])',
+        '#characters-browser-view:not([hidden]), #character-movesets-view:not([hidden]), #character-moveset-compatibility-view:not([hidden]), #character-css-editor:not([hidden])',
       ) || null
     );
   }
@@ -1503,6 +2202,12 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
     list.innerHTML = movesetGroups
       .map((character) => this.renderMovesetCharacterGroup(character))
       .join('');
+
+    list
+      .querySelectorAll<HTMLElement>('.character-moveset-group')
+      .forEach((element, index) => {
+        void this.loadMovesetImages(movesetGroups[index], element);
+      });
 
     list.querySelectorAll<HTMLElement>('[data-mod-path]').forEach((item) => {
       item.addEventListener('click', () => {
@@ -1596,6 +2301,119 @@ ${category}
 `;
   }
 
+  getGameBananaModId(value: unknown): number | null {
+    if (typeof value !== 'string') return null;
+    try {
+      const url = new URL(value.trim());
+      if (
+        !['https:', 'http:'].includes(url.protocol) ||
+        !['gamebanana.com', 'www.gamebanana.com'].includes(url.hostname)
+      )
+        return null;
+      const match = url.pathname.match(/^\/mods\/(\d+)\/?$/);
+      const id = match ? Number(match[1]) : 0;
+      return Number.isInteger(id) && id > 0 && id <= 2147483647 ? id : null;
+    } catch {
+      return null;
+    }
+  }
+
+  getUmcMovesets(
+    modId: number,
+    includeDetails = false,
+  ): Promise<UmcGameBananaMoveset[]> {
+    const key = `${modId}:${includeDetails ? 'details' : 'summary'}`;
+    const cached = this.umcMovesetRequests.get(key);
+    if (cached && cached.expires > Date.now()) return cached.request;
+    const entry = {
+      expires: Date.now() + 10 * 60_000,
+      request: Promise.resolve([] as UmcGameBananaMoveset[]),
+    };
+    entry.request = (async () => {
+      try {
+        const result = await window.electronAPI.getUmcMovesetsByGameBanana(
+          modId,
+          includeDetails,
+        );
+        if (result.success) return result.movesets;
+      } catch (error) {
+        console.warn('[CharactersManager] UMC image lookup failed:', error);
+      }
+      entry.expires = Date.now() + 20_000;
+      return [];
+    })();
+    if (this.umcMovesetRequests.size >= 300) {
+      this.umcMovesetRequests.delete(
+        this.umcMovesetRequests.keys().next().value!,
+      );
+    }
+    this.umcMovesetRequests.set(key, entry);
+    return entry.request;
+  }
+
+  async loadMovesetImages(
+    character: CharacterMovesetGroup,
+    element: HTMLElement,
+  ) {
+    const rows = Array.from(
+      element.querySelectorAll<HTMLElement>('.character-moveset-mod'),
+    );
+    const matches = await Promise.all(
+      character.mods.map(async (mod, index) => {
+        if (!mod.gameBananaId) return null;
+        const movesets = await this.getUmcMovesets(mod.gameBananaId);
+        if (
+          !element.isConnected ||
+          this.movesetCharacters.get(character.id) !== character
+        )
+          return null;
+        const moveset = movesets.find((entry) => {
+          const fighterId = window.resolveFolderName
+            ? window.resolveFolderName(entry.fighterId)
+            : entry.fighterId.toLowerCase();
+          return fighterId === character.id && entry.imageUrl;
+        });
+        if (!moveset || !rows[index]) return null;
+        const image = new Image();
+        image.className = 'character-moveset-umc-thumbnail';
+        image.alt = moveset.name;
+        image.title = this.t('characters.umcImage', 'Image from UMC');
+        image.onload = () => {
+          if (
+            !rows[index].isConnected ||
+            this.movesetCharacters.get(character.id) !== character
+          )
+            return;
+          rows[index].prepend(image);
+          rows[index].classList.add('has-umc-image');
+        };
+        image.src = moveset.imageUrl;
+        return moveset;
+      }),
+    );
+    const firstMatch = matches.find((entry) => entry !== null);
+    const frame = element.querySelector<HTMLElement>(
+      '.character-moveset-image-frame',
+    );
+    if (!firstMatch || !frame || !element.isConnected) return;
+    const image = new Image();
+    image.alt = firstMatch.name;
+    image.title = this.t('characters.umcImage', 'Image from UMC');
+    image.onload = () => {
+      if (
+        !element.isConnected ||
+        this.movesetCharacters.get(character.id) !== character
+      )
+        return;
+      frame.replaceChildren(image);
+      element
+        .querySelector('.character-moveset-character')
+        ?.classList.add('has-umc-image');
+    };
+    // The vanilla image stays visible until the UMC image has loaded successfully.
+    image.src = firstMatch.imageUrl;
+  }
+
   async openAddMovesetToCssFlow(characterId: string) {
     if (this.cssSaving) {
       return;
@@ -1629,6 +2447,8 @@ ${category}
         newUiCharaId: duplicateOptions.newUiCharaId,
         newNameId: duplicateOptions.newNameId,
         newDisplayName: duplicateOptions.newDisplayName,
+        colorStartIndex: duplicateOptions.colorStartIndex,
+        colorCount: duplicateOptions.colorCount,
       });
 
       if (!result.success) {
@@ -1650,7 +2470,10 @@ ${category}
       this.cssCharacterUpdates.clear();
       this.cssDirty = true;
       window.toastManager?.success?.(
-        'Moveset character added to CSS. Edit slots, then Apply Layout.',
+        this.t(
+          'characters.movesetCss.added',
+          'Moveset character added to CSS. Review settings, then Apply Layout.',
+        ),
         4500,
       );
       await this.openCssEditor();
@@ -1666,22 +2489,17 @@ ${category}
     }
   }
 
-  openAddMovesetToCssModal(movesetCharacter: CharacterMovesetGroup): Promise<{
-    sourceCharacterId: string;
-    newUiCharaId: string;
-    newNameId: string;
-    newDisplayName: string;
-  } | null> {
+  openAddMovesetToCssModal(
+    movesetCharacter: CharacterMovesetGroup,
+  ): Promise<MovesetCssOptions | null> {
     return new Promise((resolve) => {
-      const existingModal = document.querySelector<HTMLElement>(
-        '.character-css-add-moveset-modal-overlay',
-      );
-      existingModal?.remove();
-
+      document
+        .querySelector('.character-css-add-moveset-modal-overlay')
+        ?.dispatchEvent(new Event('cancel-add-moveset'));
       const cssCharacters = [
         ...this.cssVisibleCharacters,
         ...this.cssHiddenCharacters,
-      ].filter((character) => !character.isRandom);
+      ].filter((character) => !character.isRandom && !character.isGroup);
       const preferredSource =
         cssCharacters.find(
           (character) =>
@@ -1691,122 +2509,288 @@ ${category}
       const suggestedNameId = this.getUniqueCssNameId(
         `${movesetCharacter.id}_moveset`,
       );
+      const modIds = [
+        ...new Set(
+          movesetCharacter.mods
+            .map((mod) => mod.gameBananaId)
+            .filter((id): id is number => typeof id === 'number' && id > 0),
+        ),
+      ];
+      const escape = (value: string) =>
+        this.escapeHtml(value).replace(/"/g, '&quot;');
+      const text = (
+        key: string,
+        fallback: string,
+        params: Record<string, string> = {},
+      ) => this.t(`characters.movesetCss.${key}`, fallback, params);
+      const label = (key: string, fallback: string) =>
+        escape(text(key, fallback));
       const sourceOptions = cssCharacters
         .map(
-          (character) => `
-<option value="${this.escapeHtml(character.id)}" ${character.id === preferredSource?.id ? 'selected' : ''}>
-${this.escapeHtml(character.displayName)} (${this.escapeHtml(character.id)})
-</option>`,
+          (character) =>
+            `<option value="${escape(character.id)}" ${character.id === preferredSource?.id ? 'selected' : ''}>${escape(character.displayName)} (${escape(character.id)})</option>`,
         )
         .join('');
-
       const modal = document.createElement('div');
       modal.className =
         'character-modal-overlay character-css-add-moveset-modal-overlay';
       modal.innerHTML = `
 <div class="character-modal character-css-duplicate-modal">
 <div class="character-modal-header">
-<h2>Add ${this.escapeHtml(movesetCharacter.info.name)} to CSS</h2>
-<button class="character-modal-close" type="button">
-<i class="bi bi-x-lg"></i>
-</button>
+<h2>${escape(text('title', 'Add {{name}} to CSS', { name: movesetCharacter.info.name }))}</h2>
+<button class="character-modal-close" type="button" aria-label="${label('cancel', 'Cancel')}"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
 </div>
 <form class="character-modal-body character-css-duplicate-form">
-<label class="character-css-field">
-<span>Duplicate CSS Character</span>
-<select name="sourceCharacterId">${sourceOptions}</select>
+<label class="character-css-field" data-umc-picker ${modIds.length ? '' : 'hidden'}>
+<span>${label('moveset', 'Moveset from UMC')}</span>
+<select name="umcMoveset" disabled><option>UMC</option></select>
 </label>
-<label class="character-css-field">
-<span>New Character ID</span>
-<input name="newUiCharaId" value="ui_chara_${this.escapeHtml(suggestedNameId)}" autocomplete="off">
-</label>
-<label class="character-css-field">
-<span>New Name ID</span>
-<input name="newNameId" value="${this.escapeHtml(suggestedNameId)}" autocomplete="off">
-</label>
-<label class="character-css-field">
-<span>Display Name</span>
-<input name="newDisplayName" value="${this.escapeHtml(movesetCharacter.info.name)}" autocomplete="off">
-</label>
-<div class="character-css-duplicate-error" hidden></div>
+<p class="character-css-umc-suggestion" data-umc-status role="status" aria-live="polite">${modIds.length ? label('loading', 'Loading UMC suggestions…') : label('manual', 'Enter the moveset IDs and costume range.')}</p>
+<label class="character-css-field"><span>${label('base', 'Base fighter')}</span><select name="sourceCharacterId" required>${sourceOptions}</select></label>
+<label class="character-css-field"><span>${label('characterId', 'New Character ID')}</span><input name="newUiCharaId" value="ui_chara_${escape(suggestedNameId)}" required autocomplete="off"></label>
+<label class="character-css-field"><span>${label('nameId', 'New Name ID')}</span><input name="newNameId" value="${escape(suggestedNameId)}" required autocomplete="off"></label>
+<label class="character-css-field"><span>${label('displayName', 'Display Name')}</span><input name="newDisplayName" value="${escape(movesetCharacter.info.name)}" autocomplete="off"></label>
+<div class="character-css-moveset-colors">
+<label class="character-css-field"><span>${label('start', 'Color Start')}</span><input name="colorStartIndex" type="number" min="0" max="255" step="1" value="${Number(preferredSource?.colorStartIndex) || 0}" required></label>
+<label class="character-css-field"><span>${label('count', 'Colors')}</span><input name="colorCount" type="number" min="1" max="255" step="1" value="${Number(preferredSource?.colorNum) || 8}" required></label>
+</div>
+<div class="character-css-duplicate-error" role="alert" hidden></div>
 <div class="character-css-duplicate-actions">
-<button class="input-btn" type="button" data-action="cancel">Cancel</button>
-<button class="input-btn character-css-save-btn" type="submit">
-<i class="bi bi-plus-square"></i>
-Add to CSS
-</button>
+<button class="input-btn" type="button" data-action="cancel">${label('cancel', 'Cancel')}</button>
+<button class="input-btn character-css-save-btn" type="submit"><i class="bi bi-plus-square" aria-hidden="true"></i>${label('add', 'Add to CSS')}</button>
 </div>
 </form>
-</div>
-`;
-
+</div>`;
       document.body.appendChild(modal);
-
-      const form = modal.querySelector<HTMLFormElement>(
-        '.character-css-duplicate-form',
-      )!;
+      const form = modal.querySelector<HTMLFormElement>('form')!;
       const errorEl = modal.querySelector<HTMLElement>(
         '.character-css-duplicate-error',
       )!;
-      const close = (
-        value: {
-          sourceCharacterId: string;
-          newUiCharaId: string;
-          newNameId: string;
-          newDisplayName: string;
-        } | null,
-      ) => {
-        this.closeCharacterModal(modal);
+      const status = modal.querySelector<HTMLElement>('[data-umc-status]')!;
+      const selector = form.elements.namedItem(
+        'umcMoveset',
+      ) as HTMLSelectElement;
+      const touchedFields = new Set<string>();
+      let closed = false;
+      let suggestions: UmcGameBananaMoveset[] = [];
+      let hasUmcRange = false;
+      const input = (name: string) =>
+        form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement;
+      const fail = (message: string) => {
+        errorEl.textContent = message;
+        errorEl.hidden = false;
+      };
+      const close = (value: MovesetCssOptions | null) => {
+        if (closed) return;
+        closed = true;
+        this.closeCharacterModal(modal, escapeHandler);
         resolve(value);
       };
-
+      const escapeHandler = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') close(null);
+      };
+      document.addEventListener('keydown', escapeHandler);
+      modal.addEventListener('cancel-add-moveset', () => close(null));
       modal
-        .querySelector<HTMLElement>('.character-modal-close')
+        .querySelector('.character-modal-close')
         ?.addEventListener('click', () => close(null));
       modal
-        .querySelector<HTMLElement>('[data-action="cancel"]')
+        .querySelector('[data-action="cancel"]')
         ?.addEventListener('click', () => close(null));
       this.bindBackdropClose(modal, () => close(null));
-
+      form.addEventListener('input', (event) => {
+        const field = event.target as HTMLInputElement;
+        if (field.name) touchedFields.add(field.name);
+        errorEl.hidden = true;
+      });
+      input('sourceCharacterId').addEventListener('change', () => {
+        touchedFields.add('sourceCharacterId');
+        const source = cssCharacters.find(
+          (entry) => entry.id === input('sourceCharacterId').value,
+        );
+        if (!source || hasUmcRange) return;
+        if (!touchedFields.has('colorStartIndex'))
+          input('colorStartIndex').value = source.colorStartIndex;
+        if (!touchedFields.has('colorCount'))
+          input('colorCount').value = source.colorNum;
+      });
+      const applySuggestion = (
+        moveset: UmcGameBananaMoveset,
+        preserveEdits: boolean,
+      ) => {
+        const set = (name: string, value: string) => {
+          if (!preserveEdits || !touchedFields.has(name))
+            input(name).value = value;
+        };
+        const fighterId = window.resolveFolderName
+          ? window.resolveFolderName(moveset.fighterId)
+          : moveset.fighterId.toLowerCase();
+        const source = cssCharacters.find(
+          (entry) =>
+            entry.nameId === fighterId || entry.id === `ui_chara_${fighterId}`,
+        );
+        if (source) set('sourceCharacterId', source.id);
+        const slottedId = moveset.slottedId.trim().replace(/^ui_chara_/, '');
+        const hasId = /^[a-z][a-z0-9_-]{0,127}$/i.test(slottedId);
+        if (hasId) {
+          set('newUiCharaId', `ui_chara_${slottedId}`);
+          set('newNameId', slottedId);
+        } else {
+          set('newUiCharaId', `ui_chara_${suggestedNameId}`);
+          set('newNameId', suggestedNameId);
+        }
+        if (moveset.name) set('newDisplayName', moveset.name);
+        const start = moveset.slotsStart;
+        const end = moveset.slotsEnd;
+        hasUmcRange =
+          start !== null &&
+          end !== null &&
+          Number.isInteger(start) &&
+          Number.isInteger(end) &&
+          start >= 0 &&
+          end >= start &&
+          end <= 255 &&
+          end - start + 1 <= 255;
+        if (hasUmcRange) {
+          set('colorStartIndex', String(start));
+          set('colorCount', String(end! - start! + 1));
+        } else if (source) {
+          set('colorStartIndex', source.colorStartIndex);
+          set('colorCount', String(Number(source.colorNum) || 8));
+        }
+        if (!preserveEdits) touchedFields.clear();
+        status.textContent =
+          hasId && hasUmcRange && moveset.detailsAvailable
+            ? text(
+                'prefilled',
+                'UMC suggestions applied. You can edit every field before adding.',
+              )
+            : text(
+                'partial',
+                'Some UMC information is missing. Check the IDs and costume range.',
+              );
+        errorEl.hidden = true;
+        if (
+          this.getAllCssCharacters().some(
+            (entry) => entry.id === input('newUiCharaId').value,
+          )
+        ) {
+          fail(
+            text(
+              'existingId',
+              'This Character ID already exists in the CSS. Choose another ID.',
+            ),
+          );
+        }
+      };
+      selector.addEventListener('change', () => {
+        const selected = suggestions.find(
+          (entry) => String(entry.id) === selector.value,
+        );
+        if (selected) applySuggestion(selected, false);
+      });
+      if (modIds.length) {
+        void Promise.all(
+          modIds.map((modId) => this.getUmcMovesets(modId, true)),
+        ).then((results) => {
+          if (closed || !modal.isConnected) return;
+          suggestions = [
+            ...new Map(
+              results
+                .flat()
+                .filter((entry) => {
+                  const fighterId = window.resolveFolderName
+                    ? window.resolveFolderName(entry.fighterId)
+                    : entry.fighterId.toLowerCase();
+                  return fighterId === movesetCharacter.id;
+                })
+                .map((entry) => [entry.id, entry]),
+            ).values(),
+          ];
+          if (!suggestions.length) {
+            modal.querySelector<HTMLElement>('[data-umc-picker]')!.hidden =
+              true;
+            status.textContent = text(
+              'unavailable',
+              'No UMC information available. Enter the moveset IDs and costume range.',
+            );
+            return;
+          }
+          selector.replaceChildren(
+            ...suggestions.map((moveset) => {
+              const option = document.createElement('option');
+              option.value = String(moveset.id);
+              option.textContent = moveset.slottedId
+                ? `${moveset.name} (${moveset.slottedId})`
+                : moveset.name;
+              return option;
+            }),
+          );
+          selector.disabled = false;
+          applySuggestion(suggestions[0], true);
+        }).catch(() => {
+          if (closed || !modal.isConnected) return;
+          modal.querySelector<HTMLElement>('[data-umc-picker]')!.hidden = true;
+          status.textContent = text('unavailable', 'No UMC information available. Enter the moveset IDs and costume range.');
+        });
+      }
       form.addEventListener('submit', (event) => {
         event.preventDefault();
-        const data = new FormData(form);
-        const sourceCharacterId = String(
-          data.get('sourceCharacterId') || '',
-        ).trim();
-        const newUiCharaId = String(data.get('newUiCharaId') || '').trim();
-        const newNameId = String(data.get('newNameId') || '').trim();
-        const newDisplayName = String(data.get('newDisplayName') || '').trim();
-
-        if (!sourceCharacterId) {
-          errorEl.textContent = 'Choose the CSS character to duplicate.';
-          errorEl.hidden = false;
-          return;
-        }
-
-        if (!newUiCharaId.startsWith('ui_chara_')) {
-          errorEl.textContent = 'Character ID must start with ui_chara_.';
-          errorEl.hidden = false;
-          return;
-        }
-
-        if (!newNameId) {
-          errorEl.textContent = 'Name ID cannot be empty.';
-          errorEl.hidden = false;
-          return;
-        }
-
+        const sourceCharacterId = input('sourceCharacterId').value.trim();
+        const newUiCharaId = input('newUiCharaId').value.trim();
+        const newNameId = input('newNameId').value.trim();
+        const newDisplayName = input('newDisplayName').value.trim();
+        const colorStartIndex = Number(input('colorStartIndex').value);
+        const colorCount = Number(input('colorCount').value);
+        if (!sourceCharacterId)
+          return fail(
+            text('chooseBase', 'Choose the CSS character to duplicate.'),
+          );
+        if (
+          !newUiCharaId.startsWith('ui_chara_') ||
+          newUiCharaId.length <= 'ui_chara_'.length
+        )
+          return fail(
+            text(
+              'invalidId',
+              'Character ID must start with ui_chara_ and include a name.',
+            ),
+          );
+        if (
+          this.getAllCssCharacters().some((entry) => entry.id === newUiCharaId)
+        )
+          return fail(
+            text(
+              'existingId',
+              'This Character ID already exists in the CSS. Choose another ID.',
+            ),
+          );
+        if (!newNameId)
+          return fail(text('emptyName', 'Name ID cannot be empty.'));
+        if (
+          !Number.isInteger(colorStartIndex) ||
+          !Number.isInteger(colorCount) ||
+          colorStartIndex < 0 ||
+          colorCount < 1 ||
+          colorCount > 255 ||
+          colorStartIndex + colorCount > 256
+        )
+          return fail(
+            text(
+              'invalidRange',
+              'Choose a costume range between c00 and c255.',
+            ),
+          );
         close({
           sourceCharacterId,
           newUiCharaId,
           newNameId,
           newDisplayName: newDisplayName || newNameId,
+          colorStartIndex,
+          colorCount,
         });
       });
-
-      form
-        .querySelector<HTMLSelectElement>('select[name="sourceCharacterId"]')
-        ?.focus();
+      input('sourceCharacterId').focus();
     });
   }
 
@@ -2163,12 +3147,282 @@ Add to CSS
 
   hydrateCssCharacter(character: CharacterCssEntry) {
     const info = window.SSBU_CHARACTERS?.[character.nameId];
-    return {
+    const hydrated = {
       ...character,
       displayName: character.displayName || info?.name || character.nameId,
       number: info?.number || character.number || '',
       imageUrl: this.getCssCharacterImage(character.nameId),
+      imageSource: undefined,
     };
+    this.scheduleCssCharacterImageLookup(hydrated);
+    return hydrated;
+  }
+
+  getCssCharacterLookupId(character: CharacterCssEntry) {
+    return String(
+      this.cssCharacterUpdates.get(character.id)?.uiCharaId ?? character.id,
+    ).trim();
+  }
+
+  getCssUmcImageKey(character: CharacterCssEntry) {
+    return this.getCssCharacterLookupId(character)
+      .toLowerCase()
+      .replace(/^ui_chara_/, '');
+  }
+
+  loadCssUmcImagePreferences() {
+    if (!this.cssUmcImagePreferencesPromise) {
+      const revision = this.cssUmcImageRevision;
+      this.cssUmcImagePreferencesPromise = (async () => {
+        const [enabled, exclusions, customImages] = await Promise.all([
+          window.electronAPI.store.get('cssUmcImagesEnabled'),
+          window.electronAPI.store.get('cssUmcImageExclusions'),
+          window.electronAPI.getCssCharacterImages(),
+        ]);
+        if (!customImages.success)
+          throw new Error(customImages.error || 'Failed to load custom images');
+        this.cssCustomImages = new Map(Object.entries(customImages.images));
+        if (revision === this.cssUmcImageRevision)
+          this.cssUmcImagesEnabled = enabled !== false;
+        this.cssUmcImageExclusions = new Set(
+          Array.isArray(exclusions)
+            ? exclusions.filter((id): id is string => typeof id === 'string')
+            : [],
+        );
+      })().catch((error) => {
+        this.cssUmcImagePreferencesPromise = null;
+        throw error;
+      });
+    }
+    return this.cssUmcImagePreferencesPromise;
+  }
+
+  refreshCssUmcImageControls(character: CharacterCssEntry) {
+    if (this.cssSelectedCharacterId !== character.id) return;
+    const controls = document.querySelector<HTMLElement>(
+      '[data-css-umc-image-controls]',
+    );
+    if (!controls) return;
+    const fromUmc =
+      character.imageSource === 'umc' && Boolean(character.imageUrl);
+    const removed =
+      !character.imageUrl &&
+      this.cssUmcImageExclusions.has(this.getCssUmcImageKey(character));
+    const custom = character.imageSource === 'custom';
+    const button = (action: string, key: string, fallback: string) =>
+      `<button class="input-btn" type="button" data-css-image-action="${action}" ${this.cssCustomImageBusy || this.cssSaving ? 'disabled' : ''}>${this.escapeHtml(this.t(key, fallback))}</button>`;
+    controls.hidden = character.isRandom || character.isGroup;
+    controls.innerHTML = `
+${fromUmc ? `<span>${this.escapeHtml(this.t('characters.umcImageSource', 'Image from UMC'))}</span>` : custom ? `<span>${this.escapeHtml(this.t('characters.customImageSource', 'Custom image'))}</span>` : ''}
+<div class="character-css-image-buttons">
+${button('choose', custom ? 'characters.customImageChange' : 'characters.customImageChoose', custom ? 'Change image' : 'Add image')}
+${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custom image') : fromUmc ? button('remove-umc', 'characters.umcImageRemove', 'Remove image') : removed && this.cssUmcImagesEnabled ? button('restore-umc', 'characters.umcImageRestore', 'Restore UMC image') : ''}
+</div>`;
+    controls
+      .querySelectorAll<HTMLButtonElement>('[data-css-image-action]')
+      .forEach((button) =>
+        button.addEventListener('click', () => {
+          const action = button.dataset.cssImageAction;
+          if (action === 'choose' || action === 'remove-custom') {
+            void this.changeCssCustomImage(
+              character,
+              action === 'remove-custom',
+            );
+          } else {
+            void this.setCssUmcImageRemoved(
+              character,
+              action === 'remove-umc',
+              button,
+            );
+          }
+        }),
+      );
+  }
+
+  applyCssCharacterImage(character: CharacterCssEntry) {
+    const customImage = this.cssCustomImages.get(
+      this.getCssUmcImageKey(character),
+    );
+    character.imageUrl =
+      customImage || this.getCssCharacterImage(character.nameId);
+    character.imageSource = customImage ? 'custom' : undefined;
+  }
+
+  async changeCssCustomImage(character: CharacterCssEntry, remove: boolean) {
+    if (this.cssCustomImageBusy || this.cssSaving) return;
+    this.cssCustomImageBusy = true;
+    this.refreshCssUmcImageControls(character);
+    const characterId = this.getCssCharacterLookupId(character);
+    const key = this.getCssUmcImageKey(character);
+    try {
+      await this.loadCssUmcImagePreferences();
+      if (remove) {
+        const result =
+          await window.electronAPI.removeCssCharacterImage(characterId);
+        if (!result.success)
+          throw new Error(result.error || 'Failed to remove image');
+        this.cssCustomImages.delete(key);
+      } else {
+        const result =
+          await window.electronAPI.selectCssCharacterImage(characterId);
+        if (!result.success)
+          throw new Error(result.error || 'Failed to import image');
+        if (result.canceled || !result.imageUrl) return;
+        this.cssCustomImages.set(key, result.imageUrl);
+      }
+      this.getAllCssCharacters()
+        .filter((entry) => this.getCssUmcImageKey(entry) === key)
+        .forEach((entry) => {
+          this.scheduleCssCharacterImageLookup(entry);
+          this.refreshCssCharacterImage(entry);
+        });
+    } catch (error) {
+      window.toastManager?.error('characters.customImageFailed', 4000, {
+        error: error.message || 'Unknown error',
+      });
+    } finally {
+      this.cssCustomImageBusy = false;
+      const selected = this.findCssCharacter(this.cssSelectedCharacterId || '');
+      if (selected) this.refreshCssUmcImageControls(selected);
+    }
+  }
+
+  async setCssUmcImageRemoved(
+    character: CharacterCssEntry,
+    removed: boolean,
+    button: HTMLButtonElement,
+  ) {
+    button.disabled = true;
+    const key = this.getCssUmcImageKey(character);
+    try {
+      await this.loadCssUmcImagePreferences();
+      if (removed) this.cssUmcImageExclusions.add(key);
+      else this.cssUmcImageExclusions.delete(key);
+      const result = await window.electronAPI.store.set(
+        'cssUmcImageExclusions',
+        [...this.cssUmcImageExclusions],
+      );
+      if (!result.success)
+        throw new Error('Failed to save UMC image preference');
+      if (
+        this.findCssCharacter(character.id) !== character ||
+        this.getCssUmcImageKey(character) !== key
+      )
+        return;
+      this.scheduleCssCharacterImageLookup(character);
+      this.refreshCssCharacterImage(character);
+    } catch {
+      if (removed) this.cssUmcImageExclusions.delete(key);
+      else this.cssUmcImageExclusions.add(key);
+      window.toastManager?.error('toasts.failedToSaveSetting', 4000);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  scheduleCssCharacterImageLookup(character: CharacterCssEntry) {
+    const previousTimer = this.cssImageLookupTimers.get(character);
+    if (previousTimer !== undefined) window.clearTimeout(previousTimer);
+    this.applyCssCharacterImage(character);
+    if (character.isRandom || character.isGroup) return;
+
+    // Wait for typing to settle; hydration also finishes before the lookup starts.
+    const timer = window.setTimeout(async () => {
+      this.cssImageLookupTimers.delete(character);
+      try {
+        await this.loadCssUmcImagePreferences();
+        if (this.findCssCharacter(character.id) !== character) return;
+        const previousImage = character.imageUrl;
+        const previousSource = character.imageSource;
+        this.applyCssCharacterImage(character);
+        if (
+          previousImage !== character.imageUrl ||
+          previousSource !== character.imageSource
+        ) {
+          this.refreshCssCharacterImage(character);
+        }
+        this.refreshCssUmcImageControls(character);
+        const characterId = this.getCssCharacterLookupId(character);
+        const nameId = character.nameId;
+        const revision = this.cssUmcImageRevision;
+        if (
+          character.imageUrl ||
+          !this.cssUmcImagesEnabled ||
+          this.cssUmcImageExclusions.has(this.getCssUmcImageKey(character))
+        )
+          return;
+        const result =
+          await window.electronAPI.getUmcCharacterImage(characterId);
+        if (
+          !result.success ||
+          !result.imageUrl ||
+          this.cssCustomImages.has(this.getCssUmcImageKey(character)) ||
+          !this.cssUmcImagesEnabled ||
+          revision !== this.cssUmcImageRevision ||
+          this.cssUmcImageExclusions.has(this.getCssUmcImageKey(character)) ||
+          this.findCssCharacter(character.id) !== character ||
+          this.getCssCharacterLookupId(character) !== characterId ||
+          character.nameId !== nameId
+        )
+          return;
+        character.imageUrl = result.imageUrl;
+        character.imageSource = 'umc';
+        this.refreshCssCharacterImage(character);
+      } catch {
+        // A missing UMC entry or connection keeps the normal CSS placeholder.
+      }
+    }, 350);
+    this.cssImageLookupTimers.set(character, timer);
+  }
+
+  refreshCssCharacterImage(character: CharacterCssEntry) {
+    // Replace images only: keep inspector inputs, focus and unsaved edits intact.
+    this.refreshCssUmcImageControls(character);
+    const thumbnail = character.imageUrl
+      ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${this.escapeHtml(character.displayName)}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>`
+      : '<i class="bi bi-person-circle"></i>';
+    document
+      .querySelectorAll<HTMLElement>('.character-css-cell')
+      .forEach((cell) => {
+        if (cell.dataset.characterId !== character.id) return;
+        const frame = cell.querySelector<HTMLElement>(
+          '.character-css-image-frame',
+        );
+        const updatedFrame = this.createCssCharacterCell(
+          character,
+        ).querySelector<HTMLElement>('.character-css-image-frame');
+        if (frame && updatedFrame) frame.replaceWith(updatedFrame);
+      });
+    if (this.cssSelectedCharacterId === character.id) {
+      const thumb = document.querySelector<HTMLElement>(
+        '#character-css-inspector .character-css-inspector-thumb',
+      );
+      if (thumb) thumb.innerHTML = thumbnail;
+    }
+    document
+      .querySelectorAll<HTMLElement>('.character-css-hidden-row')
+      .forEach((row) => {
+        if (row.dataset.characterId !== character.id) return;
+        const thumb = row.querySelector<HTMLElement>(
+          '.character-css-hidden-thumb',
+        );
+        if (thumb) thumb.innerHTML = thumbnail;
+      });
+    document
+      .querySelectorAll<HTMLElement>('.character-css-preview-tile')
+      .forEach((tile) => {
+        if (tile.dataset.previewCharacterId !== character.id) return;
+        const template = document.createElement('template');
+        template.innerHTML = this.renderCssPreviewTile(character);
+        tile
+          .querySelectorAll('img, .character-css-preview-placeholder')
+          .forEach((image) => image.remove());
+        tile.prepend(
+          ...template.content.querySelectorAll(
+            'img, .character-css-preview-placeholder',
+          ),
+        );
+      });
   }
 
   hydrateCssGroups(groups: Record<string, CharacterCssEntry[]> | undefined) {
@@ -2289,7 +3543,7 @@ Add to CSS
     const escapedName = this.escapeHtml(character.displayName);
     const imageMarkup =
       !character.isGroup && character.imageUrl
-        ? `<img src="${character.imageUrl}" alt="${escapedName}" class="character-css-image" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
+        ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${escapedName}" class="character-css-image" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
         : '';
     const groupSize = this.cssGroups.get(character.id)?.length || 0;
 
@@ -2299,6 +3553,7 @@ ${imageMarkup}
 <div class="character-css-placeholder" ${imageMarkup ? 'hidden' : ''}>
 <i class="bi ${character.isGroup ? 'bi-collection-fill' : 'bi-person-circle'}"></i>
 </div>
+${character.imageSource === 'umc' && imageMarkup ? `<span class="character-css-image-source">${this.escapeHtml(this.t('characters.umcImageSource', 'Image from UMC'))}</span>` : ''}
 </div>
 <div class="character-css-name">${escapedName}</div>
 ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</span>` : character.number ? `<span class="character-css-number">#${this.escapeHtml(character.number)}</span>` : ''}
@@ -2338,7 +3593,10 @@ ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</spa
 
     if (saving) {
       const activeElement = document.activeElement;
-      if (activeElement instanceof HTMLElement && inspector.contains(activeElement)) {
+      if (
+        activeElement instanceof HTMLElement &&
+        inspector.contains(activeElement)
+      ) {
         activeElement.blur();
       }
       inspector.setAttribute('aria-busy', 'true');
@@ -2389,13 +3647,14 @@ ${label}
     inspector.innerHTML = `
 <div class="character-css-inspector-header">
 <div class="character-css-inspector-thumb">
-${character.imageUrl ? `<img src="${character.imageUrl}" alt="${escapedName}">` : '<i class="bi bi-person-circle"></i>'}
+${character.imageUrl ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>` : '<i class="bi bi-person-circle"></i>'}
 </div>
 <div>
 <strong>${escapedName}</strong>
 <span>${this.escapeHtml(character.id)}</span>
 </div>
 </div>
+<div class="character-css-umc-image-controls" data-css-umc-image-controls hidden></div>
 <div class="character-css-inspector-actions">
 <button class="input-btn" type="button" data-css-action="duplicate-character">
 <i class="bi bi-copy"></i>
@@ -2413,6 +3672,8 @@ ${tabButton('msbt', 'MSBT Names')}
 </div>
 ${this.cssPanelMode === 'prc' ? this.renderCssPrcPanel(character) : this.renderCssMsbtPanel(character, slot)}
 `;
+
+    this.refreshCssUmcImageControls(character);
 
     inspector
       .querySelectorAll<HTMLButtonElement>('[data-css-panel-mode]')
@@ -2599,7 +3860,7 @@ ${options
 
     return `
 <div class="character-css-form">
-${field('Character ID', 'uiCharaId', character.id)}
+${field('Character ID', 'uiCharaId', this.getCssCharacterLookupId(character))}
 ${field('CSS Display Name', 'displayName', character.displayName)}
 ${field('Series ID', 'uiSeriesId', character.uiSeriesId)}
 ${field('Name ID', 'nameId', character.nameId)}
@@ -2855,6 +4116,8 @@ ${field('nam_stage_name', 'namStageName', slot.namStageName, true)}
       return;
     }
 
+    const previousImageLookupId = this.getCssCharacterLookupId(character);
+    const previousNameId = character.nameId;
     if (key === 'nameId') {
       character.nameId = String(value);
     } else if (key in character) {
@@ -2865,6 +4128,14 @@ ${field('nam_stage_name', 'namStageName', slot.namStageName, true)}
       this.setCssCharacterUpdate(character.id, key, String(value));
     } else {
       this.setCssCharacterUpdate(character.id, key, value);
+    }
+    if (
+      (key === 'uiCharaId' &&
+        this.getCssCharacterLookupId(character) !== previousImageLookupId) ||
+      (key === 'nameId' && character.nameId !== previousNameId)
+    ) {
+      this.scheduleCssCharacterImageLookup(character);
+      this.refreshCssCharacterImage(character);
     }
   }
 
@@ -3358,7 +4629,7 @@ Duplicate
 <div class="character-modal-body character-css-remove-body">
 <div class="character-css-remove-preview">
 <div class="character-css-hidden-thumb">
-${character.imageUrl ? `<img src="${character.imageUrl}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
+${character.imageUrl ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
 </div>
 <div>
 <strong>${this.escapeHtml(character.displayName)}</strong>
@@ -3629,7 +4900,7 @@ Remove
             (character, index) => `
 <div class="character-css-hidden-row character-css-group-row" data-character-id="${this.escapeHtml(character.id)}">
   <div class="character-css-hidden-thumb">
-    ${character.imageUrl ? `<img src="${character.imageUrl}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
+    ${character.imageUrl ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
   </div>
   <button class="character-css-group-character" type="button" data-action="select">${this.escapeHtml(character.displayName)}</button>
   <div class="character-css-group-actions">
@@ -3784,7 +5055,7 @@ ${
       return `
 <div class="character-css-hidden-row" data-character-id="${this.escapeHtml(character.id)}">
 <div class="character-css-hidden-thumb">
-${imageUrl ? `<img src="${imageUrl}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
+${imageUrl ? `<img src="${this.escapeHtml(imageUrl)}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
 </div>
 <span>${this.escapeHtml(character.displayName)}</span>
 <button class="input-btn" type="button" data-action="unhide-character">
@@ -4071,7 +5342,7 @@ ${this.renderCssPreviewRows(visibleCharacters, 13, 13)}
   renderCssPreviewTile(character: CharacterCssEntry) {
     const escapedName = this.escapeHtml(character.displayName);
     const image = character.imageUrl
-      ? `<img src="${character.imageUrl}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
+      ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
       : '';
 
     return `
@@ -4098,7 +5369,10 @@ ${image}
       const renamedCharacters = Object.fromEntries(this.cssRenamedCharacters);
       const characterUpdates = Object.fromEntries(this.cssCharacterUpdates);
       const charactersById = new Map(
-        this.getAllCssCharacters().map((character) => [character.id, character]),
+        this.getAllCssCharacters().map((character) => [
+          character.id,
+          character,
+        ]),
       );
       const result = await window.electronAPI.saveCharacterCssLayout({
         visibleCharacterIds: this.cssVisibleCharacters.map(
@@ -4130,7 +5404,8 @@ ${image}
       let layoutRefreshed = false;
 
       try {
-        const refreshedLayout = await window.electronAPI.getCharacterCssLayout();
+        const refreshedLayout =
+          await window.electronAPI.getCharacterCssLayout();
         if (!refreshedLayout.success) {
           throw new Error(
             refreshedLayout.error || 'Failed to refresh character CSS layout',
@@ -4177,7 +5452,10 @@ ${image}
       this.cssRenamedCharacters.clear();
       this.cssCharacterUpdates.clear();
       this.cssCreatedGroups.clear();
-      window.toastManager?.success?.('Character CSS Layout saved as .prc.', 3500);
+      window.toastManager?.success?.(
+        'Character CSS Layout saved as .prc.',
+        3500,
+      );
       if (result.stderr?.includes('MSBT changes')) {
         window.toastManager?.warning?.(
           'Layout saved, but MSBT names need dotnet to be regenerated.',
@@ -4244,7 +5522,9 @@ ${image}
 <p id="characters-loading-status" style="font-size: 13px; color: var(--text-muted); margin-top: 8px;"></p>
 </div>
 `;
-      const videoContainer = document.getElementById('characters-loading-video');
+      const videoContainer = document.getElementById(
+        'characters-loading-video',
+      );
       if (videoContainer) {
         window.mountLoadingVideo(videoContainer);
       }

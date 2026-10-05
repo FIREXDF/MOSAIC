@@ -20,6 +20,7 @@ import { CharacterCssHandlers } from './ipc/handlers/character-css-handlers';
 import { ModProfileHandlers } from './ipc/handlers/mod-profile-handlers';
 import { ConfigBackupHandlers } from './ipc/handlers/config-backup-handlers';
 import { FeedbackHandlers } from './ipc/handlers/feedback-handlers';
+import { UmcHandlers } from './ipc/handlers/umc-handlers';
 import { ParamsWithoutFirstArg } from './types/common';
 import { WindowHandlers } from './ipc/handlers/window-handlers';
 import { DiscordHandlers } from './ipc/handlers/discord-handlers';
@@ -94,6 +95,7 @@ const invokeCharacterCssHandler = wrapInvoke<CharacterCssHandlers>();
 const invokeModProfileHandler = wrapInvoke<ModProfileHandlers>();
 const invokeConfigBackupHandler = wrapInvoke<ConfigBackupHandlers>();
 const invokeFeedbackHandler = wrapInvoke<FeedbackHandlers>();
+const invokeUmcHandler = wrapInvoke<UmcHandlers>();
 
 const registerProtocolCallback = wrapEventCallback<ProtocolHandlerEvents>();
 const registerMainCallback = wrapEventCallback<MainEvents>();
@@ -223,6 +225,9 @@ const electronAPI = {
   loadStageLayoutPreset: invokeStageHandler('load-stage-layout-preset'),
   saveStageLayoutPreset: invokeStageHandler('save-stage-layout-preset'),
   getCharacterCssLayout: invokeCharacterCssHandler('get-character-css-layout'),
+  getCssCharacterImages: invokeCharacterCssHandler('get-css-character-images'),
+  selectCssCharacterImage: invokeCharacterCssHandler('select-css-character-image'),
+  removeCssCharacterImage: invokeCharacterCssHandler('remove-css-character-image'),
   selectCharacterCssSourceFile: invokeCharacterCssHandler('select-character-css-source-file'),
   importCharacterCssSourceFiles: invokeCharacterCssHandler('import-character-css-source-files'),
   saveCharacterCssLayout: invokeCharacterCssHandler('save-character-css-layout'),
@@ -235,6 +240,10 @@ const electronAPI = {
   exportConfigBackup: invokeConfigBackupHandler('export-config-backup'),
   restoreConfigBackup: invokeConfigBackupHandler('restore-config-backup'),
   submitFeedback: invokeFeedbackHandler('submit-feedback'),
+  getUmcMovesets: invokeUmcHandler('get-umc-movesets'),
+  getUmcMovesetsByGameBanana: invokeUmcHandler('get-umc-movesets-by-gamebanana'),
+  getUmcCharacterImage: invokeUmcHandler('get-umc-character-image'),
+  getUmcCompatibility: invokeUmcHandler('get-umc-compatibility'),
 
   store: {
     get: invokeStoreHandler('store-get'),
