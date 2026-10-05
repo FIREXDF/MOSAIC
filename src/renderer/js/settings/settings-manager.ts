@@ -94,6 +94,10 @@ class SettingsManager {
       this.settings.pluginsPath,
     );
     await window.electronAPI.store.set(
+      'hardwareLibraryMode',
+      this.settings.hardwareLibraryMode,
+    );
+    await window.electronAPI.store.set(
       'primaryModsPath',
       this.settings.primaryModsPath,
     );
@@ -1383,10 +1387,11 @@ class SettingsManager {
       });
 
       options.forEach((option) => {
-        option.addEventListener('click', () => {
+        option.addEventListener('click', async () => {
           const value = this.normalizeSwitchTransferMethod(
             option.dataset.value,
           );
+          const previousDirectMode = this.isDirectSwitchLibraryMode();
           const text = option.querySelector<HTMLElement>('span')!.textContent;
           const i18nKey =
             option.querySelector<HTMLElement>('span')!.dataset.i18n;
@@ -1404,8 +1409,11 @@ class SettingsManager {
           switchTransferMethodSelect.classList.remove('open');
 
           this.settings.switchTransferMethod = value;
-          this.saveSettings();
+          await this.saveSettings();
           this.updateSwitchTransferMethodUI();
+          if (previousDirectMode && !this.isDirectSwitchLibraryMode()) {
+            await this.refreshCurrentLibraryLists();
+          }
         });
       });
 
@@ -1890,6 +1898,9 @@ class SettingsManager {
       options.forEach((option) => {
         option.addEventListener('click', async () => {
           const value = this.normalizeHardwareLibraryMode(option.dataset.value);
+          if (value === 'direct' && this.getSwitchTransferMethod() === 'ftp') {
+            return;
+          }
           const previousMode = this.normalizeHardwareLibraryMode(
             this.settings.hardwareLibraryMode,
           );
@@ -3505,6 +3516,7 @@ class SettingsManager {
     if (transferMethod === 'drive') {
       this.updateSwitchDriveLetterUI();
     }
+    this.updateHardwareLibraryModeUI();
   }
 
   updateSwitchSyncModeUI() {
@@ -4417,12 +4429,14 @@ class SettingsManager {
     const options = hardwareLibraryModeSelect.querySelectorAll<HTMLElement>(
       '.custom-select-option',
     );
-    const currentMode = this.normalizeHardwareLibraryMode(
-      this.settings.hardwareLibraryMode,
-    );
-    this.settings.hardwareLibraryMode = currentMode;
+    const currentMode = this.getHardwareLibraryMode();
+    const ftpOnly = this.getSwitchTransferMethod() === 'ftp';
 
     options.forEach((option) => {
+      const unavailable = ftpOnly && option.dataset.value === 'direct';
+      option.hidden = unavailable;
+      option.style.display = unavailable ? 'none' : '';
+      option.setAttribute('aria-disabled', String(unavailable));
       const isActive = option.dataset.value === currentMode;
       option.classList.toggle('active', isActive);
 
@@ -4434,6 +4448,17 @@ class SettingsManager {
         }
       }
     });
+
+    const hint = document.querySelector<HTMLElement>(
+      '#hardware-library-mode-hint',
+    );
+    if (hint) {
+      const key = ftpOnly
+        ? 'settings.hardwareLibraryModeFtpHint'
+        : 'settings.hardwareLibraryModeHint';
+      hint.dataset.i18n = key;
+      hint.textContent = this.translate(key);
+    }
   }
 
   updateHardwareLibraryModeVisibility() {
@@ -4581,12 +4606,29 @@ class SettingsManager {
   isDirectSwitchLibraryMode() {
     return (
       this.getAppRunMode() === 'hardware' &&
-      this.normalizeHardwareLibraryMode(this.settings.hardwareLibraryMode) ===
-        'direct'
+      this.getHardwareLibraryMode() === 'direct'
     );
   }
 
   applyHardwareLibraryModePaths() {
+    if (
+      this.getSwitchTransferMethod() === 'ftp' &&
+      this.settings.hardwareLibraryMode === 'direct' &&
+      this.directLibraryPathsApplied === null
+    ) {
+      // Restore the PC library when loading an older FTP + direct configuration.
+      this.directLibraryPathsApplied = true;
+      const activeLibrary = this.settings.activeModsLibrary;
+      if (
+        this.getConfiguredModsLibraryPath(activeLibrary) === this.settings.modsPath
+      ) {
+        this.setConfiguredModsLibraryPath(
+          activeLibrary,
+          this.settings.localModsPath,
+        );
+      }
+    }
+    this.settings.hardwareLibraryMode = this.getHardwareLibraryMode();
     const directMode = this.isDirectSwitchLibraryMode();
     if (directMode) {
       this.syncSwitchDriveFromLibraryPaths();
@@ -4640,11 +4682,14 @@ class SettingsManager {
 
     this.updateModsFolderUI();
     this.updatePluginsFolderUI();
+    this.updateHardwareLibraryModeUI();
   }
 
   async refreshCurrentLibraryLists() {
     if (this.settings.modsPath) {
       await this.refreshModsListForPath(this.settings.modsPath);
+    } else {
+      await window.modManager?.fetchMods?.();
     }
 
     if (
@@ -4654,6 +4699,8 @@ class SettingsManager {
       await window.pluginManager.loadPluginsFromFolder(
         this.settings.pluginsPath,
       );
+    } else if (!this.settings.pluginsPath) {
+      await window.pluginManager?.fetchPlugins?.();
     }
   }
 
@@ -5119,6 +5166,9 @@ class SettingsManager {
   }
 
   getHardwareLibraryMode() {
+    if (this.getSwitchTransferMethod() === 'ftp') {
+      return 'local';
+    }
     return this.normalizeHardwareLibraryMode(this.settings.hardwareLibraryMode);
   }
 

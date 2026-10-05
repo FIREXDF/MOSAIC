@@ -605,6 +605,7 @@
     "hardwareLibraryModeLocal": "Garder les mods sur ce PC et synchroniser",
     "hardwareLibraryModeDirect": "Lire les mods directement depuis la Switch",
     "hardwareLibraryModeHint": "Le mode synchronisation garde la librairie MOSAIC sur ce PC. Le mode direct utilise la carte SD Switch montée comme librairie.",
+    "hardwareLibraryModeFtpHint": "Avec FTP, garde tes mods et plugins sur ce PC, puis transfère-les vers la Switch. La lecture directe de la bibliothèque est indisponible avec FTP.",
     "soundNotification": "Notifications",
     "soundError": "Erreurs",
     "soundComplete": "Terminé",

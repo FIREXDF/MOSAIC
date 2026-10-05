@@ -46,6 +46,16 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   };
 
+  const getHardwareLibraryMode = async () => {
+    if ((await apiWrapper.storeGet('switchTransferMethod')) === 'ftp') {
+      return 'local';
+    }
+    return (
+      (await apiWrapper.storeGet('tutorial.hardwareLibraryMode')) ||
+      (await apiWrapper.storeGet('hardwareLibraryMode'))
+    );
+  };
+
   const chooseArcropolisRelease = async (container: HTMLElement) => {
     const [recommendedRelease, latestRelease] = await Promise.all([
       window.tutorialAPI.getGithubRelease('Raytwo/ARCropolis', 'v4.0.8'),
@@ -1248,7 +1258,7 @@ document.addEventListener('DOMContentLoaded', () => {
       content: `
 <div style="text-align: center;">
     <h3 style="color: #fff; margin-bottom: 12px; font-size: 22px; font-weight: 700;">How do you want to manage your mods?</h3>
-    <p style="margin: 0 auto 24px; max-width: 560px; color: rgba(255,255,255,0.68); font-size: 14px; line-height: 1.6;">Choose whether MOSAIC keeps a local mod library on this PC and syncs it to your Switch, or reads the mounted Switch SD card directly.</p>
+    <p id="hardware-library-description" style="margin: 0 auto 24px; max-width: 560px; color: rgba(255,255,255,0.68); font-size: 14px; line-height: 1.6;">Choose whether MOSAIC keeps a local mod library on this PC and syncs it to your Switch, or reads the mounted Switch SD card directly.</p>
 
     <div style="display: flex; gap: 16px; max-width: 680px; margin: 0 auto;">
         <label class="hardware-library-option" data-value="local" style="flex: 1; position: relative; cursor: pointer;">
@@ -1304,6 +1314,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const status = document.querySelector<HTMLElement>(
           '#hardware-library-status',
         );
+        const ftpOnly =
+          (await apiWrapper.storeGet('switchTransferMethod')) === 'ftp';
+        const directRadio = document.querySelector<HTMLInputElement>(
+          'input[name="hardware-library-mode"][value="direct"]',
+        );
+        if (directRadio) {
+          directRadio.disabled = ftpOnly;
+          const directOption = directRadio.closest<HTMLElement>(
+            '.hardware-library-option',
+          );
+          if (directOption) {
+            directOption.style.display = ftpOnly ? 'none' : '';
+          }
+        }
+        if (ftpOnly) {
+          const description = document.querySelector<HTMLElement>(
+            '#hardware-library-description',
+          );
+          if (description) {
+            description.textContent =
+              'FTP requires keeping mods on this PC and transferring them to the Switch. Direct library access is unavailable with FTP.';
+          }
+        }
 
         const disableNext = () => {
           if (nextBtn) {
@@ -1518,6 +1551,14 @@ document.addEventListener('DOMContentLoaded', () => {
           options: { requireSdSelection?: boolean } = {},
         ) => {
           if (!window.tutorialAPI) return;
+          const useFtp =
+            (await apiWrapper.storeGet('switchTransferMethod')) === 'ftp';
+          if (useFtp) {
+            mode = 'local';
+          }
+          radios.forEach((radio) => {
+            radio.checked = radio.value === mode;
+          });
 
           await window.tutorialAPI.store.set(
             'tutorial.hardwareLibraryMode',
@@ -1525,7 +1566,10 @@ document.addEventListener('DOMContentLoaded', () => {
           );
           await window.tutorialAPI.store.set('hardwareLibraryMode', mode);
           await window.tutorialAPI.store.set('appRunMode', 'hardware');
-          await window.tutorialAPI.store.set('switchTransferMethod', 'drive');
+          await window.tutorialAPI.store.set(
+            'switchTransferMethod',
+            useFtp ? 'ftp' : 'drive',
+          );
 
           const sdDrive =
             ((await apiWrapper.storeGet('tutorial.sdDrive')) as
@@ -1628,11 +1672,7 @@ document.addEventListener('DOMContentLoaded', () => {
           await renderProgressDots();
         };
 
-        const savedMode =
-          ((await apiWrapper.storeGet('tutorial.hardwareLibraryMode')) as
-            | string
-            | null) ||
-          ((await apiWrapper.storeGet('hardwareLibraryMode')) as string | null);
+        const savedMode = await getHardwareLibraryMode();
         if (savedMode === 'local' || savedMode === 'direct') {
           const radio = document.querySelector<HTMLInputElement>(
             `input[name="hardware-library-mode"][value="${savedMode}"]`,
@@ -3094,9 +3134,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'tutorial.arcropolisInstalled',
     );
     const emulatorType = await apiWrapper.storeGet('tutorial.emulatorType');
-    const hardwareLibraryMode =
-      (await apiWrapper.storeGet('tutorial.hardwareLibraryMode')) ||
-      (await apiWrapper.storeGet('hardwareLibraryMode'));
+    const hardwareLibraryMode = await getHardwareLibraryMode();
 
     if (title === 'Switch Modded Check') {
       return hardwareType === 'hardware';
@@ -3479,9 +3517,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'tutorial.arcropolisInstalled',
         );
         const switchModded = await apiWrapper.storeGet('tutorial.switchModded');
-        const hardwareLibraryMode =
-          (await apiWrapper.storeGet('tutorial.hardwareLibraryMode')) ||
-          (await apiWrapper.storeGet('hardwareLibraryMode'));
+        const hardwareLibraryMode = await getHardwareLibraryMode();
 
         let canShowConfigurePaths = false;
 
