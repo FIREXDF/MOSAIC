@@ -2,6 +2,59 @@ import * as https from 'https';
 import * as fs from 'fs';
 import * as path from 'path';
 import { FileExtractor } from './file-extractor';
+import { resolveVirtualPath } from './virtual-paths';
+
+export function findBundledArcropolisDirectory(
+  extractRoot: string,
+  sourcePath: string,
+): string | null {
+  const root = path.resolve(extractRoot);
+  let packageRoot = path.dirname(path.resolve(sourcePath));
+
+  while (true) {
+    const relativePath = path.relative(root, packageRoot);
+    if (
+      relativePath === '..' ||
+      relativePath.startsWith(`..${path.sep}`) ||
+      path.isAbsolute(relativePath)
+    ) {
+      return null;
+    }
+    const candidate = path.join(packageRoot, 'ultimate', 'arcropolis');
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
+      return candidate;
+    }
+    if (packageRoot === root) {
+      return null;
+    }
+    packageRoot = path.dirname(packageRoot);
+  }
+}
+
+export function getArcropolisDirectoryForLibrary(
+  pluginsPath: string,
+  modsPath?: string | null,
+): string {
+  const pluginsDirectory = path.resolve(resolveVirtualPath(pluginsPath));
+  if (
+    /\/(?:atmosphere|ultimate)\/contents\/01006a800016e000\/romfs\/skyline\/plugins$/i.test(
+      pluginsDirectory.replace(/\\/g, '/'),
+    )
+  ) {
+    const sdRoot = path.resolve(pluginsDirectory, '../../../../../..');
+    return path.join(sdRoot, 'ultimate', 'arcropolis');
+  }
+
+  if (modsPath) {
+    const modsDirectory = path.resolve(modsPath);
+    if (/\/ultimate\/mods$/i.test(modsDirectory.replace(/\\/g, '/'))) {
+      return path.join(path.dirname(modsDirectory), 'arcropolis');
+    }
+  }
+
+  // A standalone PC plugins library stages the SD tree for Switch transfers.
+  return path.join(pluginsDirectory, 'ultimate', 'arcropolis');
+}
 
 /**
  * Get a GitHub release, defaulting to the latest release.
@@ -74,11 +127,11 @@ async function getGitHubRelease(repo: string, tag?: string): Promise<{
 }
 
 /**
- * Get the latest ARCropolis release from GitHub
+ * Get the ARCropolis release used by the Latest installation option.
  * @returns {Promise<{tag: string, downloadUrl: string, version: string}>}
  */
 export async function getLatestArcropolisRelease() {
-  return getGitHubRelease('Raytwo/ARCropolis');
+  return getGitHubRelease('Raytwo/ARCropolis', 'v4.1.1');
 }
 
 export async function getArcropolisRelease(tag: string) {
@@ -329,12 +382,13 @@ export async function extractAndInstallSkyline(
 }
 
 /**
- * Extract ARCropolis ZIP and copy romfs files to target directory
+ * Install romfs and bundled ultimate/arcropolis files to the same SD card root.
  */
 export async function extractAndInstallArcropolis(
   zipPath: string,
   targetDir: string,
 ) {
+  let tempDir: string | null = null;
   try {
     if (!fs.existsSync(zipPath)) {
       throw new Error(`ZIP file does not exist: ${zipPath}`);
@@ -342,22 +396,11 @@ export async function extractAndInstallArcropolis(
 
     // Create temp extraction directory using os.tmpdir() for better compatibility
     const os = require('os');
-    const tempDir = path.join(os.tmpdir(), `arcropolis-extract-${Date.now()}`);
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'arcropolis-extract-'));
 
     try {
       await FileExtractor.extractArchive(zipPath, tempDir);
     } catch (error) {
-      // Cleanup on failure
-      if (fs.existsSync(tempDir)) {
-        try {
-          fs.rmSync(tempDir, { recursive: true, force: true });
-        } catch (cleanupError) {
-          console.warn('Failed to cleanup temp directory:', cleanupError);
-        }
-      }
       throw new Error(`Failed to extract ZIP: ${error.message}`);
     }
 
@@ -464,7 +507,34 @@ export async function extractAndInstallArcropolis(
       );
     }
 
-    // Ensure target directory exists
+    // Find the matching SD package root, including releases inside a wrapper folder.
+    const arcropolisSource = findBundledArcropolisDirectory(
+      tempDir,
+      romfsSource,
+    );
+
+    let arcropolisTarget: string | null = null;
+    if (arcropolisSource) {
+      const titleDir = path.resolve(targetDir);
+      const contentsDir = path.dirname(titleDir);
+      const atmosphereDir = path.dirname(contentsDir);
+      if (
+        path.basename(titleDir).toLowerCase() !== '01006a800016e000' ||
+        path.basename(contentsDir).toLowerCase() !== 'contents' ||
+        path.basename(atmosphereDir).toLowerCase() !== 'atmosphere'
+      ) {
+        throw new Error(
+          'Bundled ARCropolis resources require a target under atmosphere/contents/01006A800016E000.',
+        );
+      }
+      arcropolisTarget = path.join(
+        path.dirname(atmosphereDir),
+        'ultimate',
+        'arcropolis',
+      );
+    }
+
+    // Merge release files so existing mods, workspaces and configuration survive.
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
@@ -472,16 +542,27 @@ export async function extractAndInstallArcropolis(
     const romfsTarget = path.join(targetDir, 'romfs');
 
     copyRecursive(romfsSource, romfsTarget);
-    cleanup(tempDir);
+    if (arcropolisSource && arcropolisTarget) {
+      copyRecursive(arcropolisSource, arcropolisTarget);
+    }
 
     return {
       success: true,
       romfsPath: romfsTarget,
+      arcropolisPath: arcropolisTarget,
     };
   } catch (error) {
     throw new Error(
       `Failed to extract and install ARCropolis: ${error.message}`,
     );
+  } finally {
+    if (tempDir && fs.existsSync(tempDir)) {
+      try {
+        cleanup(tempDir);
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup temp directory:', cleanupError);
+      }
+    }
   }
 }
 

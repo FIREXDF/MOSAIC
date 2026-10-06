@@ -366,7 +366,8 @@ const PluginHandlers = {
     try {
       const result = await PluginUpdateInstaller.installUpdate(
         downloadUrl,
-        pluginPath,
+        resolveVirtualPath(pluginPath),
+        store.get('modsPath') as string | null | undefined,
       );
 
       if (result.success) {

@@ -179,18 +179,15 @@ class PluginMarketplace {
     }
 
     const [recommended, latest] = await Promise.all([
-      window.electronAPI.getGithubRelease(
-        'Raytwo/ARCropolis',
-        'v4.0.8',
-      ),
-      window.electronAPI.getGithubRelease('Raytwo/ARCropolis'),
+      window.electronAPI.getGithubRelease('Raytwo/ARCropolis', 'v4.0.8'),
+      window.electronAPI.getGithubRelease('Raytwo/ARCropolis', 'v4.1.1'),
     ]);
 
     if (!recommended.success) {
       throw new Error('ARCropolis 4.0.8 release is unavailable');
     }
     if (!latest.success) {
-      throw new Error('Latest ARCropolis release is unavailable');
+      throw new Error('ARCropolis 4.1.1 release is unavailable');
     }
 
     return { recommended, latest };

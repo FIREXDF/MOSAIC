@@ -59,20 +59,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const chooseArcropolisRelease = async (container: HTMLElement) => {
     const [recommendedRelease, latestRelease] = await Promise.all([
       window.tutorialAPI.getGithubRelease('Raytwo/ARCropolis', 'v4.0.8'),
-      window.tutorialAPI.getGithubRelease('Raytwo/ARCropolis'),
+      window.tutorialAPI.getGithubRelease('Raytwo/ARCropolis', 'v4.1.1'),
     ]);
 
     if (!recommendedRelease.success) {
       throw new Error('Failed to get recommended ARCropolis 4.0.8 release');
     }
     if (!latestRelease.success) {
-      throw new Error('Failed to get latest ARCropolis release');
+      throw new Error('Failed to get ARCropolis 4.1.1 release');
     }
 
     const latestCompatibility =
-      latestRelease.version === '4.0.9'
-        ? 'Supports only Super Smash Bros. Ultimate 13.0.5.'
-        : 'Check the release notes for supported game versions.';
+      'Supports only Super Smash Bros. Ultimate 13.0.5.';
 
     container.innerHTML = `
       <fieldset style="border: 0; margin: 0; padding: 0; display: grid; gap: 12px;">

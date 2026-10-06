@@ -6,6 +6,7 @@ import {
   handleError,
 } from '../../../utils/error-handler';
 import { resolveDrivePath } from '../../../utils/drive-detector';
+import { collectArcropolisResources } from './switch-transfer-files';
 import {
   SwitchTransferConfig,
   SwitchTransferProgressPayload,
@@ -147,6 +148,7 @@ async function collectDriveTransferItems(
   config: SwitchTransferConfig,
   targetModsPath: string,
   targetPluginsPath: string,
+  targetArcropolisPath: string,
 ): Promise<DriveTransferItem[]> {
   const items: DriveTransferItem[] = [];
   const quickSync = config.switchSyncMode === 'quick';
@@ -222,6 +224,19 @@ async function collectDriveTransferItems(
         ],
       });
     }
+
+    for (const item of await collectArcropolisResources(
+      config.pluginsPath,
+      config.modsPath,
+    )) {
+      items.push({
+        itemName: 'ARCropolis resources',
+        files: await collectDirectoryFiles(
+          item.localPath,
+          path.join(targetArcropolisPath, item.itemName),
+        ),
+      });
+    }
   }
 
   return items;
@@ -265,6 +280,7 @@ export async function sendModsToDrive(
       config,
       targetModsPath,
       targetPluginsPath,
+      path.join(drivePath, 'ultimate', 'arcropolis'),
     );
     const totalItems = transferItems.length;
     const totalFiles = transferItems.reduce(
