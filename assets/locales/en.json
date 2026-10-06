@@ -381,6 +381,8 @@
     "exportMods": "Export Mod List",
     "allCategories": "All Categories",
     "noModsAvailable": "No mods available.",
+    "modsFolderNotConfigured": "No mods folder configured.",
+    "chooseModsFolderInSettings": "Choose a mods folder in Settings > Library.",
     "downloadOnGameBanana": "Go download some on {{site}}!",
     "noModsForFilter": "No mods found for this search/filter.",
     "checkGameBanana": "Looking for something new? Check {{site}}!",

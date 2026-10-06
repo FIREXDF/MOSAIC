@@ -387,6 +387,8 @@
     "actionOpenFolder": "Ouvrir le Dossier",
     "actionPlay": "Jouer",
     "noModsAvailable": "Aucun mod disponible.",
+    "modsFolderNotConfigured": "Aucun dossier de mods configuré.",
+    "chooseModsFolderInSettings": "Choisis un dossier de mods dans Paramètres > Bibliothèque.",
     "downloadOnGameBanana": "Téléchargez-en sur {{site}} !",
     "noModsForFilter": "Aucun mod ne correspond à cette recherche ou à ce filtre.",
     "checkGameBanana": "Vous cherchez quelque chose de nouveau ? Consultez {{site}} !",
