@@ -335,6 +335,7 @@ const tutorialAPI = {
   },
 
   closeTutorial: invokeTutorialHandler('close-tutorial-window'),
+  completeTutorial: invokeTutorialHandler('complete-tutorial'),
   skipTutorial: invokeTutorialHandler('skip-tutorial'),
   tutorialIntroComplete: invokeTutorialHandler('tutorial-intro-complete'),
   getMigrationStatus: invokeMigrationHandler('get-migration-status'),

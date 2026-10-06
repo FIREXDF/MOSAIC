@@ -143,7 +143,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   const params = new URLSearchParams(window.location.search);
-  if (params.get('postTutorialIntro') === 'true') {
+  const guideProgress = await window.electronAPI?.store.get('tutorial.guideProgress');
+  if (params.get('postTutorialIntro') === 'true' || guideProgress) {
     setTimeout(() => window.tutorial?.showInApp?.(), 800);
   }
 

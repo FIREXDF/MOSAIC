@@ -306,6 +306,31 @@ function createWindow(options: CreateWindowOptions = {}) {
 }
 
 const gotTheLock = app.requestSingleInstanceLock();
+let isQuitting = false;
+
+app.on('before-quit', () => {
+  isQuitting = true;
+});
+
+function createStartupWindow() {
+  if (store.get('hasLaunchedBefore') && !store.get('tutorial.setupProgress')) {
+    createWindow({ startup: true });
+    return;
+  }
+
+  console.log('Opening unfinished setup tutorial');
+  const tutWindow = createTutorialWindow();
+  tutWindow.once('closed', () => {
+    if (isQuitting) return;
+
+    if (!store.get('tutorial.setupProgress')) {
+      createWindow({ postTutorialIntro: true });
+    } else {
+      // Closing the setup window pauses onboarding instead of completing it.
+      app.quit();
+    }
+  });
+}
 
 if (!gotTheLock) {
   app.quit();
@@ -359,34 +384,11 @@ if (!gotTheLock) {
       );
     }
 
-    const hasLaunchedBefore = await store.get('hasLaunchedBefore');
-
-    if (!hasLaunchedBefore) {
-      console.log('First launch - opening tutorial only');
-      await store.set('hasLaunchedBefore', true);
-
-      const tempWindow = new BrowserWindow({
-        show: false,
-        webPreferences: {
-          nodeIntegration: false,
-        },
-      });
-
-      const tutWindow = createTutorialWindow(tempWindow);
-
-      tutWindow.on('closed', () => {
-        tempWindow.close();
-
-        console.log('omg he finish the tutorial lets gooo, go to the main app');
-        createWindow({ postTutorialIntro: true });
-      });
-    } else {
-      createWindow({ startup: true });
-    }
+    createStartupWindow();
 
     app.on('activate', function () {
       if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow({ startup: true });
+        createStartupWindow();
       }
     });
   });

@@ -3118,6 +3118,8 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
 
   let currentStep = 0;
+  let resumedStep: number | null = null;
+  let resumeMessage = "Let's pick up where we left off.";
   let renderTimeout: ReturnType<typeof setTimeout> | null = null;
 
   async function isStepRelevant(index: number): Promise<boolean> {
@@ -3309,10 +3311,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log('Total tutorial steps:', steps.length);
 
-    // If restored from dev mode reload, create properties
-    if (tutorialDevMode) {
-      createDevPanel();
-      // Skip startup animation
+    let resumeSavedStep = false;
+    if (!tutorialDevMode && window.tutorialAPI) {
+      try {
+        const progress = await apiWrapper.storeGet('tutorial.setupProgress');
+        const savedIndex = steps.findIndex(
+          (step) => step.title === progress?.stepTitle,
+        );
+        if (savedIndex >= 0) {
+          currentStep = (await isStepRelevant(savedIndex))
+            ? savedIndex
+            : await getPreviousRelevantStep(savedIndex);
+          resumeSavedStep = true;
+          resumedStep = currentStep;
+        }
+      } catch (error) {
+        console.error('Could not restore tutorial progress:', error);
+      }
+    }
+
+    if (tutorialDevMode || resumeSavedStep) {
+      if (tutorialDevMode) createDevPanel();
+      // Resume directly at the checkpoint without replaying the intro.
       document.querySelector<HTMLElement>(
         '#intro-tutorial-frame',
       )!.style.display = 'none';
@@ -3328,7 +3348,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .querySelector<HTMLElement>('.tutorial-window')!
         .classList.add('white-bg');
       await window.tutorialAPI?.tutorialIntroComplete?.();
-      renderProgressDots().then(() => renderStep(0));
+      renderProgressDots().then(() => renderStep(currentStep));
     } else {
       startAnimation();
     }
@@ -3357,6 +3377,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const translations = result?.success
         ? (result.translations as Record<string, any>)
         : null;
+      if (typeof translations?.tutorial?.resumeMessage === 'string') {
+        resumeMessage = translations.tutorial.resumeMessage;
+      }
       const welcomeTitle = translations?.tutorial?.welcomeTitle;
       if (typeof welcomeTitle === 'string') {
         const localizedAppName = welcomeTitle.match(/MOSAIC|FightPlanner/i)?.[0];
@@ -3864,6 +3887,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderStep(index) {
     const step = steps[index];
+    if (!step) return;
+    if (index !== resumedStep) resumedStep = null;
+    const showResumeMessage = index === resumedStep;
+    currentStep = index;
+    if (!tutorialDevMode && window.tutorialAPI) {
+      // Titles already identify branches; unlike indexes, they survive migration steps.
+      void window.tutorialAPI.store
+        .set('tutorial.setupProgress', { stepTitle: step.title })
+        .then((result) => {
+          if (!result.success) {
+            console.error('Could not save tutorial progress:', result);
+          }
+        })
+        .catch((error) => console.error('Could not save tutorial progress:', error));
+    }
     const contentDiv = document.querySelector<HTMLElement>('#tutorial-content');
     const prevBtn = document.querySelector<HTMLElement>('#prev-btn');
     const nextBtn = document.querySelector<HTMLElement>('#next-btn');
@@ -3895,6 +3933,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTimeout = null;
       contentDiv!.innerHTML = `
 <div class="tutorial-step">
+${showResumeMessage ? `<p class="tutorial-resume-message" role="status">${escapeTutorialHtml(resumeMessage)}</p>` : ''}
 <div class="tutorial-step-header">
 <div class="tutorial-step-icon">
 <i class="bi ${step.icon}"></i>
@@ -3987,7 +4026,7 @@ ${step.content}
       await renderProgressDots();
       renderStep(currentStep);
     } else {
-      closeTutorial();
+      await closeTutorial('complete');
     }
   }
 
@@ -4000,14 +4039,20 @@ ${step.content}
     }
   }
 
-  function closeTutorial() {
+  async function closeTutorial(action: 'close' | 'complete' | 'skip' = 'close') {
     console.log('Closing tutorial...');
     console.log('window.tutorialAPI:', window.tutorialAPI);
 
     if (window.tutorialAPI) {
       console.log('Calling tutorialAPI.closeTutorial()');
       try {
-        window.tutorialAPI.closeTutorial();
+        if (action === 'complete') {
+          await window.tutorialAPI.completeTutorial();
+        } else if (action === 'skip') {
+          await window.tutorialAPI.skipTutorial();
+        } else {
+          await window.tutorialAPI.closeTutorial();
+        }
         console.log('✓ Close event sent');
       } catch (error) {
         console.error('Error calling closeTutorial:', error);
@@ -4025,7 +4070,7 @@ ${step.content}
 
   function skipTutorial() {
     if (confirm('Are you sure you want to skip the tutorial?')) {
-      closeTutorial();
+      void closeTutorial('skip');
     }
   }
 

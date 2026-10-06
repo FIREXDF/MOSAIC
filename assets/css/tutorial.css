@@ -110,6 +110,12 @@
   margin-top: 18px;
 }
 
+.tutorial-guide-panel .tutorial-guide-resume {
+  margin: 0 34px 10px 0;
+  color: var(--accent-color);
+  font-size: 13px;
+}
+
 .tutorial-install-choice {
   grid-template-columns: 1fr;
   gap: 10px;

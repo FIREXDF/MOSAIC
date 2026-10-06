@@ -2,6 +2,7 @@ import { BrowserWindow, IpcMain, dialog, ipcMain } from 'electron';
 import {
   createTutorialWindow,
   closeTutorialWindow,
+  completeTutorialWindow,
 } from '../../tutorial-window';
 import {
   handleError,
@@ -54,7 +55,12 @@ const TutorialHandlers = {
 
   ['skip-tutorial']: async (common: BaseHandlerArg) => {
     console.log('Received skip-tutorial event');
-    closeTutorialWindow();
+    completeTutorialWindow();
+    return { success: true };
+  },
+
+  ['complete-tutorial']: async (common: BaseHandlerArg) => {
+    completeTutorialWindow();
     return { success: true };
   },
 

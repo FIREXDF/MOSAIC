@@ -1405,6 +1405,7 @@
   "tutorial": {
     "welcomeTitle": "Bienvenue dans MOSAIC 4",
     "welcomeSubtitle": "Votre Gestionnaire de Mods Ultime",
+    "resumeMessage": "Reprenons là où nous en étions.",
     "skipTutorial": "Passer le Tutoriel",
     "previous": "Précédent",
     "next": "Suivant"

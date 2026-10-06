@@ -1405,6 +1405,7 @@
   "tutorial": {
     "welcomeTitle": "Welcome to MOSAIC 4",
     "welcomeSubtitle": "Your Ultimate Mod Manager",
+    "resumeMessage": "Let's pick up where we left off.",
     "skipTutorial": "Skip Tutorial",
     "previous": "Previous",
     "next": "Next"
