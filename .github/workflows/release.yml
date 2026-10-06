@@ -16,7 +16,12 @@ on:
         options:
           - alpha
           - beta
+          - stable
           - custom
+      base_version:
+        description: 'Base version for alpha, beta, or stable (e.g. 4.1.0; blank = automatic)'
+        required: false
+        default: ''
       custom_version:
         description: 'Custom Version (only if Type is custom)'
         required: false
@@ -57,11 +62,17 @@ jobs:
       - name: Calculate and set version
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         shell: bash
+        env:
+          VERSION_TYPE: ${{ github.event.inputs.version_type }}
+          BASE_VERSION: ${{ github.event.inputs.base_version }}
+          CUSTOM_VERSION: ${{ github.event.inputs.custom_version }}
         run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
+          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
             node scripts/bump-version.js alpha
+          elif [ "$VERSION_TYPE" == "custom" ]; then
+            node scripts/bump-version.js custom "$CUSTOM_VERSION"
           else
-            node scripts/bump-version.js ${{ github.event.inputs.version_type }} ${{ github.event.inputs.custom_version }}
+            node scripts/bump-version.js "$VERSION_TYPE" "$BASE_VERSION"
           fi
 
       - name: Build and publish (Windows)

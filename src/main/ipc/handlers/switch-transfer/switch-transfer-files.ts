@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import { getArcropolisDirectoryForLibrary } from '../../../utils/arcropolis-installer';
 
 export interface TransferItem {
   localPath: string;
@@ -125,4 +126,41 @@ export async function collectPluginFiles(
   }
 
   return items;
+}
+
+export async function collectArcropolisResources(
+  pluginsPath?: string | null,
+  modsPath?: string | null,
+): Promise<TransferItem[]> {
+  if (!pluginsPath) {
+    return [];
+  }
+
+  const resourcesPath = path.join(
+    getArcropolisDirectoryForLibrary(pluginsPath, modsPath),
+    'resources',
+  );
+  try {
+    const plugins = await fs.readdir(pluginsPath);
+    if (
+      !plugins.some((name) => name.toLowerCase() === 'libarcropolis.nro') ||
+      !(await fs.stat(resourcesPath)).isDirectory()
+    ) {
+      return [];
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return [];
+    }
+    throw error;
+  }
+
+  return [
+    {
+      localPath: resourcesPath,
+      itemName: 'resources',
+      kind: 'directory',
+      ...(await summarizeDirectory(resourcesPath)),
+    },
+  ];
 }

@@ -14,6 +14,7 @@ import { sendModsToDrive } from './drive-transfer';
 import {
   collectModDirectories,
   collectPluginFiles,
+  collectArcropolisResources,
   TransferItem,
 } from './switch-transfer-files';
 import {
@@ -173,11 +174,14 @@ const SwitchTransferHandlers = {
         config.switchFtpPluginsPath,
         '/atmosphere/contents/01006A800016E000/romfs/skyline/plugins',
       );
-      const [modItems, pluginItems] = await Promise.all([
+      const [modItems, pluginItems, resourceItems] = await Promise.all([
         collectModDirectories(config.modsPath, selectedModPaths),
         quickSync
           ? Promise.resolve([])
           : collectPluginFiles(config.pluginsPath),
+        quickSync
+          ? Promise.resolve([])
+          : collectArcropolisResources(config.pluginsPath, config.modsPath),
       ]);
       const transferItems = [
         ...modItems.map((item) => ({
@@ -187,6 +191,10 @@ const SwitchTransferHandlers = {
         ...pluginItems.map((item) => ({
           ...item,
           remoteBasePath: remotePluginsPath,
+        })),
+        ...resourceItems.map((item) => ({
+          ...item,
+          remoteBasePath: '/ultimate/arcropolis',
         })),
       ];
 
@@ -374,11 +382,14 @@ const MtpHandlers = {
             .map((download) => download.folderPath)
             .filter((folderPath): folderPath is string => !!folderPath)
         : undefined;
-      const [modItems, pluginItems] = await Promise.all([
+      const [modItems, pluginItems, resourceItems] = await Promise.all([
         collectModDirectories(config.modsPath, selectedModPaths),
         quickSync
           ? Promise.resolve([])
           : collectPluginFiles(config.pluginsPath),
+        quickSync
+          ? Promise.resolve([])
+          : collectArcropolisResources(config.pluginsPath, config.modsPath),
       ]);
       const transferItems = [
         ...modItems.map((item) => ({
@@ -388,6 +399,10 @@ const MtpHandlers = {
         ...pluginItems.map((item) => ({
           ...item,
           remoteBasePath: remotePluginsPath,
+        })),
+        ...resourceItems.map((item) => ({
+          ...item,
+          remoteBasePath: '/ultimate/arcropolis',
         })),
       ];
       const files = (

@@ -2,11 +2,11 @@ import * as https from 'https';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import { FileExtractor } from './utils/file-extractor';
-
-const execAsync = promisify(exec);
+import {
+  findBundledArcropolisDirectory,
+  getArcropolisDirectoryForLibrary,
+} from './utils/arcropolis-installer';
 
 export type PluginInstallResult =
   | {
@@ -111,7 +111,9 @@ export default class PluginUpdateInstaller {
   static async installUpdate(
     downloadUrl: string,
     pluginPath: string,
+    modsPath?: string | null,
   ): Promise<PluginInstallResult> {
+    let tempRoot: string | null = null;
     try {
       if (!downloadUrl) {
         return {
@@ -120,7 +122,7 @@ export default class PluginUpdateInstaller {
         };
       }
 
-      const tempDir = os.tmpdir();
+      tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-update-'));
       const isZip =
         downloadUrl.toLowerCase().endsWith('.zip') ||
         downloadUrl.toLowerCase().includes('.zip');
@@ -129,10 +131,10 @@ export default class PluginUpdateInstaller {
       let nroFilePath;
 
       let actualFileName;
+      let extractDir: string | null = null;
 
       if (isZip) {
-        const tempZipName = `plugin-download-${Date.now()}.zip`;
-        downloadedFilePath = path.join(tempDir, tempZipName);
+        downloadedFilePath = path.join(tempRoot, 'release.zip');
 
         await this.downloadFile(downloadUrl, downloadedFilePath);
 
@@ -143,18 +145,12 @@ export default class PluginUpdateInstaller {
           };
         }
 
-        const extractDir = path.join(tempDir, `plugin-extract-${Date.now()}`);
+        extractDir = path.join(tempRoot, 'extracted');
         await FileExtractor.extractArchive(downloadedFilePath, extractDir);
 
         nroFilePath = this.findNroFile(extractDir);
 
         if (!nroFilePath) {
-          if (fs.existsSync(extractDir)) {
-            fs.rmSync(extractDir, { recursive: true, force: true });
-          }
-          if (fs.existsSync(downloadedFilePath)) {
-            fs.unlinkSync(downloadedFilePath);
-          }
           return {
             success: false,
             error: 'No .nro file found in the ZIP archive',
@@ -178,8 +174,7 @@ export default class PluginUpdateInstaller {
           actualFileName = path.basename(pluginPath);
         }
 
-        const tempFileName = `plugin-update-${Date.now()}.nro`;
-        downloadedFilePath = path.join(tempDir, tempFileName);
+        downloadedFilePath = path.join(tempRoot, 'plugin.nro');
         await this.downloadFile(downloadUrl, downloadedFilePath);
         nroFilePath = downloadedFilePath;
       }
@@ -199,18 +194,21 @@ export default class PluginUpdateInstaller {
         fs.mkdirSync(pluginDir, { recursive: true });
       }
 
-      fs.copyFileSync(nroFilePath, finalPluginPath);
-
-      if (fs.existsSync(downloadedFilePath)) {
-        fs.unlinkSync(downloadedFilePath);
-      }
-
-      if (isZip && nroFilePath !== downloadedFilePath) {
-        const extractDir = path.dirname(nroFilePath);
-        if (fs.existsSync(extractDir)) {
-          fs.rmSync(extractDir, { recursive: true, force: true });
+      if (extractDir && actualFileName.toLowerCase() === 'libarcropolis.nro') {
+        const arcropolisSource = findBundledArcropolisDirectory(
+          extractDir,
+          nroFilePath,
+        );
+        if (arcropolisSource) {
+          const arcropolisTarget = getArcropolisDirectoryForLibrary(
+            pluginDir,
+            modsPath,
+          );
+          fs.cpSync(arcropolisSource, arcropolisTarget, { recursive: true });
         }
       }
+
+      fs.copyFileSync(nroFilePath, finalPluginPath);
 
       return {
         success: true,
@@ -222,6 +220,14 @@ export default class PluginUpdateInstaller {
         success: false,
         error: error.message,
       };
+    } finally {
+      if (tempRoot) {
+        try {
+          fs.rmSync(tempRoot, { recursive: true, force: true });
+        } catch (error) {
+          console.warn('Failed to clean up plugin update:', error);
+        }
+      }
     }
   }
 }

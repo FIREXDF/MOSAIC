@@ -646,9 +646,7 @@ export {};
     if (!document.body.contains(modal)) return;
 
     const latestCompatibility =
-      choices.latest.version === '4.0.9'
-        ? 'Supports only Super Smash Bros. Ultimate 13.0.5.'
-        : 'Check the release notes for supported game versions.';
+      'Supports only Super Smash Bros. Ultimate 13.0.5.';
 
     body.innerHTML = `
       <fieldset style="border: 0; margin: 0; padding: 0; display: grid; gap: 12px;">

@@ -46,23 +46,31 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   };
 
+  const getHardwareLibraryMode = async () => {
+    if ((await apiWrapper.storeGet('switchTransferMethod')) === 'ftp') {
+      return 'local';
+    }
+    return (
+      (await apiWrapper.storeGet('tutorial.hardwareLibraryMode')) ||
+      (await apiWrapper.storeGet('hardwareLibraryMode'))
+    );
+  };
+
   const chooseArcropolisRelease = async (container: HTMLElement) => {
     const [recommendedRelease, latestRelease] = await Promise.all([
       window.tutorialAPI.getGithubRelease('Raytwo/ARCropolis', 'v4.0.8'),
-      window.tutorialAPI.getGithubRelease('Raytwo/ARCropolis'),
+      window.tutorialAPI.getGithubRelease('Raytwo/ARCropolis', 'v4.1.1'),
     ]);
 
     if (!recommendedRelease.success) {
       throw new Error('Failed to get recommended ARCropolis 4.0.8 release');
     }
     if (!latestRelease.success) {
-      throw new Error('Failed to get latest ARCropolis release');
+      throw new Error('Failed to get ARCropolis 4.1.1 release');
     }
 
     const latestCompatibility =
-      latestRelease.version === '4.0.9'
-        ? 'Supports only Super Smash Bros. Ultimate 13.0.5.'
-        : 'Check the release notes for supported game versions.';
+      'Supports only Super Smash Bros. Ultimate 13.0.5.';
 
     container.innerHTML = `
       <fieldset style="border: 0; margin: 0; padding: 0; display: grid; gap: 12px;">
@@ -1248,7 +1256,7 @@ document.addEventListener('DOMContentLoaded', () => {
       content: `
 <div style="text-align: center;">
     <h3 style="color: #fff; margin-bottom: 12px; font-size: 22px; font-weight: 700;">How do you want to manage your mods?</h3>
-    <p style="margin: 0 auto 24px; max-width: 560px; color: rgba(255,255,255,0.68); font-size: 14px; line-height: 1.6;">Choose whether MOSAIC keeps a local mod library on this PC and syncs it to your Switch, or reads the mounted Switch SD card directly.</p>
+    <p id="hardware-library-description" style="margin: 0 auto 24px; max-width: 560px; color: rgba(255,255,255,0.68); font-size: 14px; line-height: 1.6;">Choose whether MOSAIC keeps a local mod library on this PC and syncs it to your Switch, or reads the mounted Switch SD card directly.</p>
 
     <div style="display: flex; gap: 16px; max-width: 680px; margin: 0 auto;">
         <label class="hardware-library-option" data-value="local" style="flex: 1; position: relative; cursor: pointer;">
@@ -1304,6 +1312,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const status = document.querySelector<HTMLElement>(
           '#hardware-library-status',
         );
+        const ftpOnly =
+          (await apiWrapper.storeGet('switchTransferMethod')) === 'ftp';
+        const directRadio = document.querySelector<HTMLInputElement>(
+          'input[name="hardware-library-mode"][value="direct"]',
+        );
+        if (directRadio) {
+          directRadio.disabled = ftpOnly;
+          const directOption = directRadio.closest<HTMLElement>(
+            '.hardware-library-option',
+          );
+          if (directOption) {
+            directOption.style.display = ftpOnly ? 'none' : '';
+          }
+        }
+        if (ftpOnly) {
+          const description = document.querySelector<HTMLElement>(
+            '#hardware-library-description',
+          );
+          if (description) {
+            description.textContent =
+              'FTP requires keeping mods on this PC and transferring them to the Switch. Direct library access is unavailable with FTP.';
+          }
+        }
 
         const disableNext = () => {
           if (nextBtn) {
@@ -1518,6 +1549,14 @@ document.addEventListener('DOMContentLoaded', () => {
           options: { requireSdSelection?: boolean } = {},
         ) => {
           if (!window.tutorialAPI) return;
+          const useFtp =
+            (await apiWrapper.storeGet('switchTransferMethod')) === 'ftp';
+          if (useFtp) {
+            mode = 'local';
+          }
+          radios.forEach((radio) => {
+            radio.checked = radio.value === mode;
+          });
 
           await window.tutorialAPI.store.set(
             'tutorial.hardwareLibraryMode',
@@ -1525,7 +1564,10 @@ document.addEventListener('DOMContentLoaded', () => {
           );
           await window.tutorialAPI.store.set('hardwareLibraryMode', mode);
           await window.tutorialAPI.store.set('appRunMode', 'hardware');
-          await window.tutorialAPI.store.set('switchTransferMethod', 'drive');
+          await window.tutorialAPI.store.set(
+            'switchTransferMethod',
+            useFtp ? 'ftp' : 'drive',
+          );
 
           const sdDrive =
             ((await apiWrapper.storeGet('tutorial.sdDrive')) as
@@ -1628,11 +1670,7 @@ document.addEventListener('DOMContentLoaded', () => {
           await renderProgressDots();
         };
 
-        const savedMode =
-          ((await apiWrapper.storeGet('tutorial.hardwareLibraryMode')) as
-            | string
-            | null) ||
-          ((await apiWrapper.storeGet('hardwareLibraryMode')) as string | null);
+        const savedMode = await getHardwareLibraryMode();
         if (savedMode === 'local' || savedMode === 'direct') {
           const radio = document.querySelector<HTMLInputElement>(
             `input[name="hardware-library-mode"][value="${savedMode}"]`,
@@ -3080,6 +3118,8 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
 
   let currentStep = 0;
+  let resumedStep: number | null = null;
+  let resumeMessage = "Let's pick up where we left off.";
   let renderTimeout: ReturnType<typeof setTimeout> | null = null;
 
   async function isStepRelevant(index: number): Promise<boolean> {
@@ -3094,9 +3134,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'tutorial.arcropolisInstalled',
     );
     const emulatorType = await apiWrapper.storeGet('tutorial.emulatorType');
-    const hardwareLibraryMode =
-      (await apiWrapper.storeGet('tutorial.hardwareLibraryMode')) ||
-      (await apiWrapper.storeGet('hardwareLibraryMode'));
+    const hardwareLibraryMode = await getHardwareLibraryMode();
 
     if (title === 'Switch Modded Check') {
       return hardwareType === 'hardware';
@@ -3273,10 +3311,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log('Total tutorial steps:', steps.length);
 
-    // If restored from dev mode reload, create properties
-    if (tutorialDevMode) {
-      createDevPanel();
-      // Skip startup animation
+    let resumeSavedStep = false;
+    if (!tutorialDevMode && window.tutorialAPI) {
+      try {
+        const progress = await apiWrapper.storeGet('tutorial.setupProgress');
+        const savedIndex = steps.findIndex(
+          (step) => step.title === progress?.stepTitle,
+        );
+        if (savedIndex >= 0) {
+          currentStep = (await isStepRelevant(savedIndex))
+            ? savedIndex
+            : await getPreviousRelevantStep(savedIndex);
+          resumeSavedStep = true;
+          resumedStep = currentStep;
+        }
+      } catch (error) {
+        console.error('Could not restore tutorial progress:', error);
+      }
+    }
+
+    if (tutorialDevMode || resumeSavedStep) {
+      if (tutorialDevMode) createDevPanel();
+      // Resume directly at the checkpoint without replaying the intro.
       document.querySelector<HTMLElement>(
         '#intro-tutorial-frame',
       )!.style.display = 'none';
@@ -3292,7 +3348,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .querySelector<HTMLElement>('.tutorial-window')!
         .classList.add('white-bg');
       await window.tutorialAPI?.tutorialIntroComplete?.();
-      renderProgressDots().then(() => renderStep(0));
+      renderProgressDots().then(() => renderStep(currentStep));
     } else {
       startAnimation();
     }
@@ -3321,6 +3377,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const translations = result?.success
         ? (result.translations as Record<string, any>)
         : null;
+      if (typeof translations?.tutorial?.resumeMessage === 'string') {
+        resumeMessage = translations.tutorial.resumeMessage;
+      }
       const welcomeTitle = translations?.tutorial?.welcomeTitle;
       if (typeof welcomeTitle === 'string') {
         const localizedAppName = welcomeTitle.match(/MOSAIC|FightPlanner/i)?.[0];
@@ -3479,9 +3538,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'tutorial.arcropolisInstalled',
         );
         const switchModded = await apiWrapper.storeGet('tutorial.switchModded');
-        const hardwareLibraryMode =
-          (await apiWrapper.storeGet('tutorial.hardwareLibraryMode')) ||
-          (await apiWrapper.storeGet('hardwareLibraryMode'));
+        const hardwareLibraryMode = await getHardwareLibraryMode();
 
         let canShowConfigurePaths = false;
 
@@ -3830,6 +3887,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderStep(index) {
     const step = steps[index];
+    if (!step) return;
+    if (index !== resumedStep) resumedStep = null;
+    const showResumeMessage = index === resumedStep;
+    currentStep = index;
+    if (!tutorialDevMode && window.tutorialAPI) {
+      // Titles already identify branches; unlike indexes, they survive migration steps.
+      void window.tutorialAPI.store
+        .set('tutorial.setupProgress', { stepTitle: step.title })
+        .then((result) => {
+          if (!result.success) {
+            console.error('Could not save tutorial progress:', result);
+          }
+        })
+        .catch((error) => console.error('Could not save tutorial progress:', error));
+    }
     const contentDiv = document.querySelector<HTMLElement>('#tutorial-content');
     const prevBtn = document.querySelector<HTMLElement>('#prev-btn');
     const nextBtn = document.querySelector<HTMLElement>('#next-btn');
@@ -3861,6 +3933,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTimeout = null;
       contentDiv!.innerHTML = `
 <div class="tutorial-step">
+${showResumeMessage ? `<p class="tutorial-resume-message" role="status">${escapeTutorialHtml(resumeMessage)}</p>` : ''}
 <div class="tutorial-step-header">
 <div class="tutorial-step-icon">
 <i class="bi ${step.icon}"></i>
@@ -3953,7 +4026,7 @@ ${step.content}
       await renderProgressDots();
       renderStep(currentStep);
     } else {
-      closeTutorial();
+      await closeTutorial('complete');
     }
   }
 
@@ -3966,14 +4039,20 @@ ${step.content}
     }
   }
 
-  function closeTutorial() {
+  async function closeTutorial(action: 'close' | 'complete' | 'skip' = 'close') {
     console.log('Closing tutorial...');
     console.log('window.tutorialAPI:', window.tutorialAPI);
 
     if (window.tutorialAPI) {
       console.log('Calling tutorialAPI.closeTutorial()');
       try {
-        window.tutorialAPI.closeTutorial();
+        if (action === 'complete') {
+          await window.tutorialAPI.completeTutorial();
+        } else if (action === 'skip') {
+          await window.tutorialAPI.skipTutorial();
+        } else {
+          await window.tutorialAPI.closeTutorial();
+        }
         console.log('✓ Close event sent');
       } catch (error) {
         console.error('Error calling closeTutorial:', error);
@@ -3991,7 +4070,7 @@ ${step.content}
 
   function skipTutorial() {
     if (confirm('Are you sure you want to skip the tutorial?')) {
-      closeTutorial();
+      void closeTutorial('skip');
     }
   }
 

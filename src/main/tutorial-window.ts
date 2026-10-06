@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
+import store from './store';
 
 let tutorialWindow: BrowserWindow | null = null;
 
@@ -14,6 +15,11 @@ export function createTutorialWindow(parentWindow?: BrowserWindow | null) {
 
   const width = 1300;
   const height = 800;
+
+  // Keep a checkpoint even if the app exits before the first step renders.
+  if (!store.get('tutorial.setupProgress')) {
+    store.set('tutorial.setupProgress', { stepTitle: null });
+  }
 
   tutorialWindow = new BrowserWindow({
     width: width,
@@ -58,11 +64,20 @@ export function createTutorialWindow(parentWindow?: BrowserWindow | null) {
     console.log('Tutorial window "closed" event triggered');
     tutorialWindow = null;
     if (parentWindow && !parentWindow.isDestroyed()) {
-      parentWindow.webContents.send('tutorial-window-closed');
+      if (!store.get('tutorial.setupProgress')) {
+        parentWindow.webContents.send('tutorial-window-closed');
+      }
     }
   });
 
   return tutorialWindow;
+}
+
+export function completeTutorialWindow() {
+  store.set('hasLaunchedBefore', true);
+  store.set('tutorial.guideProgress', { stepTitle: "Let's guide you to MOSAIC" });
+  store.delete('tutorial.setupProgress');
+  closeTutorialWindow();
 }
 
 export function closeTutorialWindow() {

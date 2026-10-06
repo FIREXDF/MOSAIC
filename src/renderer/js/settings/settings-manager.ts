@@ -8,6 +8,7 @@ class SettingsManager {
   lastModsPathWarningPath: string | null;
   pathFixModalOpen: boolean;
   libraryLocaleListenerAttached: boolean;
+  directLibraryPathsApplied: boolean | null;
 
   constructor() {
     this.settings = {
@@ -17,6 +18,8 @@ class SettingsManager {
       hardwareLibraryMode: 'local',
       localModsPath: null,
       localPluginsPath: null,
+      directModsPath: null,
+      directPluginsPath: null,
       primaryModsPath: null,
       secondaryModsPath: null,
       activeModsLibrary: 'primary',
@@ -46,6 +49,7 @@ class SettingsManager {
       disableAllModsOnDownload: false,
       autoUseGameBananaModName: false,
       reviewSlotChangesBeforeApply: true,
+      cssUmcImagesEnabled: true,
       devMode: false,
       devShowModHash: false,
       theme: 'dark',
@@ -67,6 +71,7 @@ class SettingsManager {
     this.lastModsPathWarningPath = null;
     this.pathFixModalOpen = false;
     this.libraryLocaleListenerAttached = false;
+    this.directLibraryPathsApplied = null;
     this.readyPromise = this.initSettings();
     this.initializeUI();
   }
@@ -87,6 +92,10 @@ class SettingsManager {
     await window.electronAPI.store.set(
       'pluginsPath',
       this.settings.pluginsPath,
+    );
+    await window.electronAPI.store.set(
+      'hardwareLibraryMode',
+      this.settings.hardwareLibraryMode,
     );
     await window.electronAPI.store.set(
       'primaryModsPath',
@@ -166,10 +175,56 @@ class SettingsManager {
     }
 
     if (
+      !this.isDirectSwitchLibraryMode() &&
       this.normalizeActiveModsLibrary(this.settings.activeModsLibrary) ===
       normalizedLibrary
     ) {
       this.settings.modsPath = path || null;
+    }
+  }
+
+  setLibraryFolderPath(
+    key: 'modsPath' | 'pluginsPath',
+    folder: string,
+    modsLibrary = this.settings.activeModsLibrary,
+  ) {
+    if (this.isDirectSwitchLibraryMode()) {
+      this.settings[key === 'modsPath' ? 'directModsPath' : 'directPluginsPath'] =
+        folder;
+      this.settings[key] = folder;
+      const driveRoot = this.getSwitchDriveRootFromLibraryPath(folder);
+      if (driveRoot && (driveRoot.startsWith('/') || driveRoot.includes(':\\'))) {
+        this.settings.switchDriveLetter = driveRoot;
+      }
+    } else if (key === 'modsPath') {
+      this.setConfiguredModsLibraryPath(modsLibrary, folder);
+      if (
+        this.normalizeActiveModsLibrary(modsLibrary) ===
+        this.normalizeActiveModsLibrary(this.settings.activeModsLibrary)
+      ) {
+        this.settings.localModsPath = folder;
+      }
+    } else {
+      this.settings.pluginsPath = folder;
+      this.settings.localPluginsPath = folder;
+    }
+  }
+
+  async saveLibraryFolderPath(
+    key: 'modsPath' | 'pluginsPath',
+    folder: string,
+    modsLibrary = this.settings.activeModsLibrary,
+  ) {
+    const previousModsPath = this.settings.modsPath;
+    const previousPluginsPath = this.settings.pluginsPath;
+    this.setLibraryFolderPath(key, folder, modsLibrary);
+    await this.saveSettings();
+
+    if (this.settings.modsPath !== previousModsPath) {
+      await this.refreshModsListForPath(this.settings.modsPath);
+    }
+    if (this.settings.pluginsPath !== previousPluginsPath) {
+      await this.refreshPluginsListForPath(this.settings.pluginsPath);
     }
   }
 
@@ -530,6 +585,46 @@ class SettingsManager {
       });
   }
 
+  askDebugReportAnonymization(): Promise<boolean | null> {
+    const message = this.translate('settings.debugReportAnonymizeQuestion');
+    if (!window.modalManager?.showCustomModal) {
+      return Promise.resolve(window.confirm(message));
+    }
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (choice: boolean | null) => {
+        if (settled) return;
+        settled = true;
+        resolve(choice);
+      };
+
+      window.modalManager.showCustomModal({
+        id: 'debug-report-anonymization-modal',
+        title: this.translate('settings.debugReportAnonymizeTitle'),
+        body: `<p>${message}</p>`,
+        buttons: [
+          {
+            text: this.translate('common.cancel'),
+            type: 'cancel',
+            onClick: () => finish(null),
+          },
+          {
+            text: this.translate('settings.debugReportKeepPaths'),
+            type: 'secondary',
+            onClick: () => finish(false),
+          },
+          {
+            text: this.translate('settings.debugReportAnonymize'),
+            type: 'primary',
+            onClick: () => finish(true),
+          },
+        ],
+        onClose: () => finish(null),
+      });
+    });
+  }
+
   setupEventListeners() {
     this.organizeSettingsLayout();
     this.initializeFeedbackUI();
@@ -795,6 +890,38 @@ class SettingsManager {
       enhancedStatusBarToggle.dataset.listenerAttached = 'true';
     }
 
+    const cssUmcImagesToggle = document.querySelector<HTMLInputElement>(
+      '#css-umc-images-enabled',
+    );
+    if (cssUmcImagesToggle && !cssUmcImagesToggle.dataset.listenerAttached) {
+      cssUmcImagesToggle.addEventListener('change', async () => {
+        const enabled = cssUmcImagesToggle.checked;
+        cssUmcImagesToggle.disabled = true;
+        try {
+          await this.readyPromise;
+          const result = await window.electronAPI.store.set(
+            'cssUmcImagesEnabled',
+            enabled,
+          );
+          if (!result.success)
+            throw new Error('Failed to save UMC image setting');
+          this.settings.cssUmcImagesEnabled = enabled;
+          window.dispatchEvent(
+            new CustomEvent('css-umc-images-setting-changed', {
+              detail: { enabled },
+            }),
+          );
+        } catch {
+          cssUmcImagesToggle.checked =
+            this.settings.cssUmcImagesEnabled !== false;
+          this.showToast(this.translate('toasts.failedToSaveSetting'), 'error');
+        } finally {
+          cssUmcImagesToggle.disabled = false;
+        }
+      });
+      cssUmcImagesToggle.dataset.listenerAttached = 'true';
+    }
+
     const browseMods = document.querySelector<HTMLElement>(
       '#browse-mods-folder',
     );
@@ -1035,15 +1162,21 @@ class SettingsManager {
         );
         const originalIconClass = icon?.className;
         exportDebugReportBtn.disabled = true;
-        exportDebugReportBtn.classList.add('is-loading');
-        exportDebugReportBtn.setAttribute('aria-busy', 'true');
-        if (icon) icon.className = 'bi bi-arrow-clockwise';
-        if (title) {
-          title.dataset.i18n = 'settings.debugReportExporting';
-          title.textContent = this.translate('settings.debugReportExporting');
-        }
         try {
-          const result = await window.electronAPI.exportDebugReport();
+          const anonymizeUserPaths = await this.askDebugReportAnonymization();
+          if (anonymizeUserPaths === null) return;
+
+          exportDebugReportBtn.classList.add('is-loading');
+          exportDebugReportBtn.setAttribute('aria-busy', 'true');
+          if (icon) icon.className = 'bi bi-arrow-clockwise';
+          if (title) {
+            title.dataset.i18n = 'settings.debugReportExporting';
+            title.textContent = this.translate('settings.debugReportExporting');
+          }
+
+          const result = await window.electronAPI.exportDebugReport(
+            anonymizeUserPaths,
+          );
           if (result.success) {
             this.showToast(
               this.translate('settings.debugReportExported'),
@@ -1254,10 +1387,11 @@ class SettingsManager {
       });
 
       options.forEach((option) => {
-        option.addEventListener('click', () => {
+        option.addEventListener('click', async () => {
           const value = this.normalizeSwitchTransferMethod(
             option.dataset.value,
           );
+          const previousDirectMode = this.isDirectSwitchLibraryMode();
           const text = option.querySelector<HTMLElement>('span')!.textContent;
           const i18nKey =
             option.querySelector<HTMLElement>('span')!.dataset.i18n;
@@ -1275,8 +1409,11 @@ class SettingsManager {
           switchTransferMethodSelect.classList.remove('open');
 
           this.settings.switchTransferMethod = value;
-          this.saveSettings();
+          await this.saveSettings();
           this.updateSwitchTransferMethodUI();
+          if (previousDirectMode && !this.isDirectSwitchLibraryMode()) {
+            await this.refreshCurrentLibraryLists();
+          }
         });
       });
 
@@ -1555,7 +1692,6 @@ class SettingsManager {
 
           if (window.electronAPI && window.electronAPI.setUpdateChannel) {
             await window.electronAPI.setUpdateChannel(value);
-            await window.electronAPI.store.set('updateChannel', value);
             console.log('Update channel set to:', value);
 
             if (window.toastManager) {
@@ -1762,6 +1898,9 @@ class SettingsManager {
       options.forEach((option) => {
         option.addEventListener('click', async () => {
           const value = this.normalizeHardwareLibraryMode(option.dataset.value);
+          if (value === 'direct' && this.getSwitchTransferMethod() === 'ftp') {
+            return;
+          }
           const previousMode = this.normalizeHardwareLibraryMode(
             this.settings.hardwareLibraryMode,
           );
@@ -1965,6 +2104,8 @@ class SettingsManager {
     this.updateAutoUseGameBananaModNameUI();
     this.updateReviewSlotChangesUI();
     this.updateEnhancedStatusBarUI();
+    if (cssUmcImagesToggle)
+      cssUmcImagesToggle.checked = this.settings.cssUmcImagesEnabled !== false;
     this.updateStartupSplashUI();
     this.updateStartupSplashSoundUI();
     this.updateAppSoundsUI();
@@ -2496,12 +2637,8 @@ class SettingsManager {
         previousPath: this.settings.primaryModsPath,
         nextPath: folder,
       });
-      this.setConfiguredModsLibraryPath('primary', folder);
-      await this.saveSettings();
+      await this.saveLibraryFolderPath('modsPath', folder, 'primary');
       this.updateModsFolderUI();
-      if (this.settings.activeModsLibrary === 'primary') {
-        await this.refreshModsListForPath(folder);
-      }
       this.checkModsPath(folder, { force: true });
     } else {
       console.log('[SettingsManager] Mods folder selection cancelled');
@@ -2510,7 +2647,10 @@ class SettingsManager {
 
   async updateModsFolderFromInput(value) {
     const folder = value.trim();
-    if (!folder || folder === this.settings.primaryModsPath) {
+    const currentPath = this.isDirectSwitchLibraryMode()
+      ? this.settings.modsPath
+      : this.settings.primaryModsPath;
+    if (!folder || folder === currentPath) {
       console.log('[SettingsManager] Mods folder manual change ignored:', {
         value,
         currentPath: this.settings.primaryModsPath,
@@ -2523,12 +2663,8 @@ class SettingsManager {
       previousPath: this.settings.primaryModsPath,
       nextPath: folder,
     });
-    this.setConfiguredModsLibraryPath('primary', folder);
-    await this.saveSettings();
+    await this.saveLibraryFolderPath('modsPath', folder, 'primary');
     this.updateModsFolderUI();
-    if (this.settings.activeModsLibrary === 'primary') {
-      await this.refreshModsListForPath(folder);
-    }
     this.checkModsPath(folder, { force: true });
   }
 
@@ -2546,7 +2682,10 @@ class SettingsManager {
     this.setConfiguredModsLibraryPath('secondary', folder);
     await this.saveSettings();
     this.updateModsFolderUI();
-    if (this.settings.activeModsLibrary === 'secondary') {
+    if (
+      !this.isDirectSwitchLibraryMode() &&
+      this.settings.activeModsLibrary === 'secondary'
+    ) {
       await this.refreshModsListForPath(folder);
     }
     this.checkModsPath(folder, { force: true });
@@ -2562,7 +2701,10 @@ class SettingsManager {
     this.setConfiguredModsLibraryPath('secondary', folder);
     await this.saveSettings();
     this.updateModsFolderUI();
-    if (this.settings.activeModsLibrary === 'secondary') {
+    if (
+      !this.isDirectSwitchLibraryMode() &&
+      this.settings.activeModsLibrary === 'secondary'
+    ) {
       await this.refreshModsListForPath(folder);
     }
     this.checkModsPath(folder, { force: true });
@@ -2881,21 +3023,7 @@ class SettingsManager {
         }
       }
 
-      if (issue.key === 'modsPath') {
-        this.settings.modsPath = nextPath;
-        this.setConfiguredModsLibraryPath(
-          this.settings.activeModsLibrary,
-          nextPath,
-        );
-        if (!this.isSwitchLibraryPath(nextPath)) {
-          this.settings.localModsPath = nextPath;
-        }
-      } else {
-        this.settings.pluginsPath = nextPath;
-        if (!this.isSwitchLibraryPath(nextPath)) {
-          this.settings.localPluginsPath = nextPath;
-        }
-      }
+      this.setLibraryFolderPath(issue.key, nextPath);
     }
 
     await this.saveSettings();
@@ -2919,8 +3047,7 @@ class SettingsManager {
         previousPath: this.settings.pluginsPath,
         nextPath: folder,
       });
-      this.settings.pluginsPath = folder;
-      this.saveSettings();
+      await this.saveLibraryFolderPath('pluginsPath', folder);
       this.updatePluginsFolderUI();
     } else {
       console.log('[SettingsManager] Plugins folder selection cancelled');
@@ -2942,10 +3069,14 @@ class SettingsManager {
       previousPath: this.settings.pluginsPath,
       nextPath: folder,
     });
-    this.settings.pluginsPath = folder;
-    this.saveSettings();
+    await this.saveLibraryFolderPath('pluginsPath', folder);
     this.updatePluginsFolderUI();
+  }
 
+  async refreshPluginsListForPath(folder: string | null) {
+    if (!folder) {
+      return;
+    }
     try {
       console.log(
         '[SettingsManager] Refreshing plugins list for path:',
@@ -3038,7 +3169,9 @@ class SettingsManager {
     const primaryInput =
       document.querySelector<HTMLInputElement>('#mods-folder-path');
     if (primaryInput) {
-      primaryInput.value = this.settings.primaryModsPath || '';
+      primaryInput.value = this.isDirectSwitchLibraryMode()
+        ? this.settings.modsPath || ''
+        : this.settings.primaryModsPath || '';
     }
 
     const secondaryInput = document.querySelector<HTMLInputElement>(
@@ -3177,8 +3310,8 @@ class SettingsManager {
     const input = document.querySelector<HTMLInputElement>(
       '#plugins-folder-path',
     );
-    if (input && this.settings.pluginsPath) {
-      input.value = this.settings.pluginsPath;
+    if (input) {
+      input.value = this.settings.pluginsPath || '';
     }
   }
 
@@ -3383,6 +3516,7 @@ class SettingsManager {
     if (transferMethod === 'drive') {
       this.updateSwitchDriveLetterUI();
     }
+    this.updateHardwareLibraryModeUI();
   }
 
   updateSwitchSyncModeUI() {
@@ -4166,7 +4300,8 @@ class SettingsManager {
     );
     if (updateChannelSelect && window.electronAPI) {
       try {
-        const channel = 'public-beta';
+        const channel =
+          (await window.electronAPI.getUpdateChannel?.()) || 'beta';
         const selectedValue =
           updateChannelSelect.querySelector<HTMLElement>('.selected-value');
         const options = updateChannelSelect.querySelectorAll<HTMLElement>(
@@ -4294,12 +4429,14 @@ class SettingsManager {
     const options = hardwareLibraryModeSelect.querySelectorAll<HTMLElement>(
       '.custom-select-option',
     );
-    const currentMode = this.normalizeHardwareLibraryMode(
-      this.settings.hardwareLibraryMode,
-    );
-    this.settings.hardwareLibraryMode = currentMode;
+    const currentMode = this.getHardwareLibraryMode();
+    const ftpOnly = this.getSwitchTransferMethod() === 'ftp';
 
     options.forEach((option) => {
+      const unavailable = ftpOnly && option.dataset.value === 'direct';
+      option.hidden = unavailable;
+      option.style.display = unavailable ? 'none' : '';
+      option.setAttribute('aria-disabled', String(unavailable));
       const isActive = option.dataset.value === currentMode;
       option.classList.toggle('active', isActive);
 
@@ -4311,6 +4448,17 @@ class SettingsManager {
         }
       }
     });
+
+    const hint = document.querySelector<HTMLElement>(
+      '#hardware-library-mode-hint',
+    );
+    if (hint) {
+      const key = ftpOnly
+        ? 'settings.hardwareLibraryModeFtpHint'
+        : 'settings.hardwareLibraryModeHint';
+      hint.dataset.i18n = key;
+      hint.textContent = this.translate(key);
+    }
   }
 
   updateHardwareLibraryModeVisibility() {
@@ -4330,12 +4478,8 @@ class SettingsManager {
       return null;
     }
 
-    if (driveIdentifier.includes(':\\') || driveIdentifier.startsWith('/')) {
-      return driveIdentifier.replace(/[\\/]+$/, '');
-    }
-
-    if (/^[A-Z]$/i.test(driveIdentifier.trim())) {
-      return `${driveIdentifier.replace(':', '')}:\\`;
+    if (/^[A-Z]:?[\\/]?$/i.test(driveIdentifier.trim())) {
+      return `${driveIdentifier.trim()[0]}:\\`;
     }
 
     return driveIdentifier.replace(/[\\/]+$/, '');
@@ -4382,25 +4526,27 @@ class SettingsManager {
       segment.replace(/^[/\\]+|[/\\]+$/g, ''),
     );
 
-    if (root.endsWith('\\')) {
-      return `${root}${normalizedSegments.join('\\')}`;
-    }
-
-    return `${root}/${normalizedSegments.join('/')}`;
+    const separator = /^[A-Z]:/i.test(root) || root.startsWith('\\\\') ? '\\' : '/';
+    return `${root.replace(/[\\/]+$/, '')}${separator}${normalizedSegments.join(separator)}`;
   }
 
   getSwitchModsLibraryPath() {
-    return this.joinSwitchPath('ultimate', 'mods');
+    return (
+      this.settings.directModsPath || this.joinSwitchPath('ultimate', 'mods')
+    );
   }
 
   getSwitchPluginsLibraryPath() {
-    return this.joinSwitchPath(
-      'ultimate',
-      'contents',
-      '01006A800016E000',
-      'romfs',
-      'skyline',
-      'plugins',
+    return (
+      this.settings.directPluginsPath ||
+      this.joinSwitchPath(
+        'ultimate',
+        'contents',
+        '01006A800016E000',
+        'romfs',
+        'skyline',
+        'plugins',
+      )
     );
   }
 
@@ -4425,21 +4571,25 @@ class SettingsManager {
 
     const modsRoot = value.replace(/[\\/]ultimate[\\/]mods[\\/]?$/i, '');
     if (modsRoot !== value) {
-      return modsRoot || null;
+      return /^[A-Z]:$/i.test(modsRoot) ? `${modsRoot}\\` : modsRoot || '/';
     }
 
     const pluginsRoot = value.replace(
-      /[\\/]ultimate[\\/]contents[\\/]01006A800016E000[\\/]romfs[\\/]skyline[\\/]plugins[\\/]?$/i,
+      /[\\/](?:ultimate|atmosphere)[\\/]contents[\\/]01006A800016E000[\\/]romfs[\\/]skyline[\\/]plugins[\\/]?$/i,
       '',
     );
     if (pluginsRoot !== value) {
-      return pluginsRoot || null;
+      return /^[A-Z]:$/i.test(pluginsRoot) ? `${pluginsRoot}\\` : pluginsRoot || '/';
     }
 
     return null;
   }
 
   syncSwitchDriveFromLibraryPaths() {
+    if (this.settings.switchDriveLetter) {
+      return;
+    }
+
     const root =
       this.getSwitchDriveRootFromLibraryPath(this.settings.modsPath) ||
       this.getSwitchDriveRootFromLibraryPath(this.settings.pluginsPath);
@@ -4456,72 +4606,90 @@ class SettingsManager {
   isDirectSwitchLibraryMode() {
     return (
       this.getAppRunMode() === 'hardware' &&
-      this.normalizeHardwareLibraryMode(this.settings.hardwareLibraryMode) ===
-        'direct'
+      this.getHardwareLibraryMode() === 'direct'
     );
   }
 
   applyHardwareLibraryModePaths() {
-    if (this.isDirectSwitchLibraryMode()) {
+    if (
+      this.getSwitchTransferMethod() === 'ftp' &&
+      this.settings.hardwareLibraryMode === 'direct' &&
+      this.directLibraryPathsApplied === null
+    ) {
+      // Restore the PC library when loading an older FTP + direct configuration.
+      this.directLibraryPathsApplied = true;
+      const activeLibrary = this.settings.activeModsLibrary;
+      if (
+        this.getConfiguredModsLibraryPath(activeLibrary) === this.settings.modsPath
+      ) {
+        this.setConfiguredModsLibraryPath(
+          activeLibrary,
+          this.settings.localModsPath,
+        );
+      }
+    }
+    this.settings.hardwareLibraryMode = this.getHardwareLibraryMode();
+    const directMode = this.isDirectSwitchLibraryMode();
+    if (directMode) {
       this.syncSwitchDriveFromLibraryPaths();
 
       const switchModsPath = this.getSwitchModsLibraryPath();
       const switchPluginsPath = this.getSwitchPluginsLibraryPath();
 
-      if (switchModsPath) {
+      // Capture local paths when entering direct mode, never on subsequent saves.
+      if (this.directLibraryPathsApplied !== true) {
         if (
           this.settings.modsPath &&
-          !this.isSwitchLibraryPath(this.settings.modsPath)
+          this.settings.modsPath !== switchModsPath &&
+          (this.directLibraryPathsApplied === false ||
+            !this.settings.localModsPath)
         ) {
           this.settings.localModsPath = this.settings.modsPath;
         }
-        this.settings.modsPath = switchModsPath;
-      } else if (
-        this.settings.modsPath &&
-        !this.isSwitchLibraryPath(this.settings.modsPath)
-      ) {
-        this.settings.localModsPath = this.settings.modsPath;
-        this.settings.modsPath = null;
-      }
-
-      if (switchPluginsPath) {
         if (
           this.settings.pluginsPath &&
-          !this.isSwitchLibraryPath(this.settings.pluginsPath)
+          this.settings.pluginsPath !== switchPluginsPath &&
+          (this.directLibraryPathsApplied === false ||
+            !this.settings.localPluginsPath)
         ) {
           this.settings.localPluginsPath = this.settings.pluginsPath;
         }
-        this.settings.pluginsPath = switchPluginsPath;
-      } else if (
-        this.settings.pluginsPath &&
-        !this.isSwitchLibraryPath(this.settings.pluginsPath)
-      ) {
-        this.settings.localPluginsPath = this.settings.pluginsPath;
-        this.settings.pluginsPath = null;
       }
+      this.settings.modsPath = switchModsPath;
+      this.settings.pluginsPath = switchPluginsPath;
     } else {
       if (
-        this.settings.localModsPath &&
-        this.isSwitchLibraryPath(this.settings.modsPath)
+        this.directLibraryPathsApplied === true ||
+        (this.directLibraryPathsApplied === null &&
+          this.settings.localModsPath &&
+          this.settings.modsPath === this.getSwitchModsLibraryPath())
       ) {
-        this.settings.modsPath = this.settings.localModsPath;
+        this.settings.modsPath =
+          this.settings.localModsPath ||
+          this.getConfiguredModsLibraryPath(this.settings.activeModsLibrary);
       }
 
       if (
-        this.settings.localPluginsPath &&
-        this.isSwitchLibraryPath(this.settings.pluginsPath)
+        this.directLibraryPathsApplied === true ||
+        (this.directLibraryPathsApplied === null &&
+          this.settings.localPluginsPath &&
+          this.settings.pluginsPath === this.getSwitchPluginsLibraryPath())
       ) {
-        this.settings.pluginsPath = this.settings.localPluginsPath;
+        this.settings.pluginsPath = this.settings.localPluginsPath || null;
       }
     }
+    this.directLibraryPathsApplied = directMode;
 
     this.updateModsFolderUI();
     this.updatePluginsFolderUI();
+    this.updateHardwareLibraryModeUI();
   }
 
   async refreshCurrentLibraryLists() {
     if (this.settings.modsPath) {
       await this.refreshModsListForPath(this.settings.modsPath);
+    } else {
+      await window.modManager?.fetchMods?.();
     }
 
     if (
@@ -4531,6 +4699,8 @@ class SettingsManager {
       await window.pluginManager.loadPluginsFromFolder(
         this.settings.pluginsPath,
       );
+    } else if (!this.settings.pluginsPath) {
+      await window.pluginManager?.fetchPlugins?.();
     }
   }
 
@@ -4568,6 +4738,9 @@ class SettingsManager {
       const localModsPath = await window.electronAPI.store.get('localModsPath');
       const localPluginsPath =
         await window.electronAPI.store.get('localPluginsPath');
+      const directModsPath = await window.electronAPI.store.get('directModsPath');
+      const directPluginsPath =
+        await window.electronAPI.store.get('directPluginsPath');
       const primaryModsPath =
         await window.electronAPI.store.get('primaryModsPath');
       const secondaryModsPath =
@@ -4638,6 +4811,9 @@ class SettingsManager {
       const reviewSlotChangesBeforeApply = await window.electronAPI.store.get(
         'reviewSlotChangesBeforeApply',
       );
+      const cssUmcImagesEnabled = await window.electronAPI.store.get(
+        'cssUmcImagesEnabled',
+      );
       const startupSplashEnabled = await window.electronAPI.store.get(
         'startupSplashEnabled',
       );
@@ -4670,6 +4846,8 @@ class SettingsManager {
         pluginsPath: pluginsPath || null,
         localModsPath: localModsPath || null,
         localPluginsPath: localPluginsPath || null,
+        directModsPath: directModsPath || null,
+        directPluginsPath: directPluginsPath || null,
         primaryModsPath: primaryModsPath || localModsPath || modsPath || null,
         secondaryModsPath: secondaryModsPath || null,
         activeModsLibrary: this.normalizeActiveModsLibrary(activeModsLibrary),
@@ -4711,6 +4889,7 @@ class SettingsManager {
         disableAllModsOnDownload: disableAllModsOnDownload || false,
         autoUseGameBananaModName: autoUseGameBananaModName === true,
         reviewSlotChangesBeforeApply: reviewSlotChangesBeforeApply !== false,
+        cssUmcImagesEnabled: cssUmcImagesEnabled !== false,
         startupSplashEnabled: startupSplashEnabled !== false,
         startupSplashSoundEnabled: startupSplashSoundEnabled !== false,
         startupSplashSoundPath:
@@ -4739,6 +4918,8 @@ class SettingsManager {
         pluginsPath: null,
         localModsPath: null,
         localPluginsPath: null,
+        directModsPath: null,
+        directPluginsPath: null,
         primaryModsPath: null,
         secondaryModsPath: null,
         activeModsLibrary: 'primary',
@@ -4771,6 +4952,7 @@ class SettingsManager {
         disableAllModsOnDownload: false,
         autoUseGameBananaModName: false,
         reviewSlotChangesBeforeApply: true,
+        cssUmcImagesEnabled: true,
         startupSplashEnabled: true,
         startupSplashSoundEnabled: true,
         startupSplashSoundPath: null,
@@ -4805,6 +4987,14 @@ class SettingsManager {
       await window.electronAPI.store.set(
         'localPluginsPath',
         this.settings.localPluginsPath,
+      );
+      await window.electronAPI.store.set(
+        'directModsPath',
+        this.settings.directModsPath,
+      );
+      await window.electronAPI.store.set(
+        'directPluginsPath',
+        this.settings.directPluginsPath,
       );
       await window.electronAPI.store.set(
         'primaryModsPath',
@@ -4922,6 +5112,10 @@ class SettingsManager {
         this.settings.reviewSlotChangesBeforeApply !== false,
       );
       await window.electronAPI.store.set(
+        'cssUmcImagesEnabled',
+        this.settings.cssUmcImagesEnabled !== false,
+      );
+      await window.electronAPI.store.set(
         'startupSplashEnabled',
         this.settings.startupSplashEnabled,
       );
@@ -4972,6 +5166,9 @@ class SettingsManager {
   }
 
   getHardwareLibraryMode() {
+    if (this.getSwitchTransferMethod() === 'ftp') {
+      return 'local';
+    }
     return this.normalizeHardwareLibraryMode(this.settings.hardwareLibraryMode);
   }
 

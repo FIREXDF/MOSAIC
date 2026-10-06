@@ -13,9 +13,15 @@ type TutorialStep = {
   choice?: 'install-method';
 };
 
+type TutorialGuideProgress = {
+  stepTitle?: string;
+  installMethod?: 'fightplanner' | 'gamebanana' | null;
+  selectedLocale?: string;
+};
 
 class TutorialManager {
   currentStep: number;
+  resumedStep: number | null;
   tutorialShown: boolean;
   overlay: HTMLElement | null;
   highlightedElement: HTMLElement | null;
@@ -31,6 +37,7 @@ class TutorialManager {
 
   constructor() {
     this.currentStep = 0;
+    this.resumedStep = null;
     this.tutorialShown = false;
     this.overlay = null;
     this.highlightedElement = null;
@@ -327,16 +334,76 @@ class TutorialManager {
   }
 
   show() {
+    this.close();
     this.pendingInAppAfterSetup = true;
     this.openTutorialWindow();
   }
 
-  showInApp() {
+  async showInApp() {
+    if (this.overlay) return;
     this.currentStep = 0;
+    this.resumedStep = null;
     this.installMethod = null;
     this.installDownloadStarted = false;
+    this.installConfirmClicked = false;
+    this.selectedLocale = window.i18n?.getCurrentLocale?.() || 'en';
+    try {
+      const progress = (await window.electronAPI?.store.get(
+        'tutorial.guideProgress',
+      )) as TutorialGuideProgress | null;
+      const savedIndex = this.steps.findIndex(
+        (step) => step.title === progress?.stepTitle,
+      );
+      if (savedIndex >= 0) {
+        this.currentStep = savedIndex;
+        if (
+          progress?.installMethod === 'fightplanner' ||
+          progress?.installMethod === 'gamebanana'
+        ) {
+          this.installMethod = progress.installMethod;
+        }
+        if (
+          progress?.selectedLocale === 'en' ||
+          progress?.selectedLocale === 'fr'
+        ) {
+          this.selectedLocale = progress.selectedLocale;
+        }
+        // Install dialogs and active downloads do not survive an app restart.
+        // Return to the link instruction so the user can start that action again.
+        const step = this.steps[this.currentStep];
+        if (step.requiredInstallClick || step.requiredDownloadComplete) {
+          this.currentStep = this.steps.findIndex(
+            (candidate) => candidate.title === '1-click install links',
+          );
+        }
+        while (
+          this.currentStep > 0 &&
+          this.shouldSkipStep(this.steps[this.currentStep])
+        ) {
+          this.currentStep--;
+        }
+        // Setup seeds only a title; saved guide steps also include the locale.
+        if (progress?.selectedLocale) this.resumedStep = this.currentStep;
+      }
+    } catch (error) {
+      console.error('Could not restore guide progress:', error);
+    }
     this.createOverlay();
-    this.renderStep();
+    await this.renderStep();
+  }
+
+  async saveProgress() {
+    if (!this.overlay || !window.electronAPI?.store) return;
+    try {
+      const result = await window.electronAPI.store.set('tutorial.guideProgress', {
+        stepTitle: this.steps[this.currentStep].title,
+        installMethod: this.installMethod,
+        selectedLocale: this.selectedLocale,
+      });
+      if (!result.success) console.error('Could not save guide progress:', result);
+    } catch (error) {
+      console.error('Could not save guide progress:', error);
+    }
   }
 
   createOverlay() {
@@ -353,6 +420,7 @@ class TutorialManager {
     <i class="bi bi-x-lg"></i>
   </button>
   <div class="tutorial-guide-count" id="tutorial-count"></div>
+  <p class="tutorial-guide-resume" id="tutorial-resume-message" role="status" hidden></p>
   <h2 id="tutorial-title"></h2>
   <p id="tutorial-description"></p>
   <div class="tutorial-guide-language" id="tutorial-language" style="display: none;">
@@ -400,6 +468,7 @@ class TutorialManager {
           if (locale) {
             this.selectedLocale = locale;
             this.updateLanguageButtons();
+            void this.saveProgress();
           }
         });
       });
@@ -412,6 +481,7 @@ class TutorialManager {
           if (method === 'fightplanner' || method === 'gamebanana') {
             this.installMethod = method;
             this.updateChoiceButtons();
+            void this.saveProgress();
           }
         });
       });
@@ -437,6 +507,17 @@ class TutorialManager {
     if (!this.overlay) return;
 
     const step = this.steps[this.currentStep];
+    if (this.currentStep !== this.resumedStep) this.resumedStep = null;
+    const resumeMessage = this.overlay.querySelector<HTMLElement>(
+      '#tutorial-resume-message',
+    );
+    if (resumeMessage) {
+      resumeMessage.hidden = this.currentStep !== this.resumedStep;
+      const translated = window.i18n?.t?.('tutorial.resumeMessage');
+      resumeMessage.textContent = translated && translated !== 'tutorial.resumeMessage'
+        ? translated
+        : "Let's pick up where we left off.";
+    }
 
     const title = this.overlay.querySelector<HTMLElement>('#tutorial-title');
     const description = this.overlay.querySelector<HTMLElement>(
@@ -468,7 +549,6 @@ class TutorialManager {
       installChoice.style.display = step.kind === 'choice' ? 'grid' : 'none';
     }
     if (step.kind === 'language') {
-      this.selectedLocale = window.i18n?.getCurrentLocale?.() || 'en';
       this.updateLanguageButtons();
     }
     if (step.kind === 'choice') {
@@ -487,6 +567,7 @@ class TutorialManager {
     this.updateNextState();
     this.stepWasWaiting = this.isCurrentStepWaiting();
     this.positionGuide();
+    await this.saveProgress();
   }
 
   updateNextState() {
@@ -859,6 +940,8 @@ class TutorialManager {
   }
 
   close() {
+    // Dismissing the guide is intentional; closing the app leaves its checkpoint.
+    void window.electronAPI?.store.delete('tutorial.guideProgress');
     if (this.highlightedElement) {
       this.highlightedElement.classList.remove('tutorial-guide-target');
       this.highlightedElement = null;
@@ -876,16 +959,15 @@ class TutorialManager {
   async reset() {
     if (window.electronAPI?.store) {
       await window.electronAPI.store.set('hasLaunchedBefore', false);
+      await window.electronAPI.store.delete('tutorial.setupProgress');
+      await window.electronAPI.store.delete('tutorial.guideProgress');
     }
     console.log('✓ Tutorial reset!');
     console.log('   The setup tutorial will open before the app next launch.');
   }
 
   async resetToTestFirstLaunch() {
-    if (window.electronAPI?.store) {
-      await window.electronAPI.store.set('hasLaunchedBefore', false);
-      console.log('✓ First launch flag reset!');
-    }
+    await this.reset();
   }
 
   forceShow() {

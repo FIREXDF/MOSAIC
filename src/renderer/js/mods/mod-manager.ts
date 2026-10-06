@@ -704,12 +704,18 @@ class ModManager {
       };
       const gameBananaLink =
         '<a href="#" onclick="window.electronAPI.openUrl(\'https://gamebanana.com/games/6498\'); return false;" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">GameBanana</a>';
+      const title = this.modsPath
+        ? t('tools.noModsAvailable', 'No mods available.')
+        : t('tools.modsFolderNotConfigured', 'No mods folder configured.');
+      const message = this.modsPath
+        ? t('tools.downloadOnGameBanana', `Go download some on ${gameBananaLink}!`, { site: gameBananaLink })
+        : t('tools.chooseModsFolderInSettings', 'Choose a mods folder in Settings > Library.');
 
       this.modListContainer.innerHTML =
         '<div class="no-results-message" style="color: var(--text-muted); text-align: center; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px;">' +
         '<i class="bi bi-folder-x" style="font-size: 32px; opacity: 0.5;"></i>' +
-        `<span>${t('tools.noModsAvailable', 'No mods available.')}</span>` +
-        `<span style="font-size: 13px;">${t('tools.downloadOnGameBanana', `Go download some on ${gameBananaLink}!`, { site: gameBananaLink })}</span>` +
+        `<span>${title}</span>` +
+        `<span style="font-size: 13px;">${message}</span>` +
         '</div>';
       this.renderedModIds.clear();
       return;
@@ -1575,71 +1581,6 @@ class ModManager {
     void this.updatePreview(this.selectedMods, updateToken);
   }
 
-  loadExampleMods() {
-    return this.loadMods([
-      {
-        id: '1',
-        name: 'Fighter Pack v2',
-        version: '2.1.0',
-        author: 'FightMaster',
-        description: 'Collection de nouveaux combattants',
-        size: '15.2 MB',
-        status: 'active',
-        path: 'fighter_pack_v2',
-      },
-      {
-        id: '2',
-        name: 'Stage HD Remaster',
-        version: '1.5.0',
-        author: 'StageBuilder',
-        description: 'Stages en haute définition',
-        size: '8.7 MB',
-        status: 'active',
-        path: 'stage_hd_remaster',
-      },
-      {
-        id: '3',
-        name: 'Sound Pack Deluxe',
-        version: '1.0.0',
-        author: 'AudioMod',
-        description: 'Sons et musiques améliorés',
-        size: '22.4 MB',
-        status: 'conflict',
-        path: 'sound_pack_deluxe',
-      },
-      {
-        id: '4',
-        name: 'UI Enhancement',
-        version: '3.2.1',
-        author: 'UITeam',
-        description: 'Interface utilisateur améliorée',
-        size: '4.1 MB',
-        status: 'disabled',
-        path: 'ui_enhancement',
-      },
-      {
-        id: '5',
-        name: 'Custom Animations',
-        version: '1.8.0',
-        author: 'AnimPro',
-        description: 'Nouvelles animations de combat',
-        size: '12.6 MB',
-        status: 'active',
-        path: 'custom_animations',
-      },
-      {
-        id: '6',
-        name: 'Balance Patch',
-        version: '2.0.0',
-        author: 'BalanceTeam',
-        description: 'Équilibrage des personnages',
-        size: '0.8 MB',
-        status: 'active',
-        path: 'balance_patch',
-      },
-    ]);
-  }
-
   async loadModsFromFolder(
     modsPath: string,
     forcedChangedPaths: string[] = [],
@@ -1653,7 +1594,7 @@ class ModManager {
 
     if (!window.electronAPI || !window.electronAPI.readModsFolder) {
       console.error('Electron API not available');
-      await this.loadExampleMods();
+      this.renderModsPathUnavailableBlocker(modsPath);
       return;
     }
 
@@ -1875,19 +1816,13 @@ class ModManager {
         return;
       }
 
-      if (this.isDirectHardwareLibraryMode()) {
-        if (await this.renderHardwareCache(modsPath)) {
-          return;
-        }
-
-        this.renderHardwareReconnectBlocker(modsPath);
-        return;
-      }
     }
 
     this.setHardwareLibraryBlockedState(false);
-    console.log('Loading example mods');
-    await this.loadExampleMods();
+    this.modsPath = null;
+    this.conflictGroups = [];
+    this.clearSelection();
+    await this.loadMods([]);
   }
 
   async checkConflicts(whitelistPatterns: string[] = []) {

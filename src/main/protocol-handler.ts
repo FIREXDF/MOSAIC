@@ -10,6 +10,7 @@ import { RequestOptions } from 'https';
 import ModUtils from './mod-utils';
 import sharedStore from './store';
 import downloadsStore from './store-downloads';
+import { ensureModInfoUrl } from './utils/mod-info-url';
 
 const packageJson = require('../../package.json');
 
@@ -699,6 +700,10 @@ export default class ProtocolHandler {
           await this.fetchAndSaveModMetadata(modId, modData.modPath, modType);
         }
 
+        for (const modData of modInstallResult.resultingMods) {
+          this.saveDownloadedModUrl(modData.modPath, protocolUrl || downloadUrl, modId, modType);
+        }
+
         const dls = (downloadsStore.get('downloads') as Record<string, string>) || {};
         for (const modData of modInstallResult.resultingMods) {
           const modHash = crypto.createHash('sha256').update(modData.modName).digest('hex').substring(0, 12);
@@ -1320,6 +1325,25 @@ export default class ProtocolHandler {
     console.log('[createInfoToml] info.toml created');
   }
 
+  private saveDownloadedModUrl(modFolderPath: string, source: string, modId?: string | null, modType = 'Mod') {
+    try {
+      const cleanSource = source.replace(PROTOCOL_URL_PREFIX, '').replace(/^\/+/, '')
+        .replace(/(\/mmdl\/\d+),(?:Mod|Sound),\d+.*$/i, '$1');
+      const url = new URL(cleanSource);
+      if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) return;
+      const isGameBanana = ['gamebanana.com', 'www.gamebanana.com'].includes(url.hostname.toLowerCase());
+      const id = modId || (isGameBanana ? this.extractModId(source) : null);
+      const type = modId ? modType : this.extractModType(source);
+      // Submission IDs differ from /dl and /mmdl file IDs.
+      const pageUrl = isGameBanana && id && /^\d+$/.test(id) && /^(Mod|Sound)$/i.test(type)
+        ? `https://gamebanana.com/${type.toLowerCase()}s/${id}`
+        : url.href;
+      ensureModInfoUrl(modFolderPath, pageUrl);
+    } catch (error) {
+      console.warn('[protocol] Failed to save mod source URL:', error.message);
+    }
+  }
+
   sendToRenderer(channel, data) {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
       this.mainWindow.webContents.send(channel, data);
@@ -1434,6 +1458,10 @@ export default class ProtocolHandler {
 
         if (modInstallResult.success) {
           resultingMods.push(...modInstallResult.resultingMods);
+
+          for (const modData of modInstallResult.resultingMods) {
+            this.saveDownloadedModUrl(modData.modPath, originalUrl);
+          }
 
           const dls = (downloadsStore.get('downloads') as Record<string, string>) || {};
           for (const modData of modInstallResult.resultingMods) {

@@ -205,7 +205,11 @@
             </div>
           </div>
         </div>
-        <p class="settings-hint" data-i18n="settings.hardwareLibraryModeHint">
+        <p
+          class="settings-hint"
+          id="hardware-library-mode-hint"
+          data-i18n="settings.hardwareLibraryModeHint"
+        >
           Sync mode keeps your MOSAIC library on this PC. Direct mode uses
           the mounted Switch SD card as the library.
         </p>
@@ -828,14 +832,20 @@
             <div class="custom-select-trigger">
               <span
                 class="selected-value"
-                data-i18n="settings.channelPublicBeta"
-                >Public Beta</span
+                data-i18n="settings.channelBeta"
+                >Beta</span
               >
               <i class="bi bi-chevron-down"></i>
             </div>
             <div class="custom-select-dropdown">
-              <div class="custom-select-option active" data-value="public-beta">
-                <span data-i18n="settings.channelPublicBeta">Public Beta</span>
+              <div class="custom-select-option" data-value="alpha">
+                <span data-i18n="settings.channelAlpha">Alpha</span>
+              </div>
+              <div class="custom-select-option active" data-value="beta">
+                <span data-i18n="settings.channelBeta">Beta</span>
+              </div>
+              <div class="custom-select-option" data-value="stable">
+                <span data-i18n="settings.channelStable">Stable</span>
               </div>
             </div>
           </div>
@@ -960,6 +970,24 @@
       <h2 class="settings-title" data-i18n="settings.libraryTitle">
         Library Settings
       </h2>
+
+      <div class="settings-section">
+        <div class="settings-label" data-i18n="settings.cssUmcImages">
+          UMC images in the CSS editor
+        </div>
+        <div class="settings-input-group">
+          <label class="settings-switch">
+            <input type="checkbox" id="css-umc-images-enabled" aria-describedby="css-umc-images-hint" checked />
+            <span class="settings-switch-slider"></span>
+          </label>
+          <label for="css-umc-images-enabled" style="margin-left: 12px; color: var(--text-secondary)" data-i18n="settings.enableCssUmcImages">
+            Enable automatic UMC images
+          </label>
+        </div>
+        <p class="settings-hint" id="css-umc-images-hint" data-i18n="settings.cssUmcImagesHint">
+          Automatically use UMC images for characters without a local image. Applies immediately.
+        </p>
+      </div>
 
       <div class="settings-group-title">
         <i class="bi bi-folder2-open"></i> Folders
@@ -1411,7 +1439,8 @@
         </button>
         <p class="settings-hint" data-i18n="settings.exportDebugReportHint">
           Includes library folder paths, CSS editor source file paths and saved
-          editor data. Passwords and game or emulator settings are not included.
+          editor data. You can choose to anonymize your home folder when
+          exporting. Passwords and game or emulator settings are not included.
         </p>
       </div>
 

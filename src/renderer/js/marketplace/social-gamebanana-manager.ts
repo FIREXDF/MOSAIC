@@ -1,6 +1,8 @@
 class SocialGameBananaManager extends SocialManagerBase {
   [key: string]: any;
   async loadDiscover() {
+    this.gameBananaDetailRequestId++;
+    this.gameBananaUmcState = null;
     const discoverContent = document.querySelector<HTMLElement>(
       '#social-discover-content',
     );
@@ -824,6 +826,13 @@ class SocialGameBananaManager extends SocialManagerBase {
         };
         await this.showGameBananaSubmissionDetails(modelName, submissionId);
       }
+      return;
+    }
+
+    const umcRetry =
+      clickedElement.closest<HTMLButtonElement>('[data-umc-retry]');
+    if (umcRetry && this.gameBananaUmcState?.status === 'error') {
+      void this.loadGameBananaUmc(this.gameBananaDetailRequestId);
       return;
     }
 
@@ -2662,6 +2671,15 @@ class SocialGameBananaManager extends SocialManagerBase {
     sourceCard?: HTMLElement,
     sourceRectOverride?: DOMRect | null,
   ) {
+    const requestId = ++this.gameBananaDetailRequestId;
+    const modId = /^\d+$/.test(submissionId) ? Number(submissionId) : 0;
+    this.gameBananaUmcState =
+      modelName.toLowerCase() === 'mod' &&
+      Number.isInteger(modId) &&
+      modId > 0 &&
+      modId <= 2147483647
+        ? { key: `Mod/${modId}`, modId, status: 'loading', movesets: [] }
+        : null;
     const fallback =
       this.getCachedGameBananaSubmission(modelName, submissionId) || null;
     const sourceRect =
@@ -2671,14 +2689,17 @@ class SocialGameBananaManager extends SocialManagerBase {
       this.renderGameBananaDetailPage(null, fallback, false, [], true);
       this.scrollGameBananaDetailToTop();
       this.animateGameBananaPreviewToDetail(sourceCard, sourceRect);
+      void this.loadGameBananaUmc(requestId);
       await this.fadeGameBananaDetailInfo('in');
     } else {
       this.renderGameBananaDetailPage(null, fallback, true);
       this.scrollGameBananaDetailToTop();
+      void this.loadGameBananaUmc(requestId);
       await this.fadeGameBananaDetailInfo('in');
     }
 
     try {
+      if (requestId !== this.gameBananaDetailRequestId) return;
       const [detailsResult, filesResult] = await Promise.all([
         window.electronAPI?.fetchGameBananaDetails
           ? window.electronAPI.fetchGameBananaDetails(modelName, submissionId)
@@ -2687,6 +2708,8 @@ class SocialGameBananaManager extends SocialManagerBase {
           ? window.electronAPI.fetchGameBananaFiles(modelName, submissionId)
           : Promise.resolve(null),
       ]);
+
+      if (requestId !== this.gameBananaDetailRequestId) return;
 
       let detailData: any = null;
       let filesData: GameBananaFileEntry[] = [];
@@ -2709,7 +2732,9 @@ class SocialGameBananaManager extends SocialManagerBase {
         await this.gameBananaPreviewAnimation;
       }
 
+      if (requestId !== this.gameBananaDetailRequestId) return;
       await this.refreshSkylineDependencyStatus();
+      if (requestId !== this.gameBananaDetailRequestId) return;
       this.renderGameBananaDetailPage(detailData, fallback, false, filesData);
       this.scrollGameBananaDetailToTop();
       if (!fallback) {
@@ -2717,6 +2742,7 @@ class SocialGameBananaManager extends SocialManagerBase {
       }
       await this.fadeGameBananaDetailInfo('in');
     } catch (error) {
+      if (requestId !== this.gameBananaDetailRequestId) return;
       console.error('[Social] Error loading GameBanana details:', error);
       this.renderGameBananaDetailPage(null, fallback, false);
       this.scrollGameBananaDetailToTop();
@@ -3063,6 +3089,8 @@ class SocialGameBananaManager extends SocialManagerBase {
   async returnFromGameBananaDetail() {
     if (this.gameBananaDetailReturnInProgress) return;
     this.gameBananaDetailReturnInProgress = true;
+    this.gameBananaDetailRequestId++;
+    this.gameBananaUmcState = null;
 
     try {
       const detailImage = document.querySelector<HTMLImageElement>(
@@ -3432,6 +3460,7 @@ class SocialGameBananaManager extends SocialManagerBase {
               ? this.renderGameBananaDescriptionSkeleton()
               : `<p class="social-gamebanana-detail-description">${description}</p>`
           }
+          ${this.renderGameBananaUmcSection()}
           ${this.renderGameBananaWipInfo(merged)}
           ${this.renderGameBananaRequirements(merged)}
           ${this.renderGameBananaFileList(files, contentLoading)}
@@ -3459,8 +3488,110 @@ class SocialGameBananaManager extends SocialManagerBase {
           ${detailImage}
           ${detailInfo}
         </div>
+        ${loading ? this.renderGameBananaUmcSection() : ''}
       </div>
     `;
+  }
+
+  async loadGameBananaUmc(requestId: number) {
+    const state = this.gameBananaUmcState;
+    if (!state || requestId !== this.gameBananaDetailRequestId) return;
+    state.status = 'loading';
+    this.updateGameBananaUmcSection();
+    try {
+      const result = await window.electronAPI.getUmcMovesetsByGameBanana(
+        state.modId,
+        true,
+      );
+      if (
+        requestId !== this.gameBananaDetailRequestId ||
+        this.gameBananaUmcState !== state
+      )
+        return;
+      if (result.success) {
+        state.movesets = result.movesets;
+        state.status = 'ready';
+      } else {
+        state.status = 'error';
+      }
+    } catch {
+      if (
+        requestId !== this.gameBananaDetailRequestId ||
+        this.gameBananaUmcState !== state
+      )
+        return;
+      state.status = 'error';
+    }
+    this.updateGameBananaUmcSection();
+  }
+
+  updateGameBananaUmcSection() {
+    const section = document.querySelector<HTMLElement>(
+      '#social-discover-content [data-umc-section]',
+    );
+    if (!section || section.dataset.umcSection !== this.gameBananaUmcState?.key)
+      return;
+    section.outerHTML = this.renderGameBananaUmcSection();
+  }
+
+  renderGameBananaUmcSection() {
+    const state = this.gameBananaUmcState;
+    if (!state) return '';
+    const escape = (value: unknown) =>
+      this.escapeHtml(value).replace(/"/g, '&quot;');
+    const label = (key: string, fallback: string) =>
+      escape(this.getSocialTranslation(`social.umc.${key}`, fallback));
+    let content = '';
+    if (state.status === 'loading') {
+      content = `<p class="social-umc-status" role="status">${label('loading', 'Looking up moveset information…')}</p>`;
+    } else if (state.status === 'error') {
+      content = `<p class="social-umc-status" role="status">${label('unavailable', 'UMC is unavailable. Try again.')}</p>
+        <button class="social-gamebanana-external-btn" type="button" data-umc-retry>${label('retry', 'Retry')}</button>`;
+    } else if (!state.movesets.length) {
+      // Ordinary skins do not need a permanent empty moveset section.
+      return `<section data-umc-section="${state.key}" hidden></section>`;
+    } else {
+      content = state.movesets
+        .map((moveset) => {
+          const fields: [string, string][] = [
+            [label('fighter', 'Base fighter'), moveset.fighterName],
+            [label('series', 'Series'), moveset.series],
+            [label('state', 'Release status'), moveset.releaseState],
+            [label('date', 'Release date'), moveset.releaseDate],
+            [label('authors', 'Authors'), moveset.authors.join(', ')],
+            [label('characterId', 'Character ID'), moveset.slottedId],
+            [label('replacementId', 'Replacement ID'), moveset.replacementId],
+            [
+              label('slots', 'Slots'),
+              moveset.slotsStart !== null && moveset.slotsEnd !== null
+                ? `c${String(moveset.slotsStart).padStart(2, '0')} – c${String(moveset.slotsEnd).padStart(2, '0')}`
+                : '',
+            ],
+          ];
+          const link = (url: string, title: string) =>
+            `<button type="button" class="social-gamebanana-external-btn" data-url="${escape(url)}"><span>${escape(title)}</span><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></button>`;
+          return `<article class="social-umc-moveset">
+          ${moveset.imageUrl ? `<img class="social-umc-image" src="${escape(moveset.imageUrl)}" alt="${escape(moveset.name)}" loading="lazy" onerror="this.hidden=true;">` : ''}
+          <h5>${escape(moveset.name)}</h5>
+          <dl class="social-umc-facts">${fields
+            .filter(([, value]) => value)
+            .map(
+              ([title, value]) =>
+                `<div><dt>${title}</dt><dd>${escape(value)}</dd></div>`,
+            )
+            .join('')}</dl>
+          ${moveset.dependencies.length ? `<h6>${label('dependencies', 'Dependencies')}</h6><ul class="social-umc-dependencies">${moveset.dependencies.map((entry) => `<li>${entry.url ? link(entry.url, entry.name) : escape(entry.name)}</li>`).join('')}</ul>` : ''}
+          ${!moveset.detailsAvailable ? `<p class="social-umc-status">${label('partial', 'Additional UMC details are temporarily unavailable.')}</p>` : ''}
+          ${moveset.sourceUrl || moveset.wikiUrl ? `<div class="social-umc-links">${moveset.sourceUrl ? link(moveset.sourceUrl, this.getSocialTranslation('social.umc.sourceCode', 'Source code')) : ''}${moveset.wikiUrl ? link(moveset.wikiUrl, 'Mods Wiki') : ''}</div>` : ''}
+        </article>`;
+        })
+        .join('');
+    }
+    return `<section class="social-umc-section" data-umc-section="${state.key}" aria-busy="${state.status === 'loading'}">
+      <div class="social-umc-heading"><h4>${label('title', 'Moveset information')}</h4>
+      <button type="button" class="social-gamebanana-external-btn" data-url="https://lilylavender.github.io/UltimateMovesetCompatibility/#/"><span>Provided by UMC</span><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></button></div>
+      ${content}
+    </section>`;
   }
 
   renderGameBananaWipInfo(
