@@ -9,6 +9,7 @@ import { BaseHandlerArg, GenericHandler } from '../../types/common';
 const buildDebugReport = async () => {
   const modsPath = (store.get('modsPath') as string | null) || null;
   const pluginsPath = (store.get('pluginsPath') as string | null) || null;
+  const selectedSsbuVersion = store.get('ssbuVersion');
   const mods = await getDebugLibrarySnapshot('mods', modsPath);
   const plugins = await getDebugLibrarySnapshot('plugins', pluginsPath);
   const otherFiles = [...mods.otherFiles, ...plugins.otherFiles];
@@ -33,6 +34,10 @@ const buildDebugReport = async () => {
     },
     configuration: {
       runMode: store.get('appRunMode') || 'emulator',
+      ssbuVersion:
+        selectedSsbuVersion === '13.0.4' || selectedSsbuVersion === '13.0.5'
+          ? selectedSsbuVersion
+          : null,
       hardwareLibraryMode: store.get('hardwareLibraryMode') || null,
       emulatorType: store.get('emulatorType') || null,
       modsPath,

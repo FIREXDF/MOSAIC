@@ -315,3 +315,45 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.marketplace-version-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 20px 24px 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(var(--accent-rgb), .35);
+  border-radius: 10px;
+  background: var(--bg-accent-subtle);
+  color: var(--text-primary);
+}
+
+.marketplace-version-banner button { flex-shrink: 0; }
+
+/* Hide a stale banner paragraph left by a renderer loaded before the copy was removed. */
+.marketplace-version-banner [data-i18n="plugins.ssbuBannerMessage"] { display: none; }
+
+.ssbu-version-choices {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 0;
+  border: 0;
+}
+
+.ssbu-version-choices label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-hover);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ssbu-version-choices label:has(input:checked) { border-color: var(--accent-color); }
+.ssbu-version-warning { color: var(--text-secondary); font-size: 13px; }
+
+@media (max-width: 600px) {
+  .marketplace-version-banner { flex-direction: column; align-items: flex-start; }
+}

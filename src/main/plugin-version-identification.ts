@@ -56,6 +56,10 @@ async function hashPlugin(filePath: string): Promise<FileHashes> {
   };
 }
 
+export async function getPluginSha256(filePath: string): Promise<string> {
+  return (await hashPlugin(filePath)).sha256;
+}
+
 async function identifyBatch(hashes: string[]): Promise<BatchResult[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
