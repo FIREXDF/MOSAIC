@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { randomUUID } from 'crypto';
 import PluginUtils, { SimplePlugin } from '../../plugin-utils';
+import { capturePluginsDebugSnapshot } from '../../debug-library-snapshot';
 import PluginUpdateChecker, {
   PluginUpdateResult,
 } from '../../plugin-update-checker';
@@ -190,6 +191,7 @@ const PluginHandlers = {
     try {
       console.log('[PluginHandlers] Reading plugins folder:', pluginsPath);
       const result = PluginUtils.readAllPlugins(pluginsPath);
+      capturePluginsDebugSnapshot(pluginsPath, result);
       console.log('[PluginHandlers] Plugins folder read complete:', {
         pluginsPath,
         activeCount: result.activePlugins.length,

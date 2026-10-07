@@ -1,233 +1,20 @@
 import { app, BrowserWindow, dialog, IpcMain } from 'electron';
-import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
-import * as path from 'path';
-import ModUtils, { Mod } from '../../mod-utils';
-import PluginUtils, { SimplePlugin } from '../../plugin-utils';
-import { resolveVirtualPath } from '../../utils/virtual-paths';
 import store from '../../store';
-import downloadsStore from '../../store-downloads';
+import { getDebugLibrarySnapshot } from '../../debug-library-snapshot';
 import { getCharacterCssDebugReport } from '../../characters/character-css-service';
 import { BaseHandlerArg, GenericHandler } from '../../types/common';
 
-const getPluginSourceUrl = (repository: string | null | undefined) => {
-  if (!repository) return null;
-  if (/^https?:\/\//i.test(repository)) return repository;
-
-  const gameBananaMatch = repository.match(/^GameBanana\/(\d+)$/i);
-  if (gameBananaMatch) {
-    return `https://gamebanana.com/mods/${gameBananaMatch[1]}`;
-  }
-
-  return `https://github.com/${repository.replace(/^\/+|\/+$/g, '')}`;
-};
-
-const collectOtherFiles = (
-  library: 'mods' | 'plugins',
-  status: 'active' | 'disabled',
-  folderPath: string,
-  excludedPaths: string[],
-) => {
-  const resolvedFolderPath = resolveVirtualPath(folderPath);
-  if (!fs.existsSync(resolvedFolderPath)) return [];
-
-  const resolvedExcludedPaths = excludedPaths.map((excludedPath) =>
-    path.resolve(excludedPath),
-  );
-  const isExcluded = (candidatePath: string) =>
-    resolvedExcludedPaths.some((excludedPath) => {
-      const relativePath = path.relative(excludedPath, candidatePath);
-      return (
-        relativePath === '' ||
-        (relativePath !== '..' &&
-          !relativePath.startsWith(`..${path.sep}`) &&
-          !path.isAbsolute(relativePath))
-      );
-    });
-
-  const files: Array<{
-    library: 'mods' | 'plugins';
-    status: 'active' | 'disabled';
-    name: string;
-    relativePath: string;
-    sizeBytes: number;
-  }> = [];
-  const pendingDirectories = [resolvedFolderPath];
-
-  while (pendingDirectories.length > 0) {
-    const currentDirectory = pendingDirectories.pop();
-    if (!currentDirectory || isExcluded(currentDirectory)) continue;
-
-    let entries: fs.Dirent[];
-    try {
-      entries = fs.readdirSync(currentDirectory, { withFileTypes: true });
-    } catch (error) {
-      console.warn('[DebugReport] Failed to scan for other files:', {
-        folderPath: currentDirectory,
-        error: error.message || String(error),
-      });
-      continue;
-    }
-
-    for (const entry of entries) {
-      const filePath = path.join(currentDirectory, entry.name);
-      if (isExcluded(filePath)) continue;
-
-      if (entry.isDirectory()) {
-        pendingDirectories.push(filePath);
-      } else if (entry.isFile()) {
-        try {
-          files.push({
-            library,
-            status,
-            name: entry.name,
-            relativePath: path
-              .relative(resolvedFolderPath, filePath)
-              .split(path.sep)
-              .join('/'),
-            sizeBytes: fs.statSync(filePath).size,
-          });
-        } catch {
-          // Skip files that disappear or become inaccessible during the scan.
-        }
-      }
-    }
-  }
-
-  return files.sort((a, b) =>
-    a.relativePath.localeCompare(b.relativePath, undefined, {
-      numeric: true,
-      sensitivity: 'base',
-    }),
-  );
-};
-
-const buildDebugReport = () => {
+const buildDebugReport = async () => {
   const modsPath = (store.get('modsPath') as string | null) || null;
   const pluginsPath = (store.get('pluginsPath') as string | null) || null;
-  const pluginVersions = (store.get('pluginVersions') || {}) as Record<
-    string,
-    string
-  >;
-  const pluginRepoMappings = (store.get('pluginRepoMappings') || {}) as Record<
-    string,
-    string
-  >;
-  const modDownloadLinks = (downloadsStore.get('downloads') || {}) as Record<
-    string,
-    string
-  >;
-
-  let mods: ReturnType<typeof ModUtils.readAllMods> = {
-    activeMods: [],
-    disabledMods: [],
-  };
-  let modsScanError: string | null = null;
-  if (modsPath) {
-    try {
-      mods = ModUtils.readAllMods(modsPath);
-    } catch (error) {
-      modsScanError = error.message || String(error);
-    }
-  }
-
-  let plugins: ReturnType<typeof PluginUtils.readAllPlugins> = {
-    activePlugins: [],
-    disabledPlugins: [],
-  };
-  let pluginsScanError: string | null = null;
-  if (pluginsPath) {
-    try {
-      plugins = PluginUtils.readAllPlugins(pluginsPath);
-    } catch (error) {
-      pluginsScanError = error.message || String(error);
-    }
-  }
-
-  const formatMod = (mod: Mod, status: 'active' | 'disabled') => {
-    let info: ReturnType<typeof ModUtils.readModInfo> = null;
-    try {
-      info = ModUtils.readModInfo(mod.path);
-    } catch {
-      // Keep the mod in the report even when its optional metadata is unreadable.
-    }
-
-    return {
-      name: info?.display_name || mod.name,
-      folderName: mod.folderName || mod.name,
-      status,
-      version: info?.version || null,
-      authors: info?.authors || null,
-      category: info?.category || null,
-      sourceUrl:
-        info?.url ||
-        modDownloadLinks[
-          crypto
-            .createHash('sha256')
-            .update(mod.folderName || mod.name)
-            .digest('hex')
-            .substring(0, 12)
-        ] ||
-        null,
-    };
-  };
-
-  const formatPlugin = (
-    plugin: SimplePlugin,
-    status: 'active' | 'disabled',
-  ) => {
-    const pluginId = path.basename(plugin.name, path.extname(plugin.name));
-    const repository =
-      pluginRepoMappings[pluginId] || pluginRepoMappings[plugin.name] || null;
-
-    return {
-      name: plugin.name,
-      status,
-      size: plugin.size,
-      version: pluginVersions[pluginId] || null,
-      repository,
-      sourceUrl: getPluginSourceUrl(repository),
-    };
-  };
-
-  const otherFiles = [
-    ...(modsPath
-      ? collectOtherFiles(
-          'mods',
-          'active',
-          modsPath,
-          mods.activeMods.map((mod) => mod.path),
-        )
-      : []),
-    ...(modsPath
-      ? collectOtherFiles(
-          'mods',
-          'disabled',
-          ModUtils.getDisabledModsFolder(modsPath),
-          mods.disabledMods.map((mod) => mod.path),
-        )
-      : []),
-    ...(pluginsPath
-      ? collectOtherFiles(
-          'plugins',
-          'active',
-          pluginsPath,
-          plugins.activePlugins.map((plugin) => plugin.path),
-        )
-      : []),
-    ...(pluginsPath
-      ? collectOtherFiles(
-          'plugins',
-          'disabled',
-          PluginUtils.getDisabledPluginsFolder(pluginsPath),
-          plugins.disabledPlugins.map((plugin) => plugin.path),
-        )
-      : []),
-  ];
+  const mods = await getDebugLibrarySnapshot('mods', modsPath);
+  const plugins = await getDebugLibrarySnapshot('plugins', pluginsPath);
+  const otherFiles = [...mods.otherFiles, ...plugins.otherFiles];
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: new Date().toISOString(),
     app: {
       name: app.getName(),
@@ -246,6 +33,7 @@ const buildDebugReport = () => {
     },
     configuration: {
       runMode: store.get('appRunMode') || 'emulator',
+      hardwareLibraryMode: store.get('hardwareLibraryMode') || null,
       emulatorType: store.get('emulatorType') || null,
       modsPath,
       pluginsPath,
@@ -253,28 +41,22 @@ const buildDebugReport = () => {
     cssEditor: getCharacterCssDebugReport(),
     libraries: {
       mods: {
-        configured: Boolean(modsPath),
-        activeCount: mods.activeMods.length,
-        disabledCount: mods.disabledMods.length,
-        scanError: modsScanError,
-        items: [
-          ...mods.activeMods.map((mod) => formatMod(mod, 'active')),
-          ...mods.disabledMods.map((mod) => formatMod(mod, 'disabled')),
-        ],
+        configured: mods.configured,
+        activeCount: mods.activeCount,
+        disabledCount: mods.disabledCount,
+        scanError: mods.scanError,
+        source: mods.source,
+        snapshotAt: mods.snapshotAt,
+        items: mods.items,
       },
       plugins: {
-        configured: Boolean(pluginsPath),
-        activeCount: plugins.activePlugins.length,
-        disabledCount: plugins.disabledPlugins.length,
-        scanError: pluginsScanError,
-        items: [
-          ...plugins.activePlugins.map((plugin) =>
-            formatPlugin(plugin, 'active'),
-          ),
-          ...plugins.disabledPlugins.map((plugin) =>
-            formatPlugin(plugin, 'disabled'),
-          ),
-        ],
+        configured: plugins.configured,
+        activeCount: plugins.activeCount,
+        disabledCount: plugins.disabledCount,
+        scanError: plugins.scanError,
+        source: plugins.source,
+        snapshotAt: plugins.snapshotAt,
+        items: plugins.items,
       },
       ...(otherFiles.length > 0
         ? {
@@ -338,7 +120,7 @@ const exportDebugReport = async (
   }
 
   try {
-    const report = buildDebugReport();
+    const report = await buildDebugReport();
     const exportReport = anonymizeUserPaths
       ? anonymizeHomeDirectory(report)
       : report;
