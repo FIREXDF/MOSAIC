@@ -235,6 +235,12 @@ export {};
       <h2 data-i18n="plugins.marketplace">Plugin Marketplace</h2>
     </div>
     <div class="modal-body">
+      <div class="marketplace-version-banner" role="status">
+        <div>
+          <strong><span data-i18n="plugins.ssbuBannerTitle">SSBU version:</span> <span id="marketplace-ssbu-version">Not selected</span></strong>
+        </div>
+        <button type="button" id="marketplace-change-ssbu-version" class="modal-btn modal-btn-secondary" data-i18n="plugins.changeSsbuVersion">Change version</button>
+      </div>
       <div id="marketplace-results" class="marketplace-results">
       </div>
     </div>
@@ -263,6 +269,19 @@ export {};
     const resultsContainer = modal.querySelector<HTMLElement>(
       '#marketplace-results',
     );
+
+    const versionLabel = modal.querySelector<HTMLElement>('#marketplace-ssbu-version')!;
+    const refreshVersion = async () => {
+      versionLabel.textContent =
+        (await window.pluginMarketplace.getConfiguredSsbuVersion()) ||
+        (window.i18n?.t?.('plugins.ssbuNotSelected') || 'Not selected');
+    };
+    await refreshVersion();
+    modal.querySelector<HTMLButtonElement>('#marketplace-change-ssbu-version')!
+      .addEventListener('click', async () => {
+        await this.openSsbuVersionModal(modal);
+        await refreshVersion();
+      });
 
     let installedRepos: string[] = [];
     if (window.electronAPI && window.electronAPI.getPluginRepoMapping) {
@@ -293,12 +312,83 @@ export {};
     });
 
     const escapeHandler = (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && modal.style.display !== 'none') {
         this.closePluginMarketplaceModal(modal);
         document.removeEventListener('keydown', escapeHandler);
       }
     };
     document.addEventListener('keydown', escapeHandler);
+  };
+
+  M.prototype.openSsbuVersionModal = async function (marketplaceModal: HTMLElement) {
+    const current = await window.pluginMarketplace.getConfiguredSsbuVersion();
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'ssbu-version-modal';
+    modal.style.maxWidth = '480px';
+    modal.innerHTML = `
+      <div class="modal-header"><h2 data-i18n="plugins.ssbuModalTitle">Your SSBU version</h2></div>
+      <div class="modal-body">
+        <p data-i18n="plugins.ssbuModalMessage">Select the game version installed on your Switch or emulator.</p>
+        <fieldset class="ssbu-version-choices">
+          <label><input type="radio" name="ssbu-marketplace-version" value="13.0.4" ${current === '13.0.4' ? 'checked' : ''}> 13.0.4</label>
+          <label><input type="radio" name="ssbu-marketplace-version" value="13.0.5" ${current === '13.0.5' ? 'checked' : ''}> 13.0.5</label>
+        </fieldset>
+        <p class="ssbu-version-warning" data-i18n="plugins.ssbuReinstallWarning">After switching version, reinstall every installed plugin so it matches your game.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="modal-btn modal-btn-secondary" id="cancel-ssbu-version" data-i18n="common.cancel">Cancel</button>
+        <button type="button" class="modal-btn modal-btn-primary" id="save-ssbu-version" data-i18n="common.save" ${current ? '' : 'disabled'}>Save</button>
+      </div>`;
+    document.body.appendChild(modal);
+    marketplaceModal.style.display = 'none';
+    this.showOverlay();
+    modal.style.display = 'block';
+    window.i18n?.updateDOM();
+
+    return new Promise<string | null>((resolve) => {
+      const save = modal.querySelector<HTMLButtonElement>('#save-ssbu-version')!;
+      const escapeHandler = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          event.stopPropagation();
+          close(null);
+        }
+      };
+      const close = (version: string | null) => {
+        document.removeEventListener('keydown', escapeHandler, true);
+        this.closeModal(modal, {
+          skipHideOverlay: true,
+          onModalClosed: () => {
+            modal.remove();
+            marketplaceModal.style.display = 'block';
+            this.showOverlay();
+            resolve(version);
+          },
+        });
+      };
+      document.addEventListener('keydown', escapeHandler, true);
+      modal.querySelectorAll<HTMLInputElement>('input[name="ssbu-marketplace-version"]')
+        .forEach((radio) => radio.addEventListener('change', () => { save.disabled = false; }));
+      modal.querySelector<HTMLButtonElement>('#cancel-ssbu-version')!
+        .addEventListener('click', () => close(null));
+      save.addEventListener('click', async () => {
+        const version = modal.querySelector<HTMLInputElement>('input[name="ssbu-marketplace-version"]:checked')?.value;
+        if (version !== '13.0.4' && version !== '13.0.5') return;
+        save.disabled = true;
+        try {
+          const saved = await window.electronAPI.store.set('ssbuVersion', version);
+          if (!saved?.success) throw new Error('Failed to save SSBU version');
+          if (version !== current) {
+            window.toastManager?.info(window.i18n?.t?.('plugins.ssbuReinstallWarning') ||
+              'After switching version, reinstall every installed plugin so it matches your game.');
+          }
+          close(version);
+        } catch (error) {
+          save.disabled = false;
+          window.toastManager?.error(String(error));
+        }
+      });
+    });
   };
 
   M.prototype.renderMarketplaceResults = function (
@@ -432,6 +522,15 @@ export {};
           (item) => item.name === pluginName && item.repo === pluginRepo,
         );
 
+        let ssbuVersion = await window.pluginMarketplace.getConfiguredSsbuVersion();
+        if (!ssbuVersion) {
+          const marketplaceModal = btn.closest<HTMLElement>('#plugin-marketplace-modal');
+          if (!marketplaceModal) return;
+          ssbuVersion = await this.openSsbuVersionModal(marketplaceModal);
+          if (!ssbuVersion) return;
+          marketplaceModal.querySelector<HTMLElement>('#marketplace-ssbu-version')!.textContent = ssbuVersion;
+        }
+
         btn.disabled = true;
         btn.innerHTML =
           '<i class="bi bi-arrow-repeat" style="animation: spin 1s linear infinite;"></i> <span data-i18n="plugins.installing">Installing...</span>';
@@ -439,24 +538,28 @@ export {};
           window.i18n.updateDOM();
         }
 
+        try {
         if (window.pluginMarketplace) {
           if (specialInstaller === 'arcropolis' && plugin) {
+            const release = await window.electronAPI.getGithubRelease(
+              pluginRepo, ssbuVersion === '13.0.4' ? 'v4.0.8' : 'v4.1.1',
+            );
+            if (!release.success) throw new Error(release.error || 'ARCropolis release unavailable');
+            const installed = await window.pluginMarketplace.downloadAndInstallPlugin(
+              pluginName, pluginRepo,
+              { url: release.downloadUrl, version: release.version },
+            );
+            if (!installed) {
+              btn.disabled = false;
+              btn.innerHTML = `<i class="bi ${restoreIcon}"></i> <span ${restoreTextKey ? `data-i18n="${restoreTextKey}"` : ''}>${restoreText}</span>`;
+              window.i18n?.updateDOM();
+              return;
+            }
+            btn.closest('.marketplace-plugin-card')?.classList.add('installed');
+            btn.dataset.isInstalled = 'true';
             btn.disabled = false;
-            btn.innerHTML = `<i class="bi ${restoreIcon}"></i> <span ${restoreTextKey ? `data-i18n="${restoreTextKey}"` : ''}>${restoreText}</span>`;
-            if (window.i18n) {
-              window.i18n.updateDOM();
-            }
-            const marketplaceModal = btn.closest<HTMLElement>(
-              '#plugin-marketplace-modal',
-            );
-            if (marketplaceModal) {
-              marketplaceModal.style.display = 'none';
-            }
-            await this.openArcropolisInstallModal(
-              plugin,
-              marketplaceModal,
-              isInstalled,
-            );
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span data-i18n="plugins.reinstall">Reinstall</span>';
+            window.i18n?.updateDOM();
             return;
           }
 
@@ -481,27 +584,23 @@ export {};
           }
 
           if (specialInstaller === 'one-slot-effects' && plugin) {
+            const file = await window.pluginMarketplace.getCompatibleOneSlotEffectsFile(ssbuVersion);
+            await window.pluginMarketplace.installOneSlotEffects({
+              downloadUrl: file._sDownloadUrl,
+              version: file._sVersion || file._sFile || '',
+            });
+            btn.closest('.marketplace-plugin-card')?.classList.add('installed');
+            btn.dataset.isInstalled = 'true';
             btn.disabled = false;
-            btn.innerHTML = `<i class="bi ${restoreIcon}"></i> <span ${restoreTextKey ? `data-i18n="${restoreTextKey}"` : ''}>${restoreText}</span>`;
-            if (window.i18n) {
-              window.i18n.updateDOM();
-            }
-            const marketplaceModal = btn.closest<HTMLElement>(
-              '#plugin-marketplace-modal',
-            );
-            if (marketplaceModal) {
-              marketplaceModal.style.display = 'none';
-            }
-            await this.openOneSlotEffectsInstallModal(
-              plugin,
-              marketplaceModal,
-            );
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span data-i18n="plugins.reinstall">Reinstall</span>';
+            window.i18n?.updateDOM();
+            window.toastManager?.success('One Slot Effects installed');
             return;
           }
 
           const downloadUrl =
-            await window.pluginMarketplace.getLatestReleaseDownloadUrl(
-              pluginRepo,
+            await window.pluginMarketplace.getCompatibleGithubDownload(
+              pluginRepo, ssbuVersion,
             );
 
           if (downloadUrl) {
@@ -544,6 +643,13 @@ export {};
               window.i18n.updateDOM();
             }
           }
+        }
+        } catch (error) {
+          console.error('[Marketplace] Install failed:', error);
+          window.toastManager?.error(error.message || String(error));
+          btn.disabled = false;
+          btn.innerHTML = `<i class="bi ${restoreIcon}"></i> <span ${restoreTextKey ? `data-i18n="${restoreTextKey}"` : ''}>${restoreText}</span>`;
+          window.i18n?.updateDOM();
         }
       });
     });
