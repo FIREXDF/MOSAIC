@@ -10,7 +10,7 @@ import { RequestOptions } from 'https';
 import ModUtils from './mod-utils';
 import sharedStore from './store';
 import downloadsStore from './store-downloads';
-import { ensureModInfoUrl } from './utils/mod-info-url';
+import { ensureModInfoMetadata, ensureModInfoUrl } from './utils/mod-info-url';
 
 const packageJson = require('../../package.json');
 
@@ -21,6 +21,71 @@ const PROTOCOL_URL_PREFIX = new RegExp(
   `^(?:${PROTOCOL_SCHEMES.join('|')}):`,
   'i',
 );
+
+const gameBananaEntities: Record<string, string> = {
+  amp: '&',
+  apos: "'",
+  bull: '•',
+  copy: '©',
+  gt: '>',
+  hellip: '…',
+  ldquo: '“',
+  lsquo: '‘',
+  lt: '<',
+  mdash: '—',
+  nbsp: ' ',
+  ndash: '–',
+  quot: '"',
+  rdquo: '”',
+  reg: '®',
+  rsquo: '’',
+};
+
+function decodeGameBananaEntities(value: string): string {
+  return value.replace(/&(#(?:x[\da-f]+|\d+)|[a-z][\da-z]+);/gi, (match, entity: string) => {
+    if (entity.startsWith('#')) {
+      const hexadecimal = /^#x/i.test(entity);
+      const codePoint = parseInt(entity.slice(hexadecimal ? 2 : 1), hexadecimal ? 16 : 10);
+      return codePoint > 0 && codePoint <= 0x10ffff
+        ? String.fromCodePoint(codePoint)
+        : match;
+    }
+    return gameBananaEntities[entity.toLowerCase()] || match;
+  });
+}
+
+function gameBananaDescriptionToText(value: unknown): string {
+  if (typeof value !== 'string') return '';
+
+  const withoutScripts = value
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
+  const withLinks = withoutScripts.replace(
+    /<a\b([^>]*)>([\s\S]*?)<\/a\s*>/gi,
+    (_match, attributes: string, body: string) => {
+      const href = attributes.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const url = decodeGameBananaEntities(href?.[1] || href?.[2] || href?.[3] || '').trim();
+      const label = decodeGameBananaEntities(body.replace(/<[^>]*>/g, '')).trim();
+      if (!/^https?:\/\//i.test(url)) return label;
+      return label && label !== url ? `${label} (${url})` : url;
+    },
+  );
+
+  return decodeGameBananaEntities(
+    withLinks
+      .replace(/<br\s*\/?\s*>/gi, '\n')
+      .replace(/<li\b[^>]*>/gi, '\n- ')
+      .replace(/<hr\b[^>]*\/?\s*>/gi, '\n')
+      .replace(/<\/(?:p|div|h[1-6]|section|article|ul|ol|li|blockquote|tr)\s*>/gi, '\n')
+      .replace(/<\/?[a-z][^>]*>/gi, ''),
+  )
+    .replace(/\r\n?/g, '\n')
+    .replace(/[\t ]{2,}/g, ' ')
+    .replace(/[\t ]*\n[\t ]*/g, '\n')
+    .replace(/\n{2,}(?=- )/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 export interface ProtocolHandlerEvents {
   'mod-install-confirm-request': {
@@ -695,9 +760,10 @@ export default class ProtocolHandler {
         });
         this.sendToRenderer('mod-extract-complete', { downloadId });
 
-        if (modId && modInstallResult.resultingMods.length === 1) {
-          const modData = modInstallResult.resultingMods[0];
-          await this.fetchAndSaveModMetadata(modId, modData.modPath, modType);
+        if (modId) {
+          for (const modData of modInstallResult.resultingMods) {
+            await this.fetchAndSaveModMetadata(modId, modData.modPath, modType);
+          }
         }
 
         for (const modData of modInstallResult.resultingMods) {
@@ -757,12 +823,27 @@ export default class ProtocolHandler {
       _handleSaveError(error);
     }
   }
+  private getMmdlSubmission(url: string): {
+    modId: string;
+    modType: 'Mod' | 'Sound';
+  } | null {
+    // GameBanana may put its tool ID between the file ID and submission details.
+    const normalizedUrl = url.replace(/%2c/gi, ',');
+    const match = normalizedUrl.match(
+      /(?:^|\/)mmdl\/\d+(?:\?[^,]*)?,(Mod|Sound),(\d+)(?=,|[&#]|$)/i,
+    );
+    if (!match) return null;
+
+    return {
+      modId: match[2],
+      modType: match[1].toLowerCase() === 'sound' ? 'Sound' : 'Mod',
+    };
+  }
+
   extractModId(url) {
     try {
-      const mmdlMatch = url.match(/mmdl\/\d+,(?:Mod|Sound),(\d+)/);
-      if (mmdlMatch && mmdlMatch[1]) {
-        return mmdlMatch[1];
-      }
+      const mmdlSubmission = this.getMmdlSubmission(url);
+      if (mmdlSubmission) return mmdlSubmission.modId;
 
       const pageMatch = url.match(/gamebanana\.com\/(?:mods|sounds)(?:\/download)?\/(\d+)/i);
       if (pageMatch && pageMatch[1]) {
@@ -778,10 +859,8 @@ export default class ProtocolHandler {
 
   extractModType(url) {
     try {
-      const typeMatch = url.match(/mmdl\/\d+,(Mod|Sound),/);
-      if (typeMatch && typeMatch[1]) {
-        return typeMatch[1];
-      }
+      const mmdlSubmission = this.getMmdlSubmission(url);
+      if (mmdlSubmission) return mmdlSubmission.modType;
 
       if (/gamebanana\.com\/sounds(?:\/download)?\//i.test(url)) {
         return 'Sound';
@@ -1167,54 +1246,47 @@ export default class ProtocolHandler {
       console.log(`Fetching metadata for ${modType} ${modId}...`);
 
       const hasPreview = this.hasPreviewImage(modFolderPath);
-      const hasInfoToml = fs.existsSync(path.join(modFolderPath, 'info.toml'));
-
-      if (hasPreview && hasInfoToml) {
-        console.log(
-          'Mod already has preview and info.toml, skipping metadata fetch',
-        );
-        return;
-      }
 
       const apiUrl = `https://gamebanana.com/apiv11/${modType}/${modId}?_csvProperties=%40gbprofile`;
-      console.log('API URL:', apiUrl);
-
-      const response = await this.fetchWithTimeout(apiUrl, 10000);
+      const textUrl = `https://gamebanana.com/apiv11/${modType}/${modId}?_csvProperties=_sText,_sDescription`;
+      const [response, textResponse] = await Promise.all([
+        this.fetchWithTimeout(apiUrl, 10000),
+        this.fetchWithTimeout(textUrl, 10000).catch((error) => {
+          console.warn('Failed to fetch mod description:', error);
+          return null;
+        }),
+      ]);
       const data = JSON.parse(response);
-
-      if (
-        !hasPreview &&
-        data._aPreviewMedia &&
-        data._aPreviewMedia._aImages &&
-        data._aPreviewMedia._aImages.length > 0
-      ) {
-        const firstImage = data._aPreviewMedia._aImages[0];
-        if (firstImage._sBaseUrl && firstImage._sFile) {
-          const imageUrl = firstImage._sBaseUrl + '/' + firstImage._sFile;
-          console.log('Downloading preview from:', imageUrl);
-          await this.downloadPreviewImage(imageUrl, modFolderPath);
+      let textData: { _sText?: string; _sDescription?: string } | null = null;
+      if (textResponse) {
+        try {
+          textData = JSON.parse(textResponse);
+        } catch (error) {
+          console.warn('Failed to parse mod description:', error);
         }
       }
 
-      if (!hasInfoToml) {
-        const category =
-          data._aSuperCategory && data._aSuperCategory._sName
-            ? data._aSuperCategory._sName
-            : '';
-        const author =
-          data._aSubmitter && data._aSubmitter._sName
-            ? data._aSubmitter._sName
-            : '';
-        const version =
-          data._aAdditionalInfo && data._aAdditionalInfo._sVersion
-            ? data._aAdditionalInfo._sVersion
-            : '';
+      ensureModInfoMetadata(modFolderPath, {
+        display_name: data._sName || '',
+        authors: data._aSubmitter?._sName || '',
+        version: data._aAdditionalInfo?._sVersion || '',
+        category: data._aSuperCategory?._sName || data._aCategory?._sName || '',
+        description: gameBananaDescriptionToText(
+          textData?._sText || textData?._sDescription || '',
+        ),
+      });
+      ensureModInfoUrl(modFolderPath, `https://gamebanana.com/${modType.toLowerCase()}s/${modId}`);
 
-        const modUrl = modId ? `https://gamebanana.com/${modType.toLowerCase()}s/${modId}` : '';
-
-        if (category || author || version || modUrl) {
-          console.log('Creating info.toml...');
-          this.createInfoToml(modFolderPath, category, author, version, modUrl);
+      if (!hasPreview) {
+        const firstImage = data._aPreviewMedia?._aImages?.[0];
+        if (firstImage?._sBaseUrl && firstImage?._sFile) {
+          const imageUrl = firstImage._sBaseUrl + '/' + firstImage._sFile;
+          console.log('Downloading preview from:', imageUrl);
+          try {
+            await this.downloadPreviewImage(imageUrl, modFolderPath);
+          } catch (previewError) {
+            console.warn('Failed to download mod preview:', previewError);
+          }
         }
       }
 
@@ -1225,12 +1297,7 @@ export default class ProtocolHandler {
   }
 
   hasPreviewImage(modFolderPath) {
-    try {
-      const files = fs.readdirSync(modFolderPath);
-      return files.some((file) => file.toLowerCase().startsWith('preview.'));
-    } catch {
-      return false;
-    }
+    return Boolean(ModUtils.getPreviewImagePath(modFolderPath));
   }
 
   fetchWithTimeout(url: string, timeout: number): Promise<string> {
@@ -1268,11 +1335,8 @@ export default class ProtocolHandler {
   }
 
   async downloadPreviewImage(imageUrl, modFolderPath) {
-    return new Promise<void>((resolve, reject) => {
+    const imageData = await new Promise<Buffer>((resolve, reject) => {
       const protocol = imageUrl.startsWith('https') ? https : http;
-      const previewPath = path.join(modFolderPath, 'preview.webp');
-      const file = fs.createWriteStream(previewPath);
-
       const requestOptions: RequestOptions = new URL(imageUrl);
       requestOptions.headers = {
         'User-Agent': USER_AGENT,
@@ -1280,28 +1344,61 @@ export default class ProtocolHandler {
       };
 
       const request = protocol.get(requestOptions, (response) => {
-        if (response.statusCode === 200) {
-          response.pipe(file);
-          file.on('finish', () => {
-            file.close();
-            console.log('✓ Preview image saved');
-            resolve();
-          });
-        } else {
-          file.close();
-          fs.unlinkSync(previewPath);
+        if (response.statusCode !== 200) {
+          response.resume();
           reject(new Error(`Failed to download image: ${response.statusCode}`));
+          return;
         }
-      });
 
-      request.on('error', (err) => {
-        file.close();
-        if (fs.existsSync(previewPath)) {
-          fs.unlinkSync(previewPath);
-        }
-        reject(err);
+        const chunks: Buffer[] = [];
+        response.on('data', (chunk: Buffer) => chunks.push(chunk));
+        response.on('end', () => resolve(Buffer.concat(chunks)));
+        response.on('error', reject);
       });
+      request.on('error', reject);
+      request.setTimeout(15000, () => request.destroy(new Error('Preview download timeout')));
     });
+
+    const isWebp = imageData.toString('ascii', 0, 4) === 'RIFF' &&
+      imageData.toString('ascii', 8, 12) === 'WEBP';
+    if (isWebp) {
+      await fs.promises.writeFile(path.join(modFolderPath, 'preview.webp'), imageData);
+      return;
+    }
+
+    try {
+      const imageDataUrl = `data:application/octet-stream;base64,${imageData.toString('base64')}`;
+      const webpDataUrl = await this.mainWindow.webContents.executeJavaScript(`
+        (async () => {
+          const response = await fetch(${JSON.stringify(imageDataUrl)});
+          const bitmap = await createImageBitmap(await response.blob());
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+            const context = canvas.getContext('2d');
+            if (!context) throw new Error('Canvas context unavailable');
+            context.drawImage(bitmap, 0, 0);
+            return canvas.toDataURL('image/webp', 0.92);
+          } finally {
+            bitmap.close();
+          }
+        })()
+      `);
+      if (typeof webpDataUrl !== 'string' || !webpDataUrl.startsWith('data:image/webp;base64,')) {
+        throw new Error('WebP conversion unavailable');
+      }
+
+      await fs.promises.writeFile(
+        path.join(modFolderPath, 'preview.webp'),
+        Buffer.from(webpDataUrl.slice('data:image/webp;base64,'.length), 'base64'),
+      );
+    } catch (error) {
+      const extension = path.extname(new URL(imageUrl).pathname).toLowerCase();
+      if (!['.jpg', '.jpeg', '.png'].includes(extension)) throw error;
+      console.warn('Failed to convert preview to WebP, saving original image:', error);
+      await fs.promises.writeFile(path.join(modFolderPath, `preview${extension}`), imageData);
+    }
   }
 
   createInfoToml(modFolderPath, category, author, version, url = '') {
@@ -1327,18 +1424,16 @@ export default class ProtocolHandler {
 
   private saveDownloadedModUrl(modFolderPath: string, source: string, modId?: string | null, modType = 'Mod') {
     try {
-      const cleanSource = source.replace(PROTOCOL_URL_PREFIX, '').replace(/^\/+/, '')
-        .replace(/(\/mmdl\/\d+),(?:Mod|Sound),\d+.*$/i, '$1');
+      const cleanSource = source.replace(PROTOCOL_URL_PREFIX, '').replace(/^\/+/, '');
       const url = new URL(cleanSource);
       if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) return;
       const isGameBanana = ['gamebanana.com', 'www.gamebanana.com'].includes(url.hostname.toLowerCase());
-      const id = modId || (isGameBanana ? this.extractModId(source) : null);
+      if (!isGameBanana) return;
+      const id = modId || this.extractModId(source);
       const type = modId ? modType : this.extractModType(source);
-      // Submission IDs differ from /dl and /mmdl file IDs.
-      const pageUrl = isGameBanana && id && /^\d+$/.test(id) && /^(Mod|Sound)$/i.test(type)
-        ? `https://gamebanana.com/${type.toLowerCase()}s/${id}`
-        : url.href;
-      ensureModInfoUrl(modFolderPath, pageUrl);
+      // /dl and /mmdl contain file IDs, which are not submission IDs.
+      if (!id || !/^\d+$/.test(id) || !/^(Mod|Sound)$/i.test(type)) return;
+      ensureModInfoUrl(modFolderPath, `https://gamebanana.com/${type.toLowerCase()}s/${id}`);
     } catch (error) {
       console.warn('[protocol] Failed to save mod source URL:', error.message);
     }

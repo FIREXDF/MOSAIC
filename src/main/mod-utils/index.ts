@@ -411,10 +411,9 @@ export default class ModUtils {
    */
   static getPreviewImagePath(modPath: string) {
     try {
-      const previewPath = path.join(modPath, 'preview.webp');
-
-      if (fs.existsSync(previewPath)) {
-        return previewPath;
+      for (const extension of ['webp', 'jpg', 'jpeg', 'png']) {
+        const previewPath = path.join(modPath, `preview.${extension}`);
+        if (fs.existsSync(previewPath)) return previewPath;
       }
 
       return null;
@@ -510,7 +509,11 @@ export default class ModUtils {
           let value = line.substring(equalsIndex + 1).trim();
 
           if (value.startsWith('"') && value.endsWith('"')) {
-            value = value.slice(1, -1);
+            try {
+              value = JSON.parse(value);
+            } catch {
+              value = value.slice(1, -1);
+            }
           }
 
           info[key] = value;
@@ -1201,20 +1204,17 @@ export default class ModUtils {
             }
           }
 
-          const previewSource = path.join(topLevelModDir, 'preview.webp');
-          const previewDest = path.join(modPath, 'preview.webp');
-
-          try {
-            await fsPromises.access(previewSource);
+          for (const extension of ['webp', 'jpg', 'jpeg', 'png']) {
+            const previewName = `preview.${extension}`;
+            const previewSource = path.join(topLevelModDir, previewName);
+            const previewDest = path.join(modPath, previewName);
             try {
-              await fsPromises.access(previewDest);
-            } catch {
-              await fsPromises.copyFile(previewSource, previewDest);
-              console.log(
-                '[installFromArchive] Copied preview.webp from top level directory',
-              );
-            }
-          } catch {}
+              await fsPromises.access(previewSource);
+              await fsPromises.copyFile(previewSource, previewDest, fs.constants.COPYFILE_EXCL);
+              console.log(`[installFromArchive] Copied ${previewName} from top level directory`);
+              break;
+            } catch {}
+          }
         }
       }
     }
