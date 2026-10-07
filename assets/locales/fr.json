@@ -492,7 +492,7 @@
     "debugReportAnonymize": "Oui, anonymiser",
     "debugReportExporting": "Export en cours…",
     "exportDebugReportDesc": "Enregistrer les informations sur l’application, le système, les mods, les plugins, les autres fichiers des bibliothèques et les données sauvegardées du CSS editor dans un fichier JSON",
-    "exportDebugReportHint": "Inclut les chemins des bibliothèques, des fichiers sources du CSS editor et les données sauvegardées de l’éditeur. Pour chaque plugin, distingue la version enregistrée par MOSAIC de celle identifiée par le hash du fichier. Si la Switch est déconnectée, les dernières données disponibles sont utilisées et datées dans le rapport. Vous pouvez choisir d’anonymiser le dossier personnel à l’export. Les mots de passe et les paramètres du jeu ou de l’émulateur ne sont pas inclus.",
+    "exportDebugReportHint": "Inclut les chemins des bibliothèques, les fichiers et données du CSS editor, ainsi que les versions enregistrées et identifiées par hash des plugins. Utilise le cache si la Switch est déconnectée. Les chemins personnels peuvent être anonymisés ; mots de passe et paramètres du jeu/émulateur exclus.",
     "debugReportExported": "Le rapport de diagnostic a été exporté.",
     "debugReportExportFailed": "Impossible d’exporter le rapport de diagnostic.",
     "feedback": "Envoyer un retour",

@@ -493,7 +493,7 @@
     "debugReportAnonymize": "Yes, anonymize",
     "debugReportExporting": "Exporting…",
     "exportDebugReportDesc": "Save app, system, mods, plugins, other library files, and saved CSS editor data to a JSON file",
-    "exportDebugReportHint": "Includes library folder paths, CSS editor source file paths and saved editor data. For each plugin, distinguishes the version recorded by MOSAIC from the version identified by the file hash. If the Switch is disconnected, the latest available saved data is used and dated in the report. You can choose to anonymize your home folder when exporting. Passwords and game or emulator settings are not included.",
+    "exportDebugReportHint": "Includes library paths, CSS editor files and saved data, plus recorded and hash-identified plugin versions. Uses cached data if the Switch is disconnected. Home paths can be anonymized; passwords and game/emulator settings are excluded.",
     "debugReportExported": "Debug report exported successfully.",
     "debugReportExportFailed": "Could not export the debug report.",
     "feedback": "Give Feedback",
