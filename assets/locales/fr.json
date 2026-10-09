@@ -1077,6 +1077,7 @@
       "conflictingModsHeader": "Mods en Conflit",
       "ignoreFile": "Ignorer ce fichier",
       "ignoreFileAria": "Ignorer {{filePath}} dans les vérifications de conflits",
+      "ignoreFileTooltip": "Masque seulement ce fichier des vérifications. Cela ne règle pas le conflit en jeu, et ARCropolis risque quand même d'afficher une erreur.",
       "deleteFileFromMod": "Supprimer ce fichier en conflit de {{modName}}",
       "deleteFileTitle": "Supprimer le fichier en conflit",
       "deleteFileWarning": "Supprimer ce fichier en conflit de {{modName}} ?",

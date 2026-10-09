@@ -176,6 +176,38 @@
   color: var(--accent-hover);
 }
 
+.conflict-ignore-tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  max-width: 280px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-hover);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
+  z-index: 100000;
+}
+
+.conflict-ignore-tooltip.below {
+  transform: translateY(-4px);
+}
+
+.conflict-ignore-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .conflict-td-mods {
   width: 60%;
   padding: 10px 8px;
