@@ -133,11 +133,15 @@ class DownloadManager {
     window.electronAPI.onSwitchTransferProgress((data: any) => {
       const currentState = this.switchTransfer;
 
+      if (!currentState) {
+        return;
+      }
+
       this.switchTransfer = {
-        id: currentState?.id || Date.now().toString(),
-        status: data.status || currentState?.status || 'uploading',
+        id: currentState.id,
+        status: data.status || currentState.status || 'uploading',
         transferMethod:
-          data.transferMethod || currentState?.transferMethod || 'ftp',
+          data.transferMethod || currentState.transferMethod || 'ftp',
         currentMod: data.currentMod ?? currentState?.currentMod ?? 0,
         totalMods: data.totalMods ?? currentState?.totalMods ?? 0,
         transferredCount:

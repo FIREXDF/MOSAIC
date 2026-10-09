@@ -289,6 +289,7 @@ export async function sendModsToDrive(
     );
     let processedCount = 0;
     let copiedCount = 0;
+    let lastProgressAt = 0;
 
     onProgress({
       status: 'copying',
@@ -319,6 +320,11 @@ export async function sendModsToDrive(
         }
 
         processedCount++;
+        const now = Date.now();
+        if (processedCount < totalFiles && now - lastProgressAt < 100) {
+          continue;
+        }
+        lastProgressAt = now;
         onProgress({
           status: 'copying',
           currentMod: itemIndex + 1,
