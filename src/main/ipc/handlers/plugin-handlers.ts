@@ -356,6 +356,11 @@ const PluginHandlers = {
     })[];
   }> => {
     try {
+      // 13.0.4 needs pinned plugin versions, newer releases target 13.0.5.
+      if (store.get('ssbuVersion') === '13.0.4') {
+        return { success: true, results: [] };
+      }
+
       const pluginMappings = (store.get('pluginRepoMappings') || {}) as Record<
         string,
         string
