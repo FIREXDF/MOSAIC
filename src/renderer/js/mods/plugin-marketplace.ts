@@ -20,7 +20,7 @@ class PluginMarketplace {
         name: 'ARCropolis',
         repo: 'Raytwo/ARCropolis',
         description:
-          'Smash Ultimate mod loader. Choose the recommended stable version or the latest release during installation.',
+          'Smash Ultimate mod loader. The release is selected from your SSBU version.',
         url: 'https://github.com/Raytwo/ARCropolis/releases',
         specialInstaller: 'arcropolis',
       },
@@ -82,6 +82,36 @@ class PluginMarketplace {
 
   getPlugins() {
     return this.plugins;
+  }
+
+  async getConfiguredSsbuVersion(): Promise<'13.0.4' | '13.0.5' | null> {
+    const version = await window.electronAPI.store.get('ssbuVersion');
+    return version === '13.0.4' || version === '13.0.5' ? version : null;
+  }
+
+  async getCompatibleGithubDownload(repo: string, ssbuVersion: '13.0.4' | '13.0.5') {
+    const tag = repo === 'ultimate-research/params-hook-plugin'
+      ? `v${ssbuVersion}`
+      : repo === 'HDR-Development/smashline' && ssbuVersion === '13.0.4'
+        ? 'v1.6.6'
+        : undefined;
+    return this.getLatestReleaseDownloadUrl(repo, tag);
+  }
+
+  async getCompatibleOneSlotEffectsFile(ssbuVersion: '13.0.4' | '13.0.5') {
+    const files = await this.getGameBananaFiles('Mod', '549058');
+    // GameBanana displays "(outdated)" outside the file metadata. Match the
+    // actual archive, with its published file ID as the primary identifier.
+    const fileId = ssbuVersion === '13.0.4' ? '1485627' : '1806494';
+    const fileName = ssbuVersion === '13.0.4'
+      ? 'one_slot_eff_13-0-4.zip'
+      : 'one_slot_eff_13-0-5.zip';
+    const selected = files.find((file) => String(file._idRow) === fileId) ||
+      files.find((file) => String(file._sFile || '').toLowerCase() === fileName);
+    if (!selected) {
+      throw new Error(`No One Slot Effects file found for SSBU ${ssbuVersion}`);
+    }
+    return selected;
   }
 
   async downloadAndInstallPlugin(
@@ -193,7 +223,7 @@ class PluginMarketplace {
     return { recommended, latest };
   }
 
-  async getLatestReleaseDownloadUrl(repo) {
+  async getLatestReleaseDownloadUrl(repo, tag?: string) {
     try {
       const [owner, repoName] = repo.split('/');
 
@@ -237,7 +267,9 @@ class PluginMarketplace {
         }>;
       } | null = null;
 
-      const latestUrl = `https://api.github.com/repos/${owner}/${repoName}/releases/latest`;
+      const latestUrl = tag
+        ? `https://api.github.com/repos/${owner}/${repoName}/releases/tags/${encodeURIComponent(tag)}`
+        : `https://api.github.com/repos/${owner}/${repoName}/releases/latest`;
       console.log('Fetching latest release from:', latestUrl);
 
       const latestResponse = await fetch(latestUrl, {
@@ -251,6 +283,10 @@ class PluginMarketplace {
         release = await latestResponse.json();
         console.log('Found latest release:', release!.tag_name);
       } else {
+        if (tag) {
+          console.error(`Release ${tag} unavailable for ${repo}: ${latestResponse.status}`);
+          return null;
+        }
         const errorText = await latestResponse.text();
         console.warn(
           `No latest release found (${latestResponse.status}):`,
@@ -325,6 +361,8 @@ class PluginMarketplace {
           (a) => `${a.name} (${a.size} bytes, ${a.content_type})`,
         ),
       );
+
+      if (tag) return null;
 
       if (release.assets.length > 0) {
         console.warn('Trying first available asset as fallback...');

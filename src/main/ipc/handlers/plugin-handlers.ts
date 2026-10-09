@@ -4,6 +4,11 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { randomUUID } from 'crypto';
 import PluginUtils, { SimplePlugin } from '../../plugin-utils';
+import { capturePluginsDebugSnapshot } from '../../debug-library-snapshot';
+import {
+  getPluginSha256,
+  identifyPluginVersions,
+} from '../../plugin-version-identification';
 import PluginUpdateChecker, {
   PluginUpdateResult,
 } from '../../plugin-update-checker';
@@ -47,6 +52,25 @@ type CachedCskArchive = {
 };
 
 const cachedCskArchives = new Map<string, CachedCskArchive>();
+
+type RecordedVersionMismatch = {
+  pluginName: string;
+  recordedVersion: string | null;
+  actualVersion: string;
+};
+
+type PendingVersionCorrection = {
+  filePath: string;
+  sha256: string;
+  actualVersion: string;
+};
+
+let pendingVersionCorrections = new Map<string, PendingVersionCorrection>();
+let pendingVersionCorrectionsPath: string | null = null;
+
+function normalizeVersion(version: string) {
+  return version.trim().replace(/^v(?=\d)/i, '').toLowerCase();
+}
 
 function findFileByRelativePath(rootDir: string, relativePath: string) {
   const normalizedTarget = relativePath.toLowerCase().replace(/\\/g, '/');
@@ -190,6 +214,7 @@ const PluginHandlers = {
     try {
       console.log('[PluginHandlers] Reading plugins folder:', pluginsPath);
       const result = PluginUtils.readAllPlugins(pluginsPath);
+      capturePluginsDebugSnapshot(pluginsPath, result);
       console.log('[PluginHandlers] Plugins folder read complete:', {
         pluginsPath,
         activeCount: result.activePlugins.length,
@@ -331,6 +356,11 @@ const PluginHandlers = {
     })[];
   }> => {
     try {
+      // 13.0.4 needs pinned plugin versions, newer releases target 13.0.5.
+      if (store.get('ssbuVersion') === '13.0.4') {
+        return { success: true, results: [] };
+      }
+
       const pluginMappings = (store.get('pluginRepoMappings') || {}) as Record<
         string,
         string
@@ -353,6 +383,137 @@ const PluginHandlers = {
         ErrorCodes.PLUGIN_UPDATE_FAILED,
         error.message,
       );
+    }
+  },
+
+  ['check-plugin-recorded-versions']: async (
+    common: BaseHandlerArg,
+  ): HandlerResponse<{
+    mismatches: RecordedVersionMismatch[];
+    complete: boolean;
+    recognizedCount: number;
+    scannedCount: number;
+  }> => {
+    pendingVersionCorrections = new Map();
+    pendingVersionCorrectionsPath = null;
+    try {
+      const pluginsPath = store.get('pluginsPath') as string | null;
+      if (!pluginsPath || !fs.statSync(resolveVirtualPath(pluginsPath)).isDirectory()) {
+        return createErrorResponse(
+          ErrorCodes.FOLDER_NOT_FOUND,
+          'Plugins folder is not available',
+        );
+      }
+
+      const plugins = PluginUtils.readAllPlugins(pluginsPath);
+      const files = [...plugins.activePlugins, ...plugins.disabledPlugins];
+      const counts = new Map<string, number>();
+      for (const file of files) {
+        const pluginName = file.name.replace(/\.nro$/i, '');
+        counts.set(pluginName, (counts.get(pluginName) || 0) + 1);
+      }
+      const uniqueFiles = files.filter(
+        (file) => counts.get(file.name.replace(/\.nro$/i, '')) === 1,
+      );
+      const identified = await identifyPluginVersions(
+        uniqueFiles.map((file) => file.path),
+      );
+      const recorded = (store.get('pluginVersions') || {}) as Record<string, string>;
+      const mismatches: RecordedVersionMismatch[] = [];
+      let complete = true;
+      let recognizedCount = 0;
+
+      for (const file of uniqueFiles) {
+        const identity = identified.get(file.path);
+        if (identity?.status === 'lookup-failed' || identity?.status === 'unreadable') {
+          complete = false;
+        }
+        if (identity?.status !== 'matched' || !identity.actualVersion || !identity.sha256) {
+          continue;
+        }
+        recognizedCount++;
+        const pluginName = file.name.replace(/\.nro$/i, '');
+        const recordedVersion = recorded[pluginName] || null;
+        if (
+          recordedVersion &&
+          normalizeVersion(recordedVersion) === normalizeVersion(identity.actualVersion)
+        ) {
+          continue;
+        }
+        mismatches.push({
+          pluginName,
+          recordedVersion,
+          actualVersion: identity.actualVersion,
+        });
+        pendingVersionCorrections.set(pluginName, {
+          filePath: file.path,
+          sha256: identity.sha256,
+          actualVersion: identity.actualVersion,
+        });
+      }
+
+      pendingVersionCorrectionsPath = pluginsPath;
+      return {
+        success: true,
+        mismatches,
+        complete,
+        recognizedCount,
+        scannedCount: files.length,
+      };
+    } catch (error) {
+      handleError(error, 'check-plugin-recorded-versions');
+      return createErrorResponse(ErrorCodes.PLUGIN_READ_ERROR, error.message);
+    }
+  },
+
+  ['apply-plugin-recorded-versions']: async (
+    common: BaseHandlerArg,
+    pluginNames: string[],
+  ): HandlerResponse<{ updated: string[]; skipped: string[] }> => {
+    try {
+      if (!Array.isArray(pluginNames) || pluginNames.length > 500 ||
+          pluginNames.some((name) => typeof name !== 'string')) {
+        return createErrorResponse(ErrorCodes.PLUGIN_READ_ERROR, 'Invalid plugin selection');
+      }
+      const pluginsPath = store.get('pluginsPath') as string | null;
+      if (!pluginsPath || pluginsPath !== pendingVersionCorrectionsPath) {
+        return createErrorResponse(ErrorCodes.PLUGIN_READ_ERROR, 'Run the version check again');
+      }
+      const plugins = PluginUtils.readAllPlugins(pluginsPath);
+      const files = [...plugins.activePlugins, ...plugins.disabledPlugins];
+      const versions = (store.get('pluginVersions') || {}) as Record<string, string>;
+      const updated: string[] = [];
+      const skipped: string[] = [];
+
+      for (const pluginName of new Set(pluginNames)) {
+        const pending = pendingVersionCorrections.get(pluginName);
+        const matchingFiles = files.filter(
+          (file) => file.name.replace(/\.nro$/i, '') === pluginName,
+        );
+        if (!pending || matchingFiles.length !== 1 ||
+            matchingFiles[0].path !== pending.filePath) {
+          skipped.push(pluginName);
+          continue;
+        }
+        try {
+          if (await getPluginSha256(pending.filePath) !== pending.sha256) {
+            skipped.push(pluginName);
+            continue;
+          }
+        } catch {
+          skipped.push(pluginName);
+          continue;
+        }
+        versions[pluginName] = pending.actualVersion;
+        updated.push(pluginName);
+        pendingVersionCorrections.delete(pluginName);
+      }
+
+      if (updated.length) store.set('pluginVersions', versions);
+      return { success: true, updated, skipped };
+    } catch (error) {
+      handleError(error, 'apply-plugin-recorded-versions');
+      return createErrorResponse(ErrorCodes.STORE_OPERATION_ERROR, error.message);
     }
   },
 

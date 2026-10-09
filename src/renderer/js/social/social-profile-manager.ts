@@ -2293,11 +2293,11 @@ ${this.renderProfileBadgeVisual(meta)}
               await this.confirmMissingGameBananaRequirements(downloadUrl);
             if (!shouldContinue) return false;
 
-            this.registerPendingGameBananaSocialDownload(downloadUrl);
-            const protocolUrl = /^(?:fightplanner|mosaic):/i.test(downloadUrl)
+            const pendingDownload = this.registerPendingGameBananaSocialDownload(downloadUrl);
+            const fallbackProtocolUrl = /^(?:fightplanner|mosaic):/i.test(downloadUrl)
               ? downloadUrl
               : `fightplanner:${downloadUrl}`;
-            await window.electronAPI.openFightPlannerLink(protocolUrl);
+            await window.electronAPI.openFightPlannerLink(pendingDownload?.link || fallbackProtocolUrl);
           } finally {
             fileDownloadBtn.disabled = false;
             fileDownloadBtn.innerHTML = originalContent;

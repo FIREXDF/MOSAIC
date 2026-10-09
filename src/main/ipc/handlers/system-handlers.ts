@@ -12,6 +12,7 @@ import { PATHS, TEMP_FOLDERS } from '../../config';
 import { HandlerResponse } from '../../types/common';
 import { BaseHandlerArg, GenericHandler } from '../../types/common';
 import store from '../../store';
+import { openPathDetached } from '../../utils';
 import type { ChildProcess } from 'child_process';
 
 let emulatorProcess: ChildProcess | null = null;
@@ -214,7 +215,7 @@ const SystemHandlers = {
   ['open-config-file']: async (common: BaseHandlerArg) => {
     try {
       if (store && store.path) {
-        await shell.openPath(store.path);
+        await openPathDetached(store.path);
         return { success: true };
       }
       return createErrorResponse(

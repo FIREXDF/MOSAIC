@@ -869,11 +869,11 @@ class SocialGameBananaManager extends SocialManagerBase {
             await this.confirmMissingGameBananaRequirements(downloadUrl);
           if (!shouldContinue) return;
 
-          this.registerPendingGameBananaSocialDownload(downloadUrl);
-          const protocolUrl = /^(?:fightplanner|mosaic):/i.test(downloadUrl)
+          const pendingDownload = this.registerPendingGameBananaSocialDownload(downloadUrl);
+          const fallbackProtocolUrl = /^(?:fightplanner|mosaic):/i.test(downloadUrl)
             ? downloadUrl
             : `fightplanner:${downloadUrl}`;
-          await window.electronAPI.openFightPlannerLink(protocolUrl);
+          await window.electronAPI.openFightPlannerLink(pendingDownload?.link || fallbackProtocolUrl);
         } finally {
           fileDownloadBtn.disabled = false;
           fileDownloadBtn.innerHTML = originalContent;
@@ -4010,9 +4010,7 @@ class SocialGameBananaManager extends SocialManagerBase {
       merged._idRow || this.gameBananaLastDetailSource.submissionId,
     );
     const extension = this.getGameBananaFileExtension(fileName);
-    const link =
-      selectedFile?._sFightPlannerDownloadUrl ||
-      `fightplanner:https://gamebanana.com/mmdl/${downloadId},${merged._sModelName || 'Mod'},${modId},${extension}`;
+    const link = `fightplanner:https://gamebanana.com/mmdl/${downloadId},${merged._sModelName || 'Mod'},${modId},${extension}`;
     const imageUrl = this.getGameBananaSubmissionImage(merged);
     const availableFiles = files.map((file) => ({
       id: file._idRow || '',
@@ -4035,9 +4033,10 @@ class SocialGameBananaManager extends SocialManagerBase {
 
   registerPendingGameBananaSocialDownload(downloadUrl: string) {
     const payload = this.createGameBananaSocialPayload(downloadUrl);
-    if (!payload) return;
+    if (!payload) return null;
 
     this.pendingGameBananaSocialDownloads.set(payload.downloadId, payload);
+    return payload;
   }
 
   async fetchSocialLinksWithRefresh() {

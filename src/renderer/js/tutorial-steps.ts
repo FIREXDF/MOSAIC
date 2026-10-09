@@ -57,61 +57,58 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const chooseArcropolisRelease = async (container: HTMLElement) => {
-    const [recommendedRelease, latestRelease] = await Promise.all([
-      window.tutorialAPI.getGithubRelease('Raytwo/ARCropolis', 'v4.0.8'),
-      window.tutorialAPI.getGithubRelease('Raytwo/ARCropolis', 'v4.1.1'),
-    ]);
-
-    if (!recommendedRelease.success) {
-      throw new Error('Failed to get recommended ARCropolis 4.0.8 release');
-    }
-    if (!latestRelease.success) {
-      throw new Error('Failed to get ARCropolis 4.1.1 release');
-    }
-
-    const latestCompatibility =
-      'Supports only Super Smash Bros. Ultimate 13.0.5.';
+    const savedVersion = await apiWrapper.storeGet('ssbuVersion');
 
     container.innerHTML = `
       <fieldset style="border: 0; margin: 0; padding: 0; display: grid; gap: 12px;">
-        <legend style="color: #fff; font-size: 16px; font-weight: 700; margin-bottom: 4px;">Choose an ARCropolis version</legend>
+        <legend style="color: #fff; font-size: 16px; font-weight: 700; margin-bottom: 4px;">Which version of Super Smash Bros. Ultimate do you have?</legend>
         <label style="display: block; cursor: pointer; padding: 16px; border: 1px solid rgba(76, 175, 80, 0.45); border-radius: 12px; background: rgba(76, 175, 80, 0.1);">
           <span style="display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 700;">
-            <input type="radio" name="arcropolis-release" value="recommended" checked>
-            ARCropolis 4.0.8
-            <span style="color: #81c784; font-size: 12px;">Recommended</span>
+            <input type="radio" name="ssbu-version" value="13.0.4" ${savedVersion === '13.0.4' ? 'checked' : ''}>
+            SSBU 13.0.4
           </span>
           <span style="display: block; margin: 8px 0 0 24px; color: rgba(255,255,255,0.72); font-size: 13px; line-height: 1.5;">
-            Supports only Super Smash Bros. Ultimate 13.0.4. Recommended now for better compatibility with existing mods.
+            Installs ARCropolis 4.0.8. Marketplace will use SSBU 13.0.4 versions where available.
           </span>
         </label>
         <label style="display: block; cursor: pointer; padding: 16px; border: 1px solid rgba(122, 155, 255, 0.35); border-radius: 12px; background: rgba(122, 155, 255, 0.08);">
           <span style="display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 700;">
-            <input type="radio" name="arcropolis-release" value="latest">
-            ARCropolis ${latestRelease.version}
-            <span style="color: #9db5ff; font-size: 12px;">Latest</span>
+            <input type="radio" name="ssbu-version" value="13.0.5" ${savedVersion === '13.0.5' ? 'checked' : ''}>
+            SSBU 13.0.5
           </span>
           <span style="display: block; margin: 8px 0 0 24px; color: rgba(255,255,255,0.72); font-size: 13px; line-height: 1.5;">
-            ${latestCompatibility} Some mods may need time to adopt this release.
+            Installs ARCropolis 4.1.1. Marketplace will use SSBU 13.0.5 versions where available.
           </span>
         </label>
-        <button id="install-selected-arcropolis" type="button" class="tutorial-btn tutorial-btn-primary" style="justify-self: end; margin-top: 4px;">
-          Install selected version
+        <button id="install-selected-arcropolis" type="button" class="tutorial-btn tutorial-btn-primary" style="justify-self: end; margin-top: 4px;" disabled>
+          Continue and install
         </button>
       </fieldset>
     `;
 
-    return new Promise<any>((resolve) => {
-      container
-        .querySelector<HTMLButtonElement>('#install-selected-arcropolis')!
-        .addEventListener('click', () => {
-          const selected = container.querySelector<HTMLInputElement>(
-            'input[name="arcropolis-release"]:checked',
+    const installButton = container.querySelector<HTMLButtonElement>('#install-selected-arcropolis')!;
+    installButton.disabled = !container.querySelector('input[name="ssbu-version"]:checked');
+    container.querySelectorAll<HTMLInputElement>('input[name="ssbu-version"]').forEach((radio) => {
+      radio.addEventListener('change', () => { installButton.disabled = false; });
+    });
+
+    return new Promise<any>((resolve, reject) => {
+      installButton.addEventListener('click', async () => {
+        const version = container.querySelector<HTMLInputElement>('input[name="ssbu-version"]:checked')?.value;
+        if (version !== '13.0.4' && version !== '13.0.5') return;
+        installButton.disabled = true;
+        try {
+          const release = await window.tutorialAPI.getGithubRelease(
+            'Raytwo/ARCropolis', version === '13.0.4' ? 'v4.0.8' : 'v4.1.1',
           );
-          resolve(
-            selected?.value === 'latest' ? latestRelease : recommendedRelease,
-          );
-        });
+          if (!release.success) throw new Error(`Failed to get ARCropolis for SSBU ${version}`);
+          const saved = await window.tutorialAPI.store.set('ssbuVersion', version);
+          if (!saved?.success) throw new Error('Failed to save SSBU version');
+          resolve(release);
+        } catch (error) {
+          reject(error);
+        }
+      });
     });
   };
 

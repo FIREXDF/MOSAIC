@@ -7,12 +7,23 @@ export interface Plugin {
   enabled?: boolean;
 }
 
+type RecordedVersionMismatch = {
+  pluginName: string;
+  recordedVersion: string | null;
+  actualVersion: string;
+};
+
 class PluginManager {
   plugins: Array<Plugin>;
   pluginListContainer: HTMLElement | null;
   pluginsPath: string | null;
   searchQuery: string;
   batchTestingOverrideActive: boolean;
+  versionAuditInProgress: boolean;
+  versionAuditPath: string | null;
+  versionAuditMismatches: RecordedVersionMismatch[];
+  versionAuditDismissed: boolean;
+  versionCorrectionInProgress: boolean;
 
   constructor() {
     this.plugins = [];
@@ -20,6 +31,11 @@ class PluginManager {
     this.pluginsPath = null;
     this.searchQuery = '';
     this.batchTestingOverrideActive = false;
+    this.versionAuditInProgress = false;
+    this.versionAuditPath = null;
+    this.versionAuditMismatches = [];
+    this.versionAuditDismissed = false;
+    this.versionCorrectionInProgress = false;
 
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.initContainer());
@@ -81,6 +97,16 @@ class PluginManager {
     if (checkUpdatesBtn && !checkUpdatesBtn.dataset.listenerAttached) {
       checkUpdatesBtn.addEventListener('click', () => this.checkForUpdates());
       checkUpdatesBtn.dataset.listenerAttached = 'true';
+    }
+
+    const verifyVersionsBtn = document.querySelector<HTMLButtonElement>(
+      '#check-plugin-recorded-versions-btn',
+    );
+    if (verifyVersionsBtn && !verifyVersionsBtn.dataset.listenerAttached) {
+      verifyVersionsBtn.addEventListener('click', () => {
+        void this.checkRecordedVersions(true);
+      });
+      verifyVersionsBtn.dataset.listenerAttached = 'true';
     }
 
     const marketplaceBtn = document.querySelector<HTMLElement>(
@@ -644,6 +670,7 @@ ${plugin.status === 'active'
       if (pluginsPath) {
         console.log('Loading plugins from saved path:', pluginsPath);
         await this.loadPluginsFromFolder(pluginsPath);
+        void this.checkRecordedVersions();
         return;
       }
     } else {
@@ -654,6 +681,260 @@ ${plugin.status === 'active'
     // Render the plugin list to show the "path not configured" message
     this.plugins = [];
     this.renderPluginList();
+  }
+
+  async checkRecordedVersions(manual = false) {
+    if (this.versionAuditInProgress || this.isBatchTestingLocked() ||
+        !this.pluginsPath || !this.plugins.length) return;
+
+    const auditPath = this.pluginsPath;
+    const auditKey = 'pluginRecordedVersionAudit';
+    const t = (key: string) => window.i18n?.t?.(`plugins.${key}`) || key;
+    const button = document.querySelector<HTMLButtonElement>(
+      '#check-plugin-recorded-versions-btn',
+    );
+
+    this.versionAuditInProgress = true;
+    if (button) button.disabled = true;
+    if (manual) window.toastManager?.info(t('versionAuditChecking'));
+    try {
+      if (!manual) {
+        const last = (await window.electronAPI.store.get(auditKey)) as
+          | { path?: string; checkedAt?: number; complete?: boolean; hasMismatches?: boolean }
+          | null;
+        const interval = last?.complete ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000;
+        if (last?.path === auditPath && typeof last.checkedAt === 'number' &&
+            Date.now() - last.checkedAt < interval &&
+            !(last.hasMismatches && this.versionAuditPath !== auditPath)) {
+          if (this.versionAuditPath === auditPath && !this.versionAuditDismissed) {
+            await new Promise<void>((resolve) => setTimeout(resolve, 0));
+            if (this.pluginsPath === auditPath) {
+              this.showRecordedVersionAudit(this.versionAuditMismatches);
+            }
+          }
+          return;
+        }
+      }
+      this.versionAuditMismatches = [];
+      this.renderRecordedVersionAudit([]);
+      const result = await window.electronAPI.checkPluginRecordedVersions();
+      if (!result.success) {
+        if (manual) window.toastManager?.error(t('versionAuditFailed'));
+        return;
+      }
+      if (this.pluginsPath !== auditPath || this.isBatchTestingLocked()) return;
+      await window.electronAPI.store.set(auditKey, {
+        path: auditPath,
+        checkedAt: Date.now(),
+        complete: result.complete,
+        hasMismatches: result.mismatches.length > 0,
+      });
+      this.versionAuditPath = auditPath;
+      this.versionAuditMismatches = result.mismatches;
+      this.versionAuditDismissed = false;
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      if (this.pluginsPath !== auditPath) return;
+      this.showRecordedVersionAudit(result.mismatches);
+      if (result.mismatches.length === 0) {
+        const fullyRecognized = result.complete &&
+          result.recognizedCount === result.scannedCount;
+        const lookupFailed = !result.complete && result.recognizedCount === 0;
+        this.showRecordedVersionCheckResult(
+          t(lookupFailed
+            ? 'versionAuditFailed'
+            : fullyRecognized
+              ? 'versionAuditCurrent'
+              : 'versionAuditPartial'),
+          fullyRecognized,
+          lookupFailed,
+        );
+      }
+    } catch (error) {
+      console.error('[PluginManager] Version audit failed:', error);
+      if (manual) window.toastManager?.error(t('versionAuditFailed'));
+    } finally {
+      this.versionAuditInProgress = false;
+      if (button) button.disabled = false;
+    }
+  }
+
+  isPluginsTabSelected() {
+    return Boolean(
+      document.querySelector('.sidebar-btn.active[data-tab="plugins"]') &&
+      document.querySelector('#tab-plugins.active #plugin-version-audit'),
+    );
+  }
+
+  showRecordedVersionAudit(mismatches: RecordedVersionMismatch[]) {
+    const pluginsTabActive = this.isPluginsTabSelected();
+    if (pluginsTabActive || !mismatches.length) {
+      this.renderRecordedVersionAudit(mismatches);
+    } else {
+      this.showRecordedVersionAuditModal(mismatches);
+    }
+  }
+
+  showRecordedVersionCheckResult(
+    message: string,
+    fullyRecognized: boolean,
+    lookupFailed: boolean,
+  ) {
+    if (this.isPluginsTabSelected()) {
+      if (lookupFailed) window.toastManager?.error(message);
+      else if (fullyRecognized) window.toastManager?.success(message);
+      else window.toastManager?.info(message);
+      return;
+    }
+    const body = document.createElement('p');
+    body.textContent = message;
+    window.modalManager?.showCustomModal({
+      id: 'plugin-recorded-version-check-result-modal',
+      title: window.i18n?.t?.('plugins.verifyVersions') || 'Verify Versions',
+      body,
+      buttons: [{
+        text: window.i18n?.t?.('common.close') || 'Close',
+        type: 'primary',
+      }],
+    });
+  }
+
+  createRecordedVersionAuditDetails(mismatches: RecordedVersionMismatch[]) {
+    const t = (key: string) => window.i18n?.t?.(`plugins.${key}`) || key;
+    const details = document.createElement('div');
+    const description = document.createElement('p');
+    description.textContent = t('versionAuditDescription');
+    const list = document.createElement('div');
+    list.className = 'plugin-version-audit-list';
+    for (const mismatch of mismatches) {
+      const row = document.createElement('div');
+      row.className = 'plugin-version-audit-row';
+      const name = document.createElement('strong');
+      name.textContent = mismatch.pluginName;
+      const versions = document.createElement('span');
+      versions.textContent = `${t('versionAuditRecorded')}: ${mismatch.recordedVersion || t('versionAuditUnknown')} → ${t('versionAuditDetected')}: ${mismatch.actualVersion}`;
+      row.append(name, versions);
+      list.appendChild(row);
+    }
+    details.append(description, list);
+    return details;
+  }
+
+  showRecordedVersionAuditModal(mismatches: RecordedVersionMismatch[]) {
+    if (!window.modalManager?.showCustomModal ||
+        document.querySelector('#plugin-recorded-version-audit-modal')) return;
+
+    const t = (key: string) => window.i18n?.t?.(`plugins.${key}`) || key;
+    let correctionRequested = false;
+    window.modalManager.showCustomModal({
+      id: 'plugin-recorded-version-audit-modal',
+      title: t('versionAuditTitle'),
+      body: this.createRecordedVersionAuditDetails(mismatches),
+      buttons: [
+        {
+          text: t('versionAuditApply'),
+          type: 'primary',
+          id: 'apply-plugin-recorded-versions-btn',
+          onClick: async (_event, modal) => {
+            if (this.versionCorrectionInProgress) return false;
+            correctionRequested = true;
+            const button = modal.querySelector<HTMLButtonElement>(
+              '#apply-plugin-recorded-versions-btn',
+            );
+            if (button) button.disabled = true;
+            try {
+              await this.applyRecordedVersions(mismatches);
+            } finally {
+              if (button) button.disabled = false;
+            }
+          },
+        },
+        {
+          text: t('versionAuditDismiss'),
+          type: 'secondary',
+          onClick: () => {
+            this.versionAuditDismissed = true;
+          },
+        },
+      ],
+      onClose: () => {
+        if (!correctionRequested) this.versionAuditDismissed = true;
+      },
+    });
+  }
+
+  async applyRecordedVersions(mismatches: RecordedVersionMismatch[]) {
+    if (this.versionCorrectionInProgress) return;
+    this.versionCorrectionInProgress = true;
+    const t = (key: string) => window.i18n?.t?.(`plugins.${key}`) || key;
+    try {
+      const result = await window.electronAPI.applyPluginRecordedVersions(
+        mismatches.map((item) => item.pluginName),
+      );
+      if (!result.success) {
+        window.toastManager?.error(t('versionAuditStale'));
+        return;
+      }
+      const remaining = mismatches.filter(
+        (item) => !result.updated.includes(item.pluginName),
+      );
+      this.versionAuditMismatches = remaining;
+      this.renderRecordedVersionAudit(remaining);
+      if (!remaining.length) {
+        const last = (await window.electronAPI.store.get(
+          'pluginRecordedVersionAudit',
+        )) as { complete?: boolean } | null;
+        await window.electronAPI.store.set('pluginRecordedVersionAudit', {
+          path: this.pluginsPath,
+          checkedAt: Date.now(),
+          complete: last?.complete === true,
+          hasMismatches: false,
+        });
+      }
+      if (result.updated.length) window.toastManager?.success(t('versionAuditSaved'));
+      if (result.skipped.length) window.toastManager?.error(t('versionAuditStale'));
+    } catch (error) {
+      console.error('[PluginManager] Could not save UMC versions:', error);
+      window.toastManager?.error(t('versionAuditFailed'));
+    } finally {
+      this.versionCorrectionInProgress = false;
+    }
+  }
+
+  renderRecordedVersionAudit(mismatches: RecordedVersionMismatch[]) {
+    const banner = document.querySelector<HTMLElement>('#plugin-version-audit');
+    if (!banner) return;
+    banner.replaceChildren();
+    banner.hidden = mismatches.length === 0;
+    if (!mismatches.length) return;
+
+    const t = (key: string) => window.i18n?.t?.(`plugins.${key}`) || key;
+    const heading = document.createElement('strong');
+    heading.textContent = t('versionAuditTitle');
+    const details = this.createRecordedVersionAuditDetails(mismatches);
+    const actions = document.createElement('div');
+    actions.className = 'plugin-version-audit-actions';
+    const apply = document.createElement('button');
+    apply.type = 'button';
+    apply.className = 'input-btn';
+    apply.textContent = t('versionAuditApply');
+    apply.addEventListener('click', async () => {
+      apply.disabled = true;
+      try {
+        await this.applyRecordedVersions(mismatches);
+      } finally {
+        apply.disabled = false;
+      }
+    });
+    const dismiss = document.createElement('button');
+    dismiss.type = 'button';
+    dismiss.className = 'input-btn';
+    dismiss.textContent = t('versionAuditDismiss');
+    dismiss.addEventListener('click', () => {
+      banner.hidden = true;
+      this.versionAuditDismissed = true;
+    });
+    actions.append(apply, dismiss);
+    banner.append(heading, details, actions);
   }
 
   async openPluginFolder() {
@@ -677,9 +958,18 @@ ${plugin.status === 'active'
     }
   }
 
-  async checkForUpdates() {
+  async checkForUpdates(showDisabledNotice = true) {
     if (!window.electronAPI || !window.electronAPI.checkPluginUpdates) {
       console.error('Electron API not available');
+      return;
+    }
+
+    if ((await window.electronAPI.store.get('ssbuVersion')) === '13.0.4') {
+      if (showDisabledNotice && window.toastManager) {
+        window.toastManager.info(
+          'Plugin updates are disabled for SSBU 13.0.4 to keep compatible versions',
+        );
+      }
       return;
     }
 
@@ -860,7 +1150,7 @@ ${plugin.status === 'active'
 
     console.log('Auto-checking plugin updates on startup...');
     setTimeout(() => {
-      this.checkForUpdates();
+      this.checkForUpdates(false);
     }, 5000); // Increased delay to ensure everything is loaded
   }
 

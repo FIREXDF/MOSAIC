@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import ModUtils, { Mod } from '../../mod-utils';
+import { captureModsDebugSnapshot } from '../../debug-library-snapshot';
 import store from '../../store';
 import downloadsStore from '../../store-downloads';
 import ProtocolHandler from '../../protocol-handler';
@@ -239,6 +240,7 @@ const ModHandlers = {
     try {
       console.log('[ModHandlers] Reading mods folder:', modsPath);
       const result = ModUtils.readAllMods(modsPath);
+      captureModsDebugSnapshot(modsPath, result);
       console.log('[ModHandlers] Mods folder read complete:', {
         modsPath,
         activeCount: result.activeMods.length,

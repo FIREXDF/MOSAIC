@@ -1,6 +1,61 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+function isGameBananaDownloadUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      ['gamebanana.com', 'www.gamebanana.com'].includes(url.hostname.toLowerCase()) &&
+      (/^\/(?:dl|mmdl)\/\d+(?:\/|,|$)/i.test(url.pathname) ||
+        /^\/(?:mods|sounds)\/download\/\d+\/?$/i.test(url.pathname))
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function ensureModInfoMetadata(
+  modFolderPath: string,
+  metadata: {
+    display_name?: string;
+    authors?: string;
+    version?: string;
+    category?: string;
+    description?: string;
+  },
+) {
+  const infoPath = path.join(modFolderPath, 'info.toml');
+  let content = '';
+  try {
+    content = fs.readFileSync(infoPath, 'utf8');
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+
+  const newline = content.includes('\r\n') ? '\r\n' : '\n';
+  const missing = (['display_name', 'authors', 'version', 'category', 'description'] as const)
+    .filter((key) => metadata[key] && !new RegExp(`^\\s*(?:${key}|"${key}"|'${key}')\\s*=`, 'm').test(content))
+    .map((key) => {
+      const value = metadata[key] as string;
+      if (key === 'description') {
+        const description = value.replace(/\r\n?/g, '\n').trim();
+        const serialized = /\\|"""/.test(description)
+          ? JSON.stringify(description)
+          : `"""${newline}${description.replace(/\n/g, newline)}${newline}"""`;
+        return `${key} = ${serialized}`;
+      }
+      return `${key} = ${JSON.stringify(value)}`;
+    });
+  if (!missing.length) return;
+
+  const bom = content.startsWith('\uFEFF') ? '\uFEFF' : '';
+  fs.writeFileSync(
+    infoPath,
+    bom + missing.join(newline) + newline + content.slice(bom.length),
+    'utf8',
+  );
+}
+
 function findMultilineEnd(
   content: string,
   delimiter: string,
@@ -16,7 +71,6 @@ function findMultilineEnd(
   return end;
 }
 
-/** Add a missing root URL without rewriting the mod author's metadata. */
 export function ensureModInfoUrl(modFolderPath: string, sourceUrl: string) {
   const url = new URL(sourceUrl);
   if (
@@ -72,7 +126,8 @@ export function ensureModInfoUrl(modFolderPath: string, sourceUrl: string) {
       }
       const quoted = value.match(/^(?:"((?:\\.|[^"\\])*)"|'([^']*)')/);
       if (quoted) {
-        if ((quoted[1] ?? quoted[2]).trim()) return;
+        const existingUrl = (quoted[1] ?? quoted[2]).trim();
+        if (existingUrl && !isGameBananaDownloadUrl(existingUrl)) return;
         const start = offset + assignment[0].length;
         fs.writeFileSync(
           infoPath,

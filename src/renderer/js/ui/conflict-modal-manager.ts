@@ -15,6 +15,7 @@ export class ConflictModalManager {
   currentConflictingMods: Array<{ name: string; path: string }>;
   autoSlotChangeMods: Array<SimpleMod>;
   selectedConflictFiles: Map<string, SelectedConflictFile>;
+  ignoreTooltip: HTMLDivElement | null = null;
 
   constructor() {
     this.currentConflictFile = null;
@@ -25,6 +26,42 @@ export class ConflictModalManager {
 
   t(key: string, params = {}) {
     return window.i18n && window.i18n.t ? window.i18n.t(key, params) : key;
+  }
+
+  // Fixed on body so modal overflow does not clip it
+  showIgnoreTooltip(anchor: HTMLElement, text: string) {
+    if (!this.ignoreTooltip) {
+      this.ignoreTooltip = document.createElement('div');
+      this.ignoreTooltip.className = 'conflict-ignore-tooltip';
+      this.ignoreTooltip.setAttribute('role', 'tooltip');
+      document.body.appendChild(this.ignoreTooltip);
+    }
+    const tooltip = this.ignoreTooltip;
+    tooltip.textContent = text;
+    tooltip.classList.remove('below');
+    tooltip.style.visibility = 'hidden';
+    tooltip.classList.add('visible');
+
+    const rect = anchor.getBoundingClientRect();
+    const tipRect = tooltip.getBoundingClientRect();
+    const margin = 8;
+    let top = rect.top - tipRect.height - margin;
+    if (top < margin) {
+      top = rect.bottom + margin;
+      tooltip.classList.add('below');
+    }
+    let left = rect.left + rect.width / 2 - tipRect.width / 2;
+    left = Math.max(
+      margin,
+      Math.min(left, window.innerWidth - tipRect.width - margin),
+    );
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${left}px`;
+    tooltip.style.visibility = '';
+  }
+
+  hideIgnoreTooltip() {
+    this.ignoreTooltip?.classList.remove('visible');
   }
 
   async confirmConflictFileDeletion(
@@ -598,9 +635,17 @@ export class ConflictModalManager {
             filePath: conflict.filePath,
           }),
         );
-        ignoreButton.title = this.t('modals.conflict.ignoreFile');
+        const tooltipText = this.t('modals.conflict.ignoreFileTooltip');
+        const showTooltip = () =>
+          this.showIgnoreTooltip(ignoreButton, tooltipText);
+        const hideTooltip = () => this.hideIgnoreTooltip();
+        ignoreButton.addEventListener('mouseenter', showTooltip);
+        ignoreButton.addEventListener('focus', showTooltip);
+        ignoreButton.addEventListener('mouseleave', hideTooltip);
+        ignoreButton.addEventListener('blur', hideTooltip);
         ignoreButton.addEventListener('click', (event) => {
           event.stopPropagation();
+          hideTooltip();
           this.ignoreConflictPath(conflict.filePath);
         });
 
@@ -697,6 +742,7 @@ export class ConflictModalManager {
   }
 
   closeConflictModal(keepOverlay = false) {
+    this.hideIgnoreTooltip();
     const modal = document.querySelector<HTMLElement>('#conflict-modal');
     if (modal) {
       modal.classList.add('closing');

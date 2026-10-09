@@ -119,13 +119,19 @@ export class GameBananaMarketplace {
         throw new Error(result.error || 'Failed to load GameBanana files');
       }
       const entries = (result.files || []).filter((file) => file?._sFightPlannerDownloadUrl || file?._sDownloadUrl);
-      files.innerHTML = entries.length ? entries.map((file) => `<div class="marketplace__file"><span class="marketplace__file-name">${this.escape(file._sFile || 'Download')}</span><button type="button" data-marketplace-file="${this.escape(file._sFightPlannerDownloadUrl || file._sDownloadUrl)}">Install</button></div>`).join('') : '<span class="marketplace__file">No installable file found.</span>';
+      files.innerHTML = entries.length ? entries.map((file) => `<div class="marketplace__file"><span class="marketplace__file-name">${this.escape(file._sFile || 'Download')}</span><button type="button" data-marketplace-file="${this.escape(file._sFightPlannerDownloadUrl || file._sDownloadUrl)}" data-marketplace-file-id="${this.escape(file._idRow || '')}">Install</button></div>`).join('') : '<span class="marketplace__file">No installable file found.</span>';
     } catch (error) { console.error('[Marketplace] Failed to get files:', error); files.innerHTML = '<span class="marketplace__file">Unable to load files.</span>'; }
   }
 
   private async installFile(button: HTMLElement) {
     const url = button.dataset.marketplaceFile;
     if (!url) return;
+    const submissionId = button.closest<HTMLElement>('[data-marketplace-card]')?.dataset.marketplaceCard;
+    const fileId = button.dataset.marketplaceFileId || url.match(/\/(?:dl|mmdl)\/(\d+)/i)?.[1];
+    if (submissionId && /^\d+$/.test(submissionId) && fileId && /^\d+$/.test(fileId)) {
+      await window.electronAPI.openFightPlannerLink(`fightplanner:https://gamebanana.com/mmdl/${fileId},Mod,${submissionId}`);
+      return;
+    }
     await window.electronAPI.openFightPlannerLink(/^(?:fightplanner|mosaic):/i.test(url) ? url : `fightplanner:${url}`);
   }
 
