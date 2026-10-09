@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, shell, IpcMain } from 'electron';
+import { BrowserWindow, dialog, IpcMain } from 'electron';
 import * as fs from 'fs';
 import {
   handleError,
@@ -6,6 +6,7 @@ import {
   ErrorCodes,
 } from '../../utils/error-handler';
 import { resolveVirtualPath } from '../../utils/virtual-paths';
+import { openPathDetached } from '../../utils';
 import { HandlerResponse } from '../../types/common';
 import { BaseHandlerArg, GenericHandler } from '../../types/common';
 
@@ -154,7 +155,7 @@ const FileHandlers = {
       }
 
       if (fs.existsSync(resolvedFolderPath)) {
-        await shell.openPath(resolvedFolderPath);
+        await openPathDetached(resolvedFolderPath);
         console.log('[FileHandlers] Folder opened:', resolvedFolderPath);
         return { success: true };
       } else {
@@ -201,7 +202,7 @@ const FileHandlers = {
   ['open-file']: async (common: BaseHandlerArg, filePath: string) => {
     try {
       if (fs.existsSync(filePath)) {
-        await shell.openPath(filePath);
+        await openPathDetached(filePath);
         return { success: true };
       } else {
         return createErrorResponse(

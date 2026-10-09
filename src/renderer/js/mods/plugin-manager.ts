@@ -958,9 +958,18 @@ ${plugin.status === 'active'
     }
   }
 
-  async checkForUpdates() {
+  async checkForUpdates(showDisabledNotice = true) {
     if (!window.electronAPI || !window.electronAPI.checkPluginUpdates) {
       console.error('Electron API not available');
+      return;
+    }
+
+    if ((await window.electronAPI.store.get('ssbuVersion')) === '13.0.4') {
+      if (showDisabledNotice && window.toastManager) {
+        window.toastManager.info(
+          'Plugin updates are disabled for SSBU 13.0.4 to keep compatible versions',
+        );
+      }
       return;
     }
 
@@ -1141,7 +1150,7 @@ ${plugin.status === 'active'
 
     console.log('Auto-checking plugin updates on startup...');
     setTimeout(() => {
-      this.checkForUpdates();
+      this.checkForUpdates(false);
     }, 5000); // Increased delay to ensure everything is loaded
   }
 
