@@ -22,6 +22,10 @@ import {
   ScanModResult,
 } from '../../mod-utils/mod-scanner';
 import { SlotChanger } from '../../mod-utils/slot-changer';
+import PluginUpdateChecker, {
+  ModUpdateResult,
+  ModUpdateWatch,
+} from '../../plugin-update-checker';
 
 const MOD_LOCK_ERROR_CODES = new Set(['EPERM', 'EACCES', 'EBUSY']);
 const MOD_RENAME_RETRY_DELAYS_MS = [0, 50, 100, 250];
@@ -742,6 +746,22 @@ const ModHandlers = {
       };
     } catch (error) {
       handleError(error, 'check-nro-limit');
+      return createErrorResponse(ErrorCodes.MOD_READ_ERROR, error.message);
+    }
+  },
+
+  ['check-mod-updates']: async (
+    common: BaseHandlerArg,
+  ): HandlerResponse<{ results: ModUpdateResult[] }> => {
+    try {
+      const watch = (store.get('modUpdateWatch') || {}) as Record<
+        string,
+        ModUpdateWatch
+      >;
+      const results = await PluginUpdateChecker.checkModUpdates(watch);
+      return { success: true, results };
+    } catch (error) {
+      handleError(error, 'check-mod-updates');
       return createErrorResponse(ErrorCodes.MOD_READ_ERROR, error.message);
     }
   },

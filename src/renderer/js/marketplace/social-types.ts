@@ -148,34 +148,3 @@ interface GameBananaFileEntry {
   _sAvResult?: string;
   _sFightPlannerDownloadUrl?: string;
 }
-
-interface PendingGameBananaSocialDownload {
-  link: string;
-  downloadId: string;
-  modId: string;
-  modName: string;
-  creator: string;
-  imageUrl: string;
-  availableFiles: {
-    id: number | string;
-    name: string;
-    description: string;
-    size: number;
-    downloads: number;
-  }[];
-}
-
-type ProfileMediaType = 'avatar' | 'banner';
-
-interface ProfileMediaCropState {
-  type: ProfileMediaType;
-  file: File;
-  objectUrl: string;
-  image: HTMLImageElement;
-  zoom: number;
-  offsetX: number;
-  offsetY: number;
-  dragging: boolean;
-  lastX: number;
-  lastY: number;
-}

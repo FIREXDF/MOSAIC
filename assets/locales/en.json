@@ -16,7 +16,7 @@
     "characters": "Characters",
     "stages": "Stages",
     "downloads": "Downloads",
-    "social": "Social",
+    "gamebanana": "GameBanana",
     "settings": "Settings",
     "fightplanner": "Credits"
   },
@@ -420,7 +420,13 @@
       "loading": "Loading...",
       "failedToLoad": "Failed to load mod information",
       "noInfoToml": "No info.toml file found",
-      "noDetailedInfo": "No detailed information available"
+      "noDetailedInfo": "No detailed information available",
+      "watchUpdates": "Notify me of updates on GameBanana",
+      "checkingUpdates": "Checking for mod updates",
+      "updatesTitle": "Mod Updates Available",
+      "openOnGameBanana": "Open on GameBanana",
+      "dismissUpdates": "Dismiss",
+      "update": "Update"
     },
     "categories": {
       "fighter": "Fighter & Skins",

@@ -4,7 +4,7 @@ const tabConfigs = {
   characters: 'tabs/characters.html',
   stages: 'tabs/stages.html',
   downloads: 'tabs/downloads.html',
-  social: 'tabs/social.html',
+  gamebanana: 'tabs/gamebanana.html',
   settings: 'tabs/settings.html',
   fightplanner: 'tabs/fightplanner.html',
 };
@@ -571,8 +571,8 @@ function initializeTabFeatures(tabName) {
     }
   }
 
-  if (tabName === 'social') {
-    void window.socialManager?.initialize();
+  if (tabName === 'gamebanana') {
+    void window.marketplaceDiscover?.initialize();
     window.i18n?.updateDOM();
   }
 

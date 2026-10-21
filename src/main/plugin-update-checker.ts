@@ -18,6 +18,23 @@ export interface PluginUpdateResult {
   error?: string;
 }
 
+// Stored under 'modUpdateWatch', keyed by GameBanana page URL; seen is a unix timestamp in seconds.
+export interface ModUpdateWatch {
+  name: string;
+  version?: string;
+  seen: number;
+}
+
+export interface ModUpdateResult {
+  url: string;
+  name: string;
+  currentVersion: string;
+  latestVersion: string;
+  latest: number;
+  changes: string;
+  installLink: string;
+}
+
 export default class PluginUpdateChecker {
   static getGameBananaSubmission(repoInput: string) {
     const trimmed = String(repoInput || '').trim();
@@ -334,6 +351,55 @@ export default class PluginUpdateChecker {
         error: error.message,
       };
     }
+  }
+
+  // Authors rarely bump _sVersion, so a newer file upload is the update signal.
+  static async checkModUpdates(watch: Record<string, ModUpdateWatch>) {
+    const results: ModUpdateResult[] = [];
+
+    for (const [url, entry] of Object.entries(watch)) {
+      const submission = this.getGameBananaSubmission(url);
+      if (!submission) continue;
+
+      try {
+        const base = `https://gamebanana.com/apiv11/${submission.modelName}/${submission.submissionId}`;
+        const data = (await this.fetchJson(
+          `${base}?_csvProperties=_aFiles,_aAdditionalInfo`,
+        )) as any;
+        const files = Object.values(data?._aFiles || {}) as any[];
+        // shortcut: picks the newest upload, which may be the wrong variant when several files change together; upgrade by remembering the installed file id.
+        const newest = files.reduce(
+          (a, f) => ((f?._tsDateAdded || 0) > (a?._tsDateAdded || 0) ? f : a),
+          null,
+        );
+        const latest = newest?._tsDateAdded || 0;
+        if (latest <= entry.seen) continue;
+        const ext = String(newest._sFile || '').split('.').pop() || 'zip';
+
+        const updates = (await this.fetchJson(
+          `${base}/Updates?_nPage=1&_nPerpage=1`,
+        ).catch(() => null)) as any;
+        const update = updates?._aRecords?.[0];
+
+        results.push({
+          url,
+          name: entry.name,
+          currentVersion: entry.version || '',
+          latestVersion: data?._aAdditionalInfo?._sVersion || '',
+          latest,
+          changes: update
+            ? [update._sName, update._aPreviewMedia?._aMetadata?._sSnippet]
+                .filter(Boolean)
+                .join(' — ')
+            : '',
+          installLink: `fightplanner:https://gamebanana.com/mmdl/${newest._idRow},${submission.modelName},${submission.submissionId},${ext}`,
+        });
+      } catch (error) {
+        console.error(`[ModUpdate] Failed to check ${url}:`, error);
+      }
+    }
+
+    return results;
   }
 
   static async checkAllPlugins(

@@ -301,6 +301,7 @@ class ModalManager {
 
   openPluginUpdateModal(_updates, _plugins) {}
   closePluginUpdateModal() {}
+  openModUpdateModal(_updates) {}
 
   async openPluginMarketplaceModal() {}
   closePluginMarketplaceModal() {}

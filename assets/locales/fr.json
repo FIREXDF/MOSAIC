@@ -16,7 +16,7 @@
     "characters": "Personnages",
     "stages": "Arènes",
     "downloads": "Téléchargements",
-    "social": "Social",
+    "gamebanana": "GameBanana",
     "settings": "Paramètres",
     "fightplanner": "Crédits"
   },
@@ -419,7 +419,13 @@
       "loading": "Chargement...",
       "failedToLoad": "Échec du chargement des informations du mod",
       "noInfoToml": "Fichier info.toml introuvable",
-      "noDetailedInfo": "Aucune information détaillée disponible"
+      "noDetailedInfo": "Aucune information détaillée disponible",
+      "watchUpdates": "Me prévenir des mises à jour sur GameBanana",
+      "checkingUpdates": "Recherche de mises à jour des mods",
+      "updatesTitle": "Mises à jour de mods disponibles",
+      "openOnGameBanana": "Ouvrir sur GameBanana",
+      "dismissUpdates": "Ignorer",
+      "update": "Mettre à jour"
     },
     "categories": {
       "fighter": "Combattants & Skins",

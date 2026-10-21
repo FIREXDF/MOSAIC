@@ -169,6 +169,7 @@ const electronAPI = {
   readMtpTransferFileChunk: invokeMtpHandler('read-mtp-transfer-file-chunk'),
   releaseMtpTransfer: invokeMtpHandler('release-mtp-transfer'),
   installModFromPath: invokeModHandler('install-mod-from-path'),
+  checkModUpdates: invokeModHandler('check-mod-updates'),
   selectModFile: invokeFileHandler('select-mod-file'),
   handleFilesDropped: invokeModHandler('handle-files-dropped'),
   getLogsPath: invokeSystemHandler('get-logs-path'),
