@@ -32,6 +32,17 @@
     <p class="credits-subtitle" data-i18n="fightplanner.subtitle">
       A modern mod manager for Super Smash Bros. Ultimate
     </p>
+    <button
+      type="button"
+      class="credits-become-member-btn"
+      onclick="window.electronAPI.openUrl('https://discord.gg/KVjvEeAeXz')"
+      aria-label="Join the MOSAIC Discord"
+      data-i18n-aria-label
+      data-i18n="fightplanner.joinDiscord"
+    >
+      <i class="bi bi-discord" aria-hidden="true"></i>
+      <span data-i18n="fightplanner.joinDiscord">Join the MOSAIC Discord</span>
+    </button>
   </div>
 
   <div class="credits-content">
@@ -97,6 +108,21 @@
               class="credits-person-role"
               data-i18n="fightplanner.communityManager"
               >Community Manager</span
+            >
+          </div>
+        </div>
+        <div class="credits-person">
+          <img
+            src="../images/credits/timerin.png"
+            class="credits-person-avatar"
+            onerror="this.outerHTML = '<i class=\'bi bi-person-circle\'></i>'"
+          />
+          <div class="credits-person-info">
+            <span class="credits-person-name">Timerin</span>
+            <span
+              class="credits-person-role"
+              data-i18n="fightplanner.communityOrganizer"
+              >Community Organizer</span
             >
           </div>
         </div>
@@ -275,19 +301,6 @@
             >
           </div>
         </div>
-        <div class="credits-person">
-          <img
-            src="../images/credits/timerin.png"
-            class="credits-person-avatar"
-            onerror="this.outerHTML = '<i class=\'bi bi-person-circle\'></i>'"
-          />
-          <div class="credits-person-info">
-            <span class="credits-person-name">Timerin</span>
-            <span class="credits-person-role"
-              >Helped for tutorial instructions for ARCropolis</span
-            >
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -296,7 +309,7 @@
     <p>
       <span data-i18n="fightplanner.madeWith">Made with</span>
       <i class="bi bi-heart-fill"></i>
-      <span data-i18n="fightplanner.byTeam">by the MOSAIC Foundation</span>
+      <span data-i18n="fightplanner.byTeam">by Compages Works</span>
     </p>
     <p class="credits-footer-small" data-i18n="fightplanner.copyright">
       © 2026 MOSAIC. All rights reserved.

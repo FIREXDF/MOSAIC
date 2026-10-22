@@ -103,6 +103,12 @@ class ModManager {
     this.operations = null;
     this.batchTestingOverrideActive = false;
 
+    window.addEventListener('mod-info-updated', (event) => {
+      const modPath = (event as CustomEvent).detail?.modPath;
+      const mod = this.mods.find((m) => m.path === modPath);
+      if (mod) this.loadCategoriesInBackground([mod]);
+    });
+
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.initContainer());
     } else {
@@ -754,21 +760,16 @@ class ModManager {
 
   reapplySelectionState() {
     const hadSelection = this.selectedMods.length > 0 || !!this.selectedMod;
-    const selectedIds = new Set(this.selectedMods.map((mod) => mod.id));
-    const selectedPaths = new Set(
-      this.selectedMods
-        .map((mod) => mod.path)
-        .filter((path): path is string => Boolean(path)),
-    );
 
-    if (selectedIds.size === 0 && selectedPaths.size === 0) {
+    if (!hadSelection) {
       this.applySelectionClasses();
       return;
     }
 
-    const refreshedSelection = this.mods.filter(
-      (mod) => selectedIds.has(mod.id) || selectedPaths.has(mod.path),
-    );
+    const refreshedSelection = this.getCurrentSelectedMods();
+    const refreshedPrimary = this.selectedMod
+      ? this.findRefreshedMod(this.selectedMod)
+      : null;
 
     if (refreshedSelection.length === 0) {
       this.selectedMods = [];
@@ -786,22 +787,40 @@ class ModManager {
       return;
     }
 
-    const primaryMod =
-      refreshedSelection.find((mod) => mod.id === this.selectedMod?.id) ||
-      refreshedSelection[0];
+    const primaryMod = refreshedPrimary || refreshedSelection[0];
+    const oldAnchor = this.selectedMods.find(
+      (mod) => mod.id === this.selectionAnchorId,
+    );
+    const refreshedAnchor = oldAnchor ? this.findRefreshedMod(oldAnchor) : null;
+    const pathsBefore = this.selectedMods.map((mod) => mod.path).join('|');
 
     this.selectedMods = this.prioritizeSelection(
       refreshedSelection,
       primaryMod,
     );
     this.selectedMod = primaryMod;
-    this.selectionAnchorId =
-      this.selectionAnchorId &&
-      refreshedSelection.some((mod) => mod.id === this.selectionAnchorId)
-        ? this.selectionAnchorId
-        : primaryMod.id;
+    this.selectionAnchorId = refreshedAnchor?.id || primaryMod.id;
+    localStorage.setItem('selectedModId', primaryMod.id);
 
     this.applySelectionClasses();
+
+    // Toggling moves the folder: point info and preview at the new path without replaying their animations.
+    if (this.selectedMods.map((mod) => mod.path).join('|') !== pathsBefore) {
+      if (window.modInfoManager && this.selectedMods.length === 1) {
+        window.modInfoManager.currentModPath = primaryMod.path || null;
+      }
+      void this.updatePreview(this.selectedMods, ++this.selectionUpdateToken);
+    }
+  }
+
+  // Mod ids are positional and shift when the folder changes, so match on path, then name.
+  findRefreshedMod(selectedMod: Mod) {
+    return (
+      (selectedMod.path &&
+        this.mods.find((mod) => mod.path === selectedMod.path)) ||
+      this.mods.find((mod) => mod.name === selectedMod.name) ||
+      null
+    );
   }
 
   restoreSelectedMod() {
@@ -825,15 +844,9 @@ class ModManager {
 
   getCurrentSelectedMods() {
     return this.selectedMods
-      .map(
-        (selectedMod) =>
-          this.mods.find(
-            (mod) =>
-              mod.id === selectedMod.id ||
-              (selectedMod.path && mod.path === selectedMod.path),
-          ) || null,
-      )
-      .filter((mod): mod is Mod => Boolean(mod));
+      .map((selectedMod) => this.findRefreshedMod(selectedMod))
+      .filter((mod): mod is Mod => Boolean(mod))
+      .filter((mod, index, all) => all.indexOf(mod) === index);
   }
 
   getSelectionSignature(mods: Mod[]) {
@@ -1079,8 +1092,9 @@ class ModManager {
         : { x: 0, y: 0, scale: 1, zIndex: 10 };
 
     return {
-      x: Math.max(anchorState.x - 1, 0),
-      y: anchorState.y + 10 + index * 8,
+      // Zoom out in place instead of dropping behind the new card.
+      x: anchorState.x,
+      y: anchorState.y,
       scale: Math.max(anchorState.scale - 0.08 - index * 0.03, 0.74),
       opacity: 0,
       filter: `blur(${Math.min(8 + index * 1.5, 12)}px)`,
@@ -1107,6 +1121,7 @@ class ModManager {
   ) {
     card.dataset.previewPath = preview.previewPath;
     card.dataset.modId = preview.mod.id;
+    card.dataset.modName = preview.mod.name;
     card.style.setProperty('--stack-index', String(index));
 
     if (index > 0) {
@@ -1441,18 +1456,19 @@ class ModManager {
     const existingCards = Array.from(
       stack.querySelectorAll<HTMLElement>('.preview-stack-card'),
     );
-    const existingCardsByPath = new Map(
-      existingCards.map((card) => [card.dataset.previewPath || '', card]),
+    // Keyed by mod name so a toggled mod (new folder, same mod) keeps its card instead of animating in again.
+    const existingCardsByMod = new Map(
+      existingCards.map((card) => [card.dataset.modName || '', card]),
     );
     const nextCards: HTMLElement[] = [];
     const newCards: HTMLElement[] = [];
 
     previews.forEach((preview, index) => {
-      const existingCard = existingCardsByPath.get(preview.previewPath);
+      const existingCard = existingCardsByMod.get(preview.mod.name);
       const card = existingCard || this.createPreviewCard(preview);
 
       if (existingCard) {
-        existingCardsByPath.delete(preview.previewPath);
+        existingCardsByMod.delete(preview.mod.name);
       } else {
         newCards.push(card);
       }
@@ -1462,7 +1478,7 @@ class ModManager {
       nextCards.push(card);
     });
 
-    const removedCards = Array.from(existingCardsByPath.values());
+    const removedCards = Array.from(existingCardsByMod.values());
 
     if (animationsDisabled) {
       removedCards.forEach((card) => card.remove());
@@ -1478,9 +1494,18 @@ class ModManager {
     });
 
     if (newCards.length > 0) {
+      // Zoom in place (no slide from the top-left corner).
       gsapRef.set(newCards, {
-        x: -18,
-        y: -24,
+        x: (index: number) =>
+          this.getPreviewStackTargetState(
+            nextCards.indexOf(newCards[index]),
+            previews.length,
+          ).x,
+        y: (index: number) =>
+          this.getPreviewStackTargetState(
+            nextCards.indexOf(newCards[index]),
+            previews.length,
+          ).y,
         scale: 0.88,
         opacity: 0,
         filter: 'blur(12px)',
@@ -1755,11 +1780,46 @@ class ModManager {
           const normalizedCategory =
             categoryMap[category.toLowerCase()] || category;
           mod.category = normalizedCategory;
+        } else {
+          mod.category = null;
         }
       } catch (error) {}
     }
 
+    this.syncCategoryFilterOptions();
     this.updateVisibility();
+  }
+
+  syncCategoryFilterOptions() {
+    const dropdown = document.querySelector<HTMLElement>(
+      '#category-filter .custom-select-dropdown',
+    );
+    if (!dropdown) return;
+
+    dropdown.querySelectorAll('[data-custom]').forEach((o) => o.remove());
+    const known = new Set(
+      Array.from(
+        dropdown.querySelectorAll<HTMLElement>('.custom-select-option'),
+      ).map((o) => (o.dataset.value || '').toLowerCase()),
+    );
+
+    for (const mod of this.mods) {
+      const category = mod.category;
+      if (!category || known.has(category.toLowerCase())) continue;
+      known.add(category.toLowerCase());
+
+      const option = document.createElement('div');
+      option.className = 'custom-select-option';
+      option.dataset.value = category;
+      option.dataset.custom = '1';
+      option.innerHTML = '<i class="bi bi-tag-fill"></i><span></span>';
+      option.querySelector('span')!.textContent = category;
+      dropdown.appendChild(option);
+    }
+
+    if (this.categoryFilter && !known.has(this.categoryFilter.toLowerCase())) {
+      this.clearFilters();
+    }
   }
 
   async openSelectedModFolder() {

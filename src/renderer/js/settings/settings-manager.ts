@@ -1953,68 +1953,6 @@ class SettingsManager {
       sidebarPrideTabsToggle.dataset.listenerAttached = 'true';
     }
 
-    const socialFeaturesToggle = document.querySelector<HTMLInputElement>(
-      '#social-features-enabled',
-    );
-    if (
-      socialFeaturesToggle &&
-      !socialFeaturesToggle.dataset.listenerAttached
-    ) {
-      window.electronAPI.store
-        .get('social.featuresEnabled')
-        .then((value: boolean | null) => {
-          socialFeaturesToggle.checked = value === true;
-        })
-        .catch(() => {
-          socialFeaturesToggle.checked = false;
-        });
-
-      socialFeaturesToggle.addEventListener('change', async () => {
-        const enabled = socialFeaturesToggle.checked;
-        let hasActiveSession = Boolean(
-          window.socialManager?.authToken || window.socialManager?.userData,
-        );
-
-        if (!enabled && !hasActiveSession) {
-          const [storedToken, storedUserData] = await Promise.all([
-            window.electronAPI.store.get('social.authToken'),
-            window.electronAPI.store.get('social.userData'),
-          ]);
-          hasActiveSession = Boolean(storedToken || storedUserData);
-        }
-
-        if (!enabled && hasActiveSession) {
-          const confirmed = await this.confirmDisableSocialFeatures();
-          if (!confirmed) {
-            socialFeaturesToggle.checked = true;
-            return;
-          }
-        }
-
-        if (window.socialManager?.setSocialFeaturesEnabled) {
-          await window.socialManager.setSocialFeaturesEnabled(enabled);
-        } else {
-          await window.electronAPI.store.set('social.featuresEnabled', enabled);
-          if (!enabled) {
-            await Promise.all([
-              window.electronAPI.store.delete('social.authToken'),
-              window.electronAPI.store.delete('social.userData'),
-            ]);
-          }
-        }
-        window.toastManager?.success?.('toasts.settingSaved');
-      });
-      socialFeaturesToggle.dataset.listenerAttached = 'true';
-
-      window.addEventListener(
-        'social-features-preference-changed',
-        (event: Event) => {
-          const detail = (event as CustomEvent<{ enabled: boolean }>).detail;
-          socialFeaturesToggle.checked = detail?.enabled === true;
-        },
-      );
-    }
-
     const emulatorTypeSelect = document.querySelector<HTMLElement>(
       '#emulator-type-select',
     );
@@ -2400,44 +2338,6 @@ class SettingsManager {
         }
       });
       toggle.dataset.listenerAttached = 'true';
-    });
-  }
-
-  confirmDisableSocialFeatures(): Promise<boolean> {
-    const title = this.translate('settings.disableSocialFeaturesTitle');
-    const message = this.translate('settings.disableSocialFeaturesMessage');
-
-    if (!window.modalManager?.showCustomModal) {
-      return Promise.resolve(window.confirm(`${title}\n\n${message}`));
-    }
-
-    return new Promise((resolve) => {
-      let settled = false;
-      const settle = (value: boolean) => {
-        if (settled) return;
-        settled = true;
-        resolve(value);
-      };
-
-      window.modalManager.showCustomModal({
-        id: 'disable-social-features-modal',
-        title,
-        body: `<p>${message}</p>`,
-        clickOverlayToClose: false,
-        onClose: () => settle(false),
-        buttons: [
-          {
-            text: this.translate('common.cancel'),
-            type: 'secondary',
-            onClick: () => settle(false),
-          },
-          {
-            text: this.translate('settings.disableAndSignOut'),
-            type: 'danger',
-            onClick: () => settle(true),
-          },
-        ],
-      });
     });
   }
 

@@ -326,24 +326,6 @@
   line-height: 1.6;
 }
 
-#social-install-sharing-notice-modal {
-  width: min(500px, calc(100vw - 32px));
-  min-width: 0;
-}
-
-.social-install-sharing-notice {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.social-install-sharing-message {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 15px;
-  line-height: 1.55;
-}
-
 .uninstall-mod-list {
   display: none;
   margin: 0 0 12px 0;

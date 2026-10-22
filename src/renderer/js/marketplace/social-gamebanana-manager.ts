@@ -869,7 +869,7 @@ class SocialGameBananaManager extends SocialManagerBase {
             await this.confirmMissingGameBananaRequirements(downloadUrl);
           if (!shouldContinue) return;
 
-          const pendingDownload = this.registerPendingGameBananaSocialDownload(downloadUrl);
+          const pendingDownload = this.createGameBananaSocialPayload(downloadUrl);
           const fallbackProtocolUrl = /^(?:fightplanner|mosaic):/i.test(downloadUrl)
             ? downloadUrl
             : `fightplanner:${downloadUrl}`;
@@ -2794,100 +2794,6 @@ class SocialGameBananaManager extends SocialManagerBase {
     });
   }
 
-  getActiveSocialSection() {
-    const activeSection = document.querySelector<HTMLElement>(
-      '.social-section.active',
-    );
-    return activeSection?.id.replace('social-section-', '') || 'discover';
-  }
-
-  activateSocialSectionWithoutLoading(sectionName: string) {
-    const navItems = document.querySelectorAll<HTMLElement>('.social-nav-item');
-    navItems.forEach((item) => {
-      item.classList.toggle(
-        'active',
-        item.getAttribute('data-section') === sectionName,
-      );
-    });
-
-    const sections = document.querySelectorAll<HTMLElement>('.social-section');
-    sections.forEach((section) => {
-      section.classList.toggle(
-        'active',
-        section.id === `social-section-${sectionName}`,
-      );
-      section.style.opacity = '';
-      section.style.transform = '';
-      section.style.transition = '';
-    });
-  }
-
-  createGameBananaFallbackFromSocialCard(
-    card: HTMLElement,
-    modelName: string,
-    submissionId: string,
-  ): GameBananaTopSubmission {
-    const name = card.getAttribute('data-gb-name') || 'Unknown Mod';
-    const imageUrl = card.getAttribute('data-gb-image') || '';
-    const creator = card.getAttribute('data-gb-creator') || 'Unknown';
-
-    return {
-      _idRow: Number(submissionId),
-      _sModelName: modelName,
-      _sName: name,
-      _sProfileUrl: this.getGameBananaProfileUrl(modelName, submissionId),
-      _sImageUrl: imageUrl,
-      _aSubmitter: {
-        _sName: creator,
-      },
-    };
-  }
-
-  async openSocialModGameBananaDetails(card: HTMLElement) {
-    const modelName = card.getAttribute('data-gb-model') || 'Mod';
-    const submissionId = card.getAttribute('data-gb-id');
-    if (!submissionId) return;
-
-    const previousSection = this.getActiveSocialSection();
-    const sourceRect = this.getGameBananaSourcePreviewRect(card);
-    this.gameBananaDetailReturnSection =
-      previousSection !== 'discover' ? previousSection : null;
-    this.gameBananaDetailReturnScrollTop = this.getSocialMainScrollTop();
-
-    const searchInput = document.querySelector<HTMLInputElement>(
-      '#social-gamebanana-search-input',
-    );
-    if (searchInput) {
-      this.gameBananaSearchQuery = searchInput.value.trim();
-    }
-
-    this.activateSocialSectionWithoutLoading('discover');
-    this.captureGameBananaDiscoverSnapshot();
-    this.setSocialMainScrollTop(0);
-
-    const fallback = this.createGameBananaFallbackFromSocialCard(
-      card,
-      modelName,
-      submissionId,
-    );
-    this.cacheGameBananaSubmission(fallback);
-
-    this.gameBananaLastDetailSource = {
-      modelName,
-      submissionId,
-      sourceKind: 'social',
-      page: this.gameBananaModsPage,
-      scrollTop: this.getSocialMainScrollTop(),
-    };
-
-    await this.showGameBananaSubmissionDetails(
-      modelName,
-      submissionId,
-      card,
-      sourceRect,
-    );
-  }
-
   keepGameBananaTargetVisible(target: HTMLElement) {
     const mainContent = document.querySelector<HTMLElement>(
       '.social-main-content',
@@ -3102,25 +3008,6 @@ class SocialGameBananaManager extends SocialManagerBase {
       const detailRect = detailImage?.getBoundingClientRect() || null;
       const detailSrc = firstGalleryImageSrc || detailImage?.src || '';
       const snapshot = this.gameBananaDiscoverSnapshot;
-      const returnSection = this.gameBananaDetailReturnSection;
-      const returnScrollTop = this.gameBananaDetailReturnScrollTop;
-
-      if (returnSection && returnSection !== 'discover') {
-        await this.returnFromGameBananaDetailToSocialSection(
-          returnSection,
-          returnScrollTop,
-          source,
-          detailRect,
-          detailSrc,
-        );
-        this.gameBananaDiscoverSnapshot = null;
-        this.gameBananaCurrentDetail = null;
-        this.gameBananaLastDetailSource = null;
-        this.gameBananaDetailReturnSection = null;
-        this.gameBananaDetailReturnScrollTop = 0;
-        return;
-      }
-
       if (snapshot) {
         const discoverContent = document.querySelector<HTMLElement>(
           '#social-discover-content',
@@ -3158,8 +3045,6 @@ class SocialGameBananaManager extends SocialManagerBase {
       this.gameBananaDiscoverSnapshot = null;
       this.gameBananaCurrentDetail = null;
       this.gameBananaLastDetailSource = null;
-      this.gameBananaDetailReturnSection = null;
-      this.gameBananaDetailReturnScrollTop = 0;
 
       if (!source || !detailRect || !detailSrc) {
         return;
@@ -3180,91 +3065,6 @@ class SocialGameBananaManager extends SocialManagerBase {
     } finally {
       this.gameBananaDetailReturnInProgress = false;
     }
-  }
-
-  async returnFromGameBananaDetailToSocialSection(
-    sectionName: string,
-    scrollTop: number,
-    source: SocialManagerBase['gameBananaLastDetailSource'],
-    detailRect: DOMRect | null,
-    detailSrc: string,
-  ) {
-    this.activateSocialSectionWithoutLoading(sectionName);
-
-    this.skipSocialModCardIntroAnimation = true;
-    try {
-      if (sectionName === 'people-downloads') {
-        await this.loadFeed();
-      } else if (sectionName === 'my-mods') {
-        await this.loadMyMods();
-      } else {
-        this.switchSection(sectionName);
-        await new Promise<void>((resolve) => window.setTimeout(resolve, 280));
-      }
-    } finally {
-      this.skipSocialModCardIntroAnimation = false;
-    }
-
-    this.setSocialMainScrollTop(scrollTop);
-
-    const canAnimateReturn = !!source && !!detailRect && !!detailSrc;
-    let targetCard = canAnimateReturn
-      ? this.findSocialGameBananaReturnTarget(source, sectionName)
-      : null;
-    let targetImage =
-      targetCard?.querySelector<HTMLElement>('.social-mod-image') || null;
-    const gsapRef = window.gsap as any;
-    if (gsapRef && targetImage) {
-      gsapRef.killTweensOf(targetImage);
-      gsapRef.set(targetImage, { autoAlpha: 0 });
-    }
-
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    );
-
-    if (!source || !detailRect || !detailSrc) return;
-
-    targetCard =
-      targetCard || this.findSocialGameBananaReturnTarget(source, sectionName);
-    targetImage =
-      targetImage ||
-      targetCard?.querySelector<HTMLElement>('.social-mod-image') ||
-      null;
-    if (targetCard) {
-      this.keepGameBananaTargetVisible(targetCard);
-    }
-    if (targetImage) {
-      this.animateGameBananaDetailToPreview(detailRect, detailSrc, targetImage);
-    }
-  }
-
-  findSocialGameBananaReturnTarget(
-    source: NonNullable<SocialManagerBase['gameBananaLastDetailSource']>,
-    sectionName: string,
-  ) {
-    const section = document.querySelector<HTMLElement>(
-      `#social-section-${sectionName}`,
-    );
-    const root = section || document;
-
-    return (
-      Array.from(
-        root.querySelectorAll<HTMLElement>(
-          '.social-mod-card.has-gamebanana-detail',
-        ),
-      ).find((card) => {
-        if (
-          card.getAttribute('data-gb-model') !== source.modelName ||
-          card.getAttribute('data-gb-id') !== source.submissionId
-        ) {
-          return false;
-        }
-
-        const rect = card.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0;
-      }) || null
-    );
   }
 
   startGameBananaGalleryBackToFirstImage() {
@@ -3936,26 +3736,6 @@ class SocialGameBananaManager extends SocialManagerBase {
     `;
   }
 
-  createSocialDocumentId() {
-    const chars =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    return Array.from({ length: 10 }, () =>
-      chars.charAt(Math.floor(Math.random() * chars.length)),
-    ).join('');
-  }
-
-  getCurrentSocialUsername() {
-    const usernameEl = document.querySelector<HTMLElement>(
-      '#social-profile-username',
-    );
-    return (
-      usernameEl?.textContent?.trim() ||
-      this.userData?.displayName ||
-      this.userData?.email?.split('@')[0] ||
-      'User'
-    );
-  }
-
   getDownloadIdFromGameBananaUrl(url: string) {
     return (
       url.match(/\/dl\/(\d+)/)?.[1] || url.match(/\/mmdl\/(\d+)/)?.[1] || ''
@@ -4029,131 +3809,6 @@ class SocialGameBananaManager extends SocialManagerBase {
       imageUrl,
       availableFiles,
     };
-  }
-
-  registerPendingGameBananaSocialDownload(downloadUrl: string) {
-    const payload = this.createGameBananaSocialPayload(downloadUrl);
-    if (!payload) return null;
-
-    this.pendingGameBananaSocialDownloads.set(payload.downloadId, payload);
-    return payload;
-  }
-
-  async fetchSocialLinksWithRefresh() {
-    if (!this.authToken) return [];
-
-    const url = `${this.API_URL}/list/links?_=${Date.now()}`;
-    const response = await this.fetchWithAuth(
-      url,
-      {
-        cache: 'no-store',
-      },
-    );
-
-    if (!response.ok) return [];
-
-    const data = await response.json();
-    return Array.isArray(data) ? data : data.documents || [];
-  }
-
-  async writeSocialLinkDocument(docId: string, body: Record<string, any>) {
-    if (!this.authToken) return false;
-
-    const response = await this.fetchWithAuth(
-      `${this.API_URL}/write/links/${docId}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...body,
-          _idToken: this.authToken,
-        }),
-      },
-    );
-
-    return response.ok;
-  }
-
-  async saveInstalledGameBananaDownloadToSocial(
-    downloadUrl: string,
-    eventDownloadId = '',
-  ) {
-    if (!this.authToken || !this.userData) return;
-
-    if (window.electronAPI?.store) {
-      try {
-        const shareInstalls = await window.electronAPI.store.get(
-          'social.shareInstallsOnProfile',
-        );
-        if (shareInstalls === false) {
-          const skippedDownloadId =
-            String(eventDownloadId || '') ||
-            this.getDownloadIdFromGameBananaUrl(downloadUrl);
-          if (skippedDownloadId) {
-            this.pendingGameBananaSocialDownloads.delete(skippedDownloadId);
-          }
-          return;
-        }
-      } catch (error) {
-        console.warn(
-          '[Social] Failed to read install sharing preference:',
-          error,
-        );
-      }
-    }
-
-    const downloadId =
-      String(eventDownloadId || '') ||
-      this.getDownloadIdFromGameBananaUrl(downloadUrl);
-    if (!downloadId) return;
-
-    const pending = this.pendingGameBananaSocialDownloads.get(downloadId);
-    if (!pending) return;
-
-    try {
-      const links = await this.fetchSocialLinksWithRefresh();
-      const username = this.getCurrentSocialUsername();
-      const existing = links.find((mod) => {
-        const link = String(mod.link || '');
-        const sameLink = link === pending.link;
-        const sameDownload =
-          this.getDownloadIdFromGameBananaUrl(link) === downloadId;
-        const isOwner =
-          mod.userId === this.userData?.localId ||
-          (username && mod.pseudo === username);
-        return isOwner && (sameLink || sameDownload);
-      });
-      const docId = existing?.id || this.createSocialDocumentId();
-      const now = new Date().toISOString();
-      const payload = {
-        id: docId,
-        availableFiles: JSON.stringify(pending.availableFiles),
-        createdAt: existing?.createdAt || now,
-        creator: pending.creator,
-        downloadedAt: now,
-        image_url: pending.imageUrl,
-        isHidden: false,
-        link: pending.link,
-        modId: pending.modId,
-        modInstalled: true,
-        mod_name: pending.modName,
-        needsFileSelection:
-          pending.availableFiles.length > 1 ? 'true' : 'false',
-        pseudo: username,
-        updatedAt: now,
-        userId: this.userData.localId,
-      };
-
-      const written = await this.writeSocialLinkDocument(docId, payload);
-      if (written) {
-        this.invalidateCache('links');
-        this.pendingGameBananaSocialDownloads.delete(downloadId);
-      }
-    } catch (error) {
-      console.error('[Social] Failed to save GameBanana download:', error);
-    }
   }
 
   formatGameBananaFileSize(bytes?: number) {

@@ -174,6 +174,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (window.pluginManager && window.settingsManager) {
       await window.pluginManager.checkForUpdatesOnStartup();
     }
+
+    await window.modInfoManager?.checkForUpdates();
   }, 5000);
 });
 

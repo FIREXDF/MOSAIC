@@ -137,11 +137,11 @@
         </button>
         <button
           class="sidebar-btn"
-          data-tab="social"
-          data-i18n="sidebar.social"
+          data-tab="gamebanana"
+          data-i18n="sidebar.gamebanana"
           data-i18n-title
         >
-          <img src="../images/icons/social.svg" alt="Social" draggable="false" />
+          <img src="../images/icons/social.svg" alt="GameBanana" draggable="false" />
         </button>
         <button
           class="sidebar-btn"
@@ -201,9 +201,9 @@
             </div>
           </div>
 
-          <!-- Tab Content: Social -->
-          <div class="tab-content" id="tab-social">
-            <!-- This tab will load from tabs/social.html -->
+          <!-- Tab Content: GameBanana -->
+          <div class="tab-content" id="tab-gamebanana">
+            <!-- This tab will load from tabs/gamebanana.html -->
           </div>
 
           <!-- Tab Content: Settings -->
@@ -833,39 +833,59 @@
           </div>
           <div class="form-group">
             <label data-i18n="modals.editInfo.category">Category</label>
-            <select name="category" id="edit-info-category">
-              <option value="" data-i18n="modals.editInfo.selectCategory">
-                Select category
-              </option>
-              <option value="Fighter" data-i18n="tools.categories.fighter">
-                Fighter & Skins
-              </option>
-              <option value="Movesets" data-i18n="tools.categories.movesets">
-                Movesets
-              </option>
-              <option value="stages" data-i18n="tools.categories.stages">
-                Stages
-              </option>
-              <option value="effects" data-i18n="tools.categories.effects">
-                Effects
-              </option>
-              <option
-                value="final smash"
-                data-i18n="tools.categories.finalSmash"
-              >
-                Final Smash
-              </option>
-              <option value="UI" data-i18n="tools.categories.ui">UI</option>
-              <option value="Param" data-i18n="tools.categories.param">
-                Param
-              </option>
-              <option value="audio" data-i18n="tools.categories.audio">
-                Audio
-              </option>
-              <option value="Other/misc" data-i18n="tools.categories.other">
-                Other/Misc
-              </option>
-            </select>
+            <div class="custom-select" id="edit-info-category-select">
+              <input type="hidden" name="category" id="edit-info-category" />
+              <div class="custom-select-trigger">
+                <span class="selected-value" data-i18n="modals.editInfo.selectCategory">Select category</span>
+                <i class="bi bi-chevron-down"></i>
+              </div>
+              <div class="custom-select-dropdown" id="edit-info-category-dropdown">
+                <div class="custom-select-option" data-value="">
+                  <i class="bi bi-grid-3x3-gap"></i>
+                  <span data-i18n="modals.editInfo.selectCategory">Select category</span>
+                </div>
+                <div class="custom-select-option" data-value="Fighter">
+                  <i class="bi bi-person-fill"></i>
+                  <span data-i18n="tools.categories.fighter">Fighter &amp; Skins</span>
+                </div>
+                <div class="custom-select-option" data-value="Movesets">
+                  <i class="bi bi-lightning-fill"></i>
+                  <span data-i18n="tools.categories.movesets">Movesets</span>
+                </div>
+                <div class="custom-select-option" data-value="Stages">
+                  <i class="bi bi-map-fill"></i>
+                  <span data-i18n="tools.categories.stages">Stages</span>
+                </div>
+                <div class="custom-select-option" data-value="Effects">
+                  <i class="bi bi-stars"></i>
+                  <span data-i18n="tools.categories.effects">Effects</span>
+                </div>
+                <div class="custom-select-option" data-value="Final Smash">
+                  <i class="bi bi-star-fill"></i>
+                  <span data-i18n="tools.categories.finalSmash">Final Smash</span>
+                </div>
+                <div class="custom-select-option" data-value="UI">
+                  <i class="bi bi-window"></i>
+                  <span data-i18n="tools.categories.ui">UI</span>
+                </div>
+                <div class="custom-select-option" data-value="Param">
+                  <i class="bi bi-sliders"></i>
+                  <span data-i18n="tools.categories.param">Param</span>
+                </div>
+                <div class="custom-select-option" data-value="Audio">
+                  <i class="bi bi-music-note-beamed"></i>
+                  <span data-i18n="tools.categories.audio">Audio</span>
+                </div>
+                <div class="custom-select-option" data-value="Other/Misc">
+                  <i class="bi bi-three-dots"></i>
+                  <span data-i18n="tools.categories.other">Other/Misc</span>
+                </div>
+                <div class="custom-select-option" data-value="__custom__">
+                  <i class="bi bi-plus-lg"></i>
+                  <span data-i18n="modals.editInfo.customCategory">Custom...</span>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="form-group">
             <label data-i18n="modals.editInfo.url">URL</label>
@@ -1743,10 +1763,7 @@
     <script src="../../out/renderer/js/stages/stages-manager.js"></script>
     <script src="../../out/renderer/js/marketplace/social-manager-base.js"></script>
     <script src="../../out/renderer/js/marketplace/social-gamebanana-manager.js"></script>
-    <script src="../../out/renderer/js/social/social-feed-manager.js"></script>
-    <script src="../../out/renderer/js/social/social-profile-manager.js"></script>
-    <script src="../../out/renderer/js/social/social-settings-manager.js"></script>
-    <script src="../../out/renderer/js/social/social-manager.js"></script>
+    <script src="../../out/renderer/js/marketplace/marketplace-discover.js"></script>
     <script src="../../out/renderer/js/tabs/tabs-loader.js"></script>
     <script src="../../out/renderer/js/settings/settings-manager.js"></script>
     <script src="../../out/renderer/js/mods/mod-info.js"></script>

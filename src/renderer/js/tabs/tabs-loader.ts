@@ -4,7 +4,7 @@ const tabConfigs = {
   characters: 'tabs/characters.html',
   stages: 'tabs/stages.html',
   downloads: 'tabs/downloads.html',
-  social: 'tabs/social.html',
+  gamebanana: 'tabs/gamebanana.html',
   settings: 'tabs/settings.html',
   fightplanner: 'tabs/fightplanner.html',
 };
@@ -397,9 +397,6 @@ function initializeTabFeatures(tabName) {
         const trigger = finalCategoryFilter.querySelector<HTMLElement>(
           '.custom-select-trigger',
         );
-        const options = finalCategoryFilter.querySelectorAll<HTMLElement>(
-          '.custom-select-option',
-        );
         const selectedValue =
           finalCategoryFilter.querySelector<HTMLElement>('.selected-value');
 
@@ -425,25 +422,32 @@ function initializeTabFeatures(tabName) {
         };
         document.addEventListener('click', categoryFilterDocumentListener);
 
-        options.forEach((option) => {
-          option.addEventListener('click', () => {
-            const value = option.dataset.value;
-            const text = option.querySelector<HTMLElement>('span')!.textContent;
+        finalCategoryFilter
+          .querySelector<HTMLElement>('.custom-select-dropdown')
+          ?.addEventListener('click', (e) => {
+            const option = (e.target as HTMLElement).closest<HTMLElement>(
+              '.custom-select-option',
+            );
+            if (!option) return;
 
             if (selectedValue) {
-              selectedValue.textContent = text;
+              selectedValue.textContent =
+                option.querySelector<HTMLElement>('span')!.textContent;
             }
 
-            options.forEach((opt) => opt.classList.remove('active'));
+            finalCategoryFilter
+              .querySelectorAll('.custom-select-option')
+              .forEach((opt) => opt.classList.remove('active'));
             option.classList.add('active');
 
             finalCategoryFilter.classList.remove('open');
 
             if (window.modManager) {
-              window.modManager.filterByCategory(value);
+              window.modManager.filterByCategory(option.dataset.value);
             }
           });
-        });
+
+        window.modManager?.syncCategoryFilterOptions();
       }
     }
 
@@ -571,8 +575,8 @@ function initializeTabFeatures(tabName) {
     }
   }
 
-  if (tabName === 'social') {
-    void window.socialManager?.initialize();
+  if (tabName === 'gamebanana') {
+    void window.marketplaceDiscover?.initialize();
     window.i18n?.updateDOM();
   }
 

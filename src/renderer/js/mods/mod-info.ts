@@ -74,10 +74,34 @@ class ModInfoManager {
     }
 
     if (modData.category) {
+      const labelKeys = {
+        fighter: 'fighter',
+        fighters: 'fighter',
+        skin: 'fighter',
+        skins: 'fighter',
+        moveset: 'movesets',
+        movesets: 'movesets',
+        stage: 'stages',
+        stages: 'stages',
+        effect: 'effects',
+        effects: 'effects',
+        'final smash': 'finalSmash',
+        finalsmash: 'finalSmash',
+        ui: 'ui',
+        param: 'param',
+        audio: 'audio',
+        other: 'other',
+        misc: 'other',
+        'other/misc': 'other',
+      };
+      const labelKey = labelKeys[modData.category.toLowerCase()];
+      const categoryLabel = labelKey
+        ? t(`tools.categories.${labelKey}`)
+        : modData.category;
       html += `
 <div class="mod-info-item">
 <div class="mod-info-label">${t('tools.modInfo.category')}</div>
-<div class="mod-info-value">${escapeHtml(modData.category)}</div>
+<div class="mod-info-value">${escapeHtml(categoryLabel)}</div>
 </div>`;
     }
 
@@ -105,6 +129,21 @@ ${escapeHtml(modData.url)}
 </div>`;
     }
 
+    const watchUrl =
+      modPath && /gamebanana\.com\/(?:mods|sounds)\/\d+/i.test(modData.url || '')
+        ? modData.url!
+        : null;
+    if (watchUrl) {
+      html += `
+<div class="mod-info-item">
+<label class="settings-switch">
+<input type="checkbox" id="mod-update-watch-toggle" />
+<span class="settings-switch-slider"></span>
+</label>
+<label for="mod-update-watch-toggle" style="margin-left: 12px; color: var(--text-secondary)">${t('tools.modInfo.watchUpdates')}</label>
+</div>`;
+    }
+
     if (html === '') {
       html = `<p class="mod-info-placeholder">${t('tools.modInfo.noInformation')}</p>`;
     }
@@ -115,9 +154,50 @@ ${escapeHtml(modData.url)}
 
     container.innerHTML = html;
 
+    const watchToggle = container.querySelector<HTMLInputElement>(
+      '#mod-update-watch-toggle',
+    );
+    if (watchToggle && watchUrl) {
+      this.getUpdateWatch().then((watch) => {
+        watchToggle.checked = Boolean(watch[watchUrl]);
+      });
+      watchToggle.addEventListener('change', async () => {
+        const watch = await this.getUpdateWatch();
+        if (watchToggle.checked) {
+          const mod = window.modManager?.mods.find((m) => m.path === modPath);
+          watch[watchUrl] = {
+            name: modData.display_name || mod?.name || watchUrl,
+            version: modData.version,
+            // Files uploaded after the mod folder was created count as updates.
+            seen: Math.floor((mod?.addedAt || Date.now()) / 1000),
+          };
+        } else {
+          delete watch[watchUrl];
+        }
+        await window.electronAPI.store.set('modUpdateWatch', watch);
+      });
+    }
+
     const editBtn = document.querySelector<HTMLElement>('#edit-info-btn');
     if (editBtn && modPath) {
       editBtn.style.display = 'flex';
+    }
+  }
+
+  async getUpdateWatch(): Promise<
+    Record<string, { name: string; version?: string; seen: number }>
+  > {
+    return ((await window.electronAPI.store.get('modUpdateWatch')) as any) || {};
+  }
+
+  async checkForUpdates() {
+    const t = (key) => window.i18n?.t?.(key) ?? key;
+    if (!Object.keys(await this.getUpdateWatch()).length) return;
+
+    window.toastManager?.info(t('tools.modInfo.checkingUpdates'));
+    const result = await window.electronAPI.checkModUpdates();
+    if (result.success && result.results.length) {
+      window.modalManager?.openModUpdateModal(result.results);
     }
   }
 

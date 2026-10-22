@@ -2,6 +2,27 @@ document.addEventListener('DOMContentLoaded', () => {
   let tutorialDevMode = false;
   const devOverrides: Record<string, any> = {};
 
+  async function warnIfEmulatorExe(
+    statusDiv: HTMLElement,
+    folderPath: string,
+    dataFolder: 'sdmc' | 'sdcard',
+  ): Promise<void> {
+    const result = await window.tutorialAPI.checkEmulatorExe(folderPath);
+    if (!('hasExe' in result) || !result.hasExe) return;
+    statusDiv.insertAdjacentHTML(
+      'beforeend',
+      `
+                    <div style="margin-top: 12px; background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start;">
+                        <i class="bi bi-exclamation-triangle-fill" style="color: #ffc107; font-size: 18px;"></i>
+                        <span style="color: rgba(255,255,255,0.8); font-size: 13px; text-align: left;">
+                            This folder contains the emulator's <strong style="color: #fff;">.exe</strong>, so it's probably not the right one.
+                            Select the folder that contains <strong style="color: #fff;">${dataFolder}</strong>, usually located in <strong style="color: #fff;">AppData</strong> (e.g. <span style="font-family: monospace;">%APPDATA%</span>).
+                        </span>
+                    </div>
+                `,
+    );
+  }
+
   const apiWrapper = {
     async storeGet(key: string): Promise<any> {
       if (tutorialDevMode && key in devOverrides) return devOverrides[key];
@@ -1886,6 +1907,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                         `;
+                  void warnIfEmulatorExe(statusDiv!, path, 'sdmc');
                   document
                     .querySelector<HTMLElement>('#wrong-yuzu-path-btn-2')
                     ?.addEventListener('click', async () => {
@@ -1905,6 +1927,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         </div>
                                     </div>
                                 `;
+                        void warnIfEmulatorExe(statusDiv!, path2, 'sdmc');
                       }
                     });
                 }
@@ -1940,6 +1963,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                         `;
+                  void warnIfEmulatorExe(statusDiv!, path, 'sdmc');
                   if (nextBtn) {
                     nextBtn.style.opacity = '1';
                     nextBtn.style.pointerEvents = 'auto';
@@ -2376,6 +2400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                         `;
+                  void warnIfEmulatorExe(statusDiv!, path, 'sdcard');
                   document
                     .querySelector<HTMLElement>('#wrong-ryujinx-path-btn-2')
                     ?.addEventListener('click', async () => {
@@ -2395,6 +2420,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         </div>
                                     </div>
                                 `;
+                        void warnIfEmulatorExe(statusDiv!, path2, 'sdcard');
                       }
                     });
                 }
@@ -2433,6 +2459,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                         `;
+                  void warnIfEmulatorExe(statusDiv!, path, 'sdcard');
                   if (nextBtn) {
                     nextBtn.style.opacity = '1';
                     nextBtn.style.pointerEvents = 'auto';
@@ -2846,6 +2873,38 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         let hasModsPath = false;
         let hasPluginsPath = false;
+        let pathsSetByMosaic = false;
+
+        const confirmPathChange = (): Promise<boolean> =>
+          new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.style.cssText =
+              'position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+            overlay.innerHTML = `
+<div style="max-width: 420px; background: #1e1e24; border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 20px; text-align: left;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <i class="bi bi-exclamation-triangle-fill" style="color: #ffc107; font-size: 18px;"></i>
+        <strong style="color: #fff; font-size: 16px;">Change this path?</strong>
+    </div>
+    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.7); margin: 0 0 18px;">
+        MOSAIC installed ARCropolis and already set these paths for you. If you change them, your mods and plugins may not load in game. Only change them if you know what you are doing.
+    </p>
+    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button data-action="cancel" style="background: rgba(255, 255, 255, 0.06); color: #fff; border: 1px solid rgba(255, 255, 255, 0.12); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Keep current path</button>
+        <button data-action="confirm" style="background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Change anyway</button>
+    </div>
+</div>`;
+            const close = (result: boolean) => {
+              overlay.remove();
+              resolve(result);
+            };
+            overlay.addEventListener('click', (e) => {
+              const action = (e.target as HTMLElement).dataset.action;
+              if (action === 'confirm') close(true);
+              else if (action === 'cancel' || e.target === overlay) close(false);
+            });
+            document.body.appendChild(overlay);
+          });
 
         const updateNextButton = () => {
           if (!nextBtn) return;
@@ -2922,6 +2981,11 @@ document.addEventListener('DOMContentLoaded', () => {
               '#plugins-path-display i',
             );
           }
+          const arcropolisInstalled = await apiWrapper.storeGet(
+            'tutorial.arcropolisInstalled',
+          );
+          pathsSetByMosaic =
+            arcropolisInstalled === false && hasModsPath && hasPluginsPath;
           updateNextButton();
         } catch (e) {
           console.error('Error loading settings:', e);
@@ -2931,6 +2995,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btn) {
           btn.addEventListener('click', async () => {
             try {
+              if (pathsSetByMosaic && !(await confirmPathChange())) return;
               const path = await window.tutorialAPI.selectFolder();
               if (path) {
                 // Save setting
@@ -2967,6 +3032,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pluginsBtn) {
           pluginsBtn.addEventListener('click', async () => {
             try {
+              if (pathsSetByMosaic && !(await confirmPathChange())) return;
               const path = await window.tutorialAPI.selectFolder();
               if (path) {
                 await window.tutorialAPI.store.set('pluginsPath', path);

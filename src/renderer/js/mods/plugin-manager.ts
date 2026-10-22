@@ -735,7 +735,7 @@ ${plugin.status === 'active'
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
       if (this.pluginsPath !== auditPath) return;
       this.showRecordedVersionAudit(result.mismatches);
-      if (result.mismatches.length === 0) {
+      if (manual && result.mismatches.length === 0) {
         const fullyRecognized = result.complete &&
           result.recognizedCount === result.scannedCount;
         const lookupFailed = !result.complete && result.recognizedCount === 0;

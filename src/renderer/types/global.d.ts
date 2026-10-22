@@ -34,7 +34,6 @@ import { StagesManager } from '../js/stages/stages-manager';
 import { I18nClient } from '../js/i18n/i18n-client';
 import { GameBananaMarketplace } from '../js/marketplace/gamebanana-marketplace';
 import { MarketplaceDiscover } from '../js/marketplace/marketplace-discover';
-import { SocialManager } from '../js/social/social-manager';
 
 import { ModOperations } from '../js/mods/mod-operations';
 import { ModContextMenuHandler } from '../js/mods/mod-context-menu';
@@ -87,7 +86,6 @@ declare global {
     modProfileManager: ModProfileManager;
     gameBananaMarketplace: GameBananaMarketplace;
     marketplaceDiscover: MarketplaceDiscover;
-    socialManager: SocialManager;
 
     ModOperations: typeof ModOperations;
     ModContextMenuHandler: typeof ModContextMenuHandler;

@@ -221,6 +221,95 @@ export {};
     this.closeModal('plugin-update-modal');
   };
 
+  M.prototype.openModUpdateModal = function (updates) {
+    const t = (key) => window.i18n?.t?.(key) ?? key;
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'mod-update-modal';
+
+    // Updates install next to the old folder: replacing it would lose reslots and edits.
+    modal.innerHTML = `
+    <div class="modal-header">
+      <h2>${t('tools.modInfo.updatesTitle')}</h2>
+    </div>
+    <div class="modal-body">
+      <div class="plugin-updates-list">
+        ${updates
+          .map(
+            (update) => `
+        <div class="plugin-update-item">
+          <div class="plugin-update-info">
+            <span class="plugin-update-name">${this.escapeHtml(update.name)}</span>
+            ${
+              update.latestVersion
+                ? `<span class="plugin-update-versions">${this.escapeHtml(
+                    update.currentVersion || '?',
+                  )} → ${this.escapeHtml(update.latestVersion)}</span>`
+                : ''
+            }
+            ${
+              update.changes
+                ? `<span class="plugin-update-versions">${this.escapeHtml(update.changes)}</span>`
+                : ''
+            }
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <button class="modal-btn modal-btn-primary update-plugin-btn" data-install="${this.escapeHtml(update.url)}">
+              ${t('tools.modInfo.update')}
+            </button>
+            <button class="modal-btn modal-btn-secondary update-plugin-btn" data-url="${this.escapeHtml(update.url)}">
+              ${t('tools.modInfo.openOnGameBanana')}
+            </button>
+          </div>
+        </div>`,
+          )
+          .join('')}
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn modal-btn-secondary" id="close-mod-update-modal">
+        ${t('tools.modInfo.dismissUpdates')}
+      </button>
+    </div>
+  `;
+
+    document.body.appendChild(modal);
+    this.showOverlay();
+    modal.style.display = 'block';
+
+    modal.querySelectorAll<HTMLButtonElement>('[data-url]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        window.electronAPI.openUrl(btn.dataset.url!);
+      });
+    });
+
+    // Marks versions as seen so each one is reported once.
+    const markSeen = async (seenUpdates) => {
+      const watch =
+        ((await window.electronAPI.store.get('modUpdateWatch')) as any) || {};
+      for (const update of seenUpdates) {
+        if (watch[update.url]) watch[update.url].seen = update.latest;
+      }
+      await window.electronAPI.store.set('modUpdateWatch', watch);
+    };
+
+    modal.querySelectorAll<HTMLButtonElement>('[data-install]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const update = updates.find((u) => u.url === btn.dataset.install);
+        btn.disabled = true;
+        await window.electronAPI.openFightPlannerLink(update.installLink);
+        await markSeen([update]);
+      });
+    });
+
+    modal
+      .querySelector<HTMLButtonElement>('#close-mod-update-modal')!
+      .addEventListener('click', async () => {
+        await markSeen(updates);
+        this.closeModal('mod-update-modal');
+      });
+  };
+
   M.prototype.openPluginMarketplaceModal = async function () {
     document
       .querySelectorAll<HTMLElement>('#plugin-marketplace-modal')
