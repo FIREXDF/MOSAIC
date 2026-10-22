@@ -103,6 +103,12 @@ class ModManager {
     this.operations = null;
     this.batchTestingOverrideActive = false;
 
+    window.addEventListener('mod-info-updated', (event) => {
+      const modPath = (event as CustomEvent).detail?.modPath;
+      const mod = this.mods.find((m) => m.path === modPath);
+      if (mod) this.loadCategoriesInBackground([mod]);
+    });
+
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.initContainer());
     } else {
@@ -1774,11 +1780,46 @@ class ModManager {
           const normalizedCategory =
             categoryMap[category.toLowerCase()] || category;
           mod.category = normalizedCategory;
+        } else {
+          mod.category = null;
         }
       } catch (error) {}
     }
 
+    this.syncCategoryFilterOptions();
     this.updateVisibility();
+  }
+
+  syncCategoryFilterOptions() {
+    const dropdown = document.querySelector<HTMLElement>(
+      '#category-filter .custom-select-dropdown',
+    );
+    if (!dropdown) return;
+
+    dropdown.querySelectorAll('[data-custom]').forEach((o) => o.remove());
+    const known = new Set(
+      Array.from(
+        dropdown.querySelectorAll<HTMLElement>('.custom-select-option'),
+      ).map((o) => (o.dataset.value || '').toLowerCase()),
+    );
+
+    for (const mod of this.mods) {
+      const category = mod.category;
+      if (!category || known.has(category.toLowerCase())) continue;
+      known.add(category.toLowerCase());
+
+      const option = document.createElement('div');
+      option.className = 'custom-select-option';
+      option.dataset.value = category;
+      option.dataset.custom = '1';
+      option.innerHTML = '<i class="bi bi-tag-fill"></i><span></span>';
+      option.querySelector('span')!.textContent = category;
+      dropdown.appendChild(option);
+    }
+
+    if (this.categoryFilter && !known.has(this.categoryFilter.toLowerCase())) {
+      this.clearFilters();
+    }
   }
 
   async openSelectedModFolder() {

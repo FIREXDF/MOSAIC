@@ -1084,10 +1084,12 @@ body.no-animations .mod-info-item {
   margin-bottom: 6px;
 }
 
+.custom-category-input,
 .mod-info-editor-modal .form-group input,
 .mod-info-editor-modal .form-group select,
 .mod-info-editor-modal .form-group textarea {
   width: 100%;
+  box-sizing: border-box;
   background-color: var(--bg-primary);
   border: 1px solid var(--border-hover);
   border-radius: 6px;
@@ -1098,12 +1100,24 @@ body.no-animations .mod-info-item {
   transition: all 0.2s ease;
 }
 
+.custom-category-input:focus,
 .mod-info-editor-modal .form-group input:focus,
 .mod-info-editor-modal .form-group select:focus,
 .mod-info-editor-modal .form-group textarea:focus {
   outline: none;
   border-color: var(--accent-color);
   background-color: var(--bg-input);
+}
+
+#edit-info-category-dropdown {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.custom-select-dropdown.floating-open {
+  position: fixed;
+  opacity: 1;
+  transform: none;
+  pointer-events: all;
 }
 
 .mod-info-editor-modal .form-group textarea {

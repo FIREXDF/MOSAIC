@@ -74,10 +74,34 @@ class ModInfoManager {
     }
 
     if (modData.category) {
+      const labelKeys = {
+        fighter: 'fighter',
+        fighters: 'fighter',
+        skin: 'fighter',
+        skins: 'fighter',
+        moveset: 'movesets',
+        movesets: 'movesets',
+        stage: 'stages',
+        stages: 'stages',
+        effect: 'effects',
+        effects: 'effects',
+        'final smash': 'finalSmash',
+        finalsmash: 'finalSmash',
+        ui: 'ui',
+        param: 'param',
+        audio: 'audio',
+        other: 'other',
+        misc: 'other',
+        'other/misc': 'other',
+      };
+      const labelKey = labelKeys[modData.category.toLowerCase()];
+      const categoryLabel = labelKey
+        ? t(`tools.categories.${labelKey}`)
+        : modData.category;
       html += `
 <div class="mod-info-item">
 <div class="mod-info-label">${t('tools.modInfo.category')}</div>
-<div class="mod-info-value">${escapeHtml(modData.category)}</div>
+<div class="mod-info-value">${escapeHtml(categoryLabel)}</div>
 </div>`;
     }
 
