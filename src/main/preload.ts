@@ -325,6 +325,7 @@ const tutorialAPI = {
   createDirectory: invokeTutorialHandler('create-directory'),
   checkArcropolisInstalled: invokeTutorialHandler('check-arcropolis-installed'),
   checkArcropolisFolder: invokeTutorialHandler('check-arcropolis-folder'),
+  checkEmulatorExe: invokeTutorialHandler('check-emulator-exe'),
   selectDrive: invokeTutorialHandler('select-drive'),
   joinPath: invokeTutorialHandler('join-path'),
   getTempDir: invokeTutorialHandler('get-temp-dir'),

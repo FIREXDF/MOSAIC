@@ -2,6 +2,27 @@ document.addEventListener('DOMContentLoaded', () => {
   let tutorialDevMode = false;
   const devOverrides: Record<string, any> = {};
 
+  async function warnIfEmulatorExe(
+    statusDiv: HTMLElement,
+    folderPath: string,
+    dataFolder: 'sdmc' | 'sdcard',
+  ): Promise<void> {
+    const result = await window.tutorialAPI.checkEmulatorExe(folderPath);
+    if (!('hasExe' in result) || !result.hasExe) return;
+    statusDiv.insertAdjacentHTML(
+      'beforeend',
+      `
+                    <div style="margin-top: 12px; background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start;">
+                        <i class="bi bi-exclamation-triangle-fill" style="color: #ffc107; font-size: 18px;"></i>
+                        <span style="color: rgba(255,255,255,0.8); font-size: 13px; text-align: left;">
+                            This folder contains the emulator's <strong style="color: #fff;">.exe</strong>, so it's probably not the right one.
+                            Select the folder that contains <strong style="color: #fff;">${dataFolder}</strong>, usually located in <strong style="color: #fff;">AppData</strong> (e.g. <span style="font-family: monospace;">%APPDATA%</span>).
+                        </span>
+                    </div>
+                `,
+    );
+  }
+
   const apiWrapper = {
     async storeGet(key: string): Promise<any> {
       if (tutorialDevMode && key in devOverrides) return devOverrides[key];
@@ -1886,6 +1907,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                         `;
+                  void warnIfEmulatorExe(statusDiv!, path, 'sdmc');
                   document
                     .querySelector<HTMLElement>('#wrong-yuzu-path-btn-2')
                     ?.addEventListener('click', async () => {
@@ -1905,6 +1927,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         </div>
                                     </div>
                                 `;
+                        void warnIfEmulatorExe(statusDiv!, path2, 'sdmc');
                       }
                     });
                 }
@@ -1940,6 +1963,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                         `;
+                  void warnIfEmulatorExe(statusDiv!, path, 'sdmc');
                   if (nextBtn) {
                     nextBtn.style.opacity = '1';
                     nextBtn.style.pointerEvents = 'auto';
@@ -2376,6 +2400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                         `;
+                  void warnIfEmulatorExe(statusDiv!, path, 'sdcard');
                   document
                     .querySelector<HTMLElement>('#wrong-ryujinx-path-btn-2')
                     ?.addEventListener('click', async () => {
@@ -2395,6 +2420,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         </div>
                                     </div>
                                 `;
+                        void warnIfEmulatorExe(statusDiv!, path2, 'sdcard');
                       }
                     });
                 }
@@ -2433,6 +2459,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                         `;
+                  void warnIfEmulatorExe(statusDiv!, path, 'sdcard');
                   if (nextBtn) {
                     nextBtn.style.opacity = '1';
                     nextBtn.style.pointerEvents = 'auto';

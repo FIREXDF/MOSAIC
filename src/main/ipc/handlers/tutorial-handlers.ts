@@ -247,6 +247,22 @@ const TutorialHandlers = {
     }
   },
 
+  // Picking the emulator install dir (with the .exe) instead of its data dir (with sdmc) is a common mistake
+  ['check-emulator-exe']: async (
+    common: BaseHandlerArg,
+    folderPath: string,
+  ) => {
+    try {
+      const hasExe = fs
+        .readdirSync(folderPath)
+        .some((name) => name.toLowerCase().endsWith('.exe'));
+      return { success: true, hasExe };
+    } catch (error) {
+      handleError(error, 'check-emulator-exe');
+      return createErrorResponse(ErrorCodes.UNKNOWN_ERROR, error.message);
+    }
+  },
+
   ['join-path']: async (
     common: BaseHandlerArg,
     ...parts: string[]
