@@ -240,6 +240,22 @@
   display: none;
 }
 
+.character-moveset-character .character-moveset-umc-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--accent-color);
+}
+
+.character-moveset-character .character-moveset-umc-loading[hidden] {
+  display: none;
+}
+
+.character-moveset-umc-loading i {
+  display: inline-block;
+}
+
 .character-moveset-character.has-umc-image {
   grid-template-columns: minmax(0, 1fr);
 }

@@ -1280,6 +1280,7 @@
       "invalidRange": "Choisissez une plage de costumes entre c00 et c255."
     },
     "umcImage": "Image provenant de UMC",
+    "umcImagesLoading": "Chargement des images UMC...",
     "title": "Personnages",
     "search": "Rechercher des personnages...",
     "refresh": "Actualiser",
@@ -1418,9 +1419,7 @@
     "showOldTesters": "Voir les anciens testeurs",
     "hideOldTesters": "Masquer les anciens testeurs",
     "specialThanks": "Remerciements Spéciaux",
-    "madeWith": "Fait avec",
-    "byTeam": "par Compages Works",
-    "copyright": "© 2024 MOSAIC. Tous droits réservés.",
+    "madeBy": "Fait par Compages Works",
     "appVersion": "Version de l'App :",
     "electron": "Electron :",
     "node": "Node :",

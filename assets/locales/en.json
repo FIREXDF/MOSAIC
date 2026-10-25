@@ -1280,6 +1280,7 @@
       "invalidRange": "Choose a costume range between c00 and c255."
     },
     "umcImage": "Image from UMC",
+    "umcImagesLoading": "Loading images from UMC...",
     "title": "Characters",
     "search": "Search characters...",
     "refresh": "Refresh",
@@ -1418,9 +1419,7 @@
     "showOldTesters": "See old testers",
     "hideOldTesters": "Hide old testers",
     "specialThanks": "Special Thanks",
-    "madeWith": "Made with",
-    "byTeam": "by Compages Works",
-    "copyright": "© 2024 MOSAIC. All rights reserved.",
+    "madeBy": "Made by Compages Works",
     "appVersion": "App Version:",
     "electron": "Electron:",
     "node": "Node:",

@@ -116,7 +116,7 @@ export default class DiscordRPCManager {
     }
 
     try {
-      console.log('📡 Updating Discord presence:', this.currentActivity);
+      console.log('Updating Discord presence:', this.currentActivity);
       this.sendActivity(activity);
     } catch (error) {
       console.error('❌ Error updating Discord presence:', error.message);
