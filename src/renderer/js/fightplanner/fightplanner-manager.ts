@@ -1,3 +1,19 @@
+const CREDITS_URL =
+  'https://raw.githubusercontent.com/CompagesWorks/.github/refs/heads/main/credits.json';
+
+interface RemoteCreditsPerson {
+  name: string;
+  avatar?: string;
+  role?: string;
+  roleKey?: string;
+}
+
+interface RemoteCredits {
+  supporters?: RemoteCreditsPerson[];
+  testers?: string[];
+  oldTesters?: string[];
+}
+
 class FightPlannerManager {
   initialized: boolean;
   oldTestersExpanded: boolean;
@@ -85,7 +101,122 @@ class FightPlannerManager {
     await this.loadVersionInfo();
     this.setupOldTestersToggle();
     this.setupLogoVariantPicker();
+    void this.loadRemoteCredits();
     this.initialized = true;
+  }
+
+  async loadRemoteCredits() {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(CREDITS_URL, {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = (await response.json()) as RemoteCredits;
+
+      if (Array.isArray(data.supporters)) {
+        this.renderCreditsPeople('.credits-supporters-list', data.supporters);
+      }
+      if (Array.isArray(data.testers)) {
+        this.renderCreditsNames(
+          '.credits-section:has(#toggle-old-testers) .credits-simple-list',
+          data.testers,
+        );
+      }
+      if (Array.isArray(data.oldTesters)) {
+        this.renderCreditsNames(
+          '#old-testers-section .credits-simple-list',
+          data.oldTesters,
+        );
+      }
+    } catch (error) {
+      console.warn('[Credits] Failed to load remote credits:', error);
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
+  renderCreditsNames(selector: string, names: unknown[]) {
+    const list = document.querySelector<HTMLElement>(selector);
+    if (!list) return;
+
+    list.replaceChildren(
+      ...names
+        .filter((name): name is string => typeof name === 'string')
+        .map((name) => {
+          const item = document.createElement('li');
+          item.textContent = name;
+          return item;
+        }),
+    );
+  }
+
+  renderCreditsPeople(selector: string, people: RemoteCreditsPerson[]) {
+    const list = document.querySelector<HTMLElement>(selector);
+    if (!list) return;
+
+    list.replaceChildren(
+      ...people
+        .filter((person) => typeof person?.name === 'string')
+        .map((person) => {
+          const card = document.createElement('div');
+          card.className = 'credits-person';
+
+          const fallbackIcon = () => {
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-person-circle';
+            return icon;
+          };
+
+          const avatar = typeof person.avatar === 'string' ? person.avatar : '';
+          const avatarSrc = avatar.startsWith('https://')
+            ? avatar
+            : avatar && !avatar.includes('/')
+              ? `../images/credits/${avatar}`
+              : '';
+
+          if (avatarSrc) {
+            const img = document.createElement('img');
+            img.src = avatarSrc;
+            img.alt = person.name;
+            img.className = 'credits-person-avatar';
+            img.addEventListener('error', () => img.replaceWith(fallbackIcon()), {
+              once: true,
+            });
+            card.append(img);
+          } else {
+            card.append(fallbackIcon());
+          }
+
+          const info = document.createElement('div');
+          info.className = 'credits-person-info';
+
+          const name = document.createElement('span');
+          name.className = 'credits-person-name';
+          name.textContent = person.name;
+
+          const role = document.createElement('span');
+          role.className = 'credits-person-role';
+          const translated =
+            person.roleKey && window.i18n?.t(person.roleKey);
+          if (person.roleKey && translated && translated !== person.roleKey) {
+            role.dataset.i18n = person.roleKey;
+            role.textContent = translated;
+          } else {
+            role.textContent = person.role || '';
+          }
+
+          info.append(name, role);
+          card.append(info);
+          return card;
+        }),
+    );
   }
 
   async loadVersionInfo() {
@@ -344,6 +475,7 @@ class FightPlannerManager {
     await this.loadVersionInfo();
     this.setupOldTestersToggle();
     this.setupLogoVariantPicker();
+    void this.loadRemoteCredits();
   }
 }
 
