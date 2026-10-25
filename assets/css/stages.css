@@ -117,7 +117,6 @@
 .stages-summary-eyebrow {
   color: var(--text-muted);
   font-size: 12px;
-  text-transform: uppercase;
   letter-spacing: 0.12em;
   margin-bottom: 8px;
 }

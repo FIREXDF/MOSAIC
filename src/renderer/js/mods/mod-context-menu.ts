@@ -70,6 +70,13 @@ class ModContextMenuHandler {
             case 'browse-files':
               await this.openFileBrowser(mod);
               break;
+            case 'watch-updates':
+              await window.modInfoManager?.setUpdateWatch(
+                this.watchModInfo,
+                mod.path,
+                item.dataset.watching !== 'true',
+              );
+              break;
             case 'uninstall':
               if (useSelection) {
                 await this.modManager.operations.uninstallMods(
@@ -468,7 +475,9 @@ class ModContextMenuHandler {
     }
   }
 
-  showContextMenu(
+  private watchModInfo: any = null;
+
+  async showContextMenu(
     e,
     mod,
     options: { source?: 'characters'; useSelection?: boolean } = {},
@@ -520,6 +529,25 @@ class ModContextMenuHandler {
     }
 
     contextMenu.dataset.modId = mod.id;
+
+    const watchItem = contextMenu.querySelector<HTMLElement>(
+      '[data-action="watch-updates"]',
+    );
+    if (watchItem) {
+      this.watchModInfo =
+        !useSelection && mod.path
+          ? await window.electronAPI?.getModInfo?.(mod.path).catch(() => null)
+          : null;
+      const watchUrl = window.modInfoManager?.getWatchUrl(this.watchModInfo);
+      const watching = Boolean(
+        watchUrl && (await window.modInfoManager.getUpdateWatch())[watchUrl],
+      );
+      watchItem.style.display = watchUrl ? '' : 'none';
+      watchItem.dataset.watching = String(watching);
+      watchItem.querySelector('i')!.className = watching
+        ? 'bi bi-bell-fill'
+        : 'bi bi-bell';
+    }
     contextMenu.dataset.useSelection = useSelection ? 'true' : 'false';
 
     if (uninstallText) {

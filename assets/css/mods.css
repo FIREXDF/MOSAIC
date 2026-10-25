@@ -202,7 +202,6 @@
 
 .plugin-status.status-active {
   background-color: var(--success-color);
-  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
 }
 
 .plugin-status.status-disabled {
@@ -674,7 +673,6 @@ body.no-animations .mod-info-item {
 .mod-info-label {
   font-size: 11px;
   color: var(--text-muted);
-  text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
 }

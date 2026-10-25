@@ -805,7 +805,6 @@ body.reduced-animations .bottom-text-left.status-changing {
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--text-muted);
   white-space: nowrap;
 }
