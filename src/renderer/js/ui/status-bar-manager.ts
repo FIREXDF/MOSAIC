@@ -36,7 +36,6 @@ type StatusTab =
   | 'plugins'
   | 'settings'
   | 'characters'
-  | 'stages'
   | 'fightplanner';
 
 interface StatusSnapshot {
@@ -1135,7 +1134,6 @@ export class StatusBarManager {
       'plugins',
       'settings',
       'characters',
-      'stages',
       'fightplanner',
     ];
 
@@ -1358,10 +1356,6 @@ export class StatusBarManager {
     return { content: this.t('statusBar.settings') };
   }
 
-  private getStagesSnapshot(): StatusSnapshot {
-    return { content: this.t('statusBar.stages') };
-  }
-
   private getDownloadsIdleSnapshot(): StatusSnapshot {
     if (!window.downloadManager || !(window.downloadManager as any).activeDownloads) {
       return { content: this.t('statusBar.downloadsReady') };
@@ -1395,8 +1389,6 @@ export class StatusBarManager {
         return this.getSettingsSnapshot();
       case 'characters':
         return this.getCharactersSnapshot();
-      case 'stages':
-        return this.getStagesSnapshot();
       case 'fightplanner':
       case 'marketplace':
       default:
@@ -1463,7 +1455,6 @@ export class StatusBarManager {
         break;
       case 'downloads':
       case 'settings':
-      case 'stages':
       case 'fightplanner':
       case 'marketplace':
       default:
@@ -3249,13 +3240,6 @@ export class StatusBarManager {
     updateStatus();
     this.updateInterval = setInterval(updateStatus, 10000);
   }
-  updateStagesStatus(statusText) {
-    this.applySnapshot(this.getStagesSnapshot());
-    return;
-
-    this.setStatusText(this.t('statusBar.stages'));
-  }
-
   updateCheckingConflictsStatus() {
     const statusRight =
       document.querySelector<HTMLElement>('.bottom-text-right');

@@ -49,10 +49,6 @@
   --sidebar-tab-icon: url('../images/icons/char.svg');
 }
 
-.sidebar-btn[data-tab='stages'] {
-  --sidebar-tab-icon: url('../images/icons/stages.png');
-}
-
 .sidebar-btn[data-tab='downloads'] {
   --sidebar-tab-icon: url('../images/icons/downloads.svg');
 }

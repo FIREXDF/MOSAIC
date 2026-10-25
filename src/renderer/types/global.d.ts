@@ -30,7 +30,6 @@ import { HardwareConnectionManager } from '../js/core/hardware-connection-manage
 import { RemoteAnnouncementManager } from '../js/core/remote-announcement-manager';
 import { ModDragDropHandler } from '../js/mods/mod-drag-drop';
 import { SmartRenameManager } from '../js/mods/smart-rename-manager';
-import { StagesManager } from '../js/stages/stages-manager';
 import { I18nClient } from '../js/i18n/i18n-client';
 import { GameBananaMarketplace } from '../js/marketplace/gamebanana-marketplace';
 import { MarketplaceDiscover } from '../js/marketplace/marketplace-discover';
@@ -82,7 +81,6 @@ declare global {
     hardwareConnectionManager: InstanceType<typeof HardwareConnectionManager>;
     modDragDropHandler: ModDragDropHandler;
     smartRenameManager: SmartRenameManager;
-    stagesManager: StagesManager;
     modProfileManager: ModProfileManager;
     gameBananaMarketplace: GameBananaMarketplace;
     marketplaceDiscover: MarketplaceDiscover;
