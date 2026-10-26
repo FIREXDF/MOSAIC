@@ -129,6 +129,9 @@ const waitForProcessStart = (
 const SystemHandlers = {
   ['open-url']: async (common: BaseHandlerArg, url: string) => {
     try {
+      if (!['http:', 'https:'].includes(new URL(url).protocol)) {
+        return createErrorResponse(ErrorCodes.INVALID_PATH, 'Only web links can be opened');
+      }
       await shell.openExternal(url);
       return { success: true };
     } catch (error) {

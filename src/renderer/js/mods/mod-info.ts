@@ -120,9 +120,7 @@ class ModInfoManager {
 <div class="mod-info-item">
 <div class="mod-info-label">${t('tools.modInfo.url')}</div>
 <div class="mod-info-value">
-<a href="#" onclick="window.electronAPI.openUrl('${escapeHtml(
-        modData.url,
-      )}'); return false;" class="mod-info-link">
+<a href="#" class="mod-info-link">
 ${escapeHtml(modData.url)}
 </a>
 </div>
@@ -138,6 +136,12 @@ ${escapeHtml(modData.url)}
     container.style.animation = '';
 
     container.innerHTML = html;
+    container
+      .querySelector<HTMLElement>('.mod-info-link')
+      ?.addEventListener('click', (event) => {
+        event.preventDefault();
+        window.electronAPI.openUrl(modData.url!);
+      });
 
     const editBtn = document.querySelector<HTMLElement>('#edit-info-btn');
     if (editBtn && modPath) {
