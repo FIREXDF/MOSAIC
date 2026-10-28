@@ -169,7 +169,7 @@ class ModDragDropHandler {
         }
 
         try {
-          const result = await window.electronAPI.installModFromPath(
+          const result = await window.downloadManager.installLocalMod(
             filePath,
             modsPath,
           );

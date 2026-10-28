@@ -807,9 +807,23 @@ const ModHandlers = {
     common: BaseHandlerArg,
     sourcePath: string,
     modsPath: string,
+    progressId?: string,
   ) => {
     try {
-      return await ModUtils.installModFromPath(sourcePath, modsPath);
+      return await ModUtils.installModFromPath(sourcePath, modsPath, {
+        onExtractProgress: progressId
+          ? ({ percent }) => {
+              if (common.event.sender.isDestroyed()) return;
+              common.event.sender.send('mod-download-progress', {
+                downloadId: progressId,
+                progress: percent,
+                receivedBytes: 0,
+                totalBytes: 0,
+                statusText: 'Extracting mod...',
+              });
+            }
+          : undefined,
+      });
     } catch (error) {
       handleError(error, 'install-mod-from-path');
       return createErrorResponse(ErrorCodes.MOD_INSTALL_ERROR, error.message);

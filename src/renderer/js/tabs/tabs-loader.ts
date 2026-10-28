@@ -214,7 +214,7 @@ function initializeTabFeatures(tabName) {
               window.toastManager.info('toasts.installingMod');
             }
 
-            const installResult = await window.electronAPI.installModFromPath(
+            const installResult = await window.downloadManager.installLocalMod(
               result.filePath,
               modsPath,
             );
