@@ -945,16 +945,16 @@ body.reduced-animations .bottom-text-left.status-changing {
   transform-origin: right bottom;
 }
 
-.bottom-bar.expanded.conflict-mode .ext-card-details {
+.bottom-bar.expanded.conflict-mode .ext-conflict-card .ext-card-details {
   align-items: flex-end;
   text-align: right;
 }
 
-.bottom-bar.expanded.conflict-mode .ext-card-header {
+.bottom-bar.expanded.conflict-mode .ext-conflict-card .ext-card-header {
   justify-content: flex-end;
 }
 
-.bottom-bar.expanded.conflict-mode .ext-conflict-message {
+.bottom-bar.expanded.conflict-mode .ext-conflict-card .ext-conflict-message {
   text-align: right;
   max-width: 280px;
 }
