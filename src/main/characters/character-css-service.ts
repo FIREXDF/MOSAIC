@@ -1786,7 +1786,11 @@ function resolveParamXmlExecutable() {
       relativeExecutablePath = path.join('ParamXML', 'windows', 'ParamXML.exe');
       break;
     case 'darwin':
-      relativeExecutablePath = path.join('ParamXML', 'osx', 'ParamXML');
+      relativeExecutablePath = path.join(
+        'ParamXML',
+        process.arch === 'arm64' ? 'osx-arm64' : 'osx-x64',
+        'ParamXML',
+      );
       break;
     case 'linux':
       relativeExecutablePath = path.join('ParamXML', 'linux', 'ParamXML');

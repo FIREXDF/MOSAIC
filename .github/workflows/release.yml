@@ -75,6 +75,12 @@ jobs:
             node scripts/bump-version.js "$VERSION_TYPE" "$BASE_VERSION"
           fi
 
+      - name: Sign MSBTEditorCLI hosts (macOS)
+        if: matrix.os == 'macos-26'
+        run: |
+          codesign --force --sign - tools/MSBTEditorCLI/osx-arm64/MSBTEditorCli tools/MSBTEditorCLI/osx-x64/MSBTEditorCli
+          codesign --verify tools/MSBTEditorCLI/osx-arm64/MSBTEditorCli tools/MSBTEditorCLI/osx-x64/MSBTEditorCli
+
       - name: Build and publish (Windows)
         if: matrix.os == 'windows-latest'
         env:

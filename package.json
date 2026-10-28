@@ -64,25 +64,17 @@
     ],
     "extraResources": [
       {
-        "from": "tools/7z",
-        "to": "tools/7z",
+        "from": "tools/prc2json",
+        "to": "tools/prc2json",
         "filter": [
           "**/*"
         ]
       },
       {
-        "from": "tools",
-        "to": "tools",
+        "from": "tools/MSBTEditorCLI",
+        "to": "tools/MSBTEditorCLI",
         "filter": [
-          "ParamXML/**/*"
-        ]
-      },
-      {
-        "from": "tools",
-        "to": "tools",
-        "filter": [
-          "prc2json/**/*",
-          "MSBTEditorCLI/**/*"
+          "MSBTEditorCli.dll"
         ]
       }
     ],
@@ -121,7 +113,31 @@
         }
       ],
       "icon": "assets/app-icons/icon.ico",
-      "verifyUpdateCodeSignature": false
+      "verifyUpdateCodeSignature": false,
+      "extraResources": [
+        {
+          "from": "tools/7z/win",
+          "to": "tools/7z/win",
+          "filter": [
+            "**/*"
+          ]
+        },
+        {
+          "from": "tools/ParamXML/windows",
+          "to": "tools/ParamXML/windows",
+          "filter": [
+            "**/*"
+          ]
+        },
+        {
+          "from": "tools/MSBTEditorCLI/win-x64",
+          "to": "tools/MSBTEditorCLI/win-x64",
+          "filter": [
+            "**/*",
+            "!publish{,/**/*}"
+          ]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -153,7 +169,31 @@
         }
       ],
       "icon": "assets/app-icons/icon.icon",
-      "category": "public.app-category.utilities"
+      "category": "public.app-category.utilities",
+      "extraResources": [
+        {
+          "from": "tools/7z/macos",
+          "to": "tools/7z/macos",
+          "filter": [
+            "**/*"
+          ]
+        },
+        {
+          "from": "tools/ParamXML/osx-${arch}",
+          "to": "tools/ParamXML/osx-${arch}",
+          "filter": [
+            "**/*"
+          ]
+        },
+        {
+          "from": "tools/MSBTEditorCLI/osx-${arch}",
+          "to": "tools/MSBTEditorCLI/osx-${arch}",
+          "filter": [
+            "**/*",
+            "!publish{,/**/*}"
+          ]
+        }
+      ]
     },
     "linux": {
       "target": [
@@ -163,7 +203,31 @@
       ],
       "icon": "assets/app-icons/icon.png",
       "category": "Utility",
-      "maintainer": "Shattered Chaos <noreply@fightplanner.app>"
+      "maintainer": "Shattered Chaos <noreply@fightplanner.app>",
+      "extraResources": [
+        {
+          "from": "tools/7z/linux",
+          "to": "tools/7z/linux",
+          "filter": [
+            "7zzs"
+          ]
+        },
+        {
+          "from": "tools/ParamXML/linux",
+          "to": "tools/ParamXML/linux",
+          "filter": [
+            "**/*"
+          ]
+        },
+        {
+          "from": "tools/MSBTEditorCLI/linux-x64",
+          "to": "tools/MSBTEditorCLI/linux-x64",
+          "filter": [
+            "**/*",
+            "!publish{,/**/*}"
+          ]
+        }
+      ]
     }
   }
 }
