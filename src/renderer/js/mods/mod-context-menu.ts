@@ -54,6 +54,9 @@ class ModContextMenuHandler {
             case 'change-slot':
               await this.modManager.operations.startChangeSlotsFlow(mod);
               break;
+            case 'restore-slot-backup':
+              await this.modManager.operations.restoreSlotBackup(mod);
+              break;
             case 'toggle':
               if (useSelection) {
                 await this.modManager.operations.toggleModsStatus(
@@ -547,6 +550,16 @@ class ModContextMenuHandler {
       watchItem.querySelector('i')!.className = watching
         ? 'bi bi-bell-fill'
         : 'bi bi-bell';
+    }
+    const restoreItem = contextMenu.querySelector<HTMLElement>(
+      '[data-action="restore-slot-backup"]',
+    );
+    if (restoreItem) {
+      const backup =
+        !useSelection && mod.path
+          ? await window.electronAPI?.hasSlotBackup?.(mod.path).catch(() => null)
+          : null;
+      restoreItem.style.display = backup?.success && backup.exists ? '' : 'none';
     }
     contextMenu.dataset.useSelection = useSelection ? 'true' : 'false';
 

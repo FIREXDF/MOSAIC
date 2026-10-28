@@ -1091,7 +1091,16 @@
       "confirmAffected": "{{count}} file(s) or folder(s) affected",
       "confirmNoChanges": "There are no changes to apply.",
       "confirmBack": "Back",
-      "confirmApply": "Confirm changes"
+      "confirmApply": "Confirm changes",
+      "duplicateTarget": "Several slots are moved to {{slot}}. Each target slot must be unique.",
+      "backupBeforeApply": "Back up the mod before applying (restore it from the mod's right-click menu)",
+      "configModeMerge": "Keep it and update the moved slots",
+      "configModeRegenerate": "Generate a new one",
+      "duplicateTargetTitle": "Duplicate target slot",
+      "configExistsTitle": "config.json already exists",
+      "configExistsMessage": "This mod already has a config.json file. Do you want to keep it and update the moved slots, or generate a new one?",
+      "groupInfoTitle": "Linked characters",
+      "groupInfoMessage": "{{fighters}} will all be reslotted with the same parameters."
     },
     "conflict": {
       "title": "Mod Conflicts Detected",
@@ -1183,7 +1192,12 @@
       "download": "Download",
       "installRestart": "Install and Restart"
     },
-    "close": "Close"
+    "close": "Close",
+    "restoreSlotBackup": {
+      "title": "Restore backup",
+      "message": "Restore this mod as it was before the last slot change? Changes made since then will be lost.",
+      "confirm": "Restore"
+    }
   },
   "contextMenu": {
     "rename": "Rename",
@@ -1196,7 +1210,8 @@
     "openFolder": "Open Folder",
     "browseFiles": "Browse Files",
     "uninstall": "Uninstall",
-    "uninstallSelected": "Uninstall Selected ({{count}})"
+    "uninstallSelected": "Uninstall Selected ({{count}})",
+    "restoreSlotBackup": "Restore backup from before the slot change"
   },
   "modFileBrowser": {
     "title": "Mod files",
@@ -1608,7 +1623,9 @@
     "switchReconnected": "Switch reconnected.",
     "directSwitchLibraryNoSync": "The library is already read directly from the Switch. No sync is needed.",
     "reconnectSwitchBeforeSyncToPc": "Reconnect your Switch or remount the SD card before syncing mods back to this PC.",
-    "nroLimitExceeded": "{{count}} active .nro files detected. Switch limit: {{limit}}. Disable or remove {{overflow}} .nro file(s)."
+    "nroLimitExceeded": "{{count}} active .nro files detected. Switch limit: {{limit}}. Disable or remove {{overflow}} .nro file(s).",
+    "slotBackupRestored": "Mod restored from backup",
+    "failedToRestoreSlotBackup": "Failed to restore backup: {{error}}"
   },
   "statusBar": {
     "ready": "Ready",

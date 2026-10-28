@@ -1069,7 +1069,16 @@
       "confirmAffected": "{{count}} fichier(s) ou dossier(s) concerné(s)",
       "confirmNoChanges": "Aucun changement à appliquer.",
       "confirmBack": "Retour",
-      "confirmApply": "Confirmer les changements"
+      "confirmApply": "Confirmer les changements",
+      "duplicateTarget": "Plusieurs slots sont déplacés vers {{slot}}. Chaque slot cible doit être unique.",
+      "backupBeforeApply": "Sauvegarder le mod avant d'appliquer (restauration depuis le clic droit sur le mod)",
+      "configModeMerge": "Le garder et mettre à jour les slots déplacés",
+      "configModeRegenerate": "En générer un nouveau",
+      "duplicateTargetTitle": "Slot cible en double",
+      "configExistsTitle": "config.json déjà présent",
+      "configExistsMessage": "Ce mod a déjà un fichier config.json. Voulez-vous le garder et mettre à jour les slots déplacés, ou en générer un nouveau ?",
+      "groupInfoTitle": "Personnages liés",
+      "groupInfoMessage": "{{fighters}} seront tous reslottés avec les mêmes paramètres."
     },
     "conflict": {
       "title": "Conflits de Mods Détectés",
@@ -1183,7 +1192,12 @@
       "download": "Télécharger",
       "installRestart": "Installer et Redémarrer"
     },
-    "close": "Fermer"
+    "close": "Fermer",
+    "restoreSlotBackup": {
+      "title": "Restaurer la sauvegarde",
+      "message": "Restaurer ce mod tel qu'il était avant le dernier changement de slot ? Les modifications faites depuis seront perdues.",
+      "confirm": "Restaurer"
+    }
   },
   "contextMenu": {
     "rename": "Renommer",
@@ -1196,7 +1210,8 @@
     "openFolder": "Ouvrir le dossier",
     "browseFiles": "Parcourir les fichiers",
     "uninstall": "Désinstaller",
-    "uninstallSelected": "Desinstaller la selection ({{count}})"
+    "uninstallSelected": "Desinstaller la selection ({{count}})",
+    "restoreSlotBackup": "Restaurer la sauvegarde d'avant le changement de slot"
   },
   "modFileBrowser": {
     "title": "Fichiers du mod",
@@ -1608,7 +1623,9 @@
     "switchReconnected": "Switch reconnectée.",
     "directSwitchLibraryNoSync": "La librairie est déjà lue directement depuis la Switch. Aucune synchronisation n'est nécessaire.",
     "reconnectSwitchBeforeSyncToPc": "Rebranche ta Switch ou remonte la carte SD avant de synchroniser les mods sur ce PC.",
-    "nroLimitExceeded": "{{count}} fichiers .nro actifs détectés. Limite Switch: {{limit}}. Désactivez ou retirez {{overflow}} fichier(s) .nro."
+    "nroLimitExceeded": "{{count}} fichiers .nro actifs détectés. Limite Switch: {{limit}}. Désactivez ou retirez {{overflow}} fichier(s) .nro.",
+    "slotBackupRestored": "Mod restauré depuis la sauvegarde",
+    "failedToRestoreSlotBackup": "Échec de la restauration : {{error}}"
   },
   "statusBar": {
     "ready": "Prêt",

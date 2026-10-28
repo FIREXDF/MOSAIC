@@ -502,6 +502,7 @@ export class ConfigGenerator {
   async generateReslotConfig(
     slotMappings: ReslotConfigMapping[],
     mergeWithExisting = false,
+    culledSlots: string[] = [],
   ) {
     const fighterRoot =
       ConfigGenerator.vanillaData?.dirs?.directories?.fighter?.directories?.[
@@ -662,6 +663,18 @@ export class ConfigGenerator {
       }
     }
 
+    for (const file of existingFiles) {
+      if (
+        file.startsWith(`effect/fighter/${this.fighterName}/transplant/`) &&
+        /\.[^/\\]+$/.test(file)
+      ) {
+        addUnique(
+          (config['new-dir-files'][`fighter/${this.fighterName}/cmn`] ||= []),
+          file,
+        );
+      }
+    }
+
     config['new-dir-infos'].sort();
     for (const section of [
       config['new-dir-files'],
@@ -672,7 +685,7 @@ export class ConfigGenerator {
     }
 
     this.resultingConfig = config;
-    await this.writeGeneratedConfig(config, mergeWithExisting);
+    await this.writeGeneratedConfig(config, mergeWithExisting, culledSlots);
   }
 
   /**
@@ -773,17 +786,61 @@ export class ConfigGenerator {
     );
   }
 
+  static cullSlotEntries(
+    config: Record<string, any>,
+    fighterName: string,
+    slots: string[],
+  ) {
+    if (slots.length === 0) return config;
+
+    const fighterPattern = new RegExp(`(?:^|[/_])${fighterName}(?:[/_.]|$)`);
+    const slotPattern = new RegExp(`[/_](?:${slots.join('|')})(?:[/._]|$)`);
+    const isCulled = (value: string) =>
+      fighterPattern.test(value) && slotPattern.test(value);
+    const culled: Record<string, any> = { ...config };
+
+    if (Array.isArray(config['new-dir-infos'])) {
+      culled['new-dir-infos'] = config['new-dir-infos'].filter(
+        (value: string) => !isCulled(value),
+      );
+    }
+
+    for (const section of ['new-dir-infos-base', 'new-dir-files']) {
+      if (!config[section]) continue;
+      culled[section] = Object.fromEntries(
+        Object.entries(config[section]).filter(([key]) => !isCulled(key)),
+      );
+    }
+
+    for (const section of ['share-to-vanilla', 'share-to-added']) {
+      if (!config[section]) continue;
+      culled[section] = Object.fromEntries(
+        Object.entries(config[section] as Record<string, string[]>)
+          .map(([key, values]) => [
+            key,
+            values.filter((value) => !isCulled(value)),
+          ])
+          .filter(([, values]) => values.length > 0),
+      );
+    }
+
+    return culled;
+  }
+
   private async writeGeneratedConfig(
     generatedConfig: GeneratedConfig,
     mergeWithExisting: boolean,
+    culledSlots: string[] = [],
   ) {
     const configPath = path.join(this.modDirectory, 'config.json');
     let outputConfig: Record<string, any> = generatedConfig;
 
     if (mergeWithExisting && (await ModFileOperations.fileExists(configPath))) {
-      const existingConfig = JSON.parse(
-        await ModFileOperations.readModFile(configPath),
-      ) as Record<string, any>;
+      const existingConfig = ConfigGenerator.cullSlotEntries(
+        JSON.parse(await ModFileOperations.readModFile(configPath)),
+        this.fighterName,
+        culledSlots,
+      );
       const mergeArrayRecord = (
         existing: Record<string, string[]> = {},
         generated: Record<string, string[]> = {},

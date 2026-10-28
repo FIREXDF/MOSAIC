@@ -21,7 +21,7 @@ import {
   PathData,
   ScanModResult,
 } from '../../mod-utils/mod-scanner';
-import { SlotChanger } from '../../mod-utils/slot-changer';
+import { ConfigMode, SlotChanger } from '../../mod-utils/slot-changer';
 import PluginUpdateChecker, {
   ModUpdateResult,
   ModUpdateWatch,
@@ -649,8 +649,13 @@ const ModHandlers = {
     pathData: PathData,
     slotAssignments: Map<string, Map<string, string>>,
     deletedSlots: Map<string, Set<string>>,
+    options: { backup?: boolean; configMode?: ConfigMode } = {},
   ): HandlerResponse => {
     try {
+      if (options.backup) {
+        await SlotChanger.backupMod(modPath);
+      }
+
       await SlotChanger.removeSlots(modPath, deletedSlots, pathData);
 
       for (const [fighterName, slots] of deletedSlots) {
@@ -663,11 +668,43 @@ const ModHandlers = {
         }
       }
 
-      await SlotChanger.changeSlots(modPath, slotAssignments, pathData);
+      await SlotChanger.changeSlots(
+        modPath,
+        slotAssignments,
+        pathData,
+        {},
+        true,
+        options.configMode,
+      );
 
       return { success: true };
     } catch (error) {
       handleError(error, 'change-slots');
+      return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
+    }
+  },
+
+  ['has-slot-backup']: async (
+    common: BaseHandlerArg,
+    modPath: string,
+  ): HandlerResponse<{ exists: boolean }> => {
+    try {
+      return { success: true, exists: await SlotChanger.hasBackup(modPath) };
+    } catch (error) {
+      handleError(error, 'has-slot-backup');
+      return createErrorResponse(ErrorCodes.MOD_READ_ERROR, error.message);
+    }
+  },
+
+  ['restore-slot-backup']: async (
+    common: BaseHandlerArg,
+    modPath: string,
+  ): HandlerResponse => {
+    try {
+      await SlotChanger.restoreBackup(modPath);
+      return { success: true };
+    } catch (error) {
+      handleError(error, 'restore-slot-backup');
       return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
     }
   },

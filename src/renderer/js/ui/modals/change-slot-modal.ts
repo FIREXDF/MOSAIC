@@ -42,6 +42,64 @@ function translate(key: string, params: Record<string, unknown> = {}): string {
     : key;
 }
 
+function findDuplicateTargetSlot(
+  assignments: Map<string, Map<string, string>>,
+  deletedSlots: Map<string, Set<string>>,
+): string | null {
+  for (const [fighter, fighterAssignments] of assignments) {
+    const targets = new Set<string>();
+
+    for (const [sourceSlot, targetSlot] of fighterAssignments) {
+      if (deletedSlots.get(fighter)?.has(sourceSlot)) continue;
+      if (targets.has(targetSlot)) return targetSlot;
+      targets.add(targetSlot);
+    }
+  }
+
+  return null;
+}
+
+function showSlotAlert(
+  manager,
+  id: string,
+  title: string,
+  message: string,
+  buttons: Array<{ text: string; type: string; onSelect?: () => void }>,
+) {
+  const editorModal = document.querySelector<HTMLElement>('#change-slot-modal');
+  if (editorModal) {
+    editorModal.inert = true;
+    editorModal.setAttribute('aria-hidden', 'true');
+  }
+
+  const modal = manager.showCustomModal({
+    id,
+    title,
+    body: message,
+    clickOverlayToClose: false,
+    escapeToClose: false,
+    buttons: buttons.map((button) => ({
+      text: button.text,
+      type: button.type,
+      closeOnClick: false,
+      onClick: () => {
+        manager.closeModal(modal, {
+          skipHideOverlay: true,
+          onModalClosed: () => {
+            modal.remove();
+            if (editorModal) {
+              editorModal.inert = false;
+              editorModal.removeAttribute('aria-hidden');
+            }
+            button.onSelect?.();
+          },
+        });
+        return false;
+      },
+    })),
+  });
+}
+
 function countAffectedEntries(pathData, fighters: string[], slot: string): number {
   const entries = new Set<string>();
 
@@ -85,6 +143,11 @@ const MULTI_CHAR_FIGHTER_GROUPS: Record<
       'light_only',
     ],
     displayName: 'Pyra/Mythra',
+  },
+
+  'bowser-group': {
+    members: ['koopa', 'koopag'],
+    displayName: 'Bowser',
   },
 };
 
@@ -179,6 +242,8 @@ M.prototype.openChangeSlotModal = function (mod, modData, callback) {
 
   this.pathData = modData.pathData;
 
+  this.changeSlotHasConfigJson = modData.hasConfigJson;
+
   const modal = document.querySelector<HTMLElement>('#change-slot-modal');
   const container = document.querySelector<HTMLElement>('#slot-list-container');
 
@@ -232,6 +297,25 @@ M.prototype.openChangeSlotModal = function (mod, modData, callback) {
 
     if (window.i18n && window.i18n.updateDOM) {
       window.i18n.updateDOM();
+    }
+
+    for (const fighterName of this.fighterNames) {
+      const groupMembers = getActualFighterNames(
+        fighterName,
+        this.rawFighterNames,
+      );
+      if (!MULTI_CHAR_FIGHTER_GROUPS[fighterName]) continue;
+
+      showSlotAlert(
+        this,
+        'change-slot-group-info-modal',
+        translate('modals.changeSlot.groupInfoTitle'),
+        translate('modals.changeSlot.groupInfoMessage', {
+          fighters: groupMembers.join(', '),
+        }),
+        [{ text: translate('common.ok'), type: 'primary' }],
+      );
+      break;
     }
   }
 };
@@ -988,22 +1072,39 @@ M.prototype._renderSlotList = function () {
         });
 
       const triggerRect = slotSelectTrigger.getBoundingClientRect();
-      const modalBody = slotSelect.closest<HTMLElement>('.modal-body');
-      const boundary = modalBody?.getBoundingClientRect();
-      const spaceBelow =
-        (boundary?.bottom || window.innerHeight) - triggerRect.bottom;
-      const spaceAbove = triggerRect.top - (boundary?.top || 0);
+      const modalElement = slotSelect.closest<HTMLElement>('.modal');
+      const bounds = modalElement?.getBoundingClientRect() || {
+        top: 0,
+        left: 0,
+        bottom: window.innerHeight,
+      };
+      const origin =
+        modalElement && getComputedStyle(modalElement).transform !== 'none'
+          ? bounds
+          : { top: 0, left: 0, bottom: window.innerHeight };
+      const spaceBelow = bounds.bottom - triggerRect.bottom - 16;
+      const spaceAbove = triggerRect.top - bounds.top - 16;
+      const openUp = spaceBelow < 180 && spaceAbove > spaceBelow;
 
-      slotSelect.classList.toggle(
-        'open-up',
-        spaceBelow < 240 && spaceAbove > spaceBelow,
-      );
+      Object.assign(slotSelectDropdown.style, {
+        left: `${triggerRect.left - origin.left}px`,
+        right: 'auto',
+        width: `${triggerRect.width}px`,
+        top: openUp ? 'auto' : `${triggerRect.bottom - origin.top + 8}px`,
+        bottom: openUp ? `${origin.bottom - triggerRect.top + 8}px` : 'auto',
+        maxHeight: `${Math.min(232, openUp ? spaceAbove : spaceBelow)}px`,
+      });
+
+      slotSelect.classList.toggle('open-up', openUp);
       slotSelect.classList.add('open');
       slotSelectTrigger.setAttribute('aria-expanded', 'true');
       slotItem.classList.add('has-open-slot-select');
 
       window.setTimeout(() => {
         document.addEventListener('click', closeSlotSelect, { once: true });
+        slotSelect
+          .closest<HTMLElement>('.modal-body')
+          ?.addEventListener('scroll', closeSlotSelect, { once: true });
       }, 0);
     };
 
@@ -1254,7 +1355,7 @@ M.prototype._toggleDeleteSlot = function (content, slot) {
   updateChangeSlotApplyState();
 };
 
-M.prototype.confirmChangeSlots = function () {
+M.prototype.confirmChangeSlots = function (configMode?: 'merge' | 'regenerate') {
   if (!this.changeSlotCallback || !this.slotAssignments) return;
 
   const firstInvalidInput = document.querySelector<HTMLInputElement>(
@@ -1265,6 +1366,51 @@ M.prototype.confirmChangeSlots = function () {
     firstInvalidInput.reportValidity();
     return;
   }
+
+  const duplicateTarget = findDuplicateTargetSlot(
+    this.slotAssignments,
+    this.deletedSlots,
+  );
+  if (duplicateTarget) {
+    showSlotAlert(
+      this,
+      'change-slot-duplicate-modal',
+      translate('modals.changeSlot.duplicateTargetTitle'),
+      translate('modals.changeSlot.duplicateTarget', { slot: duplicateTarget }),
+      [{ text: translate('common.ok'), type: 'primary' }],
+    );
+    return;
+  }
+
+  if (this.changeSlotHasConfigJson && !configMode) {
+    showSlotAlert(
+      this,
+      'change-slot-config-modal',
+      translate('modals.changeSlot.configExistsTitle'),
+      translate('modals.changeSlot.configExistsMessage'),
+      [
+        { text: translate('common.cancel'), type: 'cancel' },
+        {
+          text: translate('modals.changeSlot.configModeMerge'),
+          type: 'secondary',
+          onSelect: () => this.confirmChangeSlots('merge'),
+        },
+        {
+          text: translate('modals.changeSlot.configModeRegenerate'),
+          type: 'primary',
+          onSelect: () => this.confirmChangeSlots('regenerate'),
+        },
+      ],
+    );
+    return;
+  }
+
+  const options = {
+    backup:
+      document.querySelector<HTMLInputElement>('#change-slot-backup')
+        ?.checked ?? true,
+    configMode: configMode || 'merge',
+  };
 
   if (
     window.settingsManager?.settings?.reviewSlotChangesBeforeApply === false
@@ -1277,7 +1423,7 @@ M.prototype.confirmChangeSlots = function () {
     const deletions = this.deletedSlots;
 
     this.closeChangeSlotModal();
-    Promise.resolve(callback(assignments, deletions)).finally(() => {
+    Promise.resolve(callback(assignments, deletions, options)).finally(() => {
       this.isApplyingSlotChanges = false;
     });
     return;
@@ -1474,7 +1620,7 @@ M.prototype.confirmChangeSlots = function () {
           });
           this.closeChangeSlotModal();
 
-          Promise.resolve(callback(assignments, deletions)).finally(() => {
+          Promise.resolve(callback(assignments, deletions, options)).finally(() => {
             this.isApplyingSlotChanges = false;
           });
           return false;

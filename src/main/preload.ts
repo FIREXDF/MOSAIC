@@ -148,6 +148,8 @@ const electronAPI = {
   relaunchApp: invokeAppHandler('relaunch-app'),
   scanMod: invokeModHandler('scan-mod'),
   changeSlots: invokeModHandler('change-slots'),
+  hasSlotBackup: invokeModHandler('has-slot-backup'),
+  restoreSlotBackup: invokeModHandler('restore-slot-backup'),
   detectConflicts: invokeModHandler('detect-conflicts'),
   checkNroLimit: invokeModHandler('check-nro-limit'),
   openTutorialWindow: invokeTutorialHandler('open-tutorial-window'),

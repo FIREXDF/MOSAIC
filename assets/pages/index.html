@@ -269,6 +269,16 @@
         <i class="bi bi-grid-3x3-gap"></i>
         <span data-i18n="contextMenu.changeSlot">Change Slot</span>
       </div>
+      <div
+        class="context-menu-item"
+        data-action="restore-slot-backup"
+        style="display: none"
+      >
+        <i class="bi bi-arrow-counterclockwise"></i>
+        <span data-i18n="contextMenu.restoreSlotBackup"
+          >Restore backup from before the slot change</span
+        >
+      </div>
       <div class="context-menu-separator"></div>
       <div class="context-menu-item" data-action="toggle">
         <i class="bi bi-toggle-on" id="toggle-icon"></i>
@@ -503,6 +513,15 @@
         </p>
         <div id="slot-list-container" class="slot-list">
           <!-- Slot items will be added dynamically -->
+        </div>
+        <div class="change-slot-options">
+          <label class="change-slot-option">
+            <input type="checkbox" id="change-slot-backup" checked />
+            <span data-i18n="modals.changeSlot.backupBeforeApply"
+              >Back up the mod before applying (restore it from the mod's
+              right-click menu)</span
+            >
+          </label>
         </div>
       </div>
       <div class="modal-footer">
