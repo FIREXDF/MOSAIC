@@ -240,6 +240,22 @@
   display: none;
 }
 
+.character-moveset-character .character-moveset-umc-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--accent-color);
+}
+
+.character-moveset-character .character-moveset-umc-loading[hidden] {
+  display: none;
+}
+
+.character-moveset-umc-loading i {
+  display: inline-block;
+}
+
 .character-moveset-character.has-umc-image {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -255,26 +271,20 @@
 }
 
 .character-moveset-mod.has-umc-image {
-  grid-template-columns: minmax(64px, 104px) auto minmax(0, 1fr) minmax(
-      90px,
-      auto
-    ) auto auto;
+  grid-template-columns: minmax(64px, 104px) minmax(0, 1fr) minmax(90px, auto) auto auto;
 }
 
-.character-moveset-mod.has-umc-image > .mod-status-dot {
+.character-moveset-mod.has-umc-image > .character-moveset-mod-main {
   grid-column: 2;
 }
-.character-moveset-mod.has-umc-image > .character-moveset-mod-main {
+.character-moveset-mod.has-umc-image > .character-moveset-slots {
   grid-column: 3;
 }
-.character-moveset-mod.has-umc-image > .character-moveset-slots {
+.character-moveset-mod.has-umc-image > .character-moveset-category {
   grid-column: 4;
 }
-.character-moveset-mod.has-umc-image > .character-moveset-category {
-  grid-column: 5;
-}
 .character-moveset-mod.has-umc-image > i {
-  grid-column: 6;
+  grid-column: 5;
   grid-row: 1;
 }
 
@@ -323,7 +333,7 @@
   width: 100%;
   min-width: 0;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(90px, auto) auto auto;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, auto) auto auto;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
@@ -358,9 +368,9 @@
   background-color: var(--warning-color);
 }
 
-.character-moveset-mod:is(.active, .conflict) > .mod-status-dot,
-.character-mod-item:is(.active, .conflict) > .mod-status-dot,
-.character-modal-mod-item:is(.active, .conflict) > .mod-status-indicator {
+.character-moveset-mod > .mod-status-dot,
+.character-mod-item > .mod-status-dot,
+.character-modal-mod-item > .mod-status-indicator {
   display: none;
 }
 
@@ -1945,7 +1955,6 @@ body.no-animations .character-css-slots-table td.is-conflict {
 }
 
 .character-card:hover {
-  transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   border-color: rgba(var(--accent-rgb), 0.3);
 }
@@ -1963,10 +1972,6 @@ body.no-animations .character-css-slots-table td.is-conflict {
   height: 100%;
   object-fit: contain;
   transition: transform 0.3s ease;
-}
-
-.character-card:hover .character-image {
-  transform: scale(1.05);
 }
 
 .character-image-placeholder {
@@ -2542,7 +2547,6 @@ body.no-animations .character-css-slots-table td.is-conflict {
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 16px;
-  text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
@@ -2815,11 +2819,7 @@ body.no-animations .settings-tab-btn.active::before {
   padding: 14px 16px;
   border: 1px solid rgba(var(--accent-rgb), 0.24);
   border-radius: 10px;
-  background: linear-gradient(
-    135deg,
-    var(--bg-accent-subtle),
-    var(--bg-secondary)
-  );
+  background: var(--bg-accent-subtle);
 }
 
 .character-umc-comparison-heading {
@@ -3050,11 +3050,11 @@ body.no-animations .settings-tab-btn.active::before {
   width: 100%;
   height: auto;
   min-height: 0;
-  padding: 7px;
+  padding: 0;
   overflow: hidden;
   border: 1px solid var(--bg-transparent-10);
   border-radius: 10px;
-  background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-secondary));
+  background: var(--bg-tertiary);
   color: var(--text-primary);
   cursor: pointer;
   text-align: left;
@@ -3092,21 +3092,7 @@ body.no-animations .settings-tab-btn.active::before {
   width: 100%;
   flex: 0 0 auto;
   overflow: hidden;
-  border-radius: 7px;
   color: var(--text-muted);
-}
-
-.character-umc-card-image::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(0, 0, 0, 0.7),
-    rgba(0, 0, 0, 0.35) 48%,
-    transparent 80%
-  );
-  pointer-events: none;
 }
 
 .character-umc-card-image img {
@@ -3140,6 +3126,7 @@ body.no-animations .settings-tab-btn.active::before {
   font-size: 16px;
   font-weight: 700;
   line-height: 1.15;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -3147,7 +3134,7 @@ body.no-animations .settings-tab-btn.active::before {
 
 .character-umc-card-meta {
   display: block;
-  margin: 5px 2px 0;
+  padding: 6px 9px 7px;
   overflow: hidden;
   color: var(--text-muted);
   font-size: 11px;

@@ -67,7 +67,7 @@ class TutorialManager {
         kind: 'spotlight',
         title: 'Sidebar',
         description:
-          'Use this bar to move between mods, plugins, characters, stages, downloads, settings, and credits.',
+          'Use this bar to move between mods, plugins, characters, downloads, settings, and credits.',
         target: '.sidebar',
         placement: 'right',
       },
@@ -165,35 +165,6 @@ class TutorialManager {
           'Fighters are shown here. Select a character to inspect related mods and quickly understand what content is installed for that fighter.',
         requiredTab: 'characters',
         target: '#characters-stage',
-        placement: 'top',
-      },
-      {
-        kind: 'spotlight',
-        title: 'Stages tab',
-        description:
-          'Click this tab. It helps you inspect stage slots and stage-related content.',
-        activeDescription:
-          'This is the Stages tab. Use it to inspect stage slots and stage-related content.',
-        requiredTab: 'stages',
-        target: '.sidebar-btn[data-tab="stages"]',
-        placement: 'right',
-      },
-      {
-        kind: 'spotlight',
-        title: 'Stage layout actions',
-        description:
-          'Use this header to choose a layout preset, show hidden stages when available, and apply the stage layout after changes.',
-        requiredTab: 'stages',
-        target: '.stages-header',
-        placement: 'bottom',
-      },
-      {
-        kind: 'spotlight',
-        title: 'Stage grid',
-        description:
-          'This grid is the stage layout editor. Drag stage cells after the Random cells, then apply the layout to save the order.',
-        requiredTab: 'stages',
-        target: '.stages-grid-panel',
         placement: 'top',
       },
       {
@@ -304,7 +275,6 @@ class TutorialManager {
           'Mods tab',
           'Plugins tab',
           'Characters tab',
-          'Stages tab',
           'Downloads tab',
           'Settings tab',
         ].includes(step.title),
@@ -665,7 +635,6 @@ class TutorialManager {
       tools: 'Mods',
       plugins: 'Plugins',
       characters: 'Characters',
-      stages: 'Stages',
       downloads: 'Downloads',
       settings: 'Settings',
     };

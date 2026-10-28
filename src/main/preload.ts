@@ -15,7 +15,6 @@ import { UpdateHandlers } from './ipc/handlers/update-handlers';
 import { TutorialHandlers } from './ipc/handlers/tutorial-handlers';
 import { MigrationHandlers } from './ipc/handlers/migration-handlers';
 import { FppHandlers } from './ipc/handlers/fpp-handlers';
-import { StageHandlers } from './ipc/handlers/stage-handlers';
 import { CharacterCssHandlers } from './ipc/handlers/character-css-handlers';
 import { ModProfileHandlers } from './ipc/handlers/mod-profile-handlers';
 import { ConfigBackupHandlers } from './ipc/handlers/config-backup-handlers';
@@ -90,7 +89,6 @@ const invokeWindowHandler = wrapInvoke<WindowHandlers>();
 const invokeDiscordHandler = wrapInvoke<DiscordHandlers>();
 const invokeAnalyticsHandler = wrapInvoke<AnalyticsHandlers>();
 const invokeFppHandler = wrapInvoke<FppHandlers>();
-const invokeStageHandler = wrapInvoke<StageHandlers>();
 const invokeCharacterCssHandler = wrapInvoke<CharacterCssHandlers>();
 const invokeModProfileHandler = wrapInvoke<ModProfileHandlers>();
 const invokeConfigBackupHandler = wrapInvoke<ConfigBackupHandlers>();
@@ -150,6 +148,8 @@ const electronAPI = {
   relaunchApp: invokeAppHandler('relaunch-app'),
   scanMod: invokeModHandler('scan-mod'),
   changeSlots: invokeModHandler('change-slots'),
+  hasSlotBackup: invokeModHandler('has-slot-backup'),
+  restoreSlotBackup: invokeModHandler('restore-slot-backup'),
   detectConflicts: invokeModHandler('detect-conflicts'),
   checkNroLimit: invokeModHandler('check-nro-limit'),
   openTutorialWindow: invokeTutorialHandler('open-tutorial-window'),
@@ -222,11 +222,6 @@ const electronAPI = {
   readFpp: (fppPath: string) => ipcRenderer.invoke('read-fpp', fppPath),
   installFpp: invokeFppHandler('install-fpp'),
   selectFppFile: invokeFppHandler('select-fpp-file'),
-  getStageLayout: invokeStageHandler('get-stage-layout'),
-  importStageLayoutSource: invokeStageHandler('import-stage-layout-source'),
-  saveStageLayout: invokeStageHandler('save-stage-layout'),
-  loadStageLayoutPreset: invokeStageHandler('load-stage-layout-preset'),
-  saveStageLayoutPreset: invokeStageHandler('save-stage-layout-preset'),
   getCharacterCssLayout: invokeCharacterCssHandler('get-character-css-layout'),
   getCssCharacterImages: invokeCharacterCssHandler('get-css-character-images'),
   selectCssCharacterImage: invokeCharacterCssHandler('select-css-character-image'),

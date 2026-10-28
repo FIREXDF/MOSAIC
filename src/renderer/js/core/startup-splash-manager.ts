@@ -155,12 +155,6 @@ class StartupSplashManager {
   async runEarlyPrefetches() {
     const tasks: Promise<unknown>[] = [];
     try {
-      const stagePromise = window.stagesManager?.preloadLayout?.();
-      if (stagePromise) tasks.push(stagePromise);
-    } catch (error) {
-      console.warn('[StartupSplash] stages preload kickoff failed:', error);
-    }
-    try {
       const cssPromise = window.charactersManager?.preloadCssLayout?.();
       if (cssPromise) tasks.push(cssPromise);
     } catch (error) {

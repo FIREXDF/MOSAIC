@@ -600,7 +600,7 @@ class BatchTestingManager {
         <div style="display: flex; flex-direction: column; gap: 16px;">
           <div style="padding: 16px 18px; border-radius: 14px; background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.14) 0%, rgba(var(--primary-rgb), 0.08) 100%); border: 1px solid rgba(var(--primary-rgb), 0.2);">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-              <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);">
+              <div style="font-size: 12px; color: var(--text-muted);">
                 ${this.escapeHtml(
                   this.t('settings.batchTestingStartOrder', 'Start With'),
                 )}
@@ -1040,7 +1040,7 @@ class BatchTestingManager {
               <div style="padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: var(--text-primary); font-size: 12px; font-weight: 600;">
                 ${this.escapeHtml(snapshot.label)}
               </div>
-              <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);">
+              <div style="font-size: 12px; color: var(--text-muted);">
                 ${this.escapeHtml(stepLabel)}
               </div>
             </div>
@@ -1109,7 +1109,7 @@ class BatchTestingManager {
             )}
           </div>
           <div style="padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); min-height: 0;">
-            <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 10px;">
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
               ${this.escapeHtml(
                 this.t(
                   'settings.batchTestingDisabledNowTitle',
@@ -1135,7 +1135,7 @@ class BatchTestingManager {
       `
         <div style="display: flex; flex-direction: column; gap: 16px;">
           <div style="padding: 16px 18px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color);">
-            <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
               ${this.escapeHtml(
                 this.t('settings.batchTestingStateDone', 'Finished'),
               )}

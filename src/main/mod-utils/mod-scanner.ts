@@ -16,6 +16,7 @@ export interface ScanModResult {
   currentSlots: string[];
   unknownFiles: string[];
   fighterNames: string[];
+  hasConfigJson: boolean;
 }
 
 export interface PathDataForSlot {
@@ -163,6 +164,7 @@ export const ModScanner = {
         currentSlots,
         unknownFiles,
         fighterNames: Array.from(fighterNames),
+        hasConfigJson: fs.existsSync(path.join(modPath, 'config.json')),
       };
     } catch (error) {
       console.error('Error scanning for slots:', error);

@@ -2252,6 +2252,10 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
 <div>
 <strong>${escapedName}</strong>
 <span>#${this.escapeHtml(character.info.number)} · ${character.mods.length} moveset mod${character.mods.length !== 1 ? 's' : ''}</span>
+<span class="character-moveset-umc-loading" role="status" hidden>
+<i class="bi bi-arrow-repeat character-umc-spinner" aria-hidden="true"></i>
+${this.escapeHtml(this.t('characters.umcImagesLoading', 'Loading images from UMC...'))}
+</span>
 </div>
 <button class="input-btn character-moveset-add-css-btn" type="button" data-add-moveset-css="${this.escapeHtml(character.id)}">
 <i class="bi bi-plus-square"></i>
@@ -2355,6 +2359,36 @@ ${category}
     character: CharacterMovesetGroup,
     element: HTMLElement,
   ) {
+    if (!character.mods.some((mod) => mod.gameBananaId)) return;
+    const spinner = element.querySelector<HTMLElement>(
+      '.character-moveset-umc-loading',
+    );
+    if (spinner) spinner.hidden = false;
+    const imageLoads: Promise<void>[] = [];
+    const loadImage = (image: HTMLImageElement, onLoad: () => void) => {
+      imageLoads.push(
+        new Promise((resolve) => {
+          image.onload = () => {
+            onLoad();
+            resolve();
+          };
+          image.onerror = () => resolve();
+        }),
+      );
+    };
+    try {
+      await this.loadMovesetImageMatches(character, element, loadImage);
+    } finally {
+      await Promise.all(imageLoads);
+      if (spinner) spinner.hidden = true;
+    }
+  }
+
+  async loadMovesetImageMatches(
+    character: CharacterMovesetGroup,
+    element: HTMLElement,
+    loadImage: (image: HTMLImageElement, onLoad: () => void) => void,
+  ) {
     const rows = Array.from(
       element.querySelectorAll<HTMLElement>('.character-moveset-mod'),
     );
@@ -2378,7 +2412,7 @@ ${category}
         image.className = 'character-moveset-umc-thumbnail';
         image.alt = moveset.name;
         image.title = this.t('characters.umcImage', 'Image from UMC');
-        image.onload = () => {
+        loadImage(image, () => {
           if (
             !rows[index].isConnected ||
             this.movesetCharacters.get(character.id) !== character
@@ -2386,7 +2420,7 @@ ${category}
             return;
           rows[index].prepend(image);
           rows[index].classList.add('has-umc-image');
-        };
+        });
         image.src = moveset.imageUrl;
         return moveset;
       }),
@@ -2399,7 +2433,7 @@ ${category}
     const image = new Image();
     image.alt = firstMatch.name;
     image.title = this.t('characters.umcImage', 'Image from UMC');
-    image.onload = () => {
+    loadImage(image, () => {
       if (
         !element.isConnected ||
         this.movesetCharacters.get(character.id) !== character
@@ -2409,7 +2443,7 @@ ${category}
       element
         .querySelector('.character-moveset-character')
         ?.classList.add('has-umc-image');
-    };
+    });
     // The vanilla image stays visible until the UMC image has loaded successfully.
     image.src = firstMatch.imageUrl;
   }

@@ -120,27 +120,10 @@ class ModInfoManager {
 <div class="mod-info-item">
 <div class="mod-info-label">${t('tools.modInfo.url')}</div>
 <div class="mod-info-value">
-<a href="#" onclick="window.electronAPI.openUrl('${escapeHtml(
-        modData.url,
-      )}'); return false;" class="mod-info-link">
+<a href="#" class="mod-info-link">
 ${escapeHtml(modData.url)}
 </a>
 </div>
-</div>`;
-    }
-
-    const watchUrl =
-      modPath && /gamebanana\.com\/(?:mods|sounds)\/\d+/i.test(modData.url || '')
-        ? modData.url!
-        : null;
-    if (watchUrl) {
-      html += `
-<div class="mod-info-item">
-<label class="settings-switch">
-<input type="checkbox" id="mod-update-watch-toggle" />
-<span class="settings-switch-slider"></span>
-</label>
-<label for="mod-update-watch-toggle" style="margin-left: 12px; color: var(--text-secondary)">${t('tools.modInfo.watchUpdates')}</label>
 </div>`;
     }
 
@@ -153,35 +136,40 @@ ${escapeHtml(modData.url)}
     container.style.animation = '';
 
     container.innerHTML = html;
-
-    const watchToggle = container.querySelector<HTMLInputElement>(
-      '#mod-update-watch-toggle',
-    );
-    if (watchToggle && watchUrl) {
-      this.getUpdateWatch().then((watch) => {
-        watchToggle.checked = Boolean(watch[watchUrl]);
+    container
+      .querySelector<HTMLElement>('.mod-info-link')
+      ?.addEventListener('click', (event) => {
+        event.preventDefault();
+        window.electronAPI.openUrl(modData.url!);
       });
-      watchToggle.addEventListener('change', async () => {
-        const watch = await this.getUpdateWatch();
-        if (watchToggle.checked) {
-          const mod = window.modManager?.mods.find((m) => m.path === modPath);
-          watch[watchUrl] = {
-            name: modData.display_name || mod?.name || watchUrl,
-            version: modData.version,
-            // Files uploaded after the mod folder was created count as updates.
-            seen: Math.floor((mod?.addedAt || Date.now()) / 1000),
-          };
-        } else {
-          delete watch[watchUrl];
-        }
-        await window.electronAPI.store.set('modUpdateWatch', watch);
-      });
-    }
 
     const editBtn = document.querySelector<HTMLElement>('#edit-info-btn');
     if (editBtn && modPath) {
       editBtn.style.display = 'flex';
     }
+  }
+
+  getWatchUrl(modData: ModInfo | null) {
+    const url = modData?.url || '';
+    return /gamebanana\.com\/(?:mods|sounds)\/\d+/i.test(url) ? url : null;
+  }
+
+  async setUpdateWatch(modData: ModInfo, modPath: string, enabled: boolean) {
+    const watchUrl = this.getWatchUrl(modData);
+    if (!watchUrl) return;
+    const watch = await this.getUpdateWatch();
+    if (enabled) {
+      const mod = window.modManager?.mods.find((m) => m.path === modPath);
+      watch[watchUrl] = {
+        name: modData.display_name || mod?.name || watchUrl,
+        version: modData.version,
+        // Files uploaded after the mod folder was created count as updates.
+        seen: Math.floor((mod?.addedAt || Date.now()) / 1000),
+      };
+    } else {
+      delete watch[watchUrl];
+    }
+    await window.electronAPI.store.set('modUpdateWatch', watch);
   }
 
   async getUpdateWatch(): Promise<

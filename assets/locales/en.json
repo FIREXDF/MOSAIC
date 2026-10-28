@@ -14,7 +14,6 @@
     "plugins": "Plugins",
     "developer": "Developer",
     "characters": "Characters",
-    "stages": "Stages",
     "downloads": "Downloads",
     "gamebanana": "GameBanana",
     "settings": "Settings",
@@ -687,13 +686,14 @@
     "selectReplacementPathRequired": "Please select a corrected folder for each listed path.",
     "configBackup": "Configuration Backup",
     "exportConfigBackup": "Export Full Configuration",
-    "exportConfigBackupDesc": "Save settings, stage layout, Character CSS layout, presets, and custom CSS/JS files",
+    "exportConfigBackupDesc": "Save settings, Character CSS layout, presets, and custom CSS/JS files",
     "restoreConfigBackup": "Restore Full Configuration",
     "restoreConfigBackupDesc": "Replace the current configuration from a MOSAIC backup file",
     "configBackupHint": "Restoring a backup locks the app until MOSAIC is restarted so every setting is loaded cleanly.",
     "restoreConfigBackupConfirmMessage": "Restore this backup? Your current MOSAIC settings, stage layout, Character CSS layout, presets, and referenced custom CSS/JS files will be replaced. MOSAIC must restart afterward.",
     "restartRequiredTitle": "Restart required",
     "restartRequiredAfterRestore": "Your configuration was restored. MOSAIC is locked until restart so the restored settings, stages, and CSS data load cleanly.",
+    "restartRequiredAfterReset": "Application data was reset. MOSAIC is locked until restart so it starts again from a clean state.",
     "restartFightPlanner": "Restart MOSAIC",
     "emulatorPath": "Emulator Path",
     "emulatorPathPlaceholder": "Select emulator executable...",
@@ -988,6 +988,10 @@
     "seeConfigJsonDesc": "Open the configuration file in your default editor"
   },
   "modals": {
+    "pluginsPathRequired": {
+      "title": "Plugins folder not set",
+      "message": "Set the plugins folder path in Settings before adding a plugin."
+    },
     "nroLimit": {
       "title": "NRO limit exceeded",
       "message": "{{count}} active .nro files detected. The limit is {{limit}} in emulator and real hardware modes. Disable or remove {{overflow}} .nro file(s).",
@@ -1092,7 +1096,16 @@
       "confirmAffected": "{{count}} file(s) or folder(s) affected",
       "confirmNoChanges": "There are no changes to apply.",
       "confirmBack": "Back",
-      "confirmApply": "Confirm changes"
+      "confirmApply": "Confirm changes",
+      "duplicateTarget": "Several slots are moved to {{slot}}. Each target slot must be unique.",
+      "backupBeforeApply": "Back up the mod before applying (restore it from the mod's right-click menu)",
+      "configModeMerge": "Keep it and update the moved slots",
+      "configModeRegenerate": "Generate a new one",
+      "duplicateTargetTitle": "Duplicate target slot",
+      "configExistsTitle": "config.json already exists",
+      "configExistsMessage": "This mod already has a config.json file. Do you want to keep it and update the moved slots, or generate a new one?",
+      "groupInfoTitle": "Linked characters",
+      "groupInfoMessage": "{{fighters}} will all be reslotted with the same parameters."
     },
     "conflict": {
       "title": "Mod Conflicts Detected",
@@ -1184,7 +1197,12 @@
       "download": "Download",
       "installRestart": "Install and Restart"
     },
-    "close": "Close"
+    "close": "Close",
+    "restoreSlotBackup": {
+      "title": "Restore backup",
+      "message": "Restore this mod as it was before the last slot change? Changes made since then will be lost.",
+      "confirm": "Restore"
+    }
   },
   "contextMenu": {
     "rename": "Rename",
@@ -1197,7 +1215,8 @@
     "openFolder": "Open Folder",
     "browseFiles": "Browse Files",
     "uninstall": "Uninstall",
-    "uninstallSelected": "Uninstall Selected ({{count}})"
+    "uninstallSelected": "Uninstall Selected ({{count}})",
+    "restoreSlotBackup": "Restore backup from before the slot change"
   },
   "modFileBrowser": {
     "title": "Mod files",
@@ -1280,6 +1299,7 @@
       "invalidRange": "Choose a costume range between c00 and c255."
     },
     "umcImage": "Image from UMC",
+    "umcImagesLoading": "Loading images from UMC...",
     "title": "Characters",
     "search": "Search characters...",
     "refresh": "Refresh",
@@ -1363,45 +1383,6 @@
     "changeCssSourceConfirm": "Replace the current Character CSS source files? Unsaved layout changes will be lost."
   },
   "stages": {
-    "title": "Stages",
-    "subtitle": "Reorder the stage grid, right-click a stage to hide it, then save to regenerate the Stage Layout.",
-    "defaultPresetName": "Default Layout",
-    "currentLayoutName": "Current Layout",
-    "newPresetName": "New Layout",
-    "saveLayout": "Apply Layout",
-    "loading": "Loading stages...",
-    "sourceRequiredTitle": "Stage source required",
-    "sourceRequiredMessage": "Choose your own ui_stage_db.xml before editing the stage layout.",
-    "importSource": "Import ui_stage_db.xml",
-    "sourceSaved": "Saved layout",
-    "sourceCanonical": "Default layout",
-    "statsTitle": "Current layout",
-    "statsMovable": "Movable stages",
-    "statsMeta": "{{hidden}} hidden • {{random}} fixed random • {{rows}} rows",
-    "instructions": "Drag any visible stage after the Random cells, or right-click a stage to hide it. Use the hidden stages button to restore it.",
-    "noteOverflow": "Current embedded stage data needs {{rows}} rows to display every stage.",
-    "hiddenTitle": "Hidden stages",
-    "hiddenEmpty": "No hidden stages.",
-    "showHidden": "Hidden stages",
-    "hiddenModalHint": "Use the restore button under a hidden stage to show it again.",
-    "hiddenCardMeta": "Hidden from layout",
-    "hide": "Hide",
-    "unhide": "Unhide",
-    "unhideStageAria": "Restore {{stage}}",
-    "presetChooserTitle": "Stage Layout Presets",
-    "presetChooserHint": "Load a saved stage layout preset, start a fresh one, or save your current arrangement.",
-    "presetEmpty": "No saved stage layout presets yet.",
-    "presetCurrent": "Current",
-    "presetUpdatedAt": "Updated {{date}}",
-    "presetNew": "New",
-    "presetSave": "Save",
-    "presetNameTitle": "Save Stage Layout Preset",
-    "presetNameLabel": "Preset name",
-    "presetNamePlaceholder": "Enter a name for this layout",
-    "presetNameEmpty": "Preset name cannot be empty.",
-    "presetSaveFailed": "Failed to save preset",
-    "loadFailed": "Failed to load stage layout",
-    "saveFailed": "Failed to save stage layout",
     "modBadge": "Stages"
   },
   "fightplanner": {
@@ -1418,9 +1399,7 @@
     "showOldTesters": "See old testers",
     "hideOldTesters": "Hide old testers",
     "specialThanks": "Special Thanks",
-    "madeWith": "Made with",
-    "byTeam": "by Compages Works",
-    "copyright": "© 2024 MOSAIC. All rights reserved.",
+    "madeBy": "Made by Compages Works",
     "appVersion": "App Version:",
     "electron": "Electron:",
     "node": "Node:",
@@ -1649,7 +1628,9 @@
     "switchReconnected": "Switch reconnected.",
     "directSwitchLibraryNoSync": "The library is already read directly from the Switch. No sync is needed.",
     "reconnectSwitchBeforeSyncToPc": "Reconnect your Switch or remount the SD card before syncing mods back to this PC.",
-    "nroLimitExceeded": "{{count}} active .nro files detected. Switch limit: {{limit}}. Disable or remove {{overflow}} .nro file(s)."
+    "nroLimitExceeded": "{{count}} active .nro files detected. Switch limit: {{limit}}. Disable or remove {{overflow}} .nro file(s).",
+    "slotBackupRestored": "Mod restored from backup",
+    "failedToRestoreSlotBackup": "Failed to restore backup: {{error}}"
   },
   "statusBar": {
     "ready": "Ready",
@@ -1667,7 +1648,6 @@
     "settings": "Settings • Configure your application preferences",
     "charactersReady": "Characters • Ready",
     "charactersAvailable": "Characters • {{count}} character{{plural}} available",
-    "stages": "Stages • Manage your custom stages",
     "checkingConflicts": "Checking for conflicts...",
     "conflictsDetected": "{{count}} conflict{{plural}} detected"
   },
@@ -1724,7 +1704,7 @@
     "choose_your_language": "Choose your language",
     "pick_the_language_you_want_to_use_in_fightplanner": "Pick the language you want to use in MOSAIC.",
     "sidebar": "Sidebar",
-    "use_this_bar_to_move_between_mods_plugins_characters_stages_downloads_": "Use this bar to move between mods, plugins, characters, stages, downloads, settings, and credits.",
+    "use_this_bar_to_move_between_mods_plugins_characters_downloads_setting": "Use this bar to move between mods, plugins, characters, downloads, settings, and credits.",
     "mods_tab": "Mods tab",
     "click_this_tab_it_opens_the_main_workspace_for_enabling_disabling_sear": "Click this tab. It opens the main workspace for enabling, disabling, searching, renaming, slot changes, and uninstalling mods.",
     "this_is_the_mods_workspace_use_it_to_enable_disable_search_rename_chan": "This is the Mods workspace. Use it to enable, disable, search, rename, change slots, and uninstall mods.",
@@ -1748,13 +1728,6 @@
     "search_fighters_refresh_the_character_view_open_moveset_mods_or_edit_t": "Search fighters, refresh the character view, open moveset mods, or edit the character CSS layout from this toolbar.",
     "character_grid": "Character grid",
     "fighters_are_shown_here_select_a_character_to_inspect_related_mods_and": "Fighters are shown here. Select a character to inspect related mods and quickly understand what content is installed for that fighter.",
-    "stages_tab": "Stages tab",
-    "click_this_tab_it_helps_you_inspect_stage_slots_and_stage_related_cont": "Click this tab. It helps you inspect stage slots and stage-related content.",
-    "this_is_the_stages_tab_use_it_to_inspect_stage_slots_and_stage_related": "This is the Stages tab. Use it to inspect stage slots and stage-related content.",
-    "stage_layout_actions": "Stage layout actions",
-    "use_this_header_to_choose_a_layout_preset_show_hidden_stages_when_avai": "Use this header to choose a layout preset, show hidden stages when available, and apply the stage layout after changes.",
-    "stage_grid": "Stage grid",
-    "this_grid_is_the_stage_layout_editor_drag_stage_cells_after_the_random": "This grid is the stage layout editor. Drag stage cells after the Random cells, then apply the layout to save the order.",
     "downloads_tab": "Downloads tab",
     "click_this_tab_gamebanana_installs_and_transfers_show_up_here_so_you_c": "Click this tab. GameBanana installs and transfers show up here so you can track progress and send mods to your Switch.",
     "this_is_the_downloads_tab_gamebanana_installs_and_transfer_progress_ap": "This is the Downloads tab. GameBanana installs and transfer progress appear here.",
@@ -1798,7 +1771,6 @@
     "mods": "Mods",
     "plugins": "Plugins",
     "characters": "Characters",
-    "stages": "Stages",
     "downloads": "Downloads",
     "settings": "Settings"
   }

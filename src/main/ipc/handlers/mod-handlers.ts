@@ -21,7 +21,7 @@ import {
   PathData,
   ScanModResult,
 } from '../../mod-utils/mod-scanner';
-import { SlotChanger } from '../../mod-utils/slot-changer';
+import { ConfigMode, SlotChanger } from '../../mod-utils/slot-changer';
 import PluginUpdateChecker, {
   ModUpdateResult,
   ModUpdateWatch,
@@ -649,8 +649,13 @@ const ModHandlers = {
     pathData: PathData,
     slotAssignments: Map<string, Map<string, string>>,
     deletedSlots: Map<string, Set<string>>,
+    options: { backup?: boolean; configMode?: ConfigMode } = {},
   ): HandlerResponse => {
     try {
+      if (options.backup) {
+        await SlotChanger.backupMod(modPath);
+      }
+
       await SlotChanger.removeSlots(modPath, deletedSlots, pathData);
 
       for (const [fighterName, slots] of deletedSlots) {
@@ -663,11 +668,43 @@ const ModHandlers = {
         }
       }
 
-      await SlotChanger.changeSlots(modPath, slotAssignments, pathData);
+      await SlotChanger.changeSlots(
+        modPath,
+        slotAssignments,
+        pathData,
+        {},
+        true,
+        options.configMode,
+      );
 
       return { success: true };
     } catch (error) {
       handleError(error, 'change-slots');
+      return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
+    }
+  },
+
+  ['has-slot-backup']: async (
+    common: BaseHandlerArg,
+    modPath: string,
+  ): HandlerResponse<{ exists: boolean }> => {
+    try {
+      return { success: true, exists: await SlotChanger.hasBackup(modPath) };
+    } catch (error) {
+      handleError(error, 'has-slot-backup');
+      return createErrorResponse(ErrorCodes.MOD_READ_ERROR, error.message);
+    }
+  },
+
+  ['restore-slot-backup']: async (
+    common: BaseHandlerArg,
+    modPath: string,
+  ): HandlerResponse => {
+    try {
+      await SlotChanger.restoreBackup(modPath);
+      return { success: true };
+    } catch (error) {
+      handleError(error, 'restore-slot-backup');
       return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
     }
   },
@@ -770,9 +807,23 @@ const ModHandlers = {
     common: BaseHandlerArg,
     sourcePath: string,
     modsPath: string,
+    progressId?: string,
   ) => {
     try {
-      return await ModUtils.installModFromPath(sourcePath, modsPath);
+      return await ModUtils.installModFromPath(sourcePath, modsPath, {
+        onExtractProgress: progressId
+          ? ({ percent }) => {
+              if (common.event.sender.isDestroyed()) return;
+              common.event.sender.send('mod-download-progress', {
+                downloadId: progressId,
+                progress: percent,
+                receivedBytes: 0,
+                totalBytes: 0,
+                statusText: 'Extracting mod...',
+              });
+            }
+          : undefined,
+      });
     } catch (error) {
       handleError(error, 'install-mod-from-path');
       return createErrorResponse(ErrorCodes.MOD_INSTALL_ERROR, error.message);

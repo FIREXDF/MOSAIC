@@ -14,7 +14,6 @@
     "plugins": "Plugins",
     "developer": "Développeur",
     "characters": "Personnages",
-    "stages": "Arènes",
     "downloads": "Téléchargements",
     "gamebanana": "GameBanana",
     "settings": "Paramètres",
@@ -583,13 +582,14 @@
     "selectReplacementPathRequired": "Sélectionne un dossier corrigé pour chaque chemin affiché.",
     "configBackup": "Sauvegarde de configuration",
     "exportConfigBackup": "Exporter toute la configuration",
-    "exportConfigBackupDesc": "Sauvegarder les paramètres, les stages, la config Character CSS, les presets et les fichiers CSS/JS custom",
+    "exportConfigBackupDesc": "Sauvegarder les paramètres, la config Character CSS, les presets et les fichiers CSS/JS custom",
     "restoreConfigBackup": "Restaurer toute la configuration",
     "restoreConfigBackupDesc": "Remplacer la configuration actuelle depuis une sauvegarde MOSAIC",
     "configBackupHint": "Après une restauration, l'app est bloquée jusqu'au redémarrage de MOSAIC pour recharger proprement tous les réglages.",
     "restoreConfigBackupConfirmMessage": "Restaurer cette sauvegarde ? Les paramètres actuels, les stages, la config Character CSS, les presets et les fichiers CSS/JS custom référencés seront remplacés. MOSAIC devra redémarrer ensuite.",
     "restartRequiredTitle": "Redémarrage requis",
     "restartRequiredAfterRestore": "La configuration a été restaurée. MOSAIC est bloqué jusqu'au redémarrage pour charger proprement les réglages, stages et données CSS restaurés.",
+    "restartRequiredAfterReset": "Les données de l'application ont été réinitialisées. MOSAIC est bloqué jusqu'au redémarrage pour repartir d'un état propre.",
     "restartFightPlanner": "Redémarrer MOSAIC",
     "customization": "Personnalisation",
     "logs": "Logs",
@@ -987,6 +987,10 @@
     "seeConfigJsonDesc": "Ouvrir le fichier de configuration dans votre éditeur par défaut"
   },
   "modals": {
+    "pluginsPathRequired": {
+      "title": "Dossier des plugins non défini",
+      "message": "Définis le chemin du dossier des plugins dans les Paramètres avant d'ajouter un plugin."
+    },
     "nroLimit": {
       "title": "Limite .nro dépassée",
       "message": "{{count}} fichiers .nro actifs détectés. La limite est de {{limit}}, en émulateur comme sur vraie Switch. Désactivez ou retirez {{overflow}} fichier(s) .nro.",
@@ -1070,7 +1074,16 @@
       "confirmAffected": "{{count}} fichier(s) ou dossier(s) concerné(s)",
       "confirmNoChanges": "Aucun changement à appliquer.",
       "confirmBack": "Retour",
-      "confirmApply": "Confirmer les changements"
+      "confirmApply": "Confirmer les changements",
+      "duplicateTarget": "Plusieurs slots sont déplacés vers {{slot}}. Chaque slot cible doit être unique.",
+      "backupBeforeApply": "Sauvegarder le mod avant d'appliquer (restauration depuis le clic droit sur le mod)",
+      "configModeMerge": "Le garder et mettre à jour les slots déplacés",
+      "configModeRegenerate": "En générer un nouveau",
+      "duplicateTargetTitle": "Slot cible en double",
+      "configExistsTitle": "config.json déjà présent",
+      "configExistsMessage": "Ce mod a déjà un fichier config.json. Voulez-vous le garder et mettre à jour les slots déplacés, ou en générer un nouveau ?",
+      "groupInfoTitle": "Personnages liés",
+      "groupInfoMessage": "{{fighters}} seront tous reslottés avec les mêmes paramètres."
     },
     "conflict": {
       "title": "Conflits de Mods Détectés",
@@ -1184,7 +1197,12 @@
       "download": "Télécharger",
       "installRestart": "Installer et Redémarrer"
     },
-    "close": "Fermer"
+    "close": "Fermer",
+    "restoreSlotBackup": {
+      "title": "Restaurer la sauvegarde",
+      "message": "Restaurer ce mod tel qu'il était avant le dernier changement de slot ? Les modifications faites depuis seront perdues.",
+      "confirm": "Restaurer"
+    }
   },
   "contextMenu": {
     "rename": "Renommer",
@@ -1197,7 +1215,8 @@
     "openFolder": "Ouvrir le dossier",
     "browseFiles": "Parcourir les fichiers",
     "uninstall": "Désinstaller",
-    "uninstallSelected": "Desinstaller la selection ({{count}})"
+    "uninstallSelected": "Desinstaller la selection ({{count}})",
+    "restoreSlotBackup": "Restaurer la sauvegarde d'avant le changement de slot"
   },
   "modFileBrowser": {
     "title": "Fichiers du mod",
@@ -1280,6 +1299,7 @@
       "invalidRange": "Choisissez une plage de costumes entre c00 et c255."
     },
     "umcImage": "Image provenant de UMC",
+    "umcImagesLoading": "Chargement des images UMC...",
     "title": "Personnages",
     "search": "Rechercher des personnages...",
     "refresh": "Actualiser",
@@ -1363,45 +1383,6 @@
     "changeCssSourceConfirm": "Remplacer les fichiers source Character CSS actuels ? Les changements non sauvegardes seront perdus."
   },
   "stages": {
-    "title": "Arenes",
-    "subtitle": "Reorganisez la grille des stages, faites un clic droit sur un stage pour le masquer, puis sauvegardez pour regenerer le Stage Layout.",
-    "defaultPresetName": "Layout par defaut",
-    "currentLayoutName": "Layout actuel",
-    "newPresetName": "Nouveau layout",
-    "saveLayout": "Appliquer le layout",
-    "loading": "Chargement des stages...",
-    "sourceRequiredTitle": "Fichier stage requis",
-    "sourceRequiredMessage": "Choisis ton propre ui_stage_db.xml avant de modifier le layout des stages.",
-    "importSource": "Importer ui_stage_db.xml",
-    "sourceSaved": "Disposition sauvegardee",
-    "sourceCanonical": "Disposition par defaut",
-    "statsTitle": "Disposition actuelle",
-    "statsMovable": "Stages deplacables",
-    "statsMeta": "{{hidden}} masques • {{random}} random fixes • {{rows}} lignes",
-    "instructions": "Glissez un stage visible apres les cases Random, ou faites un clic droit sur un stage pour le masquer. Utilisez le bouton des stages masques pour le restaurer.",
-    "noteOverflow": "Les donnees de stages embarquees ont besoin de {{rows}} lignes pour tout afficher.",
-    "hiddenTitle": "Stages masques",
-    "hiddenEmpty": "Aucun stage masque.",
-    "showHidden": "Stages masques",
-    "hiddenModalHint": "Utilisez le bouton Restaurer sous un stage masque pour le reafficher.",
-    "hiddenCardMeta": "Masque du layout",
-    "hide": "Masquer",
-    "unhide": "Restaurer",
-    "unhideStageAria": "Restaurer {{stage}}",
-    "presetChooserTitle": "Presets de layout",
-    "presetChooserHint": "Chargez un preset de layout, creez-en un nouveau ou sauvegardez l'agencement actuel.",
-    "presetEmpty": "Aucun preset de layout sauvegarde pour le moment.",
-    "presetCurrent": "Actuel",
-    "presetUpdatedAt": "Mis a jour {{date}}",
-    "presetNew": "Nouveau",
-    "presetSave": "Sauvegarder",
-    "presetNameTitle": "Sauvegarder le preset",
-    "presetNameLabel": "Nom du preset",
-    "presetNamePlaceholder": "Entrez un nom pour ce layout",
-    "presetNameEmpty": "Le nom du preset ne peut pas etre vide.",
-    "presetSaveFailed": "Impossible de sauvegarder le preset",
-    "loadFailed": "Impossible de charger la disposition des stages",
-    "saveFailed": "Impossible de sauvegarder la disposition des stages",
     "modBadge": "Stages"
   },
   "fightplanner": {
@@ -1418,9 +1399,7 @@
     "showOldTesters": "Voir les anciens testeurs",
     "hideOldTesters": "Masquer les anciens testeurs",
     "specialThanks": "Remerciements Spéciaux",
-    "madeWith": "Fait avec",
-    "byTeam": "par Compages Works",
-    "copyright": "© 2024 MOSAIC. Tous droits réservés.",
+    "madeBy": "Fait par Compages Works",
     "appVersion": "Version de l'App :",
     "electron": "Electron :",
     "node": "Node :",
@@ -1649,7 +1628,9 @@
     "switchReconnected": "Switch reconnectée.",
     "directSwitchLibraryNoSync": "La librairie est déjà lue directement depuis la Switch. Aucune synchronisation n'est nécessaire.",
     "reconnectSwitchBeforeSyncToPc": "Rebranche ta Switch ou remonte la carte SD avant de synchroniser les mods sur ce PC.",
-    "nroLimitExceeded": "{{count}} fichiers .nro actifs détectés. Limite Switch: {{limit}}. Désactivez ou retirez {{overflow}} fichier(s) .nro."
+    "nroLimitExceeded": "{{count}} fichiers .nro actifs détectés. Limite Switch: {{limit}}. Désactivez ou retirez {{overflow}} fichier(s) .nro.",
+    "slotBackupRestored": "Mod restauré depuis la sauvegarde",
+    "failedToRestoreSlotBackup": "Échec de la restauration : {{error}}"
   },
   "statusBar": {
     "ready": "Prêt",
@@ -1667,7 +1648,6 @@
     "settings": "Paramètres • Configurez les préférences de l'application",
     "charactersReady": "Personnages • Prêt",
     "charactersAvailable": "Personnages • {{count}} personnage{{plural}} disponible{{plural}}",
-    "stages": "Stages • Gérez vos stages personnalisés",
     "checkingConflicts": "Vérification des conflits...",
     "conflictsDetected": "{{count}} conflit{{plural}} détecté{{plural}}"
   },
@@ -1724,7 +1704,7 @@
     "choose_your_language": "Choisis ta langue",
     "pick_the_language_you_want_to_use_in_fightplanner": "Choisis la langue que tu veux utiliser dans MOSAIC.",
     "sidebar": "Barre latérale",
-    "use_this_bar_to_move_between_mods_plugins_characters_stages_downloads_": "Utilise cette barre pour naviguer entre mods, plugins, personnages, stages, téléchargements, paramètres et crédits.",
+    "use_this_bar_to_move_between_mods_plugins_characters_downloads_setting": "Utilise cette barre pour naviguer entre mods, plugins, personnages, téléchargements, paramètres et crédits.",
     "mods_tab": "Onglet Mods",
     "click_this_tab_it_opens_the_main_workspace_for_enabling_disabling_sear": "Clique cet onglet. Il ouvre l'espace principal pour activer, désactiver, chercher, renommer, changer les slots et désinstaller les mods.",
     "this_is_the_mods_workspace_use_it_to_enable_disable_search_rename_chan": "Voici l'espace Mods. Tu peux activer, désactiver, chercher, renommer, changer les slots et désinstaller les mods.",
@@ -1748,13 +1728,6 @@
     "search_fighters_refresh_the_character_view_open_moveset_mods_or_edit_t": "Cherche un combattant, rafraîchis la vue, ouvre les movesets ou édite le layout CSS des personnages avec cette barre.",
     "character_grid": "Grille personnages",
     "fighters_are_shown_here_select_a_character_to_inspect_related_mods_and": "Les combattants sont affichés ici. Sélectionne un personnage pour voir ses mods et comprendre ce qui est installé.",
-    "stages_tab": "Onglet Stages",
-    "click_this_tab_it_helps_you_inspect_stage_slots_and_stage_related_cont": "Clique cet onglet. Il sert à inspecter les slots de stages et le contenu lié aux stages.",
-    "this_is_the_stages_tab_use_it_to_inspect_stage_slots_and_stage_related": "Voici l'onglet Stages. Utilise-le pour inspecter les slots et le contenu lié aux stages.",
-    "stage_layout_actions": "Actions du layout stages",
-    "use_this_header_to_choose_a_layout_preset_show_hidden_stages_when_avai": "Cet en-tête sert à choisir un preset, afficher les stages cachés si disponible, et appliquer le layout après modification.",
-    "stage_grid": "Grille stages",
-    "this_grid_is_the_stage_layout_editor_drag_stage_cells_after_the_random": "Cette grille édite le layout des stages. Déplace les cases après Random, puis applique le layout pour sauvegarder l'ordre.",
     "downloads_tab": "Onglet Téléchargements",
     "click_this_tab_gamebanana_installs_and_transfers_show_up_here_so_you_c": "Clique cet onglet. Les installs GameBanana et transferts apparaissent ici pour suivre la progression et envoyer vers ta Switch.",
     "this_is_the_downloads_tab_gamebanana_installs_and_transfer_progress_ap": "Voici l'onglet Téléchargements. Les installs GameBanana et la progression des transferts apparaissent ici.",
@@ -1798,7 +1771,6 @@
     "mods": "Mods",
     "plugins": "Plugins",
     "characters": "Personnages",
-    "stages": "Stages",
     "downloads": "Téléchargements",
     "settings": "Paramètres"
   }

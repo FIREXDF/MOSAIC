@@ -202,7 +202,6 @@
 
 .plugin-status.status-active {
   background-color: var(--success-color);
-  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
 }
 
 .plugin-status.status-disabled {
@@ -460,9 +459,18 @@ body.no-animations .action-btn-small {
 }
 
 .mod-item:hover {
-  background-color: var(--bg-item-hover);
-  border-color: var(--border-hover);
-  box-shadow: var(--shadow-md);
+  background-color: var(--border-hover);
+  border-color: var(--border-transparent-30);
+}
+
+.mod-item.mod-active:hover {
+  background-color: rgba(var(--success-color-rgb), 0.3);
+  border-color: rgba(var(--success-color-rgb), 0.6);
+}
+
+.mod-item.mod-conflict:hover {
+  background-color: rgba(var(--warning-color-rgb), 0.3);
+  border-color: rgba(var(--warning-color-rgb), 0.6);
 }
 
 .mod-item.mod-special-stage-layout {
@@ -540,7 +548,7 @@ body.no-animations .action-btn-small {
 div.mod-item.selected {
   background-color: rgba(var(--accent-rgb), 0.25) !important;
   border: 1px solid var(--accent-color) !important;
-  box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.15) !important;
+  box-shadow: none !important;
   z-index: 2;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
@@ -674,7 +682,6 @@ body.no-animations .mod-info-item {
 .mod-info-label {
   font-size: 11px;
   color: var(--text-muted);
-  text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
 }

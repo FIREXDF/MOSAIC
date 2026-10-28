@@ -199,7 +199,7 @@ class BatchTestingUiHelpers {
   renderInfoCard(title: string, value: string) {
     return `
       <div style="padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color);">
-        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px;">
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
           ${this.escapeHtml(title)}
         </div>
         <div style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
@@ -228,7 +228,7 @@ class BatchTestingUiHelpers {
   renderDetailRow(label: string, value: string, multiline = false) {
     return `
       <div style="padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); min-width: 0;">
-        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px;">
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
           ${this.escapeHtml(label)}
         </div>
         <div style="display: block; max-width: 100%; min-width: 0; font-size: 14px; color: var(--text-primary); line-height: 1.6; overflow-wrap: anywhere; ${multiline ? 'white-space: pre-wrap; word-break: break-word;' : ''}">

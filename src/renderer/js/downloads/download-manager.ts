@@ -1043,10 +1043,39 @@ ${subItemsHtml}
     this.updateUI();
   }
 
+  async installLocalMod(filePath: string, modsPath: string) {
+    const downloadId = `local-${Date.now()}`;
+    this.startDownload(filePath, downloadId);
+    this.markExtracting(downloadId);
+
+    try {
+      const result = await window.electronAPI.installModFromPath(
+        filePath,
+        modsPath,
+        downloadId,
+      );
+
+      if (result && result.success) {
+        this.completeDownload(downloadId, result.resultingMods);
+      } else {
+        this.failDownload(downloadId, result?.error || 'Unknown error');
+      }
+
+      return result;
+    } catch (error) {
+      this.failDownload(downloadId, error.message);
+      throw error;
+    }
+  }
+
   /**
    * Extract filename from URL
    */
   extractFileName(url) {
+    if (!/^https?:/i.test(url)) {
+      return url.split(/[\\/]/).pop() || 'mod.zip';
+    }
+
     try {
       const urlObj = new URL(url);
       const pathname = urlObj.pathname;

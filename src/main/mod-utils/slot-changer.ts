@@ -1,4 +1,5 @@
 import path from 'path';
+import * as fse from 'fs-extra';
 import { XMLParser } from 'fast-xml-parser';
 
 import { PathData, PathDataEntry } from './mod-scanner';
@@ -12,6 +13,10 @@ interface CustomData {
   boxingRing?: string;
   announcer?: string;
 }
+
+export type ConfigMode = 'merge' | 'regenerate';
+
+const SLOT_PATTERN = /^c\d{2,3}$/;
 
 interface SlotPathMapping {
   originalPath: string;
@@ -101,9 +106,15 @@ export class SlotChanger {
     pathData: PathData,
     slotCustomNames: Record<string, CustomData> = {},
     generateSupportFiles = true,
+    configMode: ConfigMode = 'merge',
   ) {
     const changedPaths: string[] = [];
     const pendingConfigMappings = new Map<string, Map<string, string>>();
+    const colorNums = new Map<number, number>();
+    const prcxmlParams = new Map<number, Map<string, string>>();
+    const msgNameEntries: string[] = [];
+    let fighterIndexes: Map<string, number> | undefined;
+    let handledSupportFiles = false;
 
     for (const fighterName of Object.keys(pathData)) {
       const isItem = fighterName.startsWith('item/');
@@ -282,158 +293,79 @@ export class SlotChanger {
         continue;
       }
 
-      const hasAnySlotAboveC07 = finalSlots.find(
-        (slot) => parseInt(slot.replace('c', '')) > 7,
+      handledSupportFiles = true;
+
+      const numberedSlots = finalSlots.filter((slot) =>
+        SLOT_PATTERN.test(slot),
       );
+      const maxSlotNum = Math.max(
+        -1,
+        ...numberedSlots.map((slot) => parseInt(slot.replace('c', ''))),
+      );
+      const hasCustomNames = Object.keys(slotCustomNames).length > 0;
 
-      if (
-        hasAnySlotAboveC07 ||
-        (slotCustomNames && Object.keys(slotCustomNames).length > 0)
-      ) {
+      if (maxSlotNum > 7 || hasCustomNames) {
         try {
-          // 1. Get the fighter folder name
-          if (!fighterName) {
-            console.log(
-              '[changeSlots] Dossier fighter non trouvé, skip la partie Max Slots.',
+          fighterIndexes ??= await this.readFighterIndexes();
+
+          const fighterIndex = fighterIndexes.get(
+            this.getPrcxmlName(fighterName),
+          );
+
+          if (fighterIndex === undefined) {
+            throw new Error(
+              `Fighter name "${fighterName}" not found in names.data`,
             );
-            // On skip, pas d'erreur bloquante
-          } else {
-            // 2. Read names.data to get fighter index
-            const namesDataPath = path.join(PATHS.dataDir(), 'names.data');
-            const namesData =
-              await ModFileOperations.readModFile(namesDataPath);
+          }
 
-            // 3. Find the fighter by internal name and get the index from the third column
-            const lines = namesData.split(/\r?\n/);
-            let fighterIndex = -1;
+          if (maxSlotNum > 7) {
+            for (const groupName of this.getPrcxmlGroup(fighterName)) {
+              const groupIndex = fighterIndexes.get(groupName);
+              if (groupIndex === undefined) continue;
 
-            for (const line of lines) {
-              const parts = line.split(',').map((p) => p.trim());
-              if (
-                parts.length >= 3 &&
-                parts[0].toLowerCase() === fighterName.trim().toLowerCase()
-              ) {
-                fighterIndex = parseInt(parts[2]);
-                break;
-              }
-            }
-
-            if (fighterIndex === -1)
-              throw new Error(
-                `Fighter name "${fighterName}" not found in names.data`,
+              colorNums.set(
+                groupIndex,
+                Math.max(colorNums.get(groupIndex) ?? 0, maxSlotNum + 1),
               );
+            }
+          }
 
-            // 4. Edit ui_chara_db.prcxml
-            const pathParts = modPath.replace(/\\/g, '/').split('/');
-            pathParts.pop();
+          for (const slot of numberedSlots) {
+            const slotNum = parseInt(slot.replace('c', ''));
+            const customAnnouncer = slotCustomNames[slot]?.announcer || '';
 
-            const prcXmlTemplatePath = path.join(
-              PATHS.dataDir(),
-              'ui_chara_db.prcxml',
+            if (slotNum <= 7 && !customAnnouncer) continue;
+
+            const nxyIndex = hasCustomNames ? slotNum + 8 : 0;
+            const params = prcxmlParams.get(fighterIndex) || new Map();
+
+            params.set(
+              `n${String(slotNum).padStart(2, '0')}_index`,
+              `<byte hash="n${String(slotNum).padStart(2, '0')}_index">${nxyIndex}</byte>`,
             );
 
-            let prcXmlContent =
-              await ModFileOperations.readModFile(prcXmlTemplatePath);
-
-            // Build all parameters for this fighter's struct
-            const structParams: string[] = [];
-
-            // Calculate the highest slot number for color_num
-            const maxSlotNum = Math.max(
-              ...finalSlots.map((slot) => parseInt(slot.replace('c', ''))),
-            );
-            const colorNum = maxSlotNum + 1;
-
-            // Add color_num if the highest slot is > 7
-            if (maxSlotNum > 7) {
-              structParams.push(`<byte hash="color_num">${colorNum}</byte>`);
-            }
-
-            for (const slot of finalSlots) {
-              const slotNum = parseInt(slot.replace('c', ''));
-
-              let announcer = '';
-              let customAnnouncer = '';
-
-              if (
-                slotCustomNames &&
-                slotCustomNames[slot] &&
-                slotCustomNames[slot].announcer
-              ) {
-                customAnnouncer = announcer = slotCustomNames[slot].announcer;
-              } else if (defaultCustomNames.announcer) {
-                announcer = defaultCustomNames.announcer;
-              }
-
-              if (slotNum > 7 || customAnnouncer) {
-                const hasCustomNames =
-                  slotCustomNames && Object.keys(slotCustomNames).length;
-
-                const nxyIndex = !hasCustomNames ? 0 : slotNum + 8;
-
-                // Add nXY_index parameter
-                structParams.push(
-                  `<byte hash="n${String(slotNum).padStart(2, '0')}_index">${nxyIndex}</byte>`,
-                );
-
-                // Add custom announcer call if provided
-                if (customAnnouncer) {
-                  structParams.push(
-                    `<hash40 hash="characall_label_c${String(nxyIndex).padStart(2, '0')}">${announcer}</hash40>`,
-                  );
-                }
-              }
-            }
-
-            // Build a single struct with all parameters
-            if (structParams.length > 0) {
-              const structContent = `<struct index="${fighterIndex}">${structParams.join('')}</struct>`;
-              const hashLine = new RegExp(
-                `<hash40 index="${fighterIndex}">dummy<\\/hash40>`,
-                'g',
+            if (customAnnouncer) {
+              const label = `characall_label_c${String(nxyIndex).padStart(2, '0')}`;
+              params.set(
+                label,
+                `<hash40 hash="${label}">${customAnnouncer}</hash40>`,
               );
-
-              prcXmlContent = prcXmlContent.replace(hashLine, structContent);
             }
 
-            // Ensure the directory exists before writing the file
-            const outputDir = `${modPath}/ui/param/database`;
-            if (!(await ModFileOperations.fileExists(outputDir))) {
-              await ModFileOperations.createDirectory(outputDir);
-            }
-
-            // Write the modified file to the mod folder
-            await ModFileOperations.writeModFile(
-              `${modPath}/ui/param/database/ui_chara_db.prcxml`,
-              prcXmlContent,
-            );
+            prcxmlParams.set(fighterIndex, params);
           }
         } catch (error) {
           console.error('Error editing ui_chara_db.prcxml:', error);
           throw new Error(`Error editing ui_chara_db.prcxml: ${error.message}`);
         }
-      } else {
-        console.log(
-          'Deleting ui_chara_db.prcxml as no slots above c07 and no custom names provided',
-        );
 
-        await ModFileOperations.deleteModFile(
-          modPath,
-          'ui/param/database/ui_chara_db.prcxml',
-        );
-      }
-
-      // Update msg_name.xmsbt with custom names if provided (for all slots)
-      if (
-        (fighterName && hasAnySlotAboveC07) ||
-        (slotCustomNames && Object.keys(slotCustomNames).length > 0)
-      ) {
-        await SlotChanger.updateMsgName(
-          modPath,
-          fighterName,
-          finalSlots,
-          slotCustomNames,
-          defaultCustomNames,
+        msgNameEntries.push(
+          ...SlotChanger.buildMsgNameEntries(
+            fighterName,
+            numberedSlots,
+            slotCustomNames,
+            defaultCustomNames,
+          ),
         );
       }
 
@@ -456,24 +388,173 @@ export class SlotChanger {
       }
     }
 
+    if (handledSupportFiles) {
+      await this.writeUiCharaDb(modPath, colorNums, prcxmlParams);
+
+      if (msgNameEntries.length > 0) {
+        await this.writeMsgName(modPath, msgNameEntries);
+      }
+    }
+
     let hasGeneratedConfig = false;
     for (const [fighterName, assignments] of pendingConfigMappings) {
       const jsonCreator = new ConfigGenerator(modPath, fighterName);
       await jsonCreator.generateReslotConfig(
-        Array.from(assignments, ([sourceSlot, targetSlot]) => ({
+        Array.from(assignments)
+          .filter(
+            ([sourceSlot, targetSlot]) =>
+              SLOT_PATTERN.test(sourceSlot) && SLOT_PATTERN.test(targetSlot),
+          )
+          .map(([sourceSlot, targetSlot]) => ({
           sourceSlot,
           targetSlot,
           shareSlot: ConfigGenerator.getDefaultShareSlot(
             fighterName,
             sourceSlot,
           ),
-        })),
-        hasGeneratedConfig,
+          })),
+        hasGeneratedConfig || configMode === 'merge',
+        Array.from(assignments)
+          .filter(([sourceSlot, targetSlot]) => sourceSlot !== targetSlot)
+          .map(([sourceSlot]) => sourceSlot),
       );
       hasGeneratedConfig = true;
     }
 
     return changedPaths.length;
+  }
+
+  private static readonly PRCXML_GROUPS = [
+    ['ptrainer', 'pzenigame', 'pfushigisou', 'plizardon'],
+    ['element', 'flame_first', 'light_first', 'flame_only', 'light_only'],
+    ['koopa', 'koopag'],
+  ];
+
+  private static readonly PRCXML_ALIASES: Record<string, string> = {
+    popo: 'ice_climber',
+    nana: 'ice_climber',
+    eflame: 'flame_first',
+    elight: 'light_first',
+  };
+
+  private static getPrcxmlName(fighterName: string): string {
+    return this.PRCXML_ALIASES[fighterName] || fighterName;
+  }
+
+  private static getPrcxmlGroup(fighterName: string): string[] {
+    const name = this.getPrcxmlName(fighterName);
+    return this.PRCXML_GROUPS.find((group) => group.includes(name)) || [name];
+  }
+
+  private static async readFighterIndexes(): Promise<Map<string, number>> {
+    const namesData = await ModFileOperations.readModFile(
+      path.join(PATHS.dataDir(), 'names.data'),
+    );
+    const indexes = new Map<string, number>();
+
+    for (const line of namesData.split(/\r?\n/)) {
+      const parts = line.split(',').map((part) => part.trim());
+      if (parts.length >= 3) {
+        indexes.set(parts[0].toLowerCase(), parseInt(parts[2]));
+      }
+    }
+
+    return indexes;
+  }
+
+  private static async writeUiCharaDb(
+    modPath: string,
+    colorNums: Map<number, number>,
+    prcxmlParams: Map<number, Map<string, string>>,
+  ) {
+    const indexes = new Set([...colorNums.keys(), ...prcxmlParams.keys()]);
+
+    if (indexes.size === 0) {
+      console.log(
+        'Deleting ui_chara_db.prcxml as no slots above c07 and no custom names provided',
+      );
+      await ModFileOperations.deleteModFile(
+        modPath,
+        'ui/param/database/ui_chara_db.prcxml',
+      );
+      return;
+    }
+
+    let prcXmlContent = await ModFileOperations.readModFile(
+      path.join(PATHS.dataDir(), 'ui_chara_db.prcxml'),
+    );
+
+    for (const index of indexes) {
+      const colorNum = colorNums.get(index);
+      const structParams = [
+        ...(colorNum ? [`<byte hash="color_num">${colorNum}</byte>`] : []),
+        ...(prcxmlParams.get(index)?.values() || []),
+      ];
+
+      prcXmlContent = prcXmlContent.replace(
+        new RegExp(`<hash40 index="${index}">dummy<\\/hash40>`, 'g'),
+        `<struct index="${index}">${structParams.join('')}</struct>`,
+      );
+    }
+
+    const outputDir = `${modPath}/ui/param/database`;
+    if (!(await ModFileOperations.fileExists(outputDir))) {
+      await ModFileOperations.createDirectory(outputDir);
+    }
+
+    await ModFileOperations.writeModFile(
+      `${outputDir}/ui_chara_db.prcxml`,
+      prcXmlContent,
+    );
+  }
+
+  private static async writeMsgName(modPath: string, xmlEntries: string[]) {
+    const xmlContent = [
+      '<?xml version="1.0" encoding="utf-8"?>',
+      '<xmsbt>',
+      ...xmlEntries,
+      '</xmsbt>',
+    ].join('\n');
+
+    const outputDir = `${modPath}/ui/message`;
+    if (!(await ModFileOperations.fileExists(outputDir))) {
+      await ModFileOperations.createDirectory(outputDir);
+    }
+
+    await ModFileOperations.writeModFile(
+      `${outputDir}/msg_name.xmsbt`,
+      xmlContent,
+    );
+    console.log('[writeMsgName] Successfully wrote msg_name.xmsbt');
+  }
+
+  static getBackupPath(modPath: string): string {
+    return path.join(PATHS.slotBackupsDir(), path.basename(modPath));
+  }
+
+  static async backupMod(modPath: string) {
+    const backupPath = this.getBackupPath(modPath);
+    await fse.remove(backupPath);
+    await fse.copy(modPath, backupPath);
+  }
+
+  static async hasBackup(modPath: string): Promise<boolean> {
+    return fse.pathExists(this.getBackupPath(modPath));
+  }
+
+  static async restoreBackup(modPath: string) {
+    const backupPath = this.getBackupPath(modPath);
+
+    if (!(await fse.pathExists(backupPath))) {
+      throw new Error('No slot change backup found for this mod');
+    }
+
+    const restorePath = `${modPath}.fp-restore`;
+    await fse.remove(restorePath);
+    await fse.copy(backupPath, restorePath);
+    await fse.remove(modPath);
+    await fse.move(restorePath, modPath);
+    await fse.remove(backupPath);
   }
 
   static async removeSlots(
@@ -501,117 +582,85 @@ export class SlotChanger {
     return deletedPaths;
   }
 
-  static async updateMsgName(
-    modPath: string,
+  static buildMsgNameEntries(
     fighterName: string,
     slots: string[],
     slotCustomNames: Record<string, CustomData>,
     defaultCustomNames: CustomData,
-  ) {
-    try {
-      console.log('[updateMsgName] called');
+  ): string[] {
+    // Prepare XML content
+    const xmlEntries: string[] = [];
 
-      // Prepare XML content
-      const xmlEntries: string[] = [];
+    for (const slot of slots) {
+      const slotNum = parseInt(slot.replace('c', ''));
 
-      for (const slot of slots) {
-        const slotNum = parseInt(slot.replace('c', ''));
-
-        if (
-          (slotNum <= 7 && !slotCustomNames[slot]) ||
-          (!slotCustomNames[slot]?.cspName &&
-            !slotCustomNames[slot]?.vsName &&
-            !slotCustomNames[slot]?.boxingRing)
-        ) {
-          continue;
-        }
-
-        const names = {
-          cspName:
-            (slotCustomNames &&
-              slotCustomNames[slot] &&
-              slotCustomNames[slot].cspName) ||
-            (defaultCustomNames &&
-              defaultCustomNames[slot] &&
-              defaultCustomNames[slot].cspName),
-          vsName:
-            (slotCustomNames &&
-              slotCustomNames[slot] &&
-              slotCustomNames[slot].vsName) ||
-            (defaultCustomNames &&
-              defaultCustomNames[slot] &&
-              defaultCustomNames[slot].vsName),
-          boxingRing:
-            (slotCustomNames &&
-              slotCustomNames[slot] &&
-              slotCustomNames[slot].boxingRing) ||
-            (defaultCustomNames &&
-              defaultCustomNames[slot] &&
-              defaultCustomNames[slot].boxingRing),
-        };
-
-        // Calculate the label index to match ui_chara_db.prcxml nXY_index value
-        // This should always be slot number + 8 (same as nxyIndex in ui_chara_db.prcxml)
-        const labelIndex = String(slotNum + 8).padStart(2, '0');
-
-        const cspName = names.cspName || '';
-        const vsName = names.vsName || (cspName ? cspName.toUpperCase() : '');
-        const boxingRingName = names.boxingRing || '';
-
-        xmlEntries.push(
-          `\t<entry label="nam_chr0_${labelIndex}_${fighterName}">`,
-        );
-        xmlEntries.push(`\t\t<text>${this.escapeXml(cspName)}</text>`);
-        xmlEntries.push(`\t</entry>`);
-
-        xmlEntries.push(
-          `\t<entry label="nam_chr1_${labelIndex}_${fighterName}">`,
-        );
-        xmlEntries.push(`\t\t<text>${this.escapeXml(cspName)}</text>`);
-        xmlEntries.push(`\t</entry>`);
-
-        xmlEntries.push(
-          `\t<entry label="nam_chr2_${labelIndex}_${fighterName}">`,
-        );
-        xmlEntries.push(`\t\t<text>${this.escapeXml(vsName)}</text>`);
-        xmlEntries.push(`\t</entry>`);
-
-        xmlEntries.push(
-          `\t<entry label="nam_stage_name_${labelIndex}_${fighterName}">`,
-        );
-        xmlEntries.push(`\t\t<text>${this.escapeXml(boxingRingName)}</text>`);
-        xmlEntries.push(`\t</entry>`);
+      if (
+        (slotNum <= 7 && !slotCustomNames[slot]) ||
+        (!slotCustomNames[slot]?.cspName &&
+          !slotCustomNames[slot]?.vsName &&
+          !slotCustomNames[slot]?.boxingRing)
+      ) {
+        continue;
       }
 
-      if (xmlEntries.length === 0) {
-        console.log('[updateMsgName] No custom names to write');
-        return;
-      }
+      const names = {
+        cspName:
+          (slotCustomNames &&
+            slotCustomNames[slot] &&
+            slotCustomNames[slot].cspName) ||
+          (defaultCustomNames &&
+            defaultCustomNames[slot] &&
+            defaultCustomNames[slot].cspName),
+        vsName:
+          (slotCustomNames &&
+            slotCustomNames[slot] &&
+            slotCustomNames[slot].vsName) ||
+          (defaultCustomNames &&
+            defaultCustomNames[slot] &&
+            defaultCustomNames[slot].vsName),
+        boxingRing:
+          (slotCustomNames &&
+            slotCustomNames[slot] &&
+            slotCustomNames[slot].boxingRing) ||
+          (defaultCustomNames &&
+            defaultCustomNames[slot] &&
+            defaultCustomNames[slot].boxingRing),
+      };
 
-      // Build complete XML file
-      const xmlContent = [
-        '<?xml version="1.0" encoding="utf-8"?>',
-        '<xmsbt>',
-        ...xmlEntries,
-        '</xmsbt>',
-      ].join('\n');
+      // Calculate the label index to match ui_chara_db.prcxml nXY_index value
+      // This should always be slot number + 8 (same as nxyIndex in ui_chara_db.prcxml)
+      const labelIndex = String(slotNum + 8).padStart(2, '0');
 
-      // Ensure the directory exists
-      const outputDir = `${modPath}/ui/message`;
-      if (!(await ModFileOperations.fileExists(outputDir))) {
-        await ModFileOperations.createDirectory(outputDir);
-      }
+      const cspName = names.cspName || '';
+      const vsName = names.vsName || (cspName ? cspName.toUpperCase() : '');
+      const boxingRingName = names.boxingRing || '';
 
-      // Write the file
-      await ModFileOperations.writeModFile(
-        `${modPath}/ui/message/msg_name.xmsbt`,
-        xmlContent,
+      xmlEntries.push(
+        `\t<entry label="nam_chr0_${labelIndex}_${fighterName}">`,
       );
-      console.log('[updateMsgName] Successfully wrote msg_name.xmsbt');
-    } catch (error) {
-      console.error('[updateMsgName] Error:', error);
-      throw error;
+      xmlEntries.push(`\t\t<text>${this.escapeXml(cspName)}</text>`);
+      xmlEntries.push(`\t</entry>`);
+
+      xmlEntries.push(
+        `\t<entry label="nam_chr1_${labelIndex}_${fighterName}">`,
+      );
+      xmlEntries.push(`\t\t<text>${this.escapeXml(cspName)}</text>`);
+      xmlEntries.push(`\t</entry>`);
+
+      xmlEntries.push(
+        `\t<entry label="nam_chr2_${labelIndex}_${fighterName}">`,
+      );
+      xmlEntries.push(`\t\t<text>${this.escapeXml(vsName)}</text>`);
+      xmlEntries.push(`\t</entry>`);
+
+      xmlEntries.push(
+        `\t<entry label="nam_stage_name_${labelIndex}_${fighterName}">`,
+      );
+      xmlEntries.push(`\t\t<text>${this.escapeXml(boxingRingName)}</text>`);
+      xmlEntries.push(`\t</entry>`);
     }
+
+    return xmlEntries;
   }
 
   static escapeXml(str) {

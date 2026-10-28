@@ -415,9 +415,11 @@ ${plugin.status === 'active'
   async addPlugin() {
     if (!this.pluginsPath) {
       console.warn('No plugins path set');
-      if (typeof alert !== 'undefined') {
-        alert('Please set the plugins folder path in Settings first');
-      }
+      window.modalManager?.showAlert(
+        'warning',
+        'modals.pluginsPathRequired.title',
+        'modals.pluginsPathRequired.message',
+      );
       return;
     }
 

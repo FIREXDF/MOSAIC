@@ -5,6 +5,7 @@ const identifyUrl =
   'https://ultimatemovesetcompatibility.onrender.com/api/plugins/identify/batch';
 const requestTimeoutMs = 12_000;
 const hashesPerBatch = 60;
+const lookupCache = new Map<string, string | null>();
 
 export type PluginIdentification = {
   sha256: string | null;
@@ -106,9 +107,16 @@ export async function identifyPluginVersions(filePaths: string[]) {
     }),
   );
 
-  const allCandidates = [...new Set(hashes.flatMap((item) => item.candidates))];
   const versions = new Map<string, string>();
   const failedHashes = new Set<string>();
+  const allCandidates = [
+    ...new Set(hashes.flatMap((item) => item.candidates)),
+  ].filter((hash) => {
+    if (!lookupCache.has(hash)) return true;
+    const version = lookupCache.get(hash);
+    if (version) versions.set(hash, version);
+    return false;
+  });
   const batches: string[][] = [];
   for (let index = 0; index < allCandidates.length; index += hashesPerBatch) {
     batches.push(allCandidates.slice(index, index + hashesPerBatch));
@@ -128,6 +136,9 @@ export async function identifyPluginVersions(filePaths: string[]) {
             if (typeof version === 'string' && version.trim()) {
               versions.set(entry.hash.toLowerCase(), version.trim());
             }
+          }
+          for (const hash of batch) {
+            lookupCache.set(hash, versions.get(hash) || null);
           }
         } catch (error) {
           console.warn(

@@ -3,11 +3,6 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-  padding: 10px 14px;
-  background: var(--bg-transparent-05);
-  border: 1px solid var(--bg-transparent-05);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
 }
 
 .logs-filter-buttons {
@@ -138,7 +133,6 @@
   padding: 7px 10px;
   margin-bottom: 3px;
   border-radius: 6px;
-  border-left: 2px solid transparent;
   transition: all 0.15s ease;
   animation: logFadeIn 0.2s ease-out;
 }
@@ -157,7 +151,6 @@
 
 .log-entry:hover {
   background: var(--bg-transparent-05);
-  border-left-width: 3px;
 }
 
 .log-time {
@@ -197,16 +190,8 @@
   white-space: pre-wrap;
 }
 
-.log-log {
-  border-left-color: var(--success-color);
-}
-
 .log-log .log-icon {
   color: var(--success-color);
-}
-
-.log-warn {
-  border-left-color: var(--warning-color);
 }
 
 .log-warn .log-icon {
@@ -214,7 +199,6 @@
 }
 
 .log-error {
-  border-left-color: var(--danger-color);
   background: rgba(var(--danger-rgb), 0.05);
 }
 

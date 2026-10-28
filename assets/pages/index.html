@@ -33,7 +33,7 @@
     <script>
       var exports = {};
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js"></script>
+    <script src="../../node_modules/lottie-web/build/player/lottie.min.js"></script>
   </head>
 
   <body>
@@ -187,13 +187,6 @@
             </div>
           </div>
 
-          <!-- Tab Content: Stages -->
-          <div class="tab-content" id="tab-stages">
-            <div class="content-box">
-              <!-- Content for Stages tab -->
-            </div>
-          </div>
-
           <!-- Tab Content: Downloads -->
           <div class="tab-content" id="tab-downloads">
             <div class="content-box">
@@ -276,6 +269,16 @@
         <i class="bi bi-grid-3x3-gap"></i>
         <span data-i18n="contextMenu.changeSlot">Change Slot</span>
       </div>
+      <div
+        class="context-menu-item"
+        data-action="restore-slot-backup"
+        style="display: none"
+      >
+        <i class="bi bi-arrow-counterclockwise"></i>
+        <span data-i18n="contextMenu.restoreSlotBackup"
+          >Restore backup from before the slot change</span
+        >
+      </div>
       <div class="context-menu-separator"></div>
       <div class="context-menu-item" data-action="toggle">
         <i class="bi bi-toggle-on" id="toggle-icon"></i>
@@ -289,6 +292,16 @@
       <div class="context-menu-item" data-action="browse-files">
         <i class="bi bi-folder2"></i>
         <span data-i18n="contextMenu.browseFiles">Browse Files</span>
+      </div>
+      <div
+        class="context-menu-item"
+        data-action="watch-updates"
+        style="display: none"
+      >
+        <i class="bi bi-bell"></i>
+        <span data-i18n="tools.modInfo.watchUpdates"
+          >Notify me of updates on GameBanana</span
+        >
       </div>
       <div class="context-menu-separator"></div>
       <div
@@ -500,6 +513,15 @@
         </p>
         <div id="slot-list-container" class="slot-list">
           <!-- Slot items will be added dynamically -->
+        </div>
+        <div class="change-slot-options">
+          <label class="change-slot-option">
+            <input type="checkbox" id="change-slot-backup" checked />
+            <span data-i18n="modals.changeSlot.backupBeforeApply"
+              >Back up the mod before applying (restore it from the mod's
+              right-click menu)</span
+            >
+          </label>
         </div>
       </div>
       <div class="modal-footer">
@@ -1728,8 +1750,8 @@
       </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Flip.min.js"></script>
+    <script src="../../node_modules/gsap/dist/gsap.min.js"></script>
+    <script src="../../node_modules/gsap/dist/Flip.min.js"></script>
     <script src="../../out/renderer/js/ui/loading-video.js"></script>
     <script src="../../out/renderer/js/i18n/i18n-client.js"></script>
     <script src="../../out/renderer/js/i18n/language-selector.js"></script>
@@ -1760,7 +1782,6 @@
     <!-- Protocol Listener -->
     <script src="../../out/renderer/js/protocol/protocol-listener.js"></script>
     <!-- End Characters Manager -->
-    <script src="../../out/renderer/js/stages/stages-manager.js"></script>
     <script src="../../out/renderer/js/marketplace/social-manager-base.js"></script>
     <script src="../../out/renderer/js/marketplace/social-gamebanana-manager.js"></script>
     <script src="../../out/renderer/js/marketplace/marketplace-discover.js"></script>

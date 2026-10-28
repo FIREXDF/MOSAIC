@@ -349,6 +349,50 @@ class ModOperations {
     });
   }
 
+  async restoreSlotBackup(mod: Mod) {
+    if (!mod.path || !window.modalManager) return;
+
+    const t = (key: string, fallback: string) => {
+      const value = window.i18n?.t?.(key);
+      return value && value !== key ? value : fallback;
+    };
+
+    window.modalManager.showCustomModal({
+      id: 'restore-slot-backup-modal',
+      title: t('modals.restoreSlotBackup.title', 'Restore backup'),
+      body: t(
+        'modals.restoreSlotBackup.message',
+        'Restore this mod as it was before the last slot change? Changes made since then will be lost.',
+      ),
+      size: 'normal',
+      buttons: [
+        { text: t('common.cancel', 'Cancel'), type: 'secondary' },
+        {
+          text: t('modals.restoreSlotBackup.confirm', 'Restore'),
+          type: 'primary',
+          onClick: () => {
+            void (async () => {
+              const result = await window.electronAPI.restoreSlotBackup(
+                mod.path,
+              );
+
+              if (result.success) {
+                window.toastManager?.success('toasts.slotBackupRestored');
+                await this.modManager.fetchMods([mod.path]);
+              } else {
+                window.toastManager?.error(
+                  'toasts.failedToRestoreSlotBackup',
+                  3000,
+                  { error: result.error },
+                );
+              }
+            })();
+          },
+        },
+      ],
+    });
+  }
+
   async startChangeSlotsFlow(mod: Mod) {
     if (!mod.path) {
       if (window.toastManager) {
@@ -373,13 +417,14 @@ class ModOperations {
           window.modalManager.openChangeSlotModal(
             mod,
             scanResult.data,
-            async (slotAssignments, deletedSlots) => {
+            async (slotAssignments, deletedSlots, options) => {
               if (window.electronAPI && window.electronAPI.changeSlots) {
                 const changeSlotsResult = await window.electronAPI.changeSlots(
                   mod.path,
                   scanResult.data.pathData,
                   slotAssignments,
                   deletedSlots,
+                  options,
                 );
 
                 if (changeSlotsResult.success) {

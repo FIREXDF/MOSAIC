@@ -36,7 +36,6 @@ type StatusTab =
   | 'plugins'
   | 'settings'
   | 'characters'
-  | 'stages'
   | 'fightplanner';
 
 interface StatusSnapshot {
@@ -56,6 +55,8 @@ export class StatusBarManager {
   lastExtendedBarData: string | null = null;
   pendingDynamicIsland: boolean = false;
   private lastHandledSuccessId: string | null = null;
+  private pendingConflictUpdate: ConflictUpdate | null = null;
+  private islandSwapUpdate: DownloadUpdate | null = null;
   private statusCycleId: number = 0;
   private renderedStatusSignature: string | null = null;
   private temporaryStatus: StatusSnapshot | null = null;
@@ -1135,7 +1136,6 @@ export class StatusBarManager {
       'plugins',
       'settings',
       'characters',
-      'stages',
       'fightplanner',
     ];
 
@@ -1358,10 +1358,6 @@ export class StatusBarManager {
     return { content: this.t('statusBar.settings') };
   }
 
-  private getStagesSnapshot(): StatusSnapshot {
-    return { content: this.t('statusBar.stages') };
-  }
-
   private getDownloadsIdleSnapshot(): StatusSnapshot {
     if (!window.downloadManager || !(window.downloadManager as any).activeDownloads) {
       return { content: this.t('statusBar.downloadsReady') };
@@ -1395,8 +1391,6 @@ export class StatusBarManager {
         return this.getSettingsSnapshot();
       case 'characters':
         return this.getCharactersSnapshot();
-      case 'stages':
-        return this.getStagesSnapshot();
       case 'fightplanner':
       case 'marketplace':
       default:
@@ -1463,7 +1457,6 @@ export class StatusBarManager {
         break;
       case 'downloads':
       case 'settings':
-      case 'stages':
       case 'fightplanner':
       case 'marketplace':
       default:
@@ -1999,7 +1992,7 @@ export class StatusBarManager {
 
   _getDownloadDisplayName(dl: DownloadItem): string {
     if (dl.modName) return dl.modName;
-    if (dl.statusText && !dl.statusText.toLowerCase().includes('downloading')) return dl.statusText;
+    if (dl.statusText && !/downloading|^extracting mod/i.test(dl.statusText)) return dl.statusText;
     const name = dl.fileName || '';
     if (/^\d+$/.test(name) || name === 'mod.zip') return 'Downloading...';
     return name;
@@ -2023,6 +2016,7 @@ export class StatusBarManager {
     if (update.type === 'none' || !enabled || !content) {
       if (update.type === 'none') {
         this.userDismissedExtendedBar = true;
+        this.islandSwapUpdate = null;
       }
 
       if (bottomBar.classList.contains('expanded')) {
@@ -2041,6 +2035,8 @@ export class StatusBarManager {
             (content as HTMLElement).style.display = 'none';
             (content as HTMLElement).innerHTML = '';
           }
+
+          setTimeout(() => this.showPendingConflict(), 0);
         };
 
         if (content) {
@@ -2052,15 +2048,42 @@ export class StatusBarManager {
         } else {
           finalizeCollapse();
         }
-      } else if (content) {
-        delete (content as HTMLElement).dataset.extendedSignature;
-        (content as HTMLElement).style.display = 'none';
-        (content as HTMLElement).innerHTML = '';
+      } else {
+        if (content) {
+          delete (content as HTMLElement).dataset.extendedSignature;
+          (content as HTMLElement).style.display = 'none';
+          (content as HTMLElement).innerHTML = '';
+        }
+        this.showPendingConflict();
       }
       return;
     }
 
     if (update.type === 'download') {
+      if (wasExpanded && previousMode === 'conflict') {
+        const isSwapping = this.islandSwapUpdate !== null;
+        this.islandSwapUpdate = update;
+        if (isSwapping) return;
+
+        this.triggerIslandCollapse(bottomBar);
+        this.animateExtendedBarExit(bottomBar, content as HTMLElement, () => {
+          bottomBar.classList.remove('expanded', 'conflict-mode');
+          bottomBar.dataset.islandMode = 'idle';
+          delete (content as HTMLElement).dataset.extendedSignature;
+          (content as HTMLElement).style.display = 'none';
+          (content as HTMLElement).innerHTML = '';
+
+          setTimeout(() => {
+            const nextUpdate = this.islandSwapUpdate;
+            this.islandSwapUpdate = null;
+            if (nextUpdate && this.hasActiveDownloads) {
+              this.updateExtendedBar(nextUpdate);
+            }
+          }, 0);
+        });
+        return;
+      }
+
       delete (content as HTMLElement).dataset.extendedSignature;
 
       if (!bottomBar.classList.contains('download-mode')) {
@@ -2114,6 +2137,9 @@ export class StatusBarManager {
           speed = '';
         }
 
+        const percentText =
+          isExtractingOrVerifying && progress <= 0 ? phaseText : `${progress}%`;
+
         const isActiveDownloadCard = content.querySelector('.ext-download-card .ext-progress-container');
         const isMultiCard = content.querySelector('.ext-multi-download-card');
         const canPatchExistingCard =
@@ -2156,7 +2182,7 @@ export class StatusBarManager {
               if (percentageEl) {
                 this.animateElementTextChange(
                   percentageEl as HTMLElement,
-                  phaseText,
+                  percentText,
                   'ext-text-swap',
                   280,
                 );
@@ -2221,7 +2247,7 @@ export class StatusBarManager {
                                   <div class="ext-progress-fill" style="width: ${progress}%"></div>
                               </div>
                           </div>
-                          <span class="ext-percentage">${isExtractingOrVerifying ? phaseText : progress + '%'}</span>
+                          <span class="ext-percentage">${percentText}</span>
                       </div>
                       
                       <div class="ext-card-meta ext-download-meta">
@@ -2390,19 +2416,19 @@ export class StatusBarManager {
                 <button class="ext-close-btn" onclick="window.statusBarManager.updateExtendedBar('none')" title="Close">
                     <i class="bi bi-chevron-down"></i>
                 </button>
-                <div class="ext-card-icon-container" style="background: rgba(40, 167, 69, 0.1); border-color: #28a745;">
+                <div class="ext-card-icon-container icon-success">
                     <div class="ext-card-icon">
-                        <i class="bi bi-check-circle-fill" style="color: #28a745;"></i>
+                        <i class="bi bi-check-circle-fill"></i>
                     </div>
                 </div>
                 <div class="ext-card-details">
                     <div class="ext-card-header">
-                        <span class="ext-status-badge" style="background: #28a745; border-color: #28a745; color: #fff;">Completed</span>
+                        <span class="ext-status-badge badge-success">Completed</span>
                         <span class="ext-filename" title="${update.fileName}">${update.fileName || 'Unknown file'}</span>
                     </div>
-                    
+
                     <div class="ext-card-meta">
-                        <span style="color: #28a745;">Download finished successfully</span>
+                        <span class="ext-success-message">Download finished successfully</span>
                     </div>
                 </div>
             </div>
@@ -2412,6 +2438,14 @@ export class StatusBarManager {
         this.animateExtendedBarEntrance(bottomBar, content as HTMLElement);
       }
     } else if (update.type === 'conflict') {
+      if (
+        this.hasActiveDownloads ||
+        (wasExpanded && previousMode === 'success')
+      ) {
+        this.pendingConflictUpdate = update;
+        return;
+      }
+
       const contentEl = content as HTMLElement;
       const conflictSignature = `conflict:${update.conflictCount}:${update.modsWithConflictsCount}`;
 
@@ -2464,6 +2498,14 @@ export class StatusBarManager {
         this.animateExtendedBarEntrance(bottomBar, contentEl);
       }
     }
+  }
+
+  private showPendingConflict() {
+    const pendingConflict = this.pendingConflictUpdate;
+    if (!pendingConflict || this.hasActiveDownloads) return;
+
+    this.pendingConflictUpdate = null;
+    this.updateExtendedBar(pendingConflict);
   }
 
   getSwitchTransferStatusContent(transfer: {
@@ -2620,12 +2662,6 @@ export class StatusBarManager {
         }
 
         // Also update standard status bar as fallback or complement
-        const statusRight =
-          document.querySelector<HTMLElement>('.bottom-text-right');
-        if (statusRight) {
-          statusRight.textContent = '';
-        }
-
         if (this.currentTab !== 'downloads') {
           const dlName =
             active.modName ||
@@ -3249,13 +3285,6 @@ export class StatusBarManager {
     updateStatus();
     this.updateInterval = setInterval(updateStatus, 10000);
   }
-  updateStagesStatus(statusText) {
-    this.applySnapshot(this.getStagesSnapshot());
-    return;
-
-    this.setStatusText(this.t('statusBar.stages'));
-  }
-
   updateCheckingConflictsStatus() {
     const statusRight =
       document.querySelector<HTMLElement>('.bottom-text-right');
@@ -3363,6 +3392,8 @@ export class StatusBarManager {
       statusRight.appendChild(conflictText);
       return;
     }
+
+    this.pendingConflictUpdate = null;
 
     if (this.lastExtendedBarData?.startsWith('conflict:')) {
       this.lastExtendedBarData = null;

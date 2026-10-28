@@ -54,6 +54,9 @@ class ModContextMenuHandler {
             case 'change-slot':
               await this.modManager.operations.startChangeSlotsFlow(mod);
               break;
+            case 'restore-slot-backup':
+              await this.modManager.operations.restoreSlotBackup(mod);
+              break;
             case 'toggle':
               if (useSelection) {
                 await this.modManager.operations.toggleModsStatus(
@@ -69,6 +72,13 @@ class ModContextMenuHandler {
               break;
             case 'browse-files':
               await this.openFileBrowser(mod);
+              break;
+            case 'watch-updates':
+              await window.modInfoManager?.setUpdateWatch(
+                this.watchModInfo,
+                mod.path,
+                item.dataset.watching !== 'true',
+              );
               break;
             case 'uninstall':
               if (useSelection) {
@@ -468,7 +478,9 @@ class ModContextMenuHandler {
     }
   }
 
-  showContextMenu(
+  private watchModInfo: any = null;
+
+  async showContextMenu(
     e,
     mod,
     options: { source?: 'characters'; useSelection?: boolean } = {},
@@ -520,6 +532,35 @@ class ModContextMenuHandler {
     }
 
     contextMenu.dataset.modId = mod.id;
+
+    const watchItem = contextMenu.querySelector<HTMLElement>(
+      '[data-action="watch-updates"]',
+    );
+    if (watchItem) {
+      this.watchModInfo =
+        !useSelection && mod.path
+          ? await window.electronAPI?.getModInfo?.(mod.path).catch(() => null)
+          : null;
+      const watchUrl = window.modInfoManager?.getWatchUrl(this.watchModInfo);
+      const watching = Boolean(
+        watchUrl && (await window.modInfoManager.getUpdateWatch())[watchUrl],
+      );
+      watchItem.style.display = watchUrl ? '' : 'none';
+      watchItem.dataset.watching = String(watching);
+      watchItem.querySelector('i')!.className = watching
+        ? 'bi bi-bell-fill'
+        : 'bi bi-bell';
+    }
+    const restoreItem = contextMenu.querySelector<HTMLElement>(
+      '[data-action="restore-slot-backup"]',
+    );
+    if (restoreItem) {
+      const backup =
+        !useSelection && mod.path
+          ? await window.electronAPI?.hasSlotBackup?.(mod.path).catch(() => null)
+          : null;
+      restoreItem.style.display = backup?.success && backup.exists ? '' : 'none';
+    }
     contextMenu.dataset.useSelection = useSelection ? 'true' : 'false';
 
     if (uninstallText) {

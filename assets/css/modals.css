@@ -634,8 +634,10 @@
 }
 
 .slot-custom-select .custom-select-dropdown {
+  position: fixed;
   min-width: 210px;
   max-height: 232px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .slot-custom-select.open-up .custom-select-dropdown {

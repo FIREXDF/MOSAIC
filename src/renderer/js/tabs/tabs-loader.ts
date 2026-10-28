@@ -2,7 +2,6 @@ const tabConfigs = {
   tools: 'tabs/tools.html',
   plugins: 'tabs/plugins.html',
   characters: 'tabs/characters.html',
-  stages: 'tabs/stages.html',
   downloads: 'tabs/downloads.html',
   gamebanana: 'tabs/gamebanana.html',
   settings: 'tabs/settings.html',
@@ -215,7 +214,7 @@ function initializeTabFeatures(tabName) {
               window.toastManager.info('toasts.installingMod');
             }
 
-            const installResult = await window.electronAPI.installModFromPath(
+            const installResult = await window.downloadManager.installLocalMod(
               result.filePath,
               modsPath,
             );
@@ -578,16 +577,6 @@ function initializeTabFeatures(tabName) {
   if (tabName === 'gamebanana') {
     void window.marketplaceDiscover?.initialize();
     window.i18n?.updateDOM();
-  }
-
-  if (tabName === 'stages') {
-    if (window.stagesManager) {
-      void window.stagesManager.initialize();
-    }
-
-    if (window.i18n) {
-      window.i18n.updateDOM();
-    }
   }
 
   if (tabName === 'settings' && window.settingsManager) {
