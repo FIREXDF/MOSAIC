@@ -5395,8 +5395,12 @@ class SettingsManager {
       return;
     }
 
-    const confirmed = confirm(
+    const confirmed = await this.confirmWithModal(
+      'settings-restore-config-backup-modal',
+      this.translate('settings.restoreConfigBackup'),
       this.translate('settings.restoreConfigBackupConfirmMessage'),
+      this.translate('modals.restoreSlotBackup.confirm'),
+      'primary',
     );
     if (!confirmed) {
       return;
@@ -5431,7 +5435,46 @@ class SettingsManager {
     }
   }
 
-  showRestartRequiredOverlay() {
+  confirmWithModal(
+    id: string,
+    title: string,
+    message: string,
+    confirmText: string,
+    confirmType: 'primary' | 'danger',
+  ): Promise<boolean> {
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (choice: boolean) => {
+        if (settled) return;
+        settled = true;
+        resolve(choice);
+      };
+
+      window.modalManager.showCustomModal({
+        id,
+        title,
+        body: `<p>${this.escapeHtml(message)}</p>`,
+        clickOverlayToClose: false,
+        buttons: [
+          {
+            text: this.translate('common.cancel'),
+            type: 'cancel',
+            onClick: () => finish(false),
+          },
+          {
+            text: confirmText,
+            type: confirmType,
+            onClick: () => finish(true),
+          },
+        ],
+        onClose: () => finish(false),
+      });
+    });
+  }
+
+  showRestartRequiredOverlay(
+    messageKey = 'settings.restartRequiredAfterRestore',
+  ) {
     document.body.classList.add('app-restart-required');
 
     let overlay = document.querySelector<HTMLElement>(
@@ -5447,7 +5490,7 @@ class SettingsManager {
         <div class="config-restore-restart-panel">
           <i class="bi bi-arrow-repeat"></i>
           <h2>${this.escapeHtml(this.translate('settings.restartRequiredTitle'))}</h2>
-          <p>${this.escapeHtml(this.translate('settings.restartRequiredAfterRestore'))}</p>
+          <p>${this.escapeHtml(this.translate(messageKey))}</p>
           <button type="button" id="config-restore-restart-btn" class="settings-btn-action">
             <i class="bi bi-power"></i>
             <span>${this.escapeHtml(this.translate('settings.restartFightPlanner'))}</span>
@@ -5501,29 +5544,24 @@ class SettingsManager {
     }
   }
 
-  showResetStoreConfirmModal() {
-    const t = (key: string) => {
-      return window.i18n && window.i18n.t ? window.i18n.t(key) : key;
-    };
+  async showResetStoreConfirmModal() {
+    const confirmed = await this.confirmWithModal(
+      'settings-reset-store-modal',
+      this.translate('settings.resetStoreTitle'),
+      this.translate('settings.resetStoreConfirmMessage'),
+      this.translate('settings.reset'),
+      'danger',
+    );
+    if (!confirmed) {
+      return;
+    }
 
-    const confirmed = confirm(t('settings.resetStoreConfirmMessage'));
-
-    if (confirmed) {
-      window.electronAPI.store
-        .clear()
-        .then(() => {
-          this.showToast(
-            this.translate('toasts.electronStoreReset'),
-            'success',
-          );
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        })
-        .catch((error: Error) => {
-          console.error('Failed to reset electron store:', error);
-          this.showToast(this.translate('toasts.failedToResetStore'), 'error');
-        });
+    try {
+      await window.electronAPI.store.clear();
+      this.showRestartRequiredOverlay('settings.restartRequiredAfterReset');
+    } catch (error) {
+      console.error('Failed to reset electron store:', error);
+      this.showToast(this.translate('toasts.failedToResetStore'), 'error');
     }
   }
 }

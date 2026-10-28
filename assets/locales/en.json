@@ -693,6 +693,7 @@
     "restoreConfigBackupConfirmMessage": "Restore this backup? Your current MOSAIC settings, stage layout, Character CSS layout, presets, and referenced custom CSS/JS files will be replaced. MOSAIC must restart afterward.",
     "restartRequiredTitle": "Restart required",
     "restartRequiredAfterRestore": "Your configuration was restored. MOSAIC is locked until restart so the restored settings, stages, and CSS data load cleanly.",
+    "restartRequiredAfterReset": "Application data was reset. MOSAIC is locked until restart so it starts again from a clean state.",
     "restartFightPlanner": "Restart MOSAIC",
     "emulatorPath": "Emulator Path",
     "emulatorPathPlaceholder": "Select emulator executable...",
@@ -987,6 +988,10 @@
     "seeConfigJsonDesc": "Open the configuration file in your default editor"
   },
   "modals": {
+    "pluginsPathRequired": {
+      "title": "Plugins folder not set",
+      "message": "Set the plugins folder path in Settings before adding a plugin."
+    },
     "nroLimit": {
       "title": "NRO limit exceeded",
       "message": "{{count}} active .nro files detected. The limit is {{limit}} in emulator and real hardware modes. Disable or remove {{overflow}} .nro file(s).",

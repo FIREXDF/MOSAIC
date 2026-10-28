@@ -589,6 +589,7 @@
     "restoreConfigBackupConfirmMessage": "Restaurer cette sauvegarde ? Les paramètres actuels, les stages, la config Character CSS, les presets et les fichiers CSS/JS custom référencés seront remplacés. MOSAIC devra redémarrer ensuite.",
     "restartRequiredTitle": "Redémarrage requis",
     "restartRequiredAfterRestore": "La configuration a été restaurée. MOSAIC est bloqué jusqu'au redémarrage pour charger proprement les réglages, stages et données CSS restaurés.",
+    "restartRequiredAfterReset": "Les données de l'application ont été réinitialisées. MOSAIC est bloqué jusqu'au redémarrage pour repartir d'un état propre.",
     "restartFightPlanner": "Redémarrer MOSAIC",
     "customization": "Personnalisation",
     "logs": "Logs",
@@ -986,6 +987,10 @@
     "seeConfigJsonDesc": "Ouvrir le fichier de configuration dans votre éditeur par défaut"
   },
   "modals": {
+    "pluginsPathRequired": {
+      "title": "Dossier des plugins non défini",
+      "message": "Définis le chemin du dossier des plugins dans les Paramètres avant d'ajouter un plugin."
+    },
     "nroLimit": {
       "title": "Limite .nro dépassée",
       "message": "{{count}} fichiers .nro actifs détectés. La limite est de {{limit}}, en émulateur comme sur vraie Switch. Désactivez ou retirez {{overflow}} fichier(s) .nro.",
