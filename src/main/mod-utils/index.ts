@@ -303,6 +303,75 @@ export default class ModUtils {
     return modDirs;
   }
 
+  private static findArchiveUltimateRoot(
+    rootDir: string,
+  ): { ultimateDir: string; modsDir: string } | null {
+    const queue = [rootDir];
+
+    while (queue.length > 0) {
+      const currentDir = queue.shift()!;
+      const childDirs = fs
+        .readdirSync(currentDir, { withFileTypes: true })
+        .filter(
+          (entry) =>
+            entry.isDirectory() && !this.isArchiveMetadataName(entry.name),
+        );
+
+      const modsEntry = childDirs.find(
+        (entry) => entry.name.toLowerCase() === 'mods',
+      );
+      if (modsEntry) {
+        return {
+          ultimateDir: currentDir,
+          modsDir: path.join(currentDir, modsEntry.name),
+        };
+      }
+
+      queue.push(...childDirs.map((entry) => path.join(currentDir, entry.name)));
+    }
+
+    return null;
+  }
+
+  private static async installArchiveUltimateFolders(
+    archiveUltimateDir: string,
+    modsPath: string,
+    isCancelled?: () => boolean,
+  ) {
+    const siblingDirs = (
+      await fsPromises.readdir(archiveUltimateDir, { withFileTypes: true })
+    ).filter(
+      (entry) =>
+        entry.isDirectory() &&
+        !this.isArchiveMetadataName(entry.name) &&
+        !['mods', 'arcropolis'].includes(entry.name.toLowerCase()),
+    );
+
+    if (siblingDirs.length === 0) {
+      return;
+    }
+
+    if (path.basename(modsPath).toLowerCase() !== 'mods') {
+      console.warn(
+        '[installFromArchive] Mods folder is not named "mods", skipping ultimate folders:',
+        siblingDirs.map((entry) => entry.name),
+      );
+      return;
+    }
+
+    const userUltimateDir = path.dirname(modsPath);
+    for (const entry of siblingDirs) {
+      console.log(
+        `[installFromArchive] Copying ${entry.name} into ultimate folder...`,
+      );
+      await this.copyRecursive(
+        path.join(archiveUltimateDir, entry.name),
+        path.join(userUltimateDir, entry.name),
+        isCancelled,
+      );
+    }
+  }
+
   /**
    * Get the path to the disabled mods folder
    * @param {string} activeModsPath - Path to the active mods folder
@@ -1117,8 +1186,34 @@ export default class ModUtils {
       modName: string;
     }[] = [];
 
-    const dirsWithModFiles =
-      this._gatherDirsWithModFiles(tempExtractDir) || tempExtractDir;
+    const archiveUltimateRoot = this.findArchiveUltimateRoot(tempExtractDir);
+    let dirsWithModFiles: string[];
+
+    if (archiveUltimateRoot) {
+      await this.installArchiveUltimateFolders(
+        archiveUltimateRoot.ultimateDir,
+        modsPath,
+        options.isCancelled,
+      );
+
+      dirsWithModFiles = this._gatherDirsWithModFiles(
+        archiveUltimateRoot.modsDir,
+      );
+      if (!dirsWithModFiles.length) {
+        dirsWithModFiles = (
+          await fsPromises.readdir(archiveUltimateRoot.modsDir, {
+            withFileTypes: true,
+          })
+        )
+          .filter(
+            (entry) =>
+              entry.isDirectory() && !this.isArchiveMetadataName(entry.name),
+          )
+          .map((entry) => path.join(archiveUltimateRoot.modsDir, entry.name));
+      }
+    } else {
+      dirsWithModFiles = this._gatherDirsWithModFiles(tempExtractDir);
+    }
 
     async function _prepareModPath(modDirectory: string) {
       if (options.isCancelled?.()) {
@@ -1144,7 +1239,7 @@ export default class ModUtils {
       return modPath;
     }
 
-    if (!dirsWithModFiles.length) {
+    if (!dirsWithModFiles.length && !archiveUltimateRoot) {
       console.log(
         '[installFromArchive] Copying multiple items to mods folder...',
       );
