@@ -712,16 +712,10 @@ body.no-animations .action-btn-small {
   flex-shrink: 0;
 }
 
-.mod-item:hover {
-  background-color: var(--bg-item-hover);
-  border-color: var(--border-hover);
-  box-shadow: var(--shadow-md);
-}
-
 div.mod-item.selected {
   background-color: rgba(var(--accent-rgb), 0.25) !important;
   border: 1px solid var(--accent-color) !important;
-  box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.15) !important;
+  box-shadow: none !important;
   z-index: 2;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
