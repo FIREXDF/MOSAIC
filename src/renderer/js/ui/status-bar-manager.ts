@@ -1992,7 +1992,7 @@ export class StatusBarManager {
 
   _getDownloadDisplayName(dl: DownloadItem): string {
     if (dl.modName) return dl.modName;
-    if (dl.statusText && !dl.statusText.toLowerCase().includes('downloading')) return dl.statusText;
+    if (dl.statusText && !/downloading|^extracting mod/i.test(dl.statusText)) return dl.statusText;
     const name = dl.fileName || '';
     if (/^\d+$/.test(name) || name === 'mod.zip') return 'Downloading...';
     return name;
@@ -2137,6 +2137,9 @@ export class StatusBarManager {
           speed = '';
         }
 
+        const percentText =
+          isExtractingOrVerifying && progress <= 0 ? phaseText : `${progress}%`;
+
         const isActiveDownloadCard = content.querySelector('.ext-download-card .ext-progress-container');
         const isMultiCard = content.querySelector('.ext-multi-download-card');
         const canPatchExistingCard =
@@ -2179,7 +2182,7 @@ export class StatusBarManager {
               if (percentageEl) {
                 this.animateElementTextChange(
                   percentageEl as HTMLElement,
-                  phaseText,
+                  percentText,
                   'ext-text-swap',
                   280,
                 );
@@ -2244,7 +2247,7 @@ export class StatusBarManager {
                                   <div class="ext-progress-fill" style="width: ${progress}%"></div>
                               </div>
                           </div>
-                          <span class="ext-percentage">${isExtractingOrVerifying ? phaseText : progress + '%'}</span>
+                          <span class="ext-percentage">${percentText}</span>
                       </div>
                       
                       <div class="ext-card-meta ext-download-meta">
@@ -2413,19 +2416,19 @@ export class StatusBarManager {
                 <button class="ext-close-btn" onclick="window.statusBarManager.updateExtendedBar('none')" title="Close">
                     <i class="bi bi-chevron-down"></i>
                 </button>
-                <div class="ext-card-icon-container" style="background: rgba(40, 167, 69, 0.1); border-color: #28a745;">
+                <div class="ext-card-icon-container icon-success">
                     <div class="ext-card-icon">
-                        <i class="bi bi-check-circle-fill" style="color: #28a745;"></i>
+                        <i class="bi bi-check-circle-fill"></i>
                     </div>
                 </div>
                 <div class="ext-card-details">
                     <div class="ext-card-header">
-                        <span class="ext-status-badge" style="background: #28a745; border-color: #28a745; color: #fff;">Completed</span>
+                        <span class="ext-status-badge badge-success">Completed</span>
                         <span class="ext-filename" title="${update.fileName}">${update.fileName || 'Unknown file'}</span>
                     </div>
-                    
+
                     <div class="ext-card-meta">
-                        <span style="color: #28a745;">Download finished successfully</span>
+                        <span class="ext-success-message">Download finished successfully</span>
                     </div>
                 </div>
             </div>

@@ -593,12 +593,12 @@ body.reduced-animations .bottom-text-left.status-changing {
   isolation: isolate;
 }
 
-.bottom-bar[data-island-mode='conflict'] {
+.bottom-bar.conflict-mode {
   --island-accent-rgb: var(--warning-color-rgb);
 }
 
-.bottom-bar[data-island-mode='success'] {
-  --island-accent-rgb: 40, 167, 69;
+.bottom-bar.success-mode {
+  --island-accent-rgb: var(--success-color-rgb);
 }
 
 .bottom-bar::after {
@@ -662,7 +662,7 @@ body.reduced-animations .bottom-text-left.status-changing {
 }
 
 .bottom-bar.expanded.success-mode::before {
-  background-color: var(--success-color, #28a745);
+  background-color: var(--success-color);
 }
 
 /* Standard Content container */
@@ -879,9 +879,9 @@ body.reduced-animations .bottom-text-left.status-changing {
   gap: 5px;
   min-height: 42px;
   padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-transparent-08);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--bg-transparent-03);
 }
 
 .bottom-bar.expanded.download-mode .ext-multi-dl-info {
@@ -969,10 +969,10 @@ body.reduced-animations .bottom-text-left.status-changing {
 }
 
 .bottom-bar.expanded.success-mode .extended-content {
-  border-top: 2px solid var(--success-color, #28a745);
-  border-right: 2px solid var(--success-color, #28a745);
+  border-top: 2px solid var(--success-color);
+  border-right: 2px solid var(--success-color);
   box-shadow:
-    0 -16px 38px rgba(40, 167, 69, 0.16),
+    0 -16px 38px rgba(var(--success-color-rgb), 0.16),
     0 -8px 24px rgba(0, 0, 0, 0.3),
     4px 0 12px rgba(0, 0, 0, 0.1);
 }
@@ -1097,6 +1097,15 @@ body.reduced-animations .bottom-text-left.status-changing {
   color: var(--warning-color);
 }
 
+.ext-card-icon-container.icon-success {
+  background: rgba(var(--success-color-rgb), 0.1);
+  border-color: rgba(var(--success-color-rgb), 0.3);
+}
+
+.ext-card-icon-container.icon-success i {
+  color: var(--success-color);
+}
+
 .ext-card-details {
   flex: 1;
   display: flex;
@@ -1131,6 +1140,16 @@ body.reduced-animations .bottom-text-left.status-changing {
   background: rgba(var(--warning-color-rgb), 0.12);
   color: var(--warning-color);
   border-color: rgba(var(--warning-color-rgb), 0.2);
+}
+
+.ext-status-badge.badge-success {
+  background: rgba(var(--success-color-rgb), 0.12);
+  color: var(--success-color);
+  border-color: rgba(var(--success-color-rgb), 0.2);
+}
+
+.ext-success-message {
+  color: var(--success-color);
 }
 
 .ext-filename {
@@ -1242,9 +1261,8 @@ body.reduced-animations .bottom-text-left.status-changing {
 }
 
 .ext-action-btn:hover {
-  background: rgba(var(--warning-color-rgb), 0.25);
-  border-color: rgba(var(--warning-color-rgb), 0.5);
-  transform: translateY(-1px);
+  background: rgba(var(--warning-color-rgb), 0.3);
+  border-color: rgba(var(--warning-color-rgb), 0.6);
 }
 
 .ext-close-btn {
@@ -1276,7 +1294,7 @@ body.reduced-animations .bottom-text-left.status-changing {
 .ext-close-btn:hover,
 .ext-close-btn:focus-visible {
   background: var(--bg-primary);
-  border-color: rgba(var(--accent-rgb), 0.45);
+  border-color: rgba(var(--island-accent-rgb), 0.45);
   color: var(--text-primary);
   opacity: 1;
 }
@@ -1300,7 +1318,7 @@ body.reduced-animations .bottom-text-left.status-changing {
 }
 
 .ext-multi-dl-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--bg-transparent-15);
   border-radius: 3px;
 }
 
@@ -1341,7 +1359,7 @@ body.reduced-animations .bottom-text-left.status-changing {
 
 .ext-multi-dl-bar {
   height: 3px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-transparent-08);
   border-radius: 2px;
   overflow: hidden;
 }
