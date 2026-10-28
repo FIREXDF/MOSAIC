@@ -11,8 +11,8 @@
   padding: 0 0 0 16px;
   -webkit-app-region: drag;
   border-bottom: 1px solid var(--border-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   position: relative;
+  z-index: 1000002;
 }
 
 .titlebar::after {
