@@ -356,7 +356,7 @@ class PluginManager {
     div.innerHTML = `
 <div class="plugin-status ${statusClass}"></div>
 <div class="plugin-item-content">
-<span class="plugin-name">${this.escapeHtml(plugin.name)}</span>
+<span class="plugin-name">${escapeHtml(plugin.name)}</span>
 <span class="plugin-size">${plugin.size}</span>
 </div>
 <div class="plugin-actions">
@@ -392,12 +392,6 @@ ${plugin.status === 'active'
     }
 
     return div;
-  }
-
-  escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 
   updatePluginCount(count) { }

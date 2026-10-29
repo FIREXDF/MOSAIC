@@ -31,13 +31,6 @@ class ModInfoManager {
       return;
     }
 
-    const escapeHtml = (text) => {
-      if (!text) return '';
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    };
-
     const t = (key) => {
       return window.i18n && window.i18n.t ? window.i18n.t(key) : key;
     };

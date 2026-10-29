@@ -231,7 +231,7 @@ class SettingsManager {
           submitButton.disabled = false;
           submitButton.innerHTML = `
             <i class="bi bi-send"></i>
-            <span data-i18n="settings.feedbackSubmit">${this.escapeHtml(
+            <span data-i18n="settings.feedbackSubmit">${escapeHtml(
               this.translate('settings.feedbackSubmit'),
             )}</span>
           `;
@@ -2473,7 +2473,7 @@ class SettingsManager {
       window.modalManager.showCustomModal({
         id,
         title,
-        body: `<p>${this.escapeHtml(message)}</p>`,
+        body: `<p>${escapeHtml(message)}</p>`,
         clickOverlayToClose: false,
         buttons: [
           {
@@ -2509,11 +2509,11 @@ class SettingsManager {
       overlay.innerHTML = `
         <div class="config-restore-restart-panel">
           <i class="bi bi-arrow-repeat"></i>
-          <h2>${this.escapeHtml(this.translate('settings.restartRequiredTitle'))}</h2>
-          <p>${this.escapeHtml(this.translate(messageKey))}</p>
+          <h2>${escapeHtml(this.translate('settings.restartRequiredTitle'))}</h2>
+          <p>${escapeHtml(this.translate(messageKey))}</p>
           <button type="button" id="config-restore-restart-btn" class="settings-btn-action">
             <i class="bi bi-power"></i>
-            <span>${this.escapeHtml(this.translate('settings.restartFightPlanner'))}</span>
+            <span>${escapeHtml(this.translate('settings.restartFightPlanner'))}</span>
           </button>
         </div>
       `;
@@ -2532,15 +2532,6 @@ class SettingsManager {
         window.toastManager?.error('toasts.failedToRestartApp');
       }
     });
-  }
-
-  escapeHtml(value: string) {
-    return String(value)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
   }
 
   translate(key, params = {}) {

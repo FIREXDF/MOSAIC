@@ -144,12 +144,12 @@ class ToastManager {
     let actionButtonHtml = '';
     if (options.actionButton) {
       const actionText = options.actionButton.text || 'Action';
-      actionButtonHtml = `<button class="toast-action-btn">${this.escapeHtml(actionText)}</button>`;
+      actionButtonHtml = `<button class="toast-action-btn">${escapeHtml(actionText)}</button>`;
     }
 
     toast.innerHTML = `
 ${icon}
-<span class="toast-message">${this.escapeHtml(translatedMessage)}</span>
+<span class="toast-message">${escapeHtml(translatedMessage)}</span>
 ${actionButtonHtml}
 <button class="toast-close">
 <i class="bi bi-x"></i>
@@ -285,12 +285,6 @@ ${actionButtonHtml}
       }
     });
     this.toasts = [];
-  }
-
-  escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 }
 

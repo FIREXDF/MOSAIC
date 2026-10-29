@@ -46,7 +46,7 @@ export {};
         ? t(message, params)
         : message || '';
 
-    titleEl.innerHTML = `<i class="bi ${icon}"></i> ${this.escapeHtml(translatedTitle)}`;
+    titleEl.innerHTML = `<i class="bi ${icon}"></i> ${escapeHtml(translatedTitle)}`;
     messageEl.textContent = translatedMessage;
 
     this.showOverlay();

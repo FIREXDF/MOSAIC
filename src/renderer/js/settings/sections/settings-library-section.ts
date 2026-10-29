@@ -504,24 +504,24 @@ class SettingsLibrarySection {
     const body = document.createElement('div');
     body.className = 'library-path-fix-modal';
     body.innerHTML = `
-      <p class="library-path-fix-intro">${this.manager.escapeHtml(this.manager.translate('settings.libraryPathFixIntro'))}</p>
+      <p class="library-path-fix-intro">${escapeHtml(this.manager.translate('settings.libraryPathFixIntro'))}</p>
       ${issues
         .map(
           (issue) => `
           <div class="library-path-fix-row" data-path-key="${issue.key}">
             <div class="library-path-fix-header">
-              <strong>${this.manager.escapeHtml(issue.label)}</strong>
-              <span>${this.manager.escapeHtml(issue.reason)}</span>
+              <strong>${escapeHtml(issue.label)}</strong>
+              <span>${escapeHtml(issue.reason)}</span>
             </div>
-            <code>${this.manager.escapeHtml(issue.currentPath)}</code>
+            <code>${escapeHtml(issue.currentPath)}</code>
             <div class="library-path-fix-picker">
-              <input class="settings-input" type="text" readonly value="" placeholder="${this.manager.escapeHtml(this.manager.translate('settings.chooseReplacementPath'))}">
+              <input class="settings-input" type="text" readonly value="" placeholder="${escapeHtml(this.manager.translate('settings.chooseReplacementPath'))}">
               <button type="button" class="settings-btn" data-path-browse="${issue.key}">
                 <i class="bi bi-folder2-open"></i>
-                <span>${this.manager.escapeHtml(this.manager.translate('settings.browse'))}</span>
+                <span>${escapeHtml(this.manager.translate('settings.browse'))}</span>
               </button>
             </div>
-            <p class="settings-hint">${this.manager.escapeHtml(
+            <p class="settings-hint">${escapeHtml(
               issue.key === 'modsPath'
                 ? this.manager.translate('settings.modsPathFixHint')
                 : this.manager.translate('settings.pluginsPathFixHint'),

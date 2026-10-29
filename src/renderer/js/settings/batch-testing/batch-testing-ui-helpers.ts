@@ -9,20 +9,17 @@ type BatchTestingUiSummary = {
 
 type BatchTestingUiDeps = {
   t: (key: string, fallback: string, params?: Record<string, any>) => string;
-  escapeHtml: (value: string) => string;
   getCategoryLabel: (category: 'mods' | 'plugins') => string;
   getStatusLabel: (status: 'active' | 'disabled') => string;
 };
 
 class BatchTestingUiHelpers {
   t: BatchTestingUiDeps['t'];
-  escapeHtml: BatchTestingUiDeps['escapeHtml'];
   getCategoryLabel: BatchTestingUiDeps['getCategoryLabel'];
   getStatusLabel: BatchTestingUiDeps['getStatusLabel'];
 
   constructor(deps: BatchTestingUiDeps) {
     this.t = deps.t;
-    this.escapeHtml = deps.escapeHtml;
     this.getCategoryLabel = deps.getCategoryLabel;
     this.getStatusLabel = deps.getStatusLabel;
   }
@@ -200,10 +197,10 @@ class BatchTestingUiHelpers {
     return `
       <div style="padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color);">
         <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
-          ${this.escapeHtml(title)}
+          ${escapeHtml(title)}
         </div>
         <div style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
-          ${this.escapeHtml(value)}
+          ${escapeHtml(value)}
         </div>
       </div>
     `;
@@ -213,13 +210,13 @@ class BatchTestingUiHelpers {
     return `
       <div style="padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); min-width: 0;">
         <div style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; background: rgba(var(--primary-rgb), 0.14); border: 1px solid rgba(var(--primary-rgb), 0.22); color: var(--primary-color); font-size: 13px; font-weight: 700; margin-bottom: 10px;">
-          ${this.escapeHtml(index)}
+          ${escapeHtml(index)}
         </div>
         <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">
-          ${this.escapeHtml(title)}
+          ${escapeHtml(title)}
         </div>
         <div style="font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
-          ${this.escapeHtml(description)}
+          ${escapeHtml(description)}
         </div>
       </div>
     `;
@@ -229,10 +226,10 @@ class BatchTestingUiHelpers {
     return `
       <div style="padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); min-width: 0;">
         <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
-          ${this.escapeHtml(label)}
+          ${escapeHtml(label)}
         </div>
         <div style="display: block; max-width: 100%; min-width: 0; font-size: 14px; color: var(--text-primary); line-height: 1.6; overflow-wrap: anywhere; ${multiline ? 'white-space: pre-wrap; word-break: break-word;' : ''}">
-          ${this.escapeHtml(value)}
+          ${escapeHtml(value)}
         </div>
       </div>
     `;
@@ -253,10 +250,10 @@ class BatchTestingUiHelpers {
         type="button"
         class="batch-testing-item-trigger"
         data-batch-category="${category}"
-        data-batch-name="${this.escapeHtml(name)}"
+        data-batch-name="${escapeHtml(name)}"
         style="${baseStyle} cursor: pointer;"
       >
-        <span style="min-width: 0; overflow-wrap: anywhere; line-height: 1.25;">${this.escapeHtml(name)}</span>
+        <span style="min-width: 0; overflow-wrap: anywhere; line-height: 1.25;">${escapeHtml(name)}</span>
         <i class="bi bi-info-circle" style="font-size: 12px; opacity: 0.8; flex: 0 0 auto;"></i>
       </button>
     `;
@@ -393,7 +390,7 @@ class BatchTestingUiHelpers {
     return `
       <div style="display: flex; flex-direction: column; gap: 14px; min-width: 0;">
         <div style="padding: 14px 16px; border-radius: 12px; background: rgba(var(--primary-rgb), 0.08); border: 1px solid rgba(var(--primary-rgb), 0.18); color: var(--text-secondary); line-height: 1.6;">
-          ${this.escapeHtml(
+          ${escapeHtml(
             modInfo.description ||
               this.t(
                 'tools.modInfo.noDetailedInfo',

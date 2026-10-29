@@ -342,7 +342,7 @@ class LogsManager {
       <div class="log-time">${time}</div>
       <div class="log-icon">${icon}</div>
       ${sourceTag}
-      <div class="log-message">${this.escapeHtml(log.message)}</div>
+      <div class="log-message">${escapeHtml(log.message)}</div>
     `;
 
     this.logsContainer.appendChild(logElement);
@@ -366,12 +366,6 @@ class LogsManager {
       error: '<i class="bi bi-x-circle"></i>',
     };
     return icons[level] || icons.log;
-  }
-
-  escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 
   getFilteredLogs() {

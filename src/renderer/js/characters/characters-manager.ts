@@ -1229,13 +1229,13 @@ class CharactersManager {
 
   renderCharacterSlotBadges(slots: string[], unknownLabel = 'Slot unknown') {
     if (!slots || slots.length === 0) {
-      return `<span class="character-moveset-slot is-unknown">${this.escapeHtml(unknownLabel)}</span>`;
+      return `<span class="character-moveset-slot is-unknown">${escapeHtml(unknownLabel)}</span>`;
     }
 
     return slots
       .map(
         (slot) =>
-          `<span class="character-moveset-slot">${this.escapeHtml(slot)}</span>`,
+          `<span class="character-moveset-slot">${escapeHtml(slot)}</span>`,
       )
       .join('');
   }
@@ -1248,7 +1248,7 @@ class CharactersManager {
           ? this.t('characters.modConflict', 'Conflict')
           : this.t('characters.modDisabled', 'Disabled');
 
-    return `<span class="character-mod-status ${status}">${this.escapeHtml(label)}</span>`;
+    return `<span class="character-mod-status ${status}">${escapeHtml(label)}</span>`;
   }
 
   showModContextMenu(event: MouseEvent, modPath?: string) {
@@ -1278,7 +1278,7 @@ class CharactersManager {
     const imageUrl =
       window.CHARACTER_IMAGES[char.id] ||
       'https://www.smashbros.com/assets_v2/img/fighter/mario/main.png';
-    const escapedName = this.escapeHtml(char.info.name);
+    const escapedName = escapeHtml(char.info.name);
     const activeModCount = char.mods.filter(
       (mod) => mod.status !== 'disabled',
     ).length;
@@ -1301,18 +1301,18 @@ onerror="this.style.display='none'; this.nextElementSibling.classList.add('show-
 </div>
 </div>
 <div class="character-card-body">
-<h3 class="character-name">${this.escapeHtml(char.info.name)}</h3>
+<h3 class="character-name">${escapeHtml(char.info.name)}</h3>
 <div class="character-mod-count">
 <i class="bi bi-file-earmark-code"></i>
-<span>${char.mods.length} mod${char.mods.length > 1 ? 's' : ''} · ${this.escapeHtml(activeModSummary)}</span>
+<span>${char.mods.length} mod${char.mods.length > 1 ? 's' : ''} · ${escapeHtml(activeModSummary)}</span>
 </div>
 <div class="character-mods-list">
 ${char.mods
   .map(
     (mod) => `
-<div class="character-mod-item ${mod.status}" data-mod-path="${this.escapeHtml(mod.path)}" title="${this.escapeHtml(this.t('characters.modActionsHint', 'Right-click for mod actions'))}">
+<div class="character-mod-item ${mod.status}" data-mod-path="${escapeHtml(mod.path)}" title="${escapeHtml(this.t('characters.modActionsHint', 'Right-click for mod actions'))}">
 <span class="mod-status-dot"></span>
-<span class="mod-name">${this.escapeHtml(mod.name)}</span>
+<span class="mod-name">${escapeHtml(mod.name)}</span>
 ${this.renderModStatus(mod.status)}
 <span class="character-mod-slots" aria-label="Detected character slots">
 ${this.renderCharacterSlotBadges(mod.slots, 'Unknown')}
@@ -1357,7 +1357,7 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Unknown')}
     modal.innerHTML = `
 <div class="character-modal">
 <div class="character-modal-header">
-<h2>${this.escapeHtml(char.info.name)}</h2>
+<h2>${escapeHtml(char.info.name)}</h2>
 <button class="character-modal-close">
 <i class="bi bi-x-lg"></i>
 </button>
@@ -1368,11 +1368,11 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Unknown')}
 ${char.mods
   .map(
     (mod) => `
-<div class="character-modal-mod-item ${mod.status}" data-mod-path="${this.escapeHtml(mod.path)}" title="${this.escapeHtml(this.t('characters.modActionsHint', 'Right-click for mod actions'))}">
+<div class="character-modal-mod-item ${mod.status}" data-mod-path="${escapeHtml(mod.path)}" title="${escapeHtml(this.t('characters.modActionsHint', 'Right-click for mod actions'))}">
 <span class="mod-status-indicator ${mod.status}"></span>
 <span class="character-modal-mod-main">
 <span class="character-modal-mod-name-row">
-<span class="mod-name">${this.escapeHtml(mod.name)}</span>
+<span class="mod-name">${escapeHtml(mod.name)}</span>
 ${this.renderModStatus(mod.status)}
 </span>
 <span class="character-modal-mod-slots" aria-label="Detected character slots">
@@ -1671,7 +1671,7 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
       grid.innerHTML = `
 <div class="character-umc-state" role="status" aria-live="polite">
   <i class="bi bi-arrow-repeat character-umc-spinner" aria-hidden="true"></i>
-  <p>${this.escapeHtml(this.t('characters.umcLoading', 'Loading UMC movesets...'))}</p>
+  <p>${escapeHtml(this.t('characters.umcLoading', 'Loading UMC movesets...'))}</p>
 </div>`;
       return;
     }
@@ -1680,8 +1680,8 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
       grid.innerHTML = `
 <div class="character-umc-state" role="status" aria-live="polite">
   <i class="bi bi-cloud-slash" aria-hidden="true"></i>
-  <p><strong>${this.escapeHtml(this.t('characters.umcLoadError', 'Could not load UMC movesets.'))}</strong><br>${this.escapeHtml(this.umcMovesetsError)}</p>
-  <button class="input-btn" type="button" data-umc-retry>${this.escapeHtml(this.t('characters.umcRetry', 'Retry'))}</button>
+  <p><strong>${escapeHtml(this.t('characters.umcLoadError', 'Could not load UMC movesets.'))}</strong><br>${escapeHtml(this.umcMovesetsError)}</p>
+  <button class="input-btn" type="button" data-umc-retry>${escapeHtml(this.t('characters.umcRetry', 'Retry'))}</button>
 </div>`;
       return;
     }
@@ -1726,7 +1726,7 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
       grid.innerHTML = `
 <div class="character-umc-state" role="status" aria-live="polite">
   <i class="bi bi-search" aria-hidden="true"></i>
-  <p>${this.escapeHtml(emptyMessage)}</p>
+  <p>${escapeHtml(emptyMessage)}</p>
 </div>`;
       return;
     }
@@ -1740,12 +1740,12 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
           moveset.seriesName,
         ].filter((value): value is string => Boolean(value?.trim()));
         return `
-<button class="character-umc-card" type="button" data-umc-moveset-id="${moveset.movesetId}" aria-pressed="${selected}" aria-label="${this.escapeHtml(moveset.moddedCharName)}${metadata.length ? ` · ${this.escapeHtml(metadata.join(' · '))}` : ''}" ${!selected && this.umcSelectedMovesetIds.size >= UMC_MAX_SELECTION ? 'disabled' : ''}>
+<button class="character-umc-card" type="button" data-umc-moveset-id="${moveset.movesetId}" aria-pressed="${selected}" aria-label="${escapeHtml(moveset.moddedCharName)}${metadata.length ? ` · ${escapeHtml(metadata.join(' · '))}` : ''}" ${!selected && this.umcSelectedMovesetIds.size >= UMC_MAX_SELECTION ? 'disabled' : ''}>
   <span class="character-umc-card-image">
-    ${imageUrl ? `<img src="${this.escapeHtml(imageUrl)}" alt="${this.escapeHtml(moveset.moddedCharName)}" loading="lazy">` : '<i class="bi bi-controller" aria-hidden="true"></i>'}
-    <span class="character-umc-card-name" title="${this.escapeHtml(moveset.moddedCharName).replace(/"/g, '&quot;')}">${this.escapeHtml(moveset.moddedCharName)}</span>
+    ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(moveset.moddedCharName)}" loading="lazy">` : '<i class="bi bi-controller" aria-hidden="true"></i>'}
+    <span class="character-umc-card-name" title="${escapeHtml(moveset.moddedCharName).replace(/"/g, '&quot;')}">${escapeHtml(moveset.moddedCharName)}</span>
   </span>
-  <span class="character-umc-card-meta">${this.escapeHtml(metadata.join(' · ') || this.t('characters.umcUnknownFighter', 'Fighter not specified'))}</span>
+  <span class="character-umc-card-meta">${escapeHtml(metadata.join(' · ') || this.t('characters.umcUnknownFighter', 'Fighter not specified'))}</span>
 </button>`;
       })
       .join('');
@@ -1800,10 +1800,10 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
                 `Deselect ${moveset.moddedCharName}`,
                 { name: moveset.moddedCharName },
               );
-              return `<button class="character-umc-selection-chip" type="button" data-umc-remove-id="${moveset.movesetId}" aria-label="${this.escapeHtml(label).replace(/"/g, '&quot;')}"><span>${this.escapeHtml(moveset.moddedCharName)}</span><i class="bi bi-x-lg" aria-hidden="true"></i></button>`;
+              return `<button class="character-umc-selection-chip" type="button" data-umc-remove-id="${moveset.movesetId}" aria-label="${escapeHtml(label).replace(/"/g, '&quot;')}"><span>${escapeHtml(moveset.moddedCharName)}</span><i class="bi bi-x-lg" aria-hidden="true"></i></button>`;
             })
             .join('')
-        : `<span class="character-umc-selection-empty">${this.escapeHtml(this.t('characters.umcChooseMultiple', 'Choose at least two movesets in the grid.'))}</span>`;
+        : `<span class="character-umc-selection-empty">${escapeHtml(this.t('characters.umcChooseMultiple', 'Choose at least two movesets in the grid.'))}</span>`;
     }
 
     document
@@ -1834,7 +1834,7 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
     if (this.umcCompatibilityError) {
       result.className = 'character-umc-result is-error';
       result.hidden = false;
-      result.innerHTML = `<strong>${this.escapeHtml(this.t('characters.umcCheckError', 'Could not check compatibility.'))}</strong> ${this.escapeHtml(this.umcCompatibilityError)}<br>${this.escapeHtml(this.t('characters.umcRetrySelection', 'Select a different pair to try again.'))}`;
+      result.innerHTML = `<strong>${escapeHtml(this.t('characters.umcCheckError', 'Could not check compatibility.'))}</strong> ${escapeHtml(this.umcCompatibilityError)}<br>${escapeHtml(this.t('characters.umcRetrySelection', 'Select a different pair to try again.'))}`;
       return;
     }
 
@@ -1883,12 +1883,12 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
     const pairRows = pairs
       .map(
         ({ pair, title, resultStyle, details }) =>
-          `<li><div class="character-umc-pair-heading"><strong>${this.escapeHtml(names.get(pair.moveset1Id) || `#${pair.moveset1Id}`)} + ${this.escapeHtml(names.get(pair.moveset2Id) || `#${pair.moveset2Id}`)}</strong><span class="${resultStyle}">${this.escapeHtml(title)}</span></div><div class="character-umc-pair-details">${details.map((detail) => this.escapeHtml(detail)).join('<br>')}</div></li>`,
+          `<li><div class="character-umc-pair-heading"><strong>${escapeHtml(names.get(pair.moveset1Id) || `#${pair.moveset1Id}`)} + ${escapeHtml(names.get(pair.moveset2Id) || `#${pair.moveset2Id}`)}</strong><span class="${resultStyle}">${escapeHtml(title)}</span></div><div class="character-umc-pair-details">${details.map((detail) => escapeHtml(detail)).join('<br>')}</div></li>`,
       )
       .join('');
     result.className = `character-umc-result ${verdict.resultStyle}`;
     result.hidden = false;
-    result.innerHTML = `<strong>${this.escapeHtml(verdict.title)}</strong><details class="character-umc-pairs" ${needsAttention || pairCount === 1 ? 'open' : ''}><summary>${this.escapeHtml(this.t('characters.umcPairDetails', `Details of ${pairs.length} pairs`, { count: String(pairs.length) }))}</summary><ul class="character-umc-pair-list">${pairRows}</ul></details>`;
+    result.innerHTML = `<strong>${escapeHtml(verdict.title)}</strong><details class="character-umc-pairs" ${needsAttention || pairCount === 1 ? 'open' : ''}><summary>${escapeHtml(this.t('characters.umcPairDetails', `Details of ${pairs.length} pairs`, { count: String(pairs.length) }))}</summary><ul class="character-umc-pair-list">${pairRows}</ul></details>`;
   }
 
   formatUmcCompatibility(compatibility: UmcCompatibilityResult): {
@@ -2232,7 +2232,7 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
     const imageUrl =
       window.CHARACTER_IMAGES[character.id] ||
       'https://www.smashbros.com/assets_v2/img/fighter/mario/main.png';
-    const escapedName = this.escapeHtml(character.info.name);
+    const escapedName = escapeHtml(character.info.name);
 
     return `
 <section class="character-moveset-group">
@@ -2243,13 +2243,13 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
 </div>
 <div>
 <strong>${escapedName}</strong>
-<span>#${this.escapeHtml(character.info.number)} · ${character.mods.length} moveset mod${character.mods.length !== 1 ? 's' : ''}</span>
+<span>#${escapeHtml(character.info.number)} · ${character.mods.length} moveset mod${character.mods.length !== 1 ? 's' : ''}</span>
 <span class="character-moveset-umc-loading" role="status" hidden>
 <i class="bi bi-arrow-repeat character-umc-spinner" aria-hidden="true"></i>
-${this.escapeHtml(this.t('characters.umcImagesLoading', 'Loading images from UMC...'))}
+${escapeHtml(this.t('characters.umcImagesLoading', 'Loading images from UMC...'))}
 </span>
 </div>
-<button class="input-btn character-moveset-add-css-btn" type="button" data-add-moveset-css="${this.escapeHtml(character.id)}">
+<button class="input-btn character-moveset-add-css-btn" type="button" data-add-moveset-css="${escapeHtml(character.id)}">
 <i class="bi bi-plus-square"></i>
 <span>Add to CSS</span>
 </button>
@@ -2263,27 +2263,27 @@ ${character.mods.map((mod) => this.renderMovesetModRow(mod)).join('')}
 
   renderMovesetModRow(mod: CharacterMovesetMod) {
     const description = mod.description
-      ? `<span class="character-moveset-description">${this.escapeHtml(mod.description)}</span>`
+      ? `<span class="character-moveset-description">${escapeHtml(mod.description)}</span>`
       : '';
     const category = mod.category
-      ? `<span class="character-moveset-category">${this.escapeHtml(mod.category)}</span>`
+      ? `<span class="character-moveset-category">${escapeHtml(mod.category)}</span>`
       : '';
     const slotBadges =
       mod.slots.length > 0
         ? mod.slots
             .map(
               (slot) =>
-                `<span class="character-moveset-slot">${this.escapeHtml(slot)}</span>`,
+                `<span class="character-moveset-slot">${escapeHtml(slot)}</span>`,
             )
             .join('')
         : '<span class="character-moveset-slot is-unknown">Slot unknown</span>';
 
     return `
-<button class="character-moveset-mod ${mod.status}" type="button" data-mod-path="${this.escapeHtml(mod.path)}" title="${this.escapeHtml(this.t('characters.modActionsHint', 'Right-click for mod actions'))}">
+<button class="character-moveset-mod ${mod.status}" type="button" data-mod-path="${escapeHtml(mod.path)}" title="${escapeHtml(this.t('characters.modActionsHint', 'Right-click for mod actions'))}">
 <span class="mod-status-dot"></span>
 <span class="character-moveset-mod-main">
 <span class="character-moveset-mod-name-row">
-<strong>${this.escapeHtml(mod.name)}</strong>
+<strong>${escapeHtml(mod.name)}</strong>
 ${this.renderModStatus(mod.status)}
 </span>
 ${description}
@@ -2543,7 +2543,7 @@ ${category}
         ),
       ];
       const escape = (value: string) =>
-        this.escapeHtml(value).replace(/"/g, '&quot;');
+        escapeHtml(value).replace(/"/g, '&quot;');
       const text = (
         key: string,
         fallback: string,
@@ -2985,34 +2985,34 @@ ${category}
       grid.innerHTML = `
 <div class="characters-empty-state character-css-source-import">
   <i class="bi bi-folder2-open"></i>
-  <h3>${this.escapeHtml(this.t('characters.cssSourceRequiredTitle', 'Character CSS source required'))}</h3>
+  <h3>${escapeHtml(this.t('characters.cssSourceRequiredTitle', 'Character CSS source required'))}</h3>
   <div class="character-css-source-row">
     <span>PRC</span>
-    <code>${this.escapeHtml(prcName || '')}</code>
+    <code>${escapeHtml(prcName || '')}</code>
     <button type="button" class="input-btn" data-css-source="prc">
       <i class="bi bi-file-earmark-code"></i>
-      <span>${this.escapeHtml(this.t('characters.selectCssPrc', 'Select ui_chara_db.prc'))}</span>
+      <span>${escapeHtml(this.t('characters.selectCssPrc', 'Select ui_chara_db.prc'))}</span>
     </button>
   </div>
   <div class="character-css-source-row">
     <span>LAYOUT</span>
-    <code>${this.escapeHtml(layoutName || '')}</code>
+    <code>${escapeHtml(layoutName || '')}</code>
     <button type="button" class="input-btn" data-css-source="layout">
       <i class="bi bi-file-earmark-code"></i>
-      <span>${this.escapeHtml(this.t('characters.selectCssLayoutPrc', 'Select ui_layout_db.prc'))}</span>
+      <span>${escapeHtml(this.t('characters.selectCssLayoutPrc', 'Select ui_layout_db.prc'))}</span>
     </button>
   </div>
   <div class="character-css-source-row">
     <span>MSBT</span>
-    <code>${this.escapeHtml(msbtName || '')}</code>
+    <code>${escapeHtml(msbtName || '')}</code>
     <button type="button" class="input-btn" data-css-source="msbt">
       <i class="bi bi-file-earmark-text"></i>
-      <span>${this.escapeHtml(this.t('characters.selectCssMsbt', 'Select msg_name.msbt'))}</span>
+      <span>${escapeHtml(this.t('characters.selectCssMsbt', 'Select msg_name.msbt'))}</span>
     </button>
   </div>
   <button type="button" class="input-btn character-css-save-btn" id="character-css-import-source-btn" ${canImport ? '' : 'disabled'}>
     <i class="bi bi-check2-circle"></i>
-    <span>${this.escapeHtml(this.cssSourceImporting ? this.t('characters.importingCssSource', 'Importing...') : this.t('characters.importCssSource', 'Import source files'))}</span>
+    <span>${escapeHtml(this.cssSourceImporting ? this.t('characters.importingCssSource', 'Importing...') : this.t('characters.importCssSource', 'Import source files'))}</span>
   </button>
 </div>
 `;
@@ -3041,7 +3041,7 @@ ${category}
       inspector.innerHTML = `
 <div class="character-css-inspector-empty">
   <i class="bi bi-file-earmark-code"></i>
-  <span>${this.escapeHtml(this.t('characters.cssSourceInspectorHint', 'Select PRC and MSBT to edit CSS.'))}</span>
+  <span>${escapeHtml(this.t('characters.cssSourceInspectorHint', 'Select PRC and MSBT to edit CSS.'))}</span>
 </div>
 `;
     }
@@ -3236,10 +3236,10 @@ ${category}
       this.cssUmcImageExclusions.has(this.getCssUmcImageKey(character));
     const custom = character.imageSource === 'custom';
     const button = (action: string, key: string, fallback: string) =>
-      `<button class="input-btn" type="button" data-css-image-action="${action}" ${this.cssCustomImageBusy || this.cssSaving ? 'disabled' : ''}>${this.escapeHtml(this.t(key, fallback))}</button>`;
+      `<button class="input-btn" type="button" data-css-image-action="${action}" ${this.cssCustomImageBusy || this.cssSaving ? 'disabled' : ''}>${escapeHtml(this.t(key, fallback))}</button>`;
     controls.hidden = character.isRandom || character.isGroup;
     controls.innerHTML = `
-${fromUmc ? `<span>${this.escapeHtml(this.t('characters.umcImageSource', 'Image from UMC'))}</span>` : custom ? `<span>${this.escapeHtml(this.t('characters.customImageSource', 'Custom image'))}</span>` : ''}
+${fromUmc ? `<span>${escapeHtml(this.t('characters.umcImageSource', 'Image from UMC'))}</span>` : custom ? `<span>${escapeHtml(this.t('characters.customImageSource', 'Custom image'))}</span>` : ''}
 <div class="character-css-image-buttons">
 ${button('choose', custom ? 'characters.customImageChange' : 'characters.customImageChoose', custom ? 'Change image' : 'Add image')}
 ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custom image') : fromUmc ? button('remove-umc', 'characters.umcImageRemove', 'Remove image') : removed && this.cssUmcImagesEnabled ? button('restore-umc', 'characters.umcImageRestore', 'Restore UMC image') : ''}
@@ -3405,7 +3405,7 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
     // Replace images only: keep inspector inputs, focus and unsaved edits intact.
     this.refreshCssUmcImageControls(character);
     const thumbnail = character.imageUrl
-      ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${this.escapeHtml(character.displayName)}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>`
+      ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapeHtml(character.displayName)}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>`
       : '<i class="bi bi-person-circle"></i>';
     document
       .querySelectorAll<HTMLElement>('.character-css-cell')
@@ -3566,10 +3566,10 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
     cell.draggable = true;
     cell.dataset.characterId = character.id;
 
-    const escapedName = this.escapeHtml(character.displayName);
+    const escapedName = escapeHtml(character.displayName);
     const imageMarkup =
       !character.isGroup && character.imageUrl
-        ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${escapedName}" class="character-css-image" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
+        ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapedName}" class="character-css-image" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
         : '';
     const groupSize = this.cssGroups.get(character.id)?.length || 0;
 
@@ -3579,10 +3579,10 @@ ${imageMarkup}
 <div class="character-css-placeholder" ${imageMarkup ? 'hidden' : ''}>
 <i class="bi ${character.isGroup ? 'bi-collection-fill' : 'bi-person-circle'}"></i>
 </div>
-${character.imageSource === 'umc' && imageMarkup ? `<span class="character-css-image-source">${this.escapeHtml(this.t('characters.umcImageSource', 'Image from UMC'))}</span>` : ''}
+${character.imageSource === 'umc' && imageMarkup ? `<span class="character-css-image-source">${escapeHtml(this.t('characters.umcImageSource', 'Image from UMC'))}</span>` : ''}
 </div>
 <div class="character-css-name">${escapedName}</div>
-${character.isGroup ? `<span class="character-css-group-count">${groupSize}</span>` : character.number ? `<span class="character-css-number">#${this.escapeHtml(character.number)}</span>` : ''}
+${character.isGroup ? `<span class="character-css-group-count">${groupSize}</span>` : character.number ? `<span class="character-css-number">#${escapeHtml(character.number)}</span>` : ''}
 <button class="character-css-hide-btn" type="button" title="Hide">
 <i class="bi bi-eye-slash"></i>
 </button>
@@ -3664,7 +3664,7 @@ ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</spa
 
     const slot =
       character.slots[this.cssSelectedSlotIndex] || character.slots[0];
-    const escapedName = this.escapeHtml(character.displayName);
+    const escapedName = escapeHtml(character.displayName);
     const tabButton = (mode: 'prc' | 'msbt', label: string) => `
 <button class="character-css-tab ${this.cssPanelMode === mode ? 'is-active' : ''}" type="button" data-css-panel-mode="${mode}">
 ${label}
@@ -3673,11 +3673,11 @@ ${label}
     inspector.innerHTML = `
 <div class="character-css-inspector-header">
 <div class="character-css-inspector-thumb">
-${character.imageUrl ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>` : '<i class="bi bi-person-circle"></i>'}
+${character.imageUrl ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>` : '<i class="bi bi-person-circle"></i>'}
 </div>
 <div>
 <strong>${escapedName}</strong>
-<span>${this.escapeHtml(character.id)}</span>
+<span>${escapeHtml(character.id)}</span>
 </div>
 </div>
 <div class="character-css-umc-image-controls" data-css-umc-image-controls hidden></div>
@@ -3750,18 +3750,18 @@ ${this.cssPanelMode === 'prc' ? this.renderCssPrcPanel(character) : this.renderC
     <i class="bi bi-collection-fill"></i>
   </div>
   <div>
-    <strong>${this.escapeHtml(group.displayName)}</strong>
-    <span>${this.escapeHtml(group.id)}</span>
+    <strong>${escapeHtml(group.displayName)}</strong>
+    <span>${escapeHtml(group.id)}</span>
   </div>
 </div>
 <div class="character-css-form">
   <label class="character-css-field">
     <span>Group Display Name</span>
-    <input type="text" data-css-group-name value="${this.escapeHtml(group.displayName)}">
+    <input type="text" data-css-group-name value="${escapeHtml(group.displayName)}">
   </label>
   <label class="character-css-field">
     <span>Name ID</span>
-    <input type="text" value="${this.escapeHtml(group.nameId)}" readonly>
+    <input type="text" value="${escapeHtml(group.nameId)}" readonly>
   </label>
   <div class="character-css-group-summary">
     <i class="bi bi-people-fill"></i>
@@ -3843,7 +3843,7 @@ ${this.cssPanelMode === 'prc' ? this.renderCssPrcPanel(character) : this.renderC
     ) => `
 <label class="character-css-field">
 <span>${label}</span>
-<input type="${type}" data-css-field="${key}" value="${this.escapeHtml(value)}">
+<input type="${type}" data-css-field="${key}" value="${escapeHtml(value)}">
 </label>`;
     const checkbox = (label: string, key: string, value: boolean) => `
 <label class="character-css-check">
@@ -3862,7 +3862,7 @@ ${this.cssPanelMode === 'prc' ? this.renderCssPrcPanel(character) : this.renderC
 ${options
   .map(
     (option) =>
-      `<option value="${this.escapeHtml(option.value)}" ${option.value === value ? 'selected' : ''}>${this.escapeHtml(option.label)}</option>`,
+      `<option value="${escapeHtml(option.value)}" ${option.value === value ? 'selected' : ''}>${escapeHtml(option.label)}</option>`,
   )
   .join('')}
 </select>
@@ -3931,8 +3931,8 @@ ${checkbox('Hidden Boss', 'isHiddenBoss', character.isHiddenBoss)}
 <span>${label}</span>
 ${
   multiline
-    ? `<textarea data-css-field="${key}" rows="3">${this.escapeHtml(value)}</textarea>`
-    : `<input type="text" data-css-field="${key}" value="${this.escapeHtml(value)}">`
+    ? `<textarea data-css-field="${key}" rows="3">${escapeHtml(value)}</textarea>`
+    : `<input type="text" data-css-field="${key}" value="${escapeHtml(value)}">`
 }
 </label>`;
 
@@ -4221,15 +4221,15 @@ ${field('nam_stage_name', 'namStageName', slot.namStageName, true)}
       .sort(([, left], [, right]) => left.localeCompare(right))
       .map(
         ([modPath, modName]) =>
-          `<option value="${this.escapeHtml(modPath)}">${this.escapeHtml(modName)}</option>`,
+          `<option value="${escapeHtml(modPath)}">${escapeHtml(modName)}</option>`,
       )
       .join('')}</select></label>
 <button class="input-btn" type="button" data-action="browse">Choose external mod</button>
 <input name="modPath" type="hidden" required>
-<label class="character-css-field"><span>Base fighter</span><select name="sourceCharacterId">${characters.map((character) => `<option value="${this.escapeHtml(character.id)}" ${character.id === selected.id ? 'selected' : ''}>${this.escapeHtml(character.displayName)} (${this.escapeHtml(character.nameId)})</option>`).join('')}</select></label>
+<label class="character-css-field"><span>Base fighter</span><select name="sourceCharacterId">${characters.map((character) => `<option value="${escapeHtml(character.id)}" ${character.id === selected.id ? 'selected' : ''}>${escapeHtml(character.displayName)} (${escapeHtml(character.nameId)})</option>`).join('')}</select></label>
 <div class="character-css-duplicate-error" data-role="detection">Select a mod.</div>
-<label class="character-css-field"><span>New Name ID</span><input name="newNameId" value="${this.escapeHtml(`${selected.nameId}_echo`)}" autocomplete="off"></label>
-<label class="character-css-field"><span>Display Name</span><input name="newDisplayName" value="${this.escapeHtml(`${selected.displayName} Echo`)}" autocomplete="off"></label>
+<label class="character-css-field"><span>New Name ID</span><input name="newNameId" value="${escapeHtml(`${selected.nameId}_echo`)}" autocomplete="off"></label>
+<label class="character-css-field"><span>Display Name</span><input name="newDisplayName" value="${escapeHtml(`${selected.displayName} Echo`)}" autocomplete="off"></label>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
 <label class="character-css-field"><span>Colors</span><input name="colorCount" type="number" min="1" max="8" value="8"></label>
 <label class="character-css-field"><span>Start</span><input name="colorStartIndex" type="number" min="0" max="255" value="8"></label>
@@ -4467,7 +4467,7 @@ ${field('nam_stage_name', 'namStageName', slot.namStageName, true)}
       modal.innerHTML = `
 <div class="character-modal character-css-duplicate-modal">
 <div class="character-modal-header">
-<h2>Duplicate ${this.escapeHtml(character.displayName)}</h2>
+<h2>Duplicate ${escapeHtml(character.displayName)}</h2>
 <button class="character-modal-close" type="button">
 <i class="bi bi-x-lg"></i>
 </button>
@@ -4475,15 +4475,15 @@ ${field('nam_stage_name', 'namStageName', slot.namStageName, true)}
 <form class="character-modal-body character-css-duplicate-form">
 <label class="character-css-field">
 <span>New Character ID</span>
-<input name="newUiCharaId" value="ui_chara_${this.escapeHtml(suggestedNameId)}" autocomplete="off">
+<input name="newUiCharaId" value="ui_chara_${escapeHtml(suggestedNameId)}" autocomplete="off">
 </label>
 <label class="character-css-field">
 <span>New Name ID</span>
-<input name="newNameId" value="${this.escapeHtml(suggestedNameId)}" autocomplete="off">
+<input name="newNameId" value="${escapeHtml(suggestedNameId)}" autocomplete="off">
 </label>
 <label class="character-css-field">
 <span>Display Name</span>
-<input name="newDisplayName" value="${this.escapeHtml(`${character.displayName} Copy`)}" autocomplete="off">
+<input name="newDisplayName" value="${escapeHtml(`${character.displayName} Copy`)}" autocomplete="off">
 </label>
 <div class="character-css-duplicate-error" hidden></div>
 <div class="character-css-duplicate-actions">
@@ -4655,11 +4655,11 @@ Duplicate
 <div class="character-modal-body character-css-remove-body">
 <div class="character-css-remove-preview">
 <div class="character-css-hidden-thumb">
-${character.imageUrl ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
+${character.imageUrl ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
 </div>
 <div>
-<strong>${this.escapeHtml(character.displayName)}</strong>
-<span>${this.escapeHtml(character.id)}</span>
+<strong>${escapeHtml(character.displayName)}</strong>
+<span>${escapeHtml(character.id)}</span>
 </div>
 </div>
 <p>${
@@ -4824,13 +4824,13 @@ Remove
       '<option value="">Root / Displayed</option>',
       ...[...this.cssGroups.keys()].map((groupId) => {
         const group = this.findCssCharacter(groupId);
-        return `<option value="${this.escapeHtml(groupId)}" ${character.groupId === groupId ? 'selected' : ''}>${this.escapeHtml(group?.displayName || groupId)}</option>`;
+        return `<option value="${escapeHtml(groupId)}" ${character.groupId === groupId ? 'selected' : ''}>${escapeHtml(group?.displayName || groupId)}</option>`;
       }),
     ].join('');
     modal.innerHTML = `
 <div class="character-modal character-css-duplicate-modal">
   <div class="character-modal-header">
-    <h2>Move ${this.escapeHtml(character.displayName)}</h2>
+    <h2>Move ${escapeHtml(character.displayName)}</h2>
     <button class="character-modal-close" type="button"><i class="bi bi-x-lg"></i></button>
   </div>
   <form class="character-modal-body character-css-duplicate-form">
@@ -4914,7 +4914,7 @@ Remove
     modal.innerHTML = `
 <div class="character-modal character-css-group-modal">
   <div class="character-modal-header">
-    <h2>${this.escapeHtml(group.displayName)}</h2>
+    <h2>${escapeHtml(group.displayName)}</h2>
     <button class="character-modal-close" type="button"><i class="bi bi-x-lg"></i></button>
   </div>
   <div class="character-modal-body">
@@ -4924,11 +4924,11 @@ Remove
         members
           .map(
             (character, index) => `
-<div class="character-css-hidden-row character-css-group-row" data-character-id="${this.escapeHtml(character.id)}">
+<div class="character-css-hidden-row character-css-group-row" data-character-id="${escapeHtml(character.id)}">
   <div class="character-css-hidden-thumb">
-    ${character.imageUrl ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
+    ${character.imageUrl ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
   </div>
-  <button class="character-css-group-character" type="button" data-action="select">${this.escapeHtml(character.displayName)}</button>
+  <button class="character-css-group-character" type="button" data-action="select">${escapeHtml(character.displayName)}</button>
   <div class="character-css-group-actions">
     <button class="input-btn" type="button" data-action="up" ${index === 0 ? 'disabled' : ''} title="Move up"><i class="bi bi-arrow-up"></i></button>
     <button class="input-btn" type="button" data-action="down" ${index === members.length - 1 ? 'disabled' : ''} title="Move down"><i class="bi bi-arrow-down"></i></button>
@@ -5079,11 +5079,11 @@ ${
     .map((character) => {
       const imageUrl = character.imageUrl || '';
       return `
-<div class="character-css-hidden-row" data-character-id="${this.escapeHtml(character.id)}">
+<div class="character-css-hidden-row" data-character-id="${escapeHtml(character.id)}">
 <div class="character-css-hidden-thumb">
-${imageUrl ? `<img src="${this.escapeHtml(imageUrl)}" alt="${this.escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
+${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(character.displayName)}">` : '<i class="bi bi-person-circle"></i>'}
 </div>
-<span>${this.escapeHtml(character.displayName)}</span>
+<span>${escapeHtml(character.displayName)}</span>
 <button class="input-btn" type="button" data-action="unhide-character">
 <i class="bi bi-eye"></i>
 Unhide
@@ -5187,9 +5187,9 @@ Unhide
           const stateLabel = isConflict
             ? `${characters.length} characters conflict`
             : 'Slot used';
-          return `<td class="${isConflict ? 'is-conflict' : 'is-used'}" title="${this.escapeHtml(names)}" data-character-id="${this.escapeHtml(characters[0].id)}" role="button" tabindex="0" aria-label="${this.escapeHtml(`${fighterKind}, slot ${slot}: ${stateLabel}`)}"><span>${isConflict ? characters.length : '<i class="bi bi-check2"></i>'}</span></td>`;
+          return `<td class="${isConflict ? 'is-conflict' : 'is-used'}" title="${escapeHtml(names)}" data-character-id="${escapeHtml(characters[0].id)}" role="button" tabindex="0" aria-label="${escapeHtml(`${fighterKind}, slot ${slot}: ${stateLabel}`)}"><span>${isConflict ? characters.length : '<i class="bi bi-check2"></i>'}</span></td>`;
         }).join('');
-        return `<tr><th class="character-css-slots-fighter" scope="row"><span>${this.escapeHtml(fighterKind)}</span></th>${cells}</tr>`;
+        return `<tr><th class="character-css-slots-fighter" scope="row"><span>${escapeHtml(fighterKind)}</span></th>${cells}</tr>`;
       })
       .join('');
     modal.innerHTML = `
@@ -5366,13 +5366,13 @@ ${this.renderCssPreviewRows(visibleCharacters, 13, 13)}
   }
 
   renderCssPreviewTile(character: CharacterCssEntry) {
-    const escapedName = this.escapeHtml(character.displayName);
+    const escapedName = escapeHtml(character.displayName);
     const image = character.imageUrl
-      ? `<img src="${this.escapeHtml(character.imageUrl)}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
+      ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
       : '';
 
     return `
-<div class="character-css-preview-tile" data-preview-character-id="${this.escapeHtml(character.id)}">
+<div class="character-css-preview-tile" data-preview-character-id="${escapeHtml(character.id)}">
 ${image}
 <div class="character-css-preview-placeholder" ${character.imageUrl ? 'hidden' : ''}>
 <i class="bi bi-person-fill"></i>
@@ -5555,12 +5555,6 @@ ${image}
       }
     }
     this.updateCharacterCount(0);
-  }
-
-  escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 }
 

@@ -122,7 +122,6 @@ type BatchTestingUiHelpersLike = {
 
 type BatchTestingUiHelpersCtor = new (deps: {
   t: (key: string, fallback: string, params?: Record<string, any>) => string;
-  escapeHtml: (value: string) => string;
   getCategoryLabel: (category: BatchCategory) => string;
   getStatusLabel: (status: 'active' | 'disabled') => string;
 }) => BatchTestingUiHelpersLike;
@@ -221,7 +220,6 @@ class BatchTestingManager {
       return new UiHelpersCtor({
         t: (key: string, fallback: string, params: Record<string, any> = {}) =>
           this.t(key, fallback, params),
-        escapeHtml: (value: string) => this.escapeHtml(value),
         getCategoryLabel: (category: BatchCategory) =>
           this.getCategoryLabel(category),
         getStatusLabel: (status: 'active' | 'disabled') =>
@@ -435,17 +433,17 @@ class BatchTestingManager {
       .map(
         (plugin) => `
           <div style="padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; background: rgba(255,255,255,0.04);">
-            <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">${this.escapeHtml(plugin.name)}</strong>
+            <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">${escapeHtml(plugin.name)}</strong>
             ${plugin.activePaths
               .map(
                 (pluginPath) =>
-                  `<div style="margin-top: 4px; color: var(--text-secondary); overflow-wrap: anywhere;"><span>${this.escapeHtml(this.t('settings.batchTestingDuplicateActiveLabel', 'Active'))}:</span> <code>${this.escapeHtml(pluginPath)}</code></div>`,
+                  `<div style="margin-top: 4px; color: var(--text-secondary); overflow-wrap: anywhere;"><span>${escapeHtml(this.t('settings.batchTestingDuplicateActiveLabel', 'Active'))}:</span> <code>${escapeHtml(pluginPath)}</code></div>`,
               )
               .join('')}
             ${plugin.disabledPaths
               .map(
                 (pluginPath) =>
-                  `<div style="margin-top: 4px; color: var(--text-secondary); overflow-wrap: anywhere;"><span>${this.escapeHtml(this.t('settings.batchTestingDuplicateDisabledLabel', 'Disabled'))}:</span> <code>${this.escapeHtml(pluginPath)}</code></div>`,
+                  `<div style="margin-top: 4px; color: var(--text-secondary); overflow-wrap: anywhere;"><span>${escapeHtml(this.t('settings.batchTestingDuplicateDisabledLabel', 'Disabled'))}:</span> <code>${escapeHtml(pluginPath)}</code></div>`,
               )
               .join('')}
           </div>
@@ -461,7 +459,7 @@ class BatchTestingManager {
       `
         <div style="display: flex; flex-direction: column; gap: 14px;">
           <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">
-            ${this.escapeHtml(
+            ${escapeHtml(
               this.t(
                 'settings.batchTestingDuplicateMessage',
                 'Batch Testing cannot safely distinguish plugins with the same filename. Keep only one copy of each .nro name across the active and disabled_plugins folders. Move extra copies to a backup folder outside both locations, or remove them only after making a backup, then recheck.',
@@ -601,12 +599,12 @@ class BatchTestingManager {
           <div style="padding: 16px 18px; border-radius: 14px; background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.14) 0%, rgba(var(--primary-rgb), 0.08) 100%); border: 1px solid rgba(var(--primary-rgb), 0.2);">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
               <div style="font-size: 12px; color: var(--text-muted);">
-                ${this.escapeHtml(
+                ${escapeHtml(
                   this.t('settings.batchTestingStartOrder', 'Start With'),
                 )}
               </div>
               <div style="padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: var(--text-primary); font-size: 12px; font-weight: 600;">
-                ${this.escapeHtml(startLabel)}
+                ${escapeHtml(startLabel)}
               </div>
             </div>
 
@@ -622,7 +620,7 @@ class BatchTestingManager {
             )}
           </div>
           <div style="padding: 14px 16px; border-radius: 12px; background: rgba(var(--primary-rgb), 0.08); border: 1px solid rgba(var(--primary-rgb), 0.18); color: var(--text-secondary); line-height: 1.6;">
-            ${this.escapeHtml(
+            ${escapeHtml(
               this.hasConfiguredEmulator()
                 ? this.t(
                     'settings.batchTestingEmulatorReady',
@@ -1038,14 +1036,14 @@ class BatchTestingManager {
           <div style="padding: 16px 18px; border-radius: 14px; background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.14) 0%, rgba(var(--primary-rgb), 0.08) 100%); border: 1px solid rgba(var(--primary-rgb), 0.2);">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
               <div style="padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: var(--text-primary); font-size: 12px; font-weight: 600;">
-                ${this.escapeHtml(snapshot.label)}
+                ${escapeHtml(snapshot.label)}
               </div>
               <div style="font-size: 12px; color: var(--text-muted);">
-                ${this.escapeHtml(stepLabel)}
+                ${escapeHtml(stepLabel)}
               </div>
             </div>
             <div style="margin-top: 10px; color: var(--text-secondary); line-height: 1.6;">
-              ${this.escapeHtml(
+              ${escapeHtml(
                 this.t(
                   'settings.batchTestingPrompt',
                   'These items are currently disabled. Launch the game, test the issue, then tell MOSAIC whether it works now.',
@@ -1110,7 +1108,7 @@ class BatchTestingManager {
           </div>
           <div style="padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); min-height: 0;">
             <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
-              ${this.escapeHtml(
+              ${escapeHtml(
                 this.t(
                   'settings.batchTestingDisabledNowTitle',
                   'Temporarily disabled for this test',
@@ -1136,12 +1134,12 @@ class BatchTestingManager {
         <div style="display: flex; flex-direction: column; gap: 16px;">
           <div style="padding: 16px 18px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color);">
             <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
-              ${this.escapeHtml(
+              ${escapeHtml(
                 this.t('settings.batchTestingStateDone', 'Finished'),
               )}
             </div>
             <div style="color: var(--text-secondary); line-height: 1.6;">
-              ${this.escapeHtml(
+              ${escapeHtml(
                 this.t(
                   'settings.batchTestingNoCauseDesc',
                   'No clear primary cause was isolated in the active mods or plugins. The original state has been restored.',
@@ -1254,7 +1252,7 @@ class BatchTestingManager {
               )}
             </div>
             <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">
-              ${this.escapeHtml(
+              ${escapeHtml(
                 this.t(
                   'settings.batchTestingPrompt',
                   'These items are currently disabled. Launch the game, test the issue, then tell MOSAIC whether it works now.',
@@ -1335,7 +1333,7 @@ class BatchTestingManager {
         <div style="display: flex; flex-direction: column; gap: 16px;">
           <div style="padding: 16px 18px; border-radius: 14px; background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.14) 0%, rgba(var(--primary-rgb), 0.08) 100%); border: 1px solid rgba(var(--primary-rgb), 0.2);">
             <div style="display: inline-flex; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: var(--text-primary); font-size: 12px; font-weight: 600; margin-bottom: 10px;">
-              ${this.escapeHtml(
+              ${escapeHtml(
                 this.t(
                   'settings.batchTestingPrimaryCauseLabel',
                   'Likely culprit',
@@ -1343,7 +1341,7 @@ class BatchTestingManager {
               )}
             </div>
             <div style="font-size: 18px; font-weight: 700; color: var(--text-primary);">
-              ${this.escapeHtml(
+              ${escapeHtml(
                 isSingle
                   ? culpritNames[0]
                   : this.t(
@@ -1353,7 +1351,7 @@ class BatchTestingManager {
               )}
             </div>
             <div style="margin-top: 8px; color: var(--text-secondary); line-height: 1.6;">
-              ${this.escapeHtml(
+              ${escapeHtml(
                 isSingle
                   ? this.t(
                       'settings.batchTestingDeleteOrDisable',
@@ -1772,12 +1770,6 @@ class BatchTestingManager {
       normalizedMessage.includes('folder is not available') ||
       normalizedMessage.includes('make sure this folder exists')
     );
-  }
-
-  escapeHtml(value: string) {
-    const div = document.createElement('div');
-    div.textContent = value;
-    return div.innerHTML;
   }
 }
 

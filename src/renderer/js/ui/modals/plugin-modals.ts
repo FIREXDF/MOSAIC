@@ -23,7 +23,7 @@ export {};
         return `
         <div class="plugin-update-item" data-plugin-name="${update.pluginName}">
           <div class="plugin-update-info">
-            <span class="plugin-update-name">${this.escapeHtml(update.pluginName)}</span>
+            <span class="plugin-update-name">${escapeHtml(update.pluginName)}</span>
             <span class="plugin-update-versions">
               ${update.currentVersion} → ${update.latestVersion}
             </span>
@@ -239,25 +239,25 @@ export {};
             (update) => `
         <div class="plugin-update-item">
           <div class="plugin-update-info">
-            <span class="plugin-update-name">${this.escapeHtml(update.name)}</span>
+            <span class="plugin-update-name">${escapeHtml(update.name)}</span>
             ${
               update.latestVersion
-                ? `<span class="plugin-update-versions">${this.escapeHtml(
+                ? `<span class="plugin-update-versions">${escapeHtml(
                     update.currentVersion || '?',
-                  )} → ${this.escapeHtml(update.latestVersion)}</span>`
+                  )} → ${escapeHtml(update.latestVersion)}</span>`
                 : ''
             }
             ${
               update.changes
-                ? `<span class="plugin-update-versions">${this.escapeHtml(update.changes)}</span>`
+                ? `<span class="plugin-update-versions">${escapeHtml(update.changes)}</span>`
                 : ''
             }
           </div>
           <div style="display: flex; flex-direction: column; gap: 8px">
-            <button class="modal-btn modal-btn-primary update-plugin-btn" data-install="${this.escapeHtml(update.url)}">
+            <button class="modal-btn modal-btn-primary update-plugin-btn" data-install="${escapeHtml(update.url)}">
               ${t('tools.modInfo.update')}
             </button>
-            <button class="modal-btn modal-btn-secondary update-plugin-btn" data-url="${this.escapeHtml(update.url)}">
+            <button class="modal-btn modal-btn-secondary update-plugin-btn" data-url="${escapeHtml(update.url)}">
               ${t('tools.modInfo.openOnGameBanana')}
             </button>
           </div>
@@ -533,22 +533,22 @@ export {};
       <div class="${cardClass}" data-installed="${isInstalled}">
         <div class="marketplace-card-header">
           <div class="marketplace-card-title-section">
-            <h3 class="marketplace-card-name">${this.escapeHtml(plugin.name)}</h3>
-            <span class="marketplace-card-repo">${this.escapeHtml(plugin.repo)}</span>
+            <h3 class="marketplace-card-name">${escapeHtml(plugin.name)}</h3>
+            <span class="marketplace-card-repo">${escapeHtml(plugin.repo)}</span>
           </div>
         </div>
         <div class="marketplace-card-body">
-          <p class="marketplace-card-description">${this.escapeHtml(plugin.description || 'No description available')}</p>
+          <p class="marketplace-card-description">${escapeHtml(plugin.description || 'No description available')}</p>
         </div>
         <div class="marketplace-card-footer">
-          <a href="${this.escapeHtml(plugin.url || `https://github.com/${plugin.repo}`)}" target="_blank" class="marketplace-card-link" rel="noopener noreferrer">
+          <a href="${escapeHtml(plugin.url || `https://github.com/${plugin.repo}`)}" target="_blank" class="marketplace-card-link" rel="noopener noreferrer">
             <i class="bi ${isGameBanana ? 'bi-box-arrow-up-right' : 'bi-github'}"></i>
             <span>${isGameBanana ? 'View on GameBanana' : 'View on GitHub'}</span>
           </a>
           <button class="${buttonClass}" 
-                  data-plugin-name="${this.escapeHtml(plugin.name)}"
-                  data-plugin-repo="${this.escapeHtml(plugin.repo)}"
-                  data-special-installer="${this.escapeHtml(plugin.specialInstaller || '')}"
+                  data-plugin-name="${escapeHtml(plugin.name)}"
+                  data-plugin-repo="${escapeHtml(plugin.repo)}"
+                  data-special-installer="${escapeHtml(plugin.specialInstaller || '')}"
                   data-is-installed="${isInstalled}">
             <i class="bi ${buttonIcon}"></i>
             <span ${buttonTextKey ? `data-i18n="${buttonTextKey}"` : ''}>${buttonDefaultText}</span>
@@ -832,7 +832,7 @@ export {};
         <div class="marketplace-empty">
           <i class="bi bi-exclamation-triangle"></i>
           <p>ARCropolis releases could not be loaded.</p>
-          <small>${this.escapeHtml(error.message || String(error))}</small>
+          <small>${escapeHtml(error.message || String(error))}</small>
         </div>
       `;
       return;
@@ -859,7 +859,7 @@ export {};
         <label style="display: block; cursor: pointer; padding: 16px; border: 1px solid rgba(122, 155, 255, 0.35); border-radius: 12px; background: rgba(122, 155, 255, 0.08);">
           <span style="display: flex; align-items: center; gap: 10px; color: var(--text-primary); font-weight: 700;">
             <input type="radio" name="marketplace-arcropolis-release" value="latest">
-            ARCropolis ${this.escapeHtml(choices.latest.version)}
+            ARCropolis ${escapeHtml(choices.latest.version)}
             <span style="color: #9db5ff; font-size: 12px;">Latest</span>
           </span>
           <span style="display: block; margin: 8px 0 0 24px; color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
@@ -1000,7 +1000,7 @@ export {};
     let archiveId = '';
     let optionsLoadId = 0;
 
-    const escape = (value: string) => this.escapeHtml(String(value || ''));
+    const escape = (value: string) => escapeHtml(String(value || ''));
     const setBusy = (busy: boolean, text = 'Install') => {
       confirmBtn.disabled = busy;
       confirmBtn.innerHTML = busy
@@ -1250,7 +1250,7 @@ export {};
     )!;
 
     let files: any[] = [];
-    const escape = (value: string) => this.escapeHtml(String(value || ''));
+    const escape = (value: string) => escapeHtml(String(value || ''));
     const getSelectedFile = () =>
       files.find((file) => String(file._idRow) === versionSelect.value) ||
       files[0];

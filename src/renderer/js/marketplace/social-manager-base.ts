@@ -154,12 +154,6 @@ class SocialManagerBase {
     }
   }
 
-  escapeHtml(value) {
-    const div = document.createElement('div');
-    div.textContent = value == null ? '' : String(value);
-    return div.innerHTML;
-  }
-
   getSocialTranslation(
     key: string,
     fallback: string,
