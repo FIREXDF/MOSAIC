@@ -302,35 +302,35 @@ document.addEventListener('DOMContentLoaded', () => {
     {
       icon: 'bi-stars',
       title: 'Welcome to MOSAIC',
-      description: 'Your all-in-one mod manager for Super Smash Bros Ultimate',
+      description: 'Mod manager for Super Smash Bros. Ultimate',
       content: `
 <div class="tutorial-center">
-    <h3 class="tutorial-welcome-title">Let's get you started</h3>
-    <p class="tutorial-welcome-text">This quick tutorial will help you set up MOSAIC 4 in just a few steps.</p>
+    <h3 class="tutorial-welcome-title">Set up MOSAIC</h3>
+    <p class="tutorial-welcome-text">A few questions about your setup, then MOSAIC knows where your mods and plugins live.</p>
     
     <div class="tutorial-feature-grid">
         <div class="tutorial-feature-hover">
             <i class="bi bi-collection-play tutorial-feature-icon"></i>
-            <strong class="tutorial-feature-title">Manage Mods</strong>
-            <span class="tutorial-feature-caption">Organize effortlessly</span>
+            <strong class="tutorial-feature-title">Mods</strong>
+            <span class="tutorial-feature-caption">Enable, disable and rename</span>
         </div>
         
         <div class="tutorial-feature">
             <i class="bi bi-cloud-download tutorial-feature-icon"></i>
-            <strong class="tutorial-feature-title">1-Click Install</strong>
-            <span class="tutorial-feature-caption">From GameBanana</span>
+            <strong class="tutorial-feature-title">GameBanana</strong>
+            <span class="tutorial-feature-caption">Install a mod from its page</span>
         </div>
         
         <div class="tutorial-feature">
             <i class="bi bi-people tutorial-feature-icon"></i>
             <strong class="tutorial-feature-title">Characters</strong>
-            <span class="tutorial-feature-caption">Sorted by fighter</span>
+            <span class="tutorial-feature-caption">Browse mods by fighter and slot</span>
         </div>
         
         <div class="tutorial-feature">
             <i class="bi bi-plugin tutorial-feature-icon"></i>
             <strong class="tutorial-feature-title">Plugins</strong>
-            <span class="tutorial-feature-caption">Handle .nro files</span>
+            <span class="tutorial-feature-caption">Manage Skyline .nro plugins</span>
         </div>
     </div>
 </div>
@@ -2747,7 +2747,7 @@ document.addEventListener('DOMContentLoaded', () => {
       description: 'Enable, disable, and organize your mods',
       content: `
 <div class="tutorial-center">
-    <h3 class="tutorial-status-title">Everything at your fingertips</h3>
+    <h3 class="tutorial-status-title">Your mod list</h3>
     
     <div class="tutorial-stack">
         
@@ -2792,7 +2792,7 @@ document.addEventListener('DOMContentLoaded', () => {
       content: `
 <div class="tutorial-center">
     <h3 class="tutorial-status-title">One-click install</h3>
-    <p class="tutorial-lead-xl">Simply click <strong class="tutorial-text-white">"Install with MOSAIC"</strong> on GameBanana.</p>
+    <p class="tutorial-lead-xl">Click <strong class="tutorial-text-white">"Install with MOSAIC"</strong> on GameBanana.</p>
     
     <div class="tutorial-gb-demo">
         
@@ -2827,16 +2827,16 @@ document.addEventListener('DOMContentLoaded', () => {
     {
       icon: 'bi-check-circle-fill',
       title: "You're All Set",
-      description: 'Start modding and have fun',
+      description: 'MOSAIC is ready to use',
       content: `
 <div class="tutorial-center">
     <div class="tutorial-done-icon">
         <i class="bi bi-check-lg tutorial-hero-glyph-success"></i>
     </div>
     
-    <h3 class="tutorial-done-title">Ready to go!</h3>
+    <h3 class="tutorial-done-title">Setup complete</h3>
     <p class="tutorial-done-text">
-        MOSAIC is configured and ready. Start downloading mods or explore the settings to customize your experience.
+        You can install mods now. Everything you chose here can be changed later in Settings.
     </p>
     
     <div class="tutorial-done-grid">
