@@ -1,0 +1,227 @@
+.batch-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.batch-stack-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.batch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.batch-duplicate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 36vh;
+  overflow: auto;
+}
+
+.batch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.batch-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.batch-card {
+  min-width: 0;
+  min-height: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-transparent-03);
+}
+
+.batch-panel {
+  padding: 16px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-transparent-03);
+}
+
+.batch-hero {
+  padding: 16px 18px;
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+  border-radius: 14px;
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.batch-note {
+  padding: 14px 16px;
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
+  border-radius: 12px;
+  background: rgba(var(--accent-rgb), 0.08);
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.batch-pill {
+  display: inline-flex;
+  padding: 6px 10px;
+  border: 1px solid var(--border-transparent-10);
+  border-radius: 999px;
+  background: var(--bg-transparent-08);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.batch-hero-pill {
+  margin-bottom: 10px;
+}
+
+.batch-meta {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.batch-label {
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.batch-text {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.batch-hero .batch-text {
+  margin-top: 8px;
+}
+
+.batch-hero-title {
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.batch-bullets {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.batch-bullets li {
+  margin-bottom: 6px;
+}
+
+.batch-duplicate-name {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.batch-duplicate-path {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.batch-stat-value {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.batch-step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(var(--accent-rgb), 0.22);
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--accent-color);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.batch-step-title {
+  margin-bottom: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.batch-step-text {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.batch-field-value {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.batch-field-value-multiline {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.batch-testing-item-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.batch-trigger-chip {
+  max-width: 100%;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-transparent-05);
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: left;
+  white-space: normal;
+}
+
+.batch-trigger-list {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--accent-color);
+  font-size: 14px;
+}
+
+.batch-trigger-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+.batch-trigger-icon {
+  flex: 0 0 auto;
+  font-size: 12px;
+  opacity: 0.8;
+}

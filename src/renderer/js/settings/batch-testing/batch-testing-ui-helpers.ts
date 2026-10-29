@@ -195,11 +195,11 @@ class BatchTestingUiHelpers {
 
   renderInfoCard(title: string, value: string) {
     return `
-      <div style="padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color);">
-        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
+      <div class="batch-card">
+        <div class="batch-label">
           ${escapeHtml(title)}
         </div>
-        <div style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
+        <div class="batch-stat-value">
           ${escapeHtml(value)}
         </div>
       </div>
@@ -208,14 +208,14 @@ class BatchTestingUiHelpers {
 
   renderStepCard(index: string, title: string, description: string) {
     return `
-      <div style="padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); min-width: 0;">
-        <div style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; background: rgba(var(--primary-rgb), 0.14); border: 1px solid rgba(var(--primary-rgb), 0.22); color: var(--primary-color); font-size: 13px; font-weight: 700; margin-bottom: 10px;">
+      <div class="batch-card">
+        <div class="batch-step-index">
           ${escapeHtml(index)}
         </div>
-        <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">
+        <div class="batch-step-title">
           ${escapeHtml(title)}
         </div>
-        <div style="font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
+        <div class="batch-step-text">
           ${escapeHtml(description)}
         </div>
       </div>
@@ -224,13 +224,11 @@ class BatchTestingUiHelpers {
 
   renderDetailRow(label: string, value: string, multiline = false) {
     return `
-      <div style="padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); min-width: 0;">
-        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
+      <div class="batch-card">
+        <div class="batch-label">
           ${escapeHtml(label)}
         </div>
-        <div style="display: block; max-width: 100%; min-width: 0; font-size: 14px; color: var(--text-primary); line-height: 1.6; overflow-wrap: anywhere; ${multiline ? 'white-space: pre-wrap; word-break: break-word;' : ''}">
-          ${escapeHtml(value)}
-        </div>
+        <div class="batch-field-value${multiline ? ' batch-field-value-multiline' : ''}">${escapeHtml(value)}</div>
       </div>
     `;
   }
@@ -240,21 +238,15 @@ class BatchTestingUiHelpers {
     name: string,
     variant: 'chip' | 'list',
   ) {
-    const baseStyle =
-      variant === 'chip'
-        ? 'display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 12px; text-align: left; white-space: normal;'
-        : 'display: inline-flex; align-items: center; gap: 6px; padding: 0; background: transparent; border: none; color: var(--primary-color); font-size: 14px;';
-
     return `
       <button
         type="button"
-        class="batch-testing-item-trigger"
+        class="batch-testing-item-trigger batch-trigger-${variant}"
         data-batch-category="${category}"
         data-batch-name="${escapeHtml(name)}"
-        style="${baseStyle} cursor: pointer;"
       >
-        <span style="min-width: 0; overflow-wrap: anywhere; line-height: 1.25;">${escapeHtml(name)}</span>
-        <i class="bi bi-info-circle" style="font-size: 12px; opacity: 0.8; flex: 0 0 auto;"></i>
+        <span class="batch-trigger-name">${escapeHtml(name)}</span>
+        <i class="bi bi-info-circle batch-trigger-icon"></i>
       </button>
     `;
   }
@@ -388,8 +380,8 @@ class BatchTestingUiHelpers {
     }
 
     return `
-      <div style="display: flex; flex-direction: column; gap: 14px; min-width: 0;">
-        <div style="padding: 14px 16px; border-radius: 12px; background: rgba(var(--primary-rgb), 0.08); border: 1px solid rgba(var(--primary-rgb), 0.18); color: var(--text-secondary); line-height: 1.6;">
+      <div class="batch-stack-sm">
+        <div class="batch-note">
           ${escapeHtml(
             modInfo.description ||
               this.t(
@@ -398,7 +390,7 @@ class BatchTestingUiHelpers {
               ),
           )}
         </div>
-        <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+        <div class="batch-list">
           ${rows.join('')}
         </div>
       </div>
@@ -411,7 +403,7 @@ class BatchTestingUiHelpers {
     entry: { path: string; size: string },
   ) {
     return `
-      <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+      <div class="batch-list">
         ${this.renderDetailRow(
           this.t('tools.modInfo.name', 'Name'),
           itemName,

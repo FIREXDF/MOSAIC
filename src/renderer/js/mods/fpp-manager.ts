@@ -146,15 +146,14 @@ export class FppManager {
             for (const mod of mods) {
                 const item = document.createElement('div');
                 item.className = 'smart-rename-select-item';
-                item.style.cssText = 'display: flex; align-items: center; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; gap: 10px;';
 
                 item.innerHTML = `
-            <input type="checkbox" class="fpp-mod-checkbox fpp-core-mod-checkbox" data-path="${mod.path}" data-name="${mod.name}" style="margin-right: 8px;" />
-            <div style="display: flex; flex-direction: column;">
-              <span style="color: var(--text-primary); font-weight: 500;">${mod.name} 
-                <span style="font-size: 10px; padding: 2px 4px; border-radius: 4px; background: rgba(var(--primary-rgb), 0.2); color: var(--primary-color); margin-left: 4px;">Mod</span>
+            <input type="checkbox" class="fpp-mod-checkbox fpp-core-mod-checkbox fpp-select-item-checkbox" data-path="${mod.path}" data-name="${mod.name}" />
+            <div class="fpp-select-info">
+              <span class="fpp-select-name">${mod.name} 
+                <span class="fpp-tag">Mod</span>
               </span>
-              <span style="color: var(--text-muted); font-size: 11px;">${mod.status === 'active' ? 'Active' : 'Disabled'}${mod.hash ? ' | #' + mod.hash : ''}</span>
+              <span class="fpp-select-meta">${mod.status === 'active' ? 'Active' : 'Disabled'}${mod.hash ? ' | #' + mod.hash : ''}</span>
             </div>
           `;
 
@@ -174,15 +173,14 @@ export class FppManager {
                 for (const plugin of plugins) {
                     const item = document.createElement('div');
                     item.className = 'smart-rename-select-item';
-                    item.style.cssText = 'display: flex; align-items: center; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; gap: 10px; border-left: 3px solid var(--accent-color);';
 
                     item.innerHTML = `
-                <input type="checkbox" class="fpp-mod-checkbox fpp-plugin-checkbox" data-path="${plugin.filePath}" data-name="${plugin.name}" style="margin-right: 8px;" />
-                <div style="display: flex; flex-direction: column;">
-                  <span style="color: var(--text-primary); font-weight: 500;">${plugin.name}
-                    <span style="font-size: 10px; padding: 2px 4px; border-radius: 4px; background: rgba(var(--accent-rgb), 0.2); color: var(--accent-color); margin-left: 4px;">Plugin</span>
+                <input type="checkbox" class="fpp-mod-checkbox fpp-plugin-checkbox fpp-select-item-checkbox" data-path="${plugin.filePath}" data-name="${plugin.name}" />
+                <div class="fpp-select-info">
+                  <span class="fpp-select-name">${plugin.name}
+                    <span class="fpp-tag">Plugin</span>
                   </span>
-                  <span style="color: var(--text-muted); font-size: 11px;">${plugin.status === 'active' ? 'Active' : 'Disabled'} | ${plugin.size}</span>
+                  <span class="fpp-select-meta">${plugin.status === 'active' ? 'Active' : 'Disabled'} | ${plugin.size}</span>
                 </div>
               `;
 
@@ -443,54 +441,54 @@ export class FppManager {
         }
 
         modalBody.innerHTML = `
-            <div style="display: flex; gap: 24px; align-items: stretch; height: 100%;">
+            <div class="fpp-summary">
                 <!-- Left Column: Thumbnail and Pack Info -->
-                <div style="width: 300px; display: flex; flex-direction: column; align-items: center; text-align: center; flex-shrink: 0;">
-                    <div style="width: 100%; border-radius: 12px; overflow: hidden; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 16px; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; background: var(--bg-tertiary);">
+                <div class="fpp-summary-side">
+                    <div class="fpp-summary-thumb">
                         ${summary.thumbnailPath
-                ? `<img src="file://${summary.thumbnailPath}" style="width: 100%; height: 100%; object-fit: cover;">`
-                : `<i class="bi bi-file-zip-fill" style="color: var(--primary-color); font-size: 64px;"></i>`
+                ? `<img src="file://${summary.thumbnailPath}">`
+                : `<i class="bi bi-file-zip-fill"></i>`
             }
                     </div>
-                    <h3 style="color: var(--text-primary); margin: 0 0 8px 0; font-size: 24px; word-break: break-word;">${summary.manifest.name || 'Unknown Pack'}</h3>
-                    <div style="display: flex; justify-content: center; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <span style="color: var(--text-muted); font-size: 12px; padding: 2px 8px; background: var(--bg-secondary); border-radius: 6px; border: 1px solid var(--border-color);">v${summary.manifest.pack_version || '1.0.0'}</span>
-                        <span style="color: var(--text-muted); font-size: 11px;">FPP Format v${summary.manifest.fpp_version}</span>
+                    <h class="fpp-summary-title"3>${summary.manifest.name || 'Unknown Pack'}</h3>
+                    <div class="fpp-summary-badges">
+                        <span class="fpp-version-badge">v${summary.manifest.pack_version || '1.0.0'}</span>
+                        <span class="fpp-select-meta">FPP Format v${summary.manifest.fpp_version}</span>
                     </div>
                 </div>
 
                 <!-- Right Column: Stats and Mod List -->
-                <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
-                    <div style="background: var(--bg-tertiary); border-radius: 10px; padding: 14px; margin-bottom: 16px; flex-shrink: 0;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="color: var(--text-secondary);">${t('fpp.totalMods', 'Total Mods')}</span>
-                            <span style="color: var(--text-primary); font-weight: 600;">${totalMods}</span>
+                <div class="fpp-summary-main">
+                    <div class="fpp-stats">
+                        <div class="fpp-stat-row">
+                            <span class="fpp-stat-label">${t('fpp.totalMods', 'Total Mods')}</span>
+                            <span class="fpp-stat-value">${totalMods}</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="color: var(--text-secondary);">${t('fpp.totalPlugins', 'Total Plugins')}</span>
-                            <span style="color: var(--text-primary); font-weight: 600;">${totalPlugins}</span>
+                        <div class="fpp-stat-row">
+                            <span class="fpp-stat-label">${t('fpp.totalPlugins', 'Total Plugins')}</span>
+                            <span class="fpp-stat-value">${totalPlugins}</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="color: var(--text-secondary);">${t('fpp.embeddedMods', 'Embedded Items')}</span>
-                            <span style="color: var(--text-primary); font-weight: 600;">${embeddedCount}</span>
+                        <div class="fpp-stat-row">
+                            <span class="fpp-stat-label">${t('fpp.embeddedMods', 'Embedded Items')}</span>
+                            <span class="fpp-stat-value">${embeddedCount}</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--text-secondary);">${t('fpp.downloadableMods', 'Downloadable Items')}</span>
-                            <span style="color: var(--text-primary); font-weight: 600;">${downloadCount}</span>
+                        <div class="fpp-stat-row">
+                            <span class="fpp-stat-label">${t('fpp.downloadableMods', 'Downloadable Items')}</span>
+                            <span class="fpp-stat-value">${downloadCount}</span>
                         </div>
                     </div>
 
                     ${(summary.mods && summary.mods.length > 0) ? `
-                    <div style="flex: 1; overflow-y: auto; background: var(--bg-secondary); border-radius: 8px; padding: 8px; border: 1px solid var(--border-hover); box-shadow: inset 0 2px 8px rgba(0,0,0,0.1); min-height: 120px; max-height: 250px;">
+                    <div class="fpp-content-list">
                       ${(summary.mods || []).map((mod: any) => `
-                        <div style="display: flex; align-items: center; padding: 6px 8px; gap: 8px;">
-                          <i class="bi ${mod.source === 'download' ? 'bi-cloud-download' : (mod.type === 'plugin' ? 'bi-puzzle' : 'bi-folder')}" style="color: ${mod.source === 'download' ? 'var(--accent-color)' : (mod.type === 'plugin' ? 'var(--primary-color)' : 'var(--primary-color)')}; font-size: 14px; flex-shrink: 0;"></i>
-                          <span style="color: var(--text-primary); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${mod.name}</span>
-                          ${mod.type === 'plugin' ? `<span style="font-size: 10px; padding: 2px 4px; border-radius: 4px; background: rgba(var(--primary-rgb), 0.2); color: var(--primary-color); margin-left: auto; flex-shrink: 0;">Plugin ${pluginVersions[mod.name.replace(/\\.nro$/i, '')] ? `v${pluginVersions[mod.name.replace(/\\.nro$/i, '')]}` : ''}</span>` : ''}
+                        <div class="fpp-content-row">
+                          <i class="bi ${mod.source === 'download' ? 'bi-cloud-download' : (mod.type === 'plugin' ? 'bi-puzzle' : 'bi-folder')} fpp-content-icon"></i>
+                          <span class="fpp-content-name">${mod.name}</span>
+                          ${mod.type === 'plugin' ? `<span class="fpp-tag fpp-content-tag">Plugin ${pluginVersions[mod.name.replace(/\\.nro$/i, '')] ? `v${pluginVersions[mod.name.replace(/\\.nro$/i, '')]}` : ''}</span>` : ''}
                         </div>
                       `).join('')}
                     </div>` : `
-                    <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 14px; min-height: 120px; background: var(--bg-secondary); border-radius: 8px; border: 1px dashed var(--border-hover);">
+                    <div class="fpp-content-empty">
                         ${t('fpp.noModsFound', 'No items found in this pack.')}
                     </div>
                     `}

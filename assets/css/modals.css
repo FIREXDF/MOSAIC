@@ -1103,3 +1103,74 @@ body.no-animations .context-menu {
   overflow-wrap: anywhere;
   user-select: text;
 }
+
+.plugin-modal-intro {
+  margin-bottom: 15px;
+  color: var(--text-secondary);
+}
+
+.plugin-modal-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plugin-empty-icon {
+  margin-bottom: 16px;
+  font-size: 48px;
+  opacity: 0.3;
+}
+
+.plugin-version-choices {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.plugin-version-legend {
+  margin-bottom: 6px;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.plugin-version-option {
+  display: block;
+  padding: 16px;
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  border-radius: 12px;
+  background: rgba(var(--accent-rgb), 0.08);
+  cursor: pointer;
+}
+
+.plugin-version-option-recommended {
+  border-color: rgba(var(--success-color-rgb), 0.45);
+  background: rgba(var(--success-color-rgb), 0.1);
+}
+
+.plugin-version-option-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.plugin-version-badge {
+  color: var(--accent-color);
+  font-size: 12px;
+}
+
+.plugin-version-option-recommended .plugin-version-badge {
+  color: var(--success-color);
+}
+
+.plugin-version-option-text {
+  display: block;
+  margin: 8px 0 0 24px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}

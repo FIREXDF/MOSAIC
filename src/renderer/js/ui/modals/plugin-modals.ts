@@ -45,7 +45,7 @@ export {};
       <h2>Plugin Updates Available</h2>
     </div>
     <div class="modal-body">
-      <p style="margin-bottom: 15px; color: #aaa;">
+      <p class="plugin-modal-intro">
         The following plugins have updates available:
       </p>
       <div class="plugin-updates-list">
@@ -253,7 +253,7 @@ export {};
                 : ''
             }
           </div>
-          <div style="display: flex; flex-direction: column; gap: 8px">
+          <div class="plugin-modal-stack">
             <button class="modal-btn modal-btn-primary update-plugin-btn" data-install="${escapeHtml(update.url)}">
               ${t('tools.modInfo.update')}
             </button>
@@ -491,7 +491,7 @@ export {};
     if (!plugins || plugins.length === 0) {
       container.innerHTML = `
       <div class="marketplace-empty">
-        <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3; margin-bottom: 16px;"></i>
+        <i class="bi bi-inbox plugin-empty-icon"></i>
         <p data-i18n="plugins.marketplaceNoResults">No plugins available</p>
       </div>
     `;
@@ -625,7 +625,7 @@ export {};
 
         btn.disabled = true;
         btn.innerHTML =
-          '<i class="bi bi-arrow-repeat" style="animation: spin 1s linear infinite;"></i> <span data-i18n="plugins.installing">Installing...</span>';
+          '<i class="bi bi-arrow-repeat spin"></i> <span data-i18n="plugins.installing">Installing...</span>';
         if (window.i18n) {
           window.i18n.updateDOM();
         }
@@ -847,25 +847,25 @@ export {};
       'Supports only Super Smash Bros. Ultimate 13.0.5.';
 
     body.innerHTML = `
-      <fieldset style="border: 0; margin: 0; padding: 0; display: grid; gap: 12px;">
-        <legend style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 6px;">Choose a version</legend>
-        <label style="display: block; cursor: pointer; padding: 16px; border: 1px solid rgba(76, 175, 80, 0.45); border-radius: 12px; background: rgba(76, 175, 80, 0.1);">
-          <span style="display: flex; align-items: center; gap: 10px; color: var(--text-primary); font-weight: 700;">
+      <fieldset class="plugin-version-choices">
+        <legend class="plugin-version-legend">Choose a version</legend>
+        <label class="plugin-version-option plugin-version-option-recommended">
+          <span class="plugin-version-option-title">
             <input type="radio" name="marketplace-arcropolis-release" value="recommended" checked>
             ARCropolis 4.0.8
-            <span style="color: #81c784; font-size: 12px;">Recommended</span>
+            <span class="plugin-version-badge">Recommended</span>
           </span>
-          <span style="display: block; margin: 8px 0 0 24px; color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
+          <span class="plugin-version-option-text">
             Supports only Super Smash Bros. Ultimate 13.0.4. Recommended now because it works better with existing mods while adoption catches up.
           </span>
         </label>
-        <label style="display: block; cursor: pointer; padding: 16px; border: 1px solid rgba(122, 155, 255, 0.35); border-radius: 12px; background: rgba(122, 155, 255, 0.08);">
-          <span style="display: flex; align-items: center; gap: 10px; color: var(--text-primary); font-weight: 700;">
+        <label class="plugin-version-option">
+          <span class="plugin-version-option-title">
             <input type="radio" name="marketplace-arcropolis-release" value="latest">
             ARCropolis ${escapeHtml(choices.latest.version)}
-            <span style="color: #9db5ff; font-size: 12px;">Latest</span>
+            <span class="plugin-version-badge">Latest</span>
           </span>
-          <span style="display: block; margin: 8px 0 0 24px; color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
+          <span class="plugin-version-option-text">
             ${latestCompatibility} Some mods may not support this release yet.
           </span>
         </label>
@@ -882,7 +882,7 @@ export {};
 
       confirmBtn.disabled = true;
       confirmBtn.innerHTML =
-        '<i class="bi bi-arrow-repeat" style="animation: spin 1s linear infinite;"></i><span>Installing...</span>';
+        '<i class="bi bi-arrow-repeat spin"></i><span>Installing...</span>';
 
       const installed =
         (await window.pluginMarketplace.downloadAndInstallPlugin(
@@ -1007,7 +1007,7 @@ export {};
     const setBusy = (busy: boolean, text = 'Install') => {
       confirmBtn.disabled = busy;
       confirmBtn.innerHTML = busy
-        ? '<i class="bi bi-arrow-repeat" style="animation: spin 1s linear infinite;"></i><span>Installing...</span>'
+        ? '<i class="bi bi-arrow-repeat spin"></i><span>Installing...</span>'
         : `<i class="bi ${isInstalled ? 'bi-check2' : 'bi-download'}"></i><span>${text}</span>`;
     };
 
@@ -1261,7 +1261,7 @@ export {};
     const setBusy = (busy: boolean) => {
       confirmBtn.disabled = busy;
       confirmBtn.innerHTML = busy
-        ? '<i class="bi bi-arrow-repeat" style="animation: spin 1s linear infinite;"></i><span>Installing...</span>'
+        ? '<i class="bi bi-arrow-repeat spin"></i><span>Installing...</span>'
         : '<i class="bi bi-download"></i><span>Install</span>';
     };
 

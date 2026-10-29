@@ -432,18 +432,18 @@ class BatchTestingManager {
     const duplicateList = duplicates
       .map(
         (plugin) => `
-          <div style="padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; background: rgba(255,255,255,0.04);">
-            <strong style="display: block; margin-bottom: 8px; color: var(--text-primary);">${escapeHtml(plugin.name)}</strong>
+          <div class="batch-card">
+            <strong class="batch-duplicate-name">${escapeHtml(plugin.name)}</strong>
             ${plugin.activePaths
               .map(
                 (pluginPath) =>
-                  `<div style="margin-top: 4px; color: var(--text-secondary); overflow-wrap: anywhere;"><span>${escapeHtml(this.t('settings.batchTestingDuplicateActiveLabel', 'Active'))}:</span> <code>${escapeHtml(pluginPath)}</code></div>`,
+                  `<div class="batch-duplicate-path"><span>${escapeHtml(this.t('settings.batchTestingDuplicateActiveLabel', 'Active'))}:</span> <code>${escapeHtml(pluginPath)}</code></div>`,
               )
               .join('')}
             ${plugin.disabledPaths
               .map(
                 (pluginPath) =>
-                  `<div style="margin-top: 4px; color: var(--text-secondary); overflow-wrap: anywhere;"><span>${escapeHtml(this.t('settings.batchTestingDuplicateDisabledLabel', 'Disabled'))}:</span> <code>${escapeHtml(pluginPath)}</code></div>`,
+                  `<div class="batch-duplicate-path"><span>${escapeHtml(this.t('settings.batchTestingDuplicateDisabledLabel', 'Disabled'))}:</span> <code>${escapeHtml(pluginPath)}</code></div>`,
               )
               .join('')}
           </div>
@@ -457,8 +457,8 @@ class BatchTestingManager {
         'Duplicate plugins detected',
       ),
       `
-        <div style="display: flex; flex-direction: column; gap: 14px;">
-          <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">
+        <div class="batch-stack-sm">
+          <p class="batch-text">
             ${escapeHtml(
               this.t(
                 'settings.batchTestingDuplicateMessage',
@@ -466,7 +466,7 @@ class BatchTestingManager {
               ),
             )}
           </p>
-          <div style="display: flex; flex-direction: column; gap: 8px; max-height: 36vh; overflow: auto;">
+          <div class="batch-duplicate-list">
             ${duplicateList}
           </div>
         </div>
@@ -595,21 +595,21 @@ class BatchTestingManager {
     this.renderModal(
       this.t('settings.batchTestingTitle', 'Batch Testing'),
       `
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-          <div style="padding: 16px 18px; border-radius: 14px; background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.14) 0%, rgba(var(--primary-rgb), 0.08) 100%); border: 1px solid rgba(var(--primary-rgb), 0.2);">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-              <div style="font-size: 12px; color: var(--text-muted);">
+        <div class="batch-stack">
+          <div class="batch-hero">
+            <div class="batch-header-row">
+              <div class="batch-meta">
                 ${escapeHtml(
                   this.t('settings.batchTestingStartOrder', 'Start With'),
                 )}
               </div>
-              <div style="padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: var(--text-primary); font-size: 12px; font-weight: 600;">
+              <div class="batch-pill">
                 ${escapeHtml(startLabel)}
               </div>
             </div>
 
           </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px;">
+          <div class="batch-grid">
             ${this.ui.renderInfoCard(
               this.t('settings.batchTestingStartMods', 'Mods'),
               `${activeMods}`,
@@ -619,7 +619,7 @@ class BatchTestingManager {
               `${activePlugins}`,
             )}
           </div>
-          <div style="padding: 14px 16px; border-radius: 12px; background: rgba(var(--primary-rgb), 0.08); border: 1px solid rgba(var(--primary-rgb), 0.18); color: var(--text-secondary); line-height: 1.6;">
+          <div class="batch-note">
             ${escapeHtml(
               this.hasConfiguredEmulator()
                 ? this.t(
@@ -1032,17 +1032,17 @@ class BatchTestingManager {
         snapshot.label
       }`,
       `
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-          <div style="padding: 16px 18px; border-radius: 14px; background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.14) 0%, rgba(var(--primary-rgb), 0.08) 100%); border: 1px solid rgba(var(--primary-rgb), 0.2);">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-              <div style="padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: var(--text-primary); font-size: 12px; font-weight: 600;">
+        <div class="batch-stack">
+          <div class="batch-hero">
+            <div class="batch-header-row">
+              <div class="batch-pill">
                 ${escapeHtml(snapshot.label)}
               </div>
-              <div style="font-size: 12px; color: var(--text-muted);">
+              <div class="batch-meta">
                 ${escapeHtml(stepLabel)}
               </div>
             </div>
-            <div style="margin-top: 10px; color: var(--text-secondary); line-height: 1.6;">
+            <div class="batch-text">
               ${escapeHtml(
                 this.t(
                   'settings.batchTestingPrompt',
@@ -1051,7 +1051,7 @@ class BatchTestingManager {
               )}
             </div>
           </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+          <div class="batch-grid">
             ${this.ui.renderInfoCard(
               this.t('settings.batchTestingQuestion', 'Does it work?'),
               stepLabel,
@@ -1071,7 +1071,7 @@ class BatchTestingManager {
               `${prompt.chunk.length}`,
             )}
           </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px;">
+          <div class="batch-grid">
             ${this.ui.renderStepCard(
               '1',
               this.t(
@@ -1106,8 +1106,8 @@ class BatchTestingManager {
               ),
             )}
           </div>
-          <div style="padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); min-height: 0;">
-            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+          <div class="batch-card">
+            <div class="batch-label">
               ${escapeHtml(
                 this.t(
                   'settings.batchTestingDisabledNowTitle',
@@ -1131,14 +1131,14 @@ class BatchTestingManager {
     this.renderModal(
       this.t('settings.batchTestingNoCauseTitle', 'No Primary Cause Found'),
       `
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-          <div style="padding: 16px 18px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color);">
-            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+        <div class="batch-stack">
+          <div class="batch-panel">
+            <div class="batch-label">
               ${escapeHtml(
                 this.t('settings.batchTestingStateDone', 'Finished'),
               )}
             </div>
-            <div style="color: var(--text-secondary); line-height: 1.6;">
+            <div class="batch-text">
               ${escapeHtml(
                 this.t(
                   'settings.batchTestingNoCauseDesc',
@@ -1147,7 +1147,7 @@ class BatchTestingManager {
               )}
             </div>
           </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px;">
+          <div class="batch-grid">
             ${this.ui.renderStepCard(
               '1',
               this.t(
@@ -1230,8 +1230,8 @@ class BatchTestingManager {
           snapshot.label
         }`,
         `
-          <div style="display: flex; flex-direction: column; gap: 16px;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+          <div class="batch-stack">
+            <div class="batch-grid">
               ${this.ui.renderInfoCard(
                 this.t('settings.batchTestingQuestion', 'Does it work?'),
                 this.t('settings.batchTestingStep', 'Step {{step}}', { step }),
@@ -1251,7 +1251,7 @@ class BatchTestingManager {
                 `${chunk.length}`,
               )}
             </div>
-            <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">
+            <p class="batch-text">
               ${escapeHtml(
                 this.t(
                   'settings.batchTestingPrompt',
@@ -1276,7 +1276,7 @@ class BatchTestingManager {
     const list = culpritNames
       .map(
         (name) =>
-          `<li style="margin-bottom: 6px;">${this.ui.renderItemTrigger(
+          `<li>${this.ui.renderItemTrigger(
             snapshot.category,
             name,
             'list',
@@ -1330,9 +1330,9 @@ class BatchTestingManager {
     this.renderModal(
       this.t('settings.batchTestingResultTitle', 'Primary Cause'),
       `
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-          <div style="padding: 16px 18px; border-radius: 14px; background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.14) 0%, rgba(var(--primary-rgb), 0.08) 100%); border: 1px solid rgba(var(--primary-rgb), 0.2);">
-            <div style="display: inline-flex; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: var(--text-primary); font-size: 12px; font-weight: 600; margin-bottom: 10px;">
+        <div class="batch-stack">
+          <div class="batch-hero">
+            <div class="batch-pill batch-hero-pill">
               ${escapeHtml(
                 this.t(
                   'settings.batchTestingPrimaryCauseLabel',
@@ -1340,7 +1340,7 @@ class BatchTestingManager {
                 ),
               )}
             </div>
-            <div style="font-size: 18px; font-weight: 700; color: var(--text-primary);">
+            <div class="batch-hero-title">
               ${escapeHtml(
                 isSingle
                   ? culpritNames[0]
@@ -1350,7 +1350,7 @@ class BatchTestingManager {
                     ),
               )}
             </div>
-            <div style="margin-top: 8px; color: var(--text-secondary); line-height: 1.6;">
+            <div class="batch-text">
               ${escapeHtml(
                 isSingle
                   ? this.t(
@@ -1364,7 +1364,7 @@ class BatchTestingManager {
               )}
             </div>
           </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+          <div class="batch-grid">
             ${this.ui.renderInfoCard(
               this.t(
                 'settings.batchTestingCurrentPool',
@@ -1377,7 +1377,7 @@ class BatchTestingManager {
               snapshot.label,
             )}
           </div>
-          <ul style="margin: 0; padding-left: 18px; color: var(--text-secondary); line-height: 1.6;">
+          <ul class="batch-bullets">
             ${list}
           </ul>
         </div>
