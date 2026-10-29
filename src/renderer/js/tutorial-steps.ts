@@ -3360,17 +3360,18 @@ document.addEventListener('DOMContentLoaded', () => {
           if (dot.parentElement === container) {
             dot.remove();
           }
-        }, 260);
+        }, 300);
       }
     });
 
     visibleSteps.forEach((stepIndex, displayIndex) => {
       let dot = existingDots.get(stepIndex);
+      const isNew = !dot || dot.classList.contains('dot-exit');
 
-      if (!dot || dot.classList.contains('dot-exit')) {
+      if (!dot || isNew) {
         dot = document.createElement('button');
         dot.setAttribute('type', 'button');
-        dot.className = 'tutorial-progress-dot';
+        dot.className = 'tutorial-progress-dot dot-enter';
         dot.dataset.step = String(stepIndex);
         dot.setAttribute(
           'aria-label',
@@ -3398,6 +3399,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const currentNodeAtPosition = container.children[displayIndex];
       if (currentNodeAtPosition !== dot) {
         container.insertBefore(dot, currentNodeAtPosition || null);
+      }
+
+      if (isNew) {
+        void dot.offsetWidth;
+        dot.classList.remove('dot-enter');
       }
     });
 
