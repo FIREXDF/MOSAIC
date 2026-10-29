@@ -1275,7 +1275,7 @@ class SettingsManager {
           key === 'hideNsfwDiscoverMods' ||
           key === 'showNsfwDiscoverPreviews'
         ) {
-          window.marketplaceDiscover?.refreshGameBananaFilteredContent?.();
+          window.marketplaceDiscover?.filters.refreshGameBananaFilteredContent();
         }
       });
       toggle.dataset.listenerAttached = 'true';

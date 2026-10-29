@@ -1,5 +1,4 @@
 class SocialManagerBase {
-  [key: string]: any;
   GAMEBANANA_TOP_SUBS_URL: string;
   GAMEBANANA_SUBFEED_URL: string;
   GAMEBANANA_API_URL: string;
@@ -27,6 +26,7 @@ class SocialManagerBase {
     movesets: import('../../../main/ipc/handlers/umc-handlers').UmcGameBananaMoveset[];
   } | null = null;
   gameBananaSearchListenerBound: boolean;
+  gameBananaClickFallbackListenerBound: boolean;
   gameBananaSubmissionCache: Map<string, GameBananaTopSubmission>;
   gameBananaDownloadCountCache: Map<string, number | null>;
   gameBananaDownloadCountRequests: Map<string, Promise<number | null>>;
