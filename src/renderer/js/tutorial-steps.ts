@@ -133,6 +133,159 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  const ARCROPOLIS_CONTENTS_PATH = [
+    'atmosphere',
+    'contents',
+    '01006A800016E000',
+  ];
+
+  const joinTutorialPath = async (...parts: string[]) => {
+    const result = await window.tutorialAPI.joinPath(...parts);
+    if (!result.success) throw new Error('Failed to construct path');
+    return result.path;
+  };
+
+  const renderInstallProgress = (
+    statusDiv: HTMLElement,
+    message: string,
+    percent: number,
+  ) => {
+    statusDiv.innerHTML = `
+                <div class="tutorial-box">
+                    <div class="tutorial-progress-label">${message}</div>
+                    <div class="tutorial-progress-track">
+                        <div class="tutorial-progress-fill" style="width: ${percent}%;"></div>
+                    </div>
+                </div>
+            `;
+  };
+
+  const downloadToTemp = async (url: string, fileName: string) => {
+    const tempDirResult = await window.tutorialAPI.getTempDir();
+    if (!tempDirResult.success) throw new Error('Failed to get temp directory');
+    return window.tutorialAPI.downloadArcropolis(
+      url,
+      await joinTutorialPath(
+        tempDirResult.path,
+        `${fileName}-${Date.now()}.zip`,
+      ),
+    );
+  };
+
+  const installArcropolis = async (
+    statusDiv: HTMLElement,
+    dataRoot: string,
+    extraDirs: string[][],
+  ) => {
+    renderInstallProgress(statusDiv, 'Fetching latest releases...', 10);
+    const skylineRelease = await apiWrapper.getSkylineRelease();
+    if (!skylineRelease.success)
+      throw createTutorialIpcError(
+        'Failed to get Skyline release',
+        skylineRelease,
+      );
+    const arcropolisRelease = await chooseArcropolisRelease(statusDiv);
+
+    renderInstallProgress(
+      statusDiv,
+      `Downloading Skyline ${skylineRelease.version} (exefs)...`,
+      20,
+    );
+    const skyline = await downloadToTemp(skylineRelease.downloadUrl, 'skyline');
+    if (!skyline.success) throw new Error('Skyline download failed');
+
+    renderInstallProgress(
+      statusDiv,
+      `Downloading ARCropolis ${arcropolisRelease.version} (romfs)...`,
+      40,
+    );
+    const arcropolis = await downloadToTemp(
+      arcropolisRelease.downloadUrl,
+      'arcropolis',
+    );
+    if (!arcropolis.success) throw new Error('ARCropolis download failed');
+
+    renderInstallProgress(statusDiv, 'Installing Skyline (exefs)...', 60);
+    const contentsDir = await joinTutorialPath(
+      dataRoot,
+      ...ARCROPOLIS_CONTENTS_PATH,
+    );
+    await window.tutorialAPI.createDirectory(contentsDir);
+    const skylineExtract = await window.tutorialAPI.extractSkyline(
+      skyline.path,
+      contentsDir,
+    );
+    if (!skylineExtract.success) throw new Error('Skyline extraction failed');
+
+    renderInstallProgress(statusDiv, 'Installing ARCropolis (romfs)...', 80);
+    const arcropolisExtract = await window.tutorialAPI.extractArcropolis(
+      arcropolis.path,
+      contentsDir,
+    );
+    if (!arcropolisExtract.success)
+      throw new Error('ARCropolis extraction failed');
+
+    for (const dir of extraDirs) {
+      await window.tutorialAPI.createDirectory(
+        await joinTutorialPath(dataRoot, ...dir),
+      );
+    }
+
+    statusDiv.innerHTML = `
+                <div class="tutorial-box-success">
+                    <div class="tutorial-row">
+                        <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
+                        <div>
+                            <strong class="tutorial-label">Installation complete!</strong>
+                            <span class="tutorial-text-muted-sm">Skyline ${skylineRelease.version} (exefs) + ARCropolis ${arcropolisRelease.version} (romfs)</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+  };
+
+  const runArcropolisInstallStep = async (options: {
+    statusSelector: string;
+    pathKey: string;
+    missingPathMessage: string;
+    dataFolder: string | null;
+    extraDirs: string[][];
+  }) => {
+    const statusDiv = document.querySelector<HTMLElement>(
+      options.statusSelector,
+    );
+    const nextBtn = document.querySelector<HTMLElement>('#next-btn');
+    if (!statusDiv) return;
+
+    if (nextBtn) {
+      nextBtn.style.opacity = '0.5';
+      nextBtn.style.pointerEvents = 'none';
+    }
+
+    try {
+      const basePath = (await apiWrapper.storeGet(options.pathKey)) as
+        | string
+        | null;
+      if (!basePath) {
+        statusDiv.innerHTML = `<div class="tutorial-text-error">Error: ${options.missingPathMessage}</div>`;
+        return;
+      }
+
+      const dataRoot = options.dataFolder
+        ? await joinTutorialPath(basePath, options.dataFolder)
+        : basePath;
+      await installArcropolis(statusDiv, dataRoot, options.extraDirs);
+
+      if (nextBtn) {
+        nextBtn.style.opacity = '1';
+        nextBtn.style.pointerEvents = 'auto';
+      }
+    } catch (error) {
+      console.error('Installation error:', error);
+      renderTutorialInstallationError(statusDiv, error);
+    }
+  };
+
   try {
     const restoredState = localStorage.getItem('tutorialDevState');
     if (restoredState) {
@@ -947,177 +1100,15 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
 </div>
 `,
-      onRender: async () => {
-        const statusDiv =
-          document.querySelector<HTMLElement>('#install-status');
-        const nextBtn = document.querySelector<HTMLElement>('#next-btn');
-        const progressBar =
-          document.querySelector<HTMLElement>('#progress-bar');
-
-        if (nextBtn) {
-          nextBtn.style.opacity = '0.5';
-          nextBtn.style.pointerEvents = 'none';
-        }
-
-        try {
-          const sdDrive = (await apiWrapper.storeGet('tutorial.sdDrive')) as
-            | string
-            | null;
-
-          if (!sdDrive) {
-            statusDiv!.innerHTML =
-              '<div class="tutorial-text-error">Error: SD card path not found. Please go back and select your SD card.</div>';
-            return;
-          }
-
-          statusDiv!.innerHTML = `
-                <div class="tutorial-box">
-                    <div class="tutorial-progress-label">Fetching latest releases...</div>
-                    <div class="tutorial-progress-track">
-                        <div id="progress-bar" class="tutorial-progress-fill" style="width: 10%;"></div>
-                    </div>
-                </div>
-            `;
-
-          const skylineRelease = await apiWrapper.getSkylineRelease();
-          if (!skylineRelease.success)
-            throw createTutorialIpcError(
-              'Failed to get Skyline release',
-              skylineRelease,
-            );
-
-          const arcropolisRelease = await chooseArcropolisRelease(statusDiv!);
-
-          progressBar!.style.width = '20%';
-          statusDiv!.innerHTML = `
-                <div class="tutorial-box">
-                    <div class="tutorial-progress-label">Downloading Skyline ${skylineRelease.version} (exefs)...</div>
-                    <div class="tutorial-progress-track">
-                        <div id="progress-bar" class="tutorial-progress-fill" style="width: 20%;"></div>
-                    </div>
-                </div>
-            `;
-
-          const tempDirResult = await window.tutorialAPI.getTempDir();
-          if (!tempDirResult.success)
-            throw new Error('Failed to get temp directory');
-          const skylineTempPathResult = await window.tutorialAPI.joinPath(
-            tempDirResult.path,
-            `skyline-${Date.now()}.zip`,
-          );
-          if (!skylineTempPathResult.success)
-            throw new Error('Failed to construct temp path');
-          const skylineTempPath = skylineTempPathResult.path;
-          const skylineDownloadResult =
-            await window.tutorialAPI.downloadArcropolis(
-              skylineRelease.downloadUrl,
-              skylineTempPath,
-            );
-          if (!skylineDownloadResult.success)
-            throw new Error('Skyline download failed');
-
-          progressBar!.style.width = '40%';
-          statusDiv!.innerHTML = `
-                <div class="tutorial-box">
-                    <div class="tutorial-progress-label">Downloading ARCropolis ${arcropolisRelease.version} (romfs)...</div>
-                    <div class="tutorial-progress-track">
-                        <div id="progress-bar" class="tutorial-progress-fill" style="width: 40%;"></div>
-                    </div>
-                </div>
-            `;
-
-          const arcropolisTempPathResult = await window.tutorialAPI.joinPath(
-            tempDirResult.path,
-            `arcropolis-${Date.now()}.zip`,
-          );
-          if (!arcropolisTempPathResult.success)
-            throw new Error('Failed to construct temp path');
-          const arcropolisTempPath = arcropolisTempPathResult.path;
-          const arcropolisDownloadResult =
-            await window.tutorialAPI.downloadArcropolis(
-              arcropolisRelease.downloadUrl,
-              arcropolisTempPath,
-            );
-          if (!arcropolisDownloadResult.success)
-            throw new Error('ARCropolis download failed');
-
-          progressBar!.style.width = '60%';
-          statusDiv!.innerHTML = `
-                <div class="tutorial-box">
-                    <div class="tutorial-progress-label">Installing Skyline (exefs)...</div>
-                    <div class="tutorial-progress-track">
-                        <div id="progress-bar" class="tutorial-progress-fill" style="width: 60%;"></div>
-                    </div>
-                </div>
-            `;
-
-          const targetDirResult = await window.tutorialAPI.joinPath(
-            sdDrive,
-            'atmosphere',
-            'contents',
-            '01006A800016E000',
-          );
-          if (!targetDirResult.success)
-            throw new Error('Failed to construct target path');
-          const targetDir = targetDirResult.path;
-          await window.tutorialAPI.createDirectory(targetDir);
-          const skylineExtractResult = await window.tutorialAPI.extractSkyline(
-            skylineDownloadResult.path,
-            targetDir,
-          );
-          if (!skylineExtractResult.success)
-            throw new Error('Skyline extraction failed');
-
-          progressBar!.style.width = '80%';
-          statusDiv!.innerHTML = `
-                <div class="tutorial-box">
-                    <div class="tutorial-progress-label">Installing ARCropolis (romfs)...</div>
-                    <div class="tutorial-progress-track">
-                        <div id="progress-bar" class="tutorial-progress-fill" style="width: 80%;"></div>
-                    </div>
-                </div>
-            `;
-
-          const arcropolisExtractResult =
-            await window.tutorialAPI.extractArcropolis(
-              arcropolisDownloadResult.path,
-              targetDir,
-            );
-          if (!arcropolisExtractResult.success)
-            throw new Error('ARCropolis extraction failed');
-
-          const modsDirResult = await window.tutorialAPI.joinPath(
-            sdDrive,
-            'ultimate',
-            'mods',
-          );
-          if (!modsDirResult.success)
-            throw new Error('Failed to construct mods path');
-          const modsDir = modsDirResult.path;
-          await window.tutorialAPI.createDirectory(modsDir);
-
-          progressBar!.style.width = '100%';
-          statusDiv!.innerHTML = `
-                <div class="tutorial-box-success">
-                    <div class="tutorial-row">
-                        <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
-                        <div>
-                            <strong class="tutorial-label">Installation complete!</strong>
-                            <span class="tutorial-text-muted-sm">Skyline ${skylineRelease.version} (exefs) + ARCropolis ${arcropolisRelease.version} (romfs)</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-          if (nextBtn) {
-            nextBtn.style.opacity = '1';
-            nextBtn.style.pointerEvents = 'auto';
-          }
-        } catch (error) {
-          console.error('Installation error:', error);
-          renderTutorialInstallationError(statusDiv!, error);
-        }
-      },
+      onRender: () =>
+        runArcropolisInstallStep({
+          statusSelector: '#install-status',
+          pathKey: 'tutorial.sdDrive',
+          missingPathMessage:
+            'SD card path not found. Please go back and select your SD card.',
+          dataFolder: null,
+          extraDirs: [['ultimate', 'mods']],
+        }),
     },
     {
       icon: 'bi-controller',
@@ -1973,136 +1964,15 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
 </div>
 `,
-      onRender: async () => {
-        const statusDiv = document.querySelector<HTMLElement>(
-          '#yuzu-install-status',
-        );
-        const nextBtn = document.querySelector<HTMLElement>('#next-btn');
-
-        if (nextBtn) {
-          nextBtn.style.opacity = '0.5';
-          nextBtn.style.pointerEvents = 'none';
-        }
-
-        try {
-          const yuzuPath = (await apiWrapper.storeGet('tutorial.yuzuPath')) as
-            | string
-            | null;
-
-          if (!yuzuPath) {
-            statusDiv!.innerHTML =
-              '<div class="tutorial-text-error">Error: Yuzu path not found. Please go back and select your Yuzu folder.</div>';
-            return;
-          }
-
-          statusDiv!.innerHTML =
-            '<div class="tutorial-text-white">Fetching latest releases...</div>';
-          const skylineRelease = await apiWrapper.getSkylineRelease();
-          if (!skylineRelease.success)
-            throw createTutorialIpcError(
-              'Failed to get Skyline release',
-              skylineRelease,
-            );
-          const arcropolisRelease = await chooseArcropolisRelease(statusDiv!);
-
-          statusDiv!.innerHTML =
-            '<div class="tutorial-text-white">Downloading Skyline (exefs)...</div>';
-          const tempDirResult = await window.tutorialAPI.getTempDir();
-          if (!tempDirResult.success)
-            throw new Error('Failed to get temp directory');
-          const skylineTempPathResult = await window.tutorialAPI.joinPath(
-            tempDirResult.path,
-            `skyline-${Date.now()}.zip`,
-          );
-          if (!skylineTempPathResult.success)
-            throw new Error('Failed to construct temp path');
-          const skylineTempPath = skylineTempPathResult.path;
-          const skylineDownloadResult =
-            await window.tutorialAPI.downloadArcropolis(
-              skylineRelease.downloadUrl,
-              skylineTempPath,
-            );
-          if (!skylineDownloadResult.success)
-            throw new Error('Skyline download failed');
-
-          statusDiv!.innerHTML =
-            '<div class="tutorial-text-white">Downloading ARCropolis (romfs)...</div>';
-          const arcropolisTempPathResult = await window.tutorialAPI.joinPath(
-            tempDirResult.path,
-            `arcropolis-${Date.now()}.zip`,
-          );
-          if (!arcropolisTempPathResult.success)
-            throw new Error('Failed to construct temp path');
-          const arcropolisTempPath = arcropolisTempPathResult.path;
-          const arcropolisDownloadResult =
-            await window.tutorialAPI.downloadArcropolis(
-              arcropolisRelease.downloadUrl,
-              arcropolisTempPath,
-            );
-          if (!arcropolisDownloadResult.success)
-            throw new Error('ARCropolis download failed');
-
-          const ultimateModsPathResult = await window.tutorialAPI.joinPath(
-            yuzuPath,
-            'sdmc',
-            'ultimate',
-            'mods',
-          );
-          if (!ultimateModsPathResult.success)
-            throw new Error('Failed to construct mods path');
-          await window.tutorialAPI.createDirectory(ultimateModsPathResult.path);
-
-          statusDiv!.innerHTML =
-            '<div class="tutorial-text-white">Installing Skyline (exefs)...</div>';
-          const atmospherePathResult = await window.tutorialAPI.joinPath(
-            yuzuPath,
-            'sdmc',
-            'atmosphere',
-            'contents',
-            '01006A800016E000',
-          );
-          if (!atmospherePathResult.success)
-            throw new Error('Failed to construct atmosphere path');
-          const atmospherePath = atmospherePathResult.path;
-          await window.tutorialAPI.createDirectory(atmospherePath);
-          const skylineExtractResult = await window.tutorialAPI.extractSkyline(
-            skylineDownloadResult.path,
-            atmospherePath,
-          );
-          if (!skylineExtractResult.success)
-            throw new Error('Skyline extraction failed');
-
-          statusDiv!.innerHTML =
-            '<div class="tutorial-text-white">Installing ARCropolis (romfs)...</div>';
-          const arcropolisExtractResult =
-            await window.tutorialAPI.extractArcropolis(
-              arcropolisDownloadResult.path,
-              atmospherePath,
-            );
-          if (!arcropolisExtractResult.success)
-            throw new Error('ARCropolis extraction failed');
-
-          statusDiv!.innerHTML = `
-                <div class="tutorial-box-success">
-                    <div class="tutorial-row">
-                        <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
-                        <div>
-                            <strong class="tutorial-label">Installation complete!</strong>
-                            <span class="tutorial-text-muted-sm">Skyline ${skylineRelease.version} (exefs) + ARCropolis ${arcropolisRelease.version} (romfs)</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-          if (nextBtn) {
-            nextBtn.style.opacity = '1';
-            nextBtn.style.pointerEvents = 'auto';
-          }
-        } catch (error) {
-          console.error('Installation error:', error);
-          renderTutorialInstallationError(statusDiv!, error);
-        }
-      },
+      onRender: () =>
+        runArcropolisInstallStep({
+          statusSelector: '#yuzu-install-status',
+          pathKey: 'tutorial.yuzuPath',
+          missingPathMessage:
+            'Yuzu path not found. Please go back and select your Yuzu folder.',
+          dataFolder: 'sdmc',
+          extraDirs: [['ultimate', 'mods']],
+        }),
     },
     {
       icon: 'bi-controller',
@@ -2459,147 +2329,15 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
 </div>
 `,
-      onRender: async () => {
-        const statusDiv = document.querySelector<HTMLElement>(
-          '#ryujinx-install-status',
-        );
-        const nextBtn = document.querySelector<HTMLElement>('#next-btn');
-
-        if (nextBtn) {
-          nextBtn.style.opacity = '0.5';
-          nextBtn.style.pointerEvents = 'none';
-        }
-
-        try {
-          const ryujinxPath = (await apiWrapper.storeGet(
-            'tutorial.ryujinxPath',
-          )) as string | null;
-
-          if (!ryujinxPath) {
-            statusDiv!.innerHTML =
-              '<div class="tutorial-text-error">Error: Ryujinx path not found. Please go back and select your Ryujinx folder.</div>';
-            return;
-          }
-
-          statusDiv!.innerHTML =
-            '<div class="tutorial-text-white">Fetching latest releases...</div>';
-
-          const skylineRelease = await apiWrapper.getSkylineRelease();
-
-          if (!skylineRelease.success)
-            throw createTutorialIpcError(
-              'Failed to get Skyline release',
-              skylineRelease,
-            );
-
-          const arcropolisRelease = await chooseArcropolisRelease(statusDiv!);
-
-          statusDiv!.innerHTML =
-            '<div class="tutorial-text-white">Downloading Skyline (exefs)...</div>';
-
-          const tempDirResult = await window.tutorialAPI.getTempDir();
-          if (!tempDirResult.success)
-            throw new Error('Failed to get temp directory');
-
-          const skylineTempPathResult = await window.tutorialAPI.joinPath(
-            tempDirResult.path!,
-            `skyline-${Date.now()}.zip`,
-          );
-
-          if (!skylineTempPathResult.success)
-            throw new Error('Failed to construct temp path');
-
-          const skylineTempPath = skylineTempPathResult.path;
-
-          const skylineDownloadResult =
-            await window.tutorialAPI.downloadArcropolis(
-              skylineRelease.downloadUrl!,
-              skylineTempPath!,
-            );
-          if (!skylineDownloadResult.success)
-            throw new Error('Skyline download failed');
-
-          statusDiv!.innerHTML =
-            '<div class="tutorial-text-white">Downloading ARCropolis (romfs)...</div>';
-          const arcropolisTempPathResult = await window.tutorialAPI.joinPath(
-            tempDirResult.path,
-            `arcropolis-${Date.now()}.zip`,
-          );
-          if (!arcropolisTempPathResult.success)
-            throw new Error('Failed to construct temp path');
-          const arcropolisTempPath = arcropolisTempPathResult.path;
-
-          const arcropolisDownloadResult =
-            await window.tutorialAPI.downloadArcropolis(
-              arcropolisRelease.downloadUrl,
-              arcropolisTempPath,
-            );
-
-          if (!arcropolisDownloadResult.success)
-            throw new Error('ARCropolis download failed');
-
-          statusDiv!.innerHTML =
-            '<div class="tutorial-text-white">Installing Skyline (exefs)...</div>';
-          const contentsPathResult = await window.tutorialAPI.joinPath(
-            ryujinxPath,
-            'sdcard',
-            'atmosphere',
-            'contents',
-            '01006A800016E000',
-          );
-          if (!contentsPathResult.success)
-            throw new Error('Failed to construct contents path');
-          const contentsPath = contentsPathResult.path;
-          await window.tutorialAPI.createDirectory(contentsPath);
-
-          const skylineExtractResult = await window.tutorialAPI.extractSkyline(
-            skylineDownloadResult.path,
-            contentsPath,
-          );
-          if (!skylineExtractResult.success)
-            throw new Error('Skyline extraction failed');
-
-          statusDiv!.innerHTML =
-            '<div class="tutorial-text-white">Installing ARCropolis (romfs)...</div>';
-          const arcropolisExtractResult =
-            await window.tutorialAPI.extractArcropolis(
-              arcropolisDownloadResult.path,
-              contentsPath,
-            );
-          if (!arcropolisExtractResult.success)
-            throw new Error('ARCropolis extraction failed');
-
-          const pluginsPathResult = await window.tutorialAPI.joinPath(
-            contentsPath,
-            'romfs',
-            'skyline',
-            'plugins',
-          );
-          if (!pluginsPathResult.success)
-            throw new Error('Failed to construct plugins path');
-          await window.tutorialAPI.createDirectory(pluginsPathResult.path);
-
-          statusDiv!.innerHTML = `
-                <div class="tutorial-box-success">
-                    <div class="tutorial-row">
-                        <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
-                        <div>
-                            <strong class="tutorial-label">Installation complete!</strong>
-                            <span class="tutorial-text-muted-sm">Skyline ${skylineRelease.version} (exefs) + ARCropolis ${arcropolisRelease.version} (romfs)</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-          if (nextBtn) {
-            nextBtn.style.opacity = '1';
-            nextBtn.style.pointerEvents = 'auto';
-          }
-        } catch (error) {
-          console.error('Installation error:', error);
-          renderTutorialInstallationError(statusDiv!, error);
-        }
-      },
+      onRender: () =>
+        runArcropolisInstallStep({
+          statusSelector: '#ryujinx-install-status',
+          pathKey: 'tutorial.ryujinxPath',
+          missingPathMessage:
+            'Ryujinx path not found. Please go back and select your Ryujinx folder.',
+          dataFolder: 'sdcard',
+          extraDirs: [[...ARCROPOLIS_CONTENTS_PATH, 'romfs', 'skyline', 'plugins']],
+        }),
     },
     {
       icon: 'bi-controller',
