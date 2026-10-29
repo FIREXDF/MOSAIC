@@ -1001,7 +1001,7 @@ ${plugin.status === 'active'
 
       if (result.success) {
         if (window.toastManager) {
-          window.toastManager.success(`${pluginName} updated successfully`);
+          window.toastManager.success(`${pluginName} updated`);
         }
         setTimeout(() => {
           this.refreshPlugins();

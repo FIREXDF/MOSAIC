@@ -40,7 +40,7 @@ if (window.electronAPI && window.electronAPI.onModInstallConfirmRequest) {
 if (window.electronAPI && window.electronAPI.onGameBananaPairingSuccess) {
   window.electronAPI.onGameBananaPairingSuccess((data) => {
     if (window.toastManager) {
-      window.toastManager.success('GameBanana account successfully paired. Listening for remote installs...', 5000);
+      window.toastManager.success('GameBanana account paired. Listening for remote installs...', 5000);
     }
   });
 }

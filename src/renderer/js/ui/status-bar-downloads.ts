@@ -701,7 +701,7 @@ class StatusBarDownloads {
                     </div>
 
                     <div class="ext-card-meta">
-                        <span class="ext-success-message">Download finished successfully</span>
+                        <span class="ext-success-message">Download finished</span>
                     </div>
                 </div>
             </div>

@@ -1422,7 +1422,7 @@ class BatchTestingManager {
         throw new Error(result.error || 'Failed to delete mod');
       }
       this.showToast(
-        this.t('toasts.modUninstalled', 'Mod uninstalled successfully'),
+        this.t('toasts.modUninstalled', 'Mod uninstalled'),
         'success',
       );
     } else {
@@ -1433,7 +1433,7 @@ class BatchTestingManager {
       this.showToast(
         this.t(
           'toasts.batchTestingPluginDeleted',
-          'Plugin deleted successfully',
+          'Plugin deleted',
         ),
         'success',
       );
@@ -1499,7 +1499,7 @@ class BatchTestingManager {
       this.showToast(
         this.t(
           'toasts.emulatorLaunchedSuccessfully',
-          'Emulator launched successfully',
+          'Emulator launched',
         ),
         'success',
       );

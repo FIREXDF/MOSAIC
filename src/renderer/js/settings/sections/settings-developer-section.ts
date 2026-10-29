@@ -196,7 +196,7 @@ class SettingsDeveloperSection {
               this.manager.showToast('Test event sent to PostHog', 'success');
               if (posthogTestStatus) {
                 const span = posthogTestStatus.querySelector('span');
-                if (span) span.textContent = 'Test event sent successfully!';
+                if (span) span.textContent = 'Test event sent';
                 posthogTestStatus.style.display = 'flex';
               }
             }
@@ -218,7 +218,7 @@ class SettingsDeveloperSection {
               this.manager.showToast('Test error sent to PostHog', 'success');
               if (posthogTestStatus) {
                 const span = posthogTestStatus.querySelector('span');
-                if (span) span.textContent = 'Test error sent successfully!';
+                if (span) span.textContent = 'Test error sent';
                 posthogTestStatus.style.display = 'flex';
               }
             }

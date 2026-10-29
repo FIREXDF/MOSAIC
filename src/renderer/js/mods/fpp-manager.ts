@@ -362,7 +362,7 @@ export class FppManager {
 
             if (result.success) {
                 if (window.toastManager) {
-                    window.toastManager.success(t('fpp.created', 'FPP pack created successfully!'));
+                    window.toastManager.success(t('fpp.created', 'FPP pack created'));
                 }
                 this.closeCreateModal();
             } else if (!result.canceled) {
