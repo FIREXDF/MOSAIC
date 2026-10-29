@@ -3226,20 +3226,20 @@
                   p += 5;
                   if (p > 100) {
                     clearInterval(iv);
-                    window.statusBarManager.updateExtendedBar({
+                    window.statusBarManager.downloads.updateExtendedBar({
                       type: 'success',
                       fileName: 'test_mod.zip',
                     });
                     setTimeout(
                       () =>
-                        window.statusBarManager.updateExtendedBar({
+                        window.statusBarManager.downloads.updateExtendedBar({
                           type: 'none',
                         }),
                       3000,
                     );
                     return;
                   }
-                  window.statusBarManager.updateExtendedBar({
+                  window.statusBarManager.downloads.updateExtendedBar({
                     type: 'download',
                     fileName: 'test_mod.zip',
                     progress: p,
@@ -3265,7 +3265,7 @@
             onclick="
               if (window.statusBarManager) {
                 window.statusBarManager.userDismissedExtendedBar = false;
-                window.statusBarManager.updateExtendedBar({
+                window.statusBarManager.downloads.updateExtendedBar({
                   type: 'conflict',
                   conflictCount: 7,
                   modsWithConflictsCount: 3,

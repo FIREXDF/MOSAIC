@@ -499,7 +499,7 @@ class StatusBarDownloads {
             this.manager.animations.renderDownloadCardWithFlip(content as HTMLElement, () => {
               content.innerHTML = `
               <div class="ext-download-card" data-flip-id="download-shell">
-                  <button class="ext-close-btn" data-flip-id="download-close" onclick="window.statusBarManager.updateExtendedBar('none')" title="Close">
+                  <button class="ext-close-btn" data-flip-id="download-close" onclick="window.statusBarManager.downloads.updateExtendedBar('none')" title="Close">
                       <i class="bi bi-chevron-down"></i>
                   </button>
                   <div class="ext-card-icon-container" data-flip-id="download-icon">
@@ -591,7 +591,7 @@ class StatusBarDownloads {
             this.manager.animations.renderDownloadCardWithFlip(content as HTMLElement, () => {
             content.innerHTML = `
             <div class="ext-multi-download-card ext-download-card" data-flip-id="download-shell">
-                <button class="ext-close-btn" data-flip-id="download-close" onclick="window.statusBarManager.updateExtendedBar('none')" title="Close">
+                <button class="ext-close-btn" data-flip-id="download-close" onclick="window.statusBarManager.downloads.updateExtendedBar('none')" title="Close">
                     <i class="bi bi-chevron-down"></i>
                 </button>
                 <div class="ext-card-icon-container" data-flip-id="download-icon">
@@ -686,7 +686,7 @@ class StatusBarDownloads {
 
       content.innerHTML = `
             <div class="ext-download-card">
-                <button class="ext-close-btn" onclick="window.statusBarManager.updateExtendedBar('none')" title="Close">
+                <button class="ext-close-btn" onclick="window.statusBarManager.downloads.updateExtendedBar('none')" title="Close">
                     <i class="bi bi-chevron-down"></i>
                 </button>
                 <div class="ext-card-icon-container icon-success">
@@ -742,7 +742,7 @@ class StatusBarDownloads {
       if (contentEl.dataset.extendedSignature !== conflictSignature) {
         content.innerHTML = `  
           <div class="ext-conflict-card">
-              <button class="ext-close-btn" onclick="window.statusBarManager.updateExtendedBar('none')" title="Close">
+              <button class="ext-close-btn" onclick="window.statusBarManager.downloads.updateExtendedBar('none')" title="Close">
                   <i class="bi bi-chevron-down"></i>
               </button>
               <div class="ext-card-icon-container icon-warning">

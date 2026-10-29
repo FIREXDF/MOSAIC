@@ -274,7 +274,7 @@ class GameBananaDetailSection {
           const link = (url: string, title: string) =>
             `<button type="button" class="social-gamebanana-external-btn" data-url="${escape(url)}"><span>${escape(title)}</span><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></button>`;
           return `<article class="social-umc-moveset">
-          ${moveset.imageUrl ? `<img class="social-umc-image" src="${escape(moveset.imageUrl)}" alt="${escape(moveset.name)}" loading="lazy" onerror="this.manager.hidden=true;">` : ''}
+          ${moveset.imageUrl ? `<img class="social-umc-image" src="${escape(moveset.imageUrl)}" alt="${escape(moveset.name)}" loading="lazy" onerror="this.hidden=true;">` : ''}
           <h5>${escape(moveset.name)}</h5>
           <dl class="social-umc-facts">${fields
             .filter(([, value]) => value)

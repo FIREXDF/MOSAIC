@@ -239,7 +239,7 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
     // Replace images only: keep inspector inputs, focus and unsaved edits intact.
     this.refreshCssUmcImageControls(character);
     const thumbnail = character.imageUrl
-      ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapeHtml(character.displayName)}" onerror="this.manager.hidden=true; this.manager.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>`
+      ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapeHtml(character.displayName)}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>`
       : '<i class="bi bi-person-circle"></i>';
     document
       .querySelectorAll<HTMLElement>('.character-css-cell')

@@ -274,7 +274,7 @@ class CharactersMovesetsSection {
 <section class="character-moveset-group">
 <div class="character-moveset-character">
 <div class="character-moveset-image-frame">
-<img src="${imageUrl}" alt="${escapedName}" onerror="this.manager.hidden=true; this.manager.nextElementSibling.hidden=false;">
+<img src="${imageUrl}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
 <i class="bi bi-person-circle" hidden></i>
 </div>
 <div>

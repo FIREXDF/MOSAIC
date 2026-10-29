@@ -69,7 +69,7 @@ ${label}
     inspector.innerHTML = `
 <div class="character-css-inspector-header">
 <div class="character-css-inspector-thumb">
-${character.imageUrl ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapedName}" onerror="this.manager.hidden=true; this.manager.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>` : '<i class="bi bi-person-circle"></i>'}
+${character.imageUrl ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;"><i class="bi bi-person-circle" hidden></i>` : '<i class="bi bi-person-circle"></i>'}
 </div>
 <div>
 <strong>${escapedName}</strong>

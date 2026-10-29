@@ -836,7 +836,7 @@ class CharactersCssEditorSection {
     const escapedName = escapeHtml(character.displayName);
     const imageMarkup =
       !character.isGroup && character.imageUrl
-        ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapedName}" class="character-css-image" onerror="this.manager.hidden=true; this.manager.nextElementSibling.hidden=false;">`
+        ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapedName}" class="character-css-image" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
         : '';
     const groupSize = this.manager.cssGroups.get(character.id)?.length || 0;
 
@@ -1209,7 +1209,7 @@ ${this.renderCssPreviewRows(visibleCharacters, 13, 13)}
   renderCssPreviewTile(character: CharacterCssEntry) {
     const escapedName = escapeHtml(character.displayName);
     const image = character.imageUrl
-      ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapedName}" onerror="this.manager.hidden=true; this.manager.nextElementSibling.hidden=false;">`
+      ? `<img src="${escapeHtml(character.imageUrl)}" alt="${escapedName}" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">`
       : '';
 
     return `
