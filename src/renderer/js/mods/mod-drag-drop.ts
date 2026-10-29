@@ -39,10 +39,7 @@ class ModDragDropHandler {
     }
 
     this.setupEventListeners();
-    this.setupWindowDropListener();
   }
-
-  setupWindowDropListener() { }
 
   setupEventListeners() {
     document.addEventListener('dragenter', (e) => this.handleDragEnter(e));

@@ -143,24 +143,14 @@ class PluginManager {
 
     const pluginItems =
       this.pluginListContainer.querySelectorAll<HTMLElement>('.plugin-item');
-    let visibleCount = 0;
 
     pluginItems.forEach((item) => {
       const pluginName =
         item
           .querySelector<HTMLElement>('.plugin-name')
           ?.textContent.toLowerCase() || '';
-      const matches = pluginName.includes(this.searchQuery);
-
-      if (matches) {
-        item.style.display = '';
-        visibleCount++;
-      } else {
-        item.style.display = 'none';
-      }
+      item.style.display = pluginName.includes(this.searchQuery) ? '' : 'none';
     });
-
-    this.updatePluginCount(visibleCount);
   }
 
   async loadPlugins(pluginsData) {
@@ -259,14 +249,12 @@ class PluginManager {
         });
       }
 
-      this.updatePluginCount(0);
       return;
     }
 
     if (this.plugins.length === 0) {
       this.pluginListContainer.innerHTML =
         '<p style="color: #666; text-align: center; padding: 20px;">No plugins available</p>';
-      this.updatePluginCount(0);
       return;
     }
 
@@ -276,8 +264,6 @@ class PluginManager {
       const pluginElement = this.createPluginElement(plugin);
       this.pluginListContainer!.appendChild(pluginElement);
     });
-
-    this.updatePluginCount(this.plugins.length);
   }
 
   async navigateToPluginsSettings() {
@@ -383,8 +369,6 @@ ${plugin.status === 'active'
 
     return div;
   }
-
-  updatePluginCount(count) { }
 
   async addPlugin() {
     if (!this.pluginsPath) {

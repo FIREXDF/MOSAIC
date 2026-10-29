@@ -1195,8 +1195,6 @@ ${step.content}
     renderProgressDots().then(() => renderStep(currentStep));
   }
 
-  function removeDevOverrides() {}
-
   function createDevPanel() {
     const p = document.createElement('div');
     p.id = 'dev-mode-panel';
@@ -1251,7 +1249,6 @@ ${step.content}
     p.querySelector('#dev-x')!.addEventListener('click', () => {
       tutorialDevMode = false;
       p.remove();
-      removeDevOverrides();
       renderProgressDots().then(() => renderStep(currentStep));
     });
 
@@ -1327,7 +1324,6 @@ ${step.content}
       if (tutorialDevMode) createDevPanel();
       else {
         document.getElementById('dev-mode-panel')?.remove();
-        removeDevOverrides();
         renderProgressDots().then(() => renderStep(currentStep));
       }
     }
