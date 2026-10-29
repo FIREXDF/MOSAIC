@@ -1,5 +1,10 @@
 class SocialGameBananaManager extends SocialManagerBase {
-  [key: string]: any;
+  filters = new GameBananaFiltersSection(this);
+  requirements = new GameBananaRequirementsSection(this);
+  transitions = new GameBananaTransitionsSection(this);
+  detail = new GameBananaDetailSection(this);
+  featured = new GameBananaFeaturedSection(this);
+
   async loadDiscover() {
     this.gameBananaDetailRequestId++;
     this.gameBananaUmcState = null;
@@ -41,7 +46,7 @@ class SocialGameBananaManager extends SocialManagerBase {
 
       discoverContent.innerHTML = `
         <div class="social-gamebanana-top-search">
-          ${this.renderGameBananaSearchControl()}
+          ${this.filters.renderGameBananaSearchControl()}
         </div>
         <div class="social-gamebanana-featured">
           <div class="social-gamebanana-carousel-header">
@@ -70,7 +75,7 @@ class SocialGameBananaManager extends SocialManagerBase {
           <div id="social-gamebanana-carousel" class="social-gamebanana-carousel">
             ${
               featuredMods.length
-                ? this.renderGameBananaFeaturedStack()
+                ? this.featured.renderGameBananaFeaturedStack()
                 : `<div class="social-gamebanana-featured-empty">${escapeHtml(
                     this.getSocialTranslation(
                       'social.noFeaturedGameBananaMods',
@@ -88,20 +93,20 @@ class SocialGameBananaManager extends SocialManagerBase {
               )}</h3>
             </div>
             <div class="social-gamebanana-mods-actions">
-              ${this.renderGameBananaSortControl()}
+              ${this.filters.renderGameBananaSortControl()}
               <div id="social-gamebanana-pagination" class="social-gamebanana-pagination">
                 ${this.renderGameBananaPagination(subfeedData)}
               </div>
             </div>
           </div>
-          ${this.renderGameBananaCategoryFilters()}
+          ${this.filters.renderGameBananaCategoryFilters()}
           <div id="social-gamebanana-mods-content">
             ${this.renderGameBananaModsPage(subfeedData)}
           </div>
         </div>
       `;
 
-      this.setGameBananaFeaturedCardPositions();
+      this.featured.setGameBananaFeaturedCardPositions();
       this.hydrateVisibleGameBananaDownloadCounts();
     } catch (error) {
       console.error('[Social] Error loading GameBanana featured mods:', error);
@@ -112,468 +117,6 @@ class SocialGameBananaManager extends SocialManagerBase {
         ),
       )}</p></div>`;
     }
-  }
-
-  renderGameBananaSearchControl() {
-    const query = escapeHtml(this.gameBananaSearchQuery);
-
-    return `
-      <label class="social-gamebanana-search" for="social-gamebanana-search-input">
-        <i class="bi bi-search"></i>
-        <input id="social-gamebanana-search-input" type="search" value="${query}" placeholder="${escapeHtml(
-          this.getSocialTranslation(
-            'social.searchGameBananaMods',
-            'Search GameBanana mods',
-          ),
-        )}" autocomplete="off">
-      </label>
-    `;
-  }
-
-  renderGameBananaSortControl() {
-    const activeSort = this.getGameBananaDiscoverSort();
-    const options: {
-      id: GameBananaDiscoverSort;
-      label: string;
-      icon: string;
-    }[] = [
-      {
-        id: 'recent',
-        label: this.getSocialTranslation('social.sortRecent', 'Recent'),
-        icon: 'clock-history',
-      },
-      {
-        id: 'popularity',
-        label: this.getSocialTranslation(
-          'social.sortPopularity',
-          'Popularity',
-        ),
-        icon: 'hand-thumbs-up',
-      },
-      {
-        id: 'downloads',
-        label: this.getSocialTranslation('social.sortDownloads', 'Downloads'),
-        icon: 'download',
-      },
-    ];
-
-    return `
-      <div class="custom-select social-gamebanana-sort" id="social-gamebanana-sort-select" role="button" tabindex="0" aria-label="${escapeHtml(
-        this.getSocialTranslation(
-          'social.sortDiscoverMods',
-          'Sort Discover mods',
-        ),
-      )}">
-        <div class="custom-select-trigger">
-          <span class="selected-value">
-            ${escapeHtml(options.find((option) => option.id === activeSort)?.label || 'Recent')}
-          </span>
-          <i class="bi bi-chevron-down"></i>
-        </div>
-        <div class="custom-select-dropdown">
-          ${options
-            .map(
-              (option) => `
-                <div class="custom-select-option ${activeSort === option.id ? 'active' : ''}" data-sort-value="${option.id}">
-                  <i class="bi bi-${option.icon}"></i>
-                  <span>${option.label}</span>
-                </div>
-              `,
-            )
-            .join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  renderGameBananaCategoryFilters() {
-    const activeFilter = this.getGameBananaCategoryFilter();
-
-    return `
-      <div id="social-gamebanana-category-filter-area">
-        <div class="social-gamebanana-category-filters" aria-label="${escapeHtml(
-          this.getSocialTranslation(
-            'social.discoverCategoryFilters',
-            'Discover category filters',
-          ),
-        )}">
-          ${this.getGameBananaCategoryFilters()
-            .map((filter) => this.renderGameBananaCategoryFilterButton(filter))
-            .join('')}
-        </div>
-        ${this.renderGameBananaSkinSubcategoryFilters()}
-      </div>
-    `;
-  }
-
-  renderGameBananaCategoryFilterButton(filter: any) {
-    const activeFilter = this.getGameBananaCategoryFilter();
-    const isActive = activeFilter === filter.id;
-    const showSkinToggle = filter.id === 'skins' && isActive;
-
-    return `
-      <button class="social-gamebanana-category-filter ${isActive ? 'is-active' : ''}" type="button" data-category-filter="${filter.id}">
-        <span>${filter.label}</span>
-        ${
-          showSkinToggle
-            ? `<i class="bi bi-chevron-${this.gameBananaSkinSubcategoryOpen ? 'up' : 'down'} social-gamebanana-skins-toggle" aria-hidden="true"></i>`
-            : ''
-        }
-      </button>
-    `;
-  }
-
-  renderGameBananaSkinSubcategoryFilters() {
-    if (
-      this.getGameBananaCategoryFilter() !== 'skins' ||
-      !this.gameBananaSkinSubcategoryOpen
-    ) {
-      return '';
-    }
-
-    if (!Array.isArray(this.gameBananaSkinSubcategories)) {
-      return `
-        <div class="social-gamebanana-subcategory-filters">
-          <span class="social-gamebanana-subcategory-loading">${escapeHtml(
-            this.getSocialTranslation(
-              'social.loadingSkins',
-              'Loading skins...',
-            ),
-          )}</span>
-        </div>
-      `;
-    }
-
-    const selectedId = this.getGameBananaActiveSkinCategoryId();
-    const buttons = [
-      {
-        _idRow: 3330,
-        _sName: this.getSocialTranslation('social.allSkins', 'All skins'),
-      },
-      ...this.gameBananaSkinSubcategories,
-    ];
-
-    return `
-      <div class="social-gamebanana-subcategory-filters social-gamebanana-skin-picker" aria-label="${escapeHtml(
-        this.getSocialTranslation(
-          'social.skinSubcategoryFilters',
-          'Skin subcategory filters',
-        ),
-      )}">
-        <label class="social-gamebanana-skin-picker-label" for="social-gamebanana-skin-select">${escapeHtml(
-          this.getSocialTranslation('social.character', 'Character'),
-        )}</label>
-        <select id="social-gamebanana-skin-select" class="social-gamebanana-skin-select">
-          ${buttons
-            .map((category) => {
-              const id = Number(category._idRow);
-              return `
-                <option value="${id}" ${selectedId === id ? 'selected' : ''}>
-                  ${escapeHtml(category._sName || 'Skins')}
-                </option>
-              `;
-            })
-            .join('')}
-        </select>
-      </div>
-    `;
-  }
-
-  getGameBananaCategoryFilters() {
-    return [
-      { id: 'all', label: this.getSocialTranslation('social.all', 'All') },
-      {
-        id: 'skins',
-        label: this.getSocialTranslation('social.skins', 'Skins'),
-        model: 'Mod',
-        categoryId: 3330,
-      },
-      {
-        id: 'stages',
-        label: this.getSocialTranslation('social.stages', 'Stages'),
-        model: 'Mod',
-        categoryId: 6089,
-      },
-      {
-        id: 'sounds',
-        label: this.getSocialTranslation('social.sounds', 'Sounds'),
-        model: 'Sound',
-      },
-      {
-        id: 'effects',
-        label: this.getSocialTranslation('social.effects', 'Effects'),
-        model: 'Mod',
-        categoryId: 1177,
-      },
-      {
-        id: 'gameplay',
-        label: this.getSocialTranslation('social.gameplay', 'Gameplay'),
-        model: 'Mod',
-        categoryId: 26521,
-      },
-      { id: 'ui', label: 'UI', model: 'Mod', categoryId: 1760 },
-      {
-        id: 'tools',
-        label: this.getSocialTranslation('social.tools', 'Tools'),
-        model: 'Tool',
-      },
-      {
-        id: 'wips',
-        label: this.getSocialTranslation('social.wips', 'WiPs'),
-        model: 'Wip',
-      },
-    ];
-  }
-
-  getGameBananaCategoryFilter() {
-    return this.gameBananaCategoryFilter || 'all';
-  }
-
-  async setGameBananaCategoryFilter(filter: string) {
-    const validFilter = this.getGameBananaCategoryFilters().some(
-      (item) => item.id === filter,
-    )
-      ? filter
-      : 'all';
-    if (validFilter === this.getGameBananaCategoryFilter()) return;
-    this.gameBananaCategoryFilter = validFilter;
-    if (validFilter !== 'skins') {
-      this.gameBananaSkinSubcategoryOpen = false;
-      this.gameBananaSkinSubcategoryId = null;
-    }
-    this.gameBananaModsTotalPages = 1;
-
-    this.refreshGameBananaCategoryFilterUI();
-    this.refreshGameBananaFilteredContent();
-    await this.loadGameBananaModsPage(1, this.gameBananaSearchQuery);
-  }
-
-  async toggleGameBananaSkinSubcategories() {
-    if (this.getGameBananaCategoryFilter() !== 'skins') {
-      await this.setGameBananaCategoryFilter('skins');
-    }
-
-    this.gameBananaSkinSubcategoryOpen = !this.gameBananaSkinSubcategoryOpen;
-    this.refreshGameBananaCategoryFilterUI();
-
-    if (
-      this.gameBananaSkinSubcategoryOpen &&
-      !Array.isArray(this.gameBananaSkinSubcategories)
-    ) {
-      await this.loadGameBananaSkinSubcategories();
-      this.refreshGameBananaCategoryFilterUI();
-    }
-  }
-
-  async setGameBananaSkinSubcategory(categoryId: number) {
-    const nextCategoryId = Number.isFinite(categoryId) ? categoryId : 3330;
-    this.gameBananaSkinSubcategoryId =
-      nextCategoryId === 3330 ? null : nextCategoryId;
-    this.gameBananaModsTotalPages = 1;
-    this.refreshGameBananaCategoryFilterUI();
-    this.refreshGameBananaFilteredContent();
-    await this.loadGameBananaModsPage(1, this.gameBananaSearchQuery);
-  }
-
-  getGameBananaDiscoverSort() {
-    const sort = this.gameBananaDiscoverSort;
-    return sort === 'popularity' || sort === 'downloads' ? sort : 'recent';
-  }
-
-  getGameBananaApiSort() {
-    const sort = this.getGameBananaDiscoverSort();
-    const apiSorts: Record<GameBananaDiscoverSort, string> = {
-      recent: 'Generic_Newest',
-      popularity: 'Generic_MostLiked',
-      downloads: 'Generic_MostDownloaded',
-    };
-
-    return apiSorts[sort];
-  }
-
-  async setGameBananaDiscoverSort(sort: string) {
-    const nextSort =
-      sort === 'popularity' || sort === 'downloads' ? sort : 'recent';
-    if (nextSort === this.getGameBananaDiscoverSort()) return;
-
-    this.gameBananaDiscoverSort = nextSort;
-    this.refreshGameBananaSortControlUI();
-    this.gameBananaModsTotalPages = 1;
-    await this.loadGameBananaModsPage(1, this.gameBananaSearchQuery);
-  }
-
-  refreshGameBananaSortControlUI() {
-    const sortSelect = document.querySelector<HTMLElement>(
-      '#social-gamebanana-sort-select',
-    );
-    if (!sortSelect) return;
-
-    const activeSort = this.getGameBananaDiscoverSort();
-    const selectedOption = sortSelect.querySelector<HTMLElement>(
-      `.custom-select-option[data-sort-value="${activeSort}"]`,
-    );
-    const selectedValue =
-      sortSelect.querySelector<HTMLElement>('.selected-value');
-    const selectedText =
-      selectedOption?.querySelector<HTMLElement>('span')?.textContent ||
-      'Recent';
-
-    if (selectedValue) {
-      selectedValue.textContent = selectedText;
-    }
-
-    sortSelect
-      .querySelectorAll<HTMLElement>('.custom-select-option')
-      .forEach((option) => {
-        option.classList.toggle(
-          'active',
-          option.getAttribute('data-sort-value') === activeSort,
-        );
-      });
-  }
-
-  async loadGameBananaSkinSubcategories() {
-    try {
-      const response = await fetch(
-        `${this.GAMEBANANA_API_URL}/Util/ModCategory/NestedStructure?_idGameRow=6498`,
-      );
-      const categories = await response.json();
-      if (!response.ok || !Array.isArray(categories)) {
-        throw new Error(`GameBanana category tree failed: ${response.status}`);
-      }
-
-      const skinsCategory = categories.find(
-        (category) => Number(category?._idRow) === 3330,
-      );
-      const children = Array.isArray(skinsCategory?._aChildren)
-        ? skinsCategory._aChildren
-        : [];
-      this.gameBananaSkinSubcategories = children
-        .filter((category) => Number(category?._nItemCount || 0) > 0)
-        .sort((a, b) =>
-          String(a._sName || '').localeCompare(String(b._sName || '')),
-        );
-    } catch (error) {
-      console.error(
-        '[Social] Error loading GameBanana skin categories:',
-        error,
-      );
-      this.gameBananaSkinSubcategories = [];
-    }
-  }
-
-  refreshGameBananaCategoryFilterUI() {
-    const filterArea = document.querySelector<HTMLElement>(
-      '#social-gamebanana-category-filter-area',
-    );
-    if (filterArea) {
-      filterArea.outerHTML = this.renderGameBananaCategoryFilters();
-    }
-  }
-
-  getGameBananaActiveSkinCategoryId() {
-    return this.gameBananaSkinSubcategoryId || 3330;
-  }
-
-  refreshGameBananaFilteredContent() {
-    this.gameBananaFeaturedMods = this.getFilteredGameBananaFeaturedMods();
-    this.gameBananaFeaturedIndex = 0;
-
-    const carousel = document.querySelector<HTMLElement>(
-      '#social-gamebanana-carousel',
-    );
-    if (carousel) {
-      carousel.innerHTML = this.renderGameBananaFeaturedStack();
-      this.setGameBananaFeaturedCardPositions();
-    }
-
-    const modsContent = document.querySelector<HTMLElement>(
-      '#social-gamebanana-mods-content',
-    );
-    if (modsContent && this.gameBananaCurrentSubfeedData) {
-      modsContent.innerHTML = this.renderGameBananaModsPage(
-        this.gameBananaCurrentSubfeedData,
-      );
-      this.hydrateVisibleGameBananaDownloadCounts();
-    }
-  }
-
-  setupGameBananaSearchEvents() {
-    this.setupGameBananaClickFallbackEvents();
-    if (this.gameBananaSearchListenerBound) return;
-    this.gameBananaSearchListenerBound = true;
-
-    const setSearchFocusState = (input: HTMLInputElement, focused: boolean) => {
-      const discoverContent = input.closest<HTMLElement>(
-        '#social-discover-content',
-      );
-      if (!discoverContent) return;
-
-      const hasQuery = input.value.trim().length > 0;
-      discoverContent.classList.toggle(
-        'is-searching-gamebanana',
-        focused || hasQuery,
-      );
-    };
-
-    document.addEventListener('focusin', (event) => {
-      const input = event.target as HTMLInputElement;
-      if (input?.id !== 'social-gamebanana-search-input') return;
-
-      setSearchFocusState(input, true);
-    });
-
-    document.addEventListener('focusout', (event) => {
-      const input = event.target as HTMLInputElement;
-      if (input?.id !== 'social-gamebanana-search-input') return;
-
-      setSearchFocusState(input, false);
-    });
-
-    document.addEventListener('input', (event) => {
-      const input = event.target as HTMLInputElement;
-      if (input?.id !== 'social-gamebanana-search-input') return;
-
-      setSearchFocusState(input, document.activeElement === input);
-
-      const query = input.value;
-      if (this.gameBananaSearchDebounce) {
-        clearTimeout(this.gameBananaSearchDebounce);
-      }
-
-      this.gameBananaSearchDebounce = setTimeout(() => {
-        this.loadGameBananaModsPage(1, query);
-      }, 350);
-    });
-
-    document.addEventListener('change', (event) => {
-      const select = event.target as HTMLSelectElement;
-      if (select?.id === 'social-gamebanana-skin-select') {
-        void this.setGameBananaSkinSubcategory(Number(select.value));
-      }
-    });
-
-    document.addEventListener('keydown', (event) => {
-      const target = event.target as HTMLElement;
-      const sortSelect = target?.closest<HTMLElement>(
-        '.social-gamebanana-sort',
-      );
-      if (!sortSelect || !['Enter', ' '].includes(event.key)) return;
-
-      event.preventDefault();
-      sortSelect.classList.toggle('open');
-    });
-
-    document.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-      document
-        .querySelectorAll<HTMLElement>('.social-gamebanana-sort.open')
-        .forEach((sortSelect) => {
-          if (!sortSelect.contains(target)) {
-            sortSelect.classList.remove('open');
-          }
-        });
-    });
   }
 
   setupGameBananaClickFallbackEvents() {
@@ -623,7 +166,7 @@ class SocialGameBananaManager extends SocialManagerBase {
       '.social-gamebanana-skins-toggle',
     );
     if (skinToggle) {
-      await this.toggleGameBananaSkinSubcategories();
+      await this.filters.toggleGameBananaSkinSubcategories();
       return;
     }
 
@@ -644,7 +187,7 @@ class SocialGameBananaManager extends SocialManagerBase {
       sortOption
         .closest<HTMLElement>('.social-gamebanana-sort')
         ?.classList.remove('open');
-      await this.setGameBananaDiscoverSort(
+      await this.filters.setGameBananaDiscoverSort(
         sortOption.getAttribute('data-sort-value') || 'recent',
       );
       return;
@@ -668,7 +211,7 @@ class SocialGameBananaManager extends SocialManagerBase {
       '.social-gamebanana-category-filter',
     );
     if (categoryFilterButton) {
-      await this.setGameBananaCategoryFilter(
+      await this.filters.setGameBananaCategoryFilter(
         categoryFilterButton.getAttribute('data-category-filter') || 'all',
       );
       return;
@@ -680,7 +223,7 @@ class SocialGameBananaManager extends SocialManagerBase {
     if (carouselButton) {
       const direction =
         carouselButton.getAttribute('data-direction') === 'next' ? 1 : -1;
-      this.scrollGameBananaCarousel(direction);
+      this.featured.scrollGameBananaCarousel(direction);
       return;
     }
 
@@ -699,7 +242,7 @@ class SocialGameBananaManager extends SocialManagerBase {
         const total = this.gameBananaFeaturedMods.length;
         const nextIndex = (this.gameBananaFeaturedIndex + 1) % total;
         const direction = featuredIndex === nextIndex ? 1 : -1;
-        this.updateGameBananaFeaturedStack(featuredIndex, direction);
+        this.featured.updateGameBananaFeaturedStack(featuredIndex, direction);
         return;
       }
     }
@@ -720,7 +263,7 @@ class SocialGameBananaManager extends SocialManagerBase {
     }
 
     if (clickedElement.closest('.social-gamebanana-detail-back')) {
-      await this.returnFromGameBananaDetail();
+      await this.transitions.returnFromGameBananaDetail();
       return;
     }
 
@@ -735,10 +278,10 @@ class SocialGameBananaManager extends SocialManagerBase {
       if (pluginName && repo) {
         requirementInstallBtn.disabled = true;
         try {
-          await this.installGameBananaRequirement(pluginName, repo);
+          await this.requirements.installGameBananaRequirement(pluginName, repo);
           await window.pluginManager?.refreshPlugins?.();
           if (this.gameBananaCurrentDetail) {
-            this.renderGameBananaDetailPage(
+            this.detail.renderGameBananaDetailPage(
               this.gameBananaCurrentDetail.details,
               this.gameBananaCurrentDetail.fallback,
               false,
@@ -770,7 +313,7 @@ class SocialGameBananaManager extends SocialManagerBase {
       const query = requirementSearchBtn.getAttribute('data-query') || '';
       const provider =
         requirementSearchBtn.getAttribute('data-provider') || 'google';
-      const url = this.getGameBananaRequirementSearchUrl(query, provider);
+      const url = this.requirements.getGameBananaRequirementSearchUrl(query, provider);
       if (window.electronAPI?.openUrl) {
         await window.electronAPI.openUrl(url);
       }
@@ -786,7 +329,7 @@ class SocialGameBananaManager extends SocialManagerBase {
       );
       const index = Number(galleryThumb.getAttribute('data-gallery-index'));
       if (gallery && Number.isFinite(index)) {
-        this.updateGameBananaGallery(gallery, index);
+        this.detail.updateGameBananaGallery(gallery, index);
       }
       return;
     }
@@ -805,7 +348,7 @@ class SocialGameBananaManager extends SocialManagerBase {
         galleryNav.getAttribute('data-gallery-direction') || 0,
       );
       if (gallery && Number.isFinite(currentIndex)) {
-        this.updateGameBananaGallery(gallery, currentIndex + direction);
+        this.detail.updateGameBananaGallery(gallery, currentIndex + direction);
       }
       return;
     }
@@ -822,7 +365,7 @@ class SocialGameBananaManager extends SocialManagerBase {
           submissionId,
           sourceKind: 'grid',
           page: this.gameBananaModsPage,
-          scrollTop: this.getSocialMainScrollTop(),
+          scrollTop: this.transitions.getSocialMainScrollTop(),
         };
         await this.showGameBananaSubmissionDetails(modelName, submissionId);
       }
@@ -832,7 +375,7 @@ class SocialGameBananaManager extends SocialManagerBase {
     const umcRetry =
       clickedElement.closest<HTMLButtonElement>('[data-umc-retry]');
     if (umcRetry && this.gameBananaUmcState?.status === 'error') {
-      void this.loadGameBananaUmc(this.gameBananaDetailRequestId);
+      void this.detail.loadGameBananaUmc(this.gameBananaDetailRequestId);
       return;
     }
 
@@ -869,7 +412,7 @@ class SocialGameBananaManager extends SocialManagerBase {
             await this.confirmMissingGameBananaRequirements(downloadUrl);
           if (!shouldContinue) return;
 
-          const pendingDownload = this.createGameBananaSocialPayload(downloadUrl);
+          const pendingDownload = this.detail.createGameBananaSocialPayload(downloadUrl);
           const fallbackProtocolUrl = /^(?:fightplanner|mosaic):/i.test(downloadUrl)
             ? downloadUrl
             : `fightplanner:${downloadUrl}`;
@@ -889,13 +432,13 @@ class SocialGameBananaManager extends SocialManagerBase {
       const modelName = gameBananaCard.getAttribute('data-gb-model');
       const submissionId = gameBananaCard.getAttribute('data-gb-id');
       if (modelName && submissionId) {
-        this.captureGameBananaDiscoverSnapshot();
+        this.transitions.captureGameBananaDiscoverSnapshot();
         this.gameBananaLastDetailSource = {
           modelName,
           submissionId,
-          sourceKind: this.getGameBananaCardSourceKind(gameBananaCard),
+          sourceKind: this.transitions.getGameBananaCardSourceKind(gameBananaCard),
           page: this.gameBananaModsPage,
-          scrollTop: this.getSocialMainScrollTop(),
+          scrollTop: this.transitions.getSocialMainScrollTop(),
         };
         await this.showGameBananaSubmissionDetails(
           modelName,
@@ -910,7 +453,7 @@ class SocialGameBananaManager extends SocialManagerBase {
     const categoryFilter = this.getGameBananaCategoryFilterConfig();
     if (
       categoryFilter?.model ||
-      this.getGameBananaDiscoverSort() !== 'recent'
+      this.filters.getGameBananaDiscoverSort() !== 'recent'
     ) {
       return this.getGameBananaIndexedListUrl(
         page,
@@ -936,7 +479,7 @@ class SocialGameBananaManager extends SocialManagerBase {
     const params = new URLSearchParams({
       _nPage: String(Math.max(1, page)),
       _nPerpage: '15',
-      _sSort: this.getGameBananaApiSort(),
+      _sSort: this.filters.getGameBananaApiSort(),
     });
     params.set('_aFilters[Generic_Game]', '6498');
     const trimmedSearch = searchQuery.trim();
@@ -1231,15 +774,15 @@ class SocialGameBananaManager extends SocialManagerBase {
   }
 
   getGameBananaCategoryFilterConfig() {
-    const filter = this.getGameBananaCategoryFilter();
+    const filter = this.filters.getGameBananaCategoryFilter();
     if (filter === 'all') return null;
     const config =
-      this.getGameBananaCategoryFilters().find((item) => item.id === filter) ||
+      this.filters.getGameBananaCategoryFilters().find((item) => item.id === filter) ||
       null;
     if (config?.id === 'skins') {
       return {
         ...config,
-        categoryId: this.getGameBananaActiveSkinCategoryId(),
+        categoryId: this.filters.getGameBananaActiveSkinCategoryId(),
       };
     }
     return config;
@@ -1367,86 +910,6 @@ class SocialGameBananaManager extends SocialManagerBase {
       <button class="social-gamebanana-page-btn" data-page-action="next" ${canGoNext ? '' : 'disabled'}>
         <i class="bi bi-chevron-right"></i>
       </button>
-    `;
-  }
-
-  renderGameBananaFeaturedStack() {
-    if (this.gameBananaFeaturedMods.length === 0) {
-      return `<div class="social-gamebanana-featured-empty">${escapeHtml(
-        this.getSocialTranslation(
-          'social.noFeaturedModsInCategory',
-          'No featured mods in this category.',
-        ),
-      )}</div>`;
-    }
-
-    return this.gameBananaFeaturedMods
-      .map((mod, index) => {
-        const position = this.getGameBananaFeaturedPosition(index);
-        return this.renderGameBananaFeaturedCard(mod, index, position);
-      })
-      .join('');
-  }
-
-  getGameBananaFeaturedPosition(index: number) {
-    const total = this.gameBananaFeaturedMods.length;
-    if (total === 0) return 'hidden';
-
-    const active = this.gameBananaFeaturedIndex;
-    const previous = (active - 1 + total) % total;
-    const next = (active + 1) % total;
-
-    if (index === active) return 'active';
-    if (index === previous) return 'previous';
-    if (index === next) return 'next';
-    return 'hidden';
-  }
-
-  renderGameBananaFeaturedCard(
-    mod: GameBananaTopSubmission,
-    index: number,
-    position: string,
-  ) {
-    const name = escapeHtml(mod._sName || 'Unknown Mod');
-    const url = escapeHtml(mod._sProfileUrl || '');
-    const imageUrl = escapeHtml(this.getGameBananaSubmissionImage(mod));
-    const creator = escapeHtml(mod._aSubmitter?._sName || 'Unknown');
-    const category = escapeHtml(mod._aRootCategory?._sName || 'Mod');
-    const period = escapeHtml(this.formatGameBananaPeriod(mod._sPeriod));
-    const likes = Number(mod._nLikeCount || 0);
-    const comments = Number(mod._nPostCount || 0);
-    const model = escapeHtml(mod._sModelName || 'Mod');
-    const id = escapeHtml(mod._idRow);
-    const isNsfw = this.isGameBananaSubmissionNsfw(mod);
-
-    return `
-      <article class="social-gamebanana-card social-gamebanana-card-featured is-${position}" data-url="${url}" data-gb-id="${id}" data-gb-model="${model}" data-featured-index="${index}" data-featured-position="${position}">
-        ${
-          imageUrl
-            ? this.renderGameBananaPreviewMedia(
-                `<img src="${imageUrl}" alt="${name}" class="social-gamebanana-featured-image">`,
-                this.shouldBlurGameBananaPreview(isNsfw),
-              )
-            : '<div class="social-gamebanana-image-placeholder"><i class="bi bi-image"></i></div>'
-        }
-        <div class="social-gamebanana-featured-body">
-          <div class="social-gamebanana-meta">
-            <span>${category}</span>
-            <span>${period}</span>
-          </div>
-          <h3 class="social-gamebanana-card-title">${name}</h3>
-          <p class="social-gamebanana-card-creator">${escapeHtml(
-            this.getSocialTranslation('social.byAuthor', 'by {{author}}', {
-              author: creator,
-            }),
-          )}</p>
-          <div class="social-gamebanana-card-footer">
-            <span><i class="bi bi-hand-thumbs-up"></i> ${likes}</span>
-            <span><i class="bi bi-chat-left"></i> ${comments}</span>
-            ${this.renderGameBananaDownloadStat(mod, model, id)}
-          </div>
-        </div>
-      </article>
     `;
   }
 
@@ -1761,645 +1224,6 @@ class SocialGameBananaManager extends SocialManagerBase {
     }
   }
 
-  normalizeDependencyName(value: string) {
-    return String(value || '')
-      .toLowerCase()
-      .replace(/\.nro$/i, '')
-      .replace(/^lib/, '')
-      .replace(/[^a-z0-9]/g, '');
-  }
-
-  getDependencyAliases(requirementName: string) {
-    const normalized = this.normalizeDependencyName(requirementName);
-    const aliases: Record<string, string[]> = {
-      arcropolis: ['arcropolis', 'arcroplois', 'libarcropolis'],
-      nrohook: ['nrohook', 'nrohookplugin', 'libnrohook'],
-      smashline2: [
-        'smashline2',
-        'smashline',
-        'smashlineplugin',
-        'smashlinehook',
-        'libsmashlinehook',
-        'libsmashlineplugin',
-      ],
-      paramconfig: ['paramconfig', 'libparamconfig'],
-      onesloteffects: ['onesloteffects', 'oneeffect', 'slotfx'],
-      cskcollection: ['cskcollection', 'thecskcollection', 'csk'],
-      skyline: ['skyline', 'libskyline'],
-    };
-
-    return new Set([normalized, ...(aliases[normalized] || [])]);
-  }
-
-  isSkylineRequirement(requirementName: string) {
-    return this.getDependencyAliases(requirementName).has('skyline');
-  }
-
-  normalizeLocalPath(value: string) {
-    return String(value || '')
-      .replace(/\\/g, '/')
-      .replace(/\/+$/, '');
-  }
-
-  getSkylineRomfsDirsFromSettings() {
-    const candidates = new Set<string>();
-    const pluginsPath = this.normalizeLocalPath(
-      window.settingsManager?.getPluginsPath?.() ||
-        window.pluginManager?.pluginsPath ||
-        '',
-    );
-    const modsPath = this.normalizeLocalPath(
-      window.settingsManager?.getModsPath?.() || '',
-    );
-
-    const addFromConfiguredPath = (configuredPath: string) => {
-      if (!configuredPath) return;
-
-      const contentMatch = configuredPath.match(
-        /^(.*?)(?:\/ultimate\/contents|\/atmosphere\/contents)\/01006A800016E000(?:\/|$)/i,
-      );
-      if (contentMatch?.[1]) {
-        candidates.add(
-          `${contentMatch[1]}/atmosphere/contents/01006A800016E000/romfs/skyline`,
-        );
-      }
-
-      const pluginsMatch = configuredPath.match(
-        /^(.*\/(?:atmosphere|ultimate)\/contents\/01006A800016E000)\/romfs\/skyline\/plugins(?:\/|$)/i,
-      );
-      if (pluginsMatch?.[1]) {
-        const contentDir = pluginsMatch[1].replace(
-          /\/ultimate\/contents\/01006A800016E000$/i,
-          '/atmosphere/contents/01006A800016E000',
-        );
-        candidates.add(`${contentDir}/romfs/skyline`);
-      }
-
-      const skylineRomfsMatch = configuredPath.match(
-        /^(.*\/(?:atmosphere|ultimate)\/contents\/01006A800016E000\/romfs\/skyline)(?:\/|$)/i,
-      );
-      if (skylineRomfsMatch?.[1]) {
-        candidates.add(
-          skylineRomfsMatch[1].replace(
-            /\/ultimate\/contents\/01006A800016E000\/romfs\/skyline$/i,
-            '/atmosphere/contents/01006A800016E000/romfs/skyline',
-          ),
-        );
-      }
-    };
-
-    addFromConfiguredPath(pluginsPath);
-    addFromConfiguredPath(modsPath);
-    (window.pluginManager?.plugins || []).forEach((plugin) => {
-      addFromConfiguredPath(this.normalizeLocalPath(plugin.filePath || ''));
-    });
-
-    const modsMatch = modsPath.match(/^(.*)\/ultimate\/mods(?:\/|$)/i);
-    if (modsMatch?.[1]) {
-      candidates.add(
-        `${modsMatch[1]}/atmosphere/contents/01006A800016E000/romfs/skyline`,
-      );
-    }
-
-    return Array.from(candidates);
-  }
-
-  async refreshSkylineDependencyStatus() {
-    if (!window.electronAPI?.folderExists) {
-      this.skylineInstalledCache = false;
-      return false;
-    }
-
-    const skylineDirs = this.getSkylineRomfsDirsFromSettings();
-    for (const skylineDir of skylineDirs) {
-      try {
-        const result = await window.electronAPI.folderExists(skylineDir);
-        if (result?.success && result.exists) {
-          this.skylineInstalledCache = true;
-          return true;
-        }
-      } catch (error) {
-        console.warn('[Social] Failed to check Skyline installation:', error);
-      }
-    }
-
-    this.skylineInstalledCache = false;
-    return false;
-  }
-
-  getGameBananaRequirements(
-    mod: GameBananaTopSubmission & { _aRequirements?: any },
-  ) {
-    const requirements = mod._aRequirements;
-    if (!Array.isArray(requirements)) return [];
-
-    return requirements
-      .map((requirement) => {
-        const name = Array.isArray(requirement)
-          ? requirement[0]
-          : requirement?._sName || requirement?.name || requirement?.title;
-        const url = Array.isArray(requirement)
-          ? requirement[1]
-          : requirement?._sUrl || requirement?.url || requirement?._sProfileUrl;
-
-        if (!name) return null;
-        return {
-          name: String(name),
-          url: String(url || ''),
-        };
-      })
-      .filter(Boolean) as { name: string; url: string }[];
-  }
-
-  findInstalledDependency(requirementName: string) {
-    if (
-      this.isSkylineRequirement(requirementName) &&
-      this.skylineInstalledCache
-    ) {
-      return {
-        id: 'skyline',
-        name: 'Skyline',
-        size: '',
-        status: 'active',
-        filePath: '',
-      };
-    }
-
-    const aliases = this.getDependencyAliases(requirementName);
-    const plugins = window.pluginManager?.plugins || [];
-
-    return plugins.find((plugin) => {
-      const candidates = [
-        plugin.name,
-        plugin.id,
-        plugin.filePath?.split(/[\\/]/).pop() || '',
-      ].map((value) => this.normalizeDependencyName(value));
-
-      return candidates.some(
-        (candidate) =>
-          aliases.has(candidate) ||
-          Array.from(aliases).some(
-            (alias) => candidate.includes(alias) || alias.includes(candidate),
-          ),
-      );
-    });
-  }
-
-  findMarketplaceDependency(requirementName: string, url = '') {
-    const marketplacePlugins = window.pluginMarketplace?.getPlugins?.() || [];
-    const aliases = this.getDependencyAliases(requirementName);
-    const normalizedUrl = this.normalizeDependencyName(url);
-
-    return marketplacePlugins.find((plugin) => {
-      const candidates = [
-        plugin.name,
-        plugin.repo,
-        plugin.repo?.split('/').pop() || '',
-        plugin.description,
-        plugin.url,
-      ].map((value) => this.normalizeDependencyName(value));
-
-      return (
-        candidates.some((candidate) => aliases.has(candidate)) ||
-        (!!normalizedUrl &&
-          candidates.some(
-            (candidate) => candidate && normalizedUrl.includes(candidate),
-          ))
-      );
-    });
-  }
-
-  renderGameBananaRequirements(
-    mod: GameBananaTopSubmission & { _aRequirements?: any },
-  ) {
-    const requirements = this.getGameBananaRequirements(mod);
-    if (!requirements.length) return '';
-
-    return `
-      <div class="social-gamebanana-requirements">
-        <h4 class="social-gamebanana-requirements-title">Requirements</h4>
-        <div class="social-gamebanana-requirements-list">
-          ${requirements
-            .map((requirement) =>
-              this.renderGameBananaRequirementItem(requirement),
-            )
-            .join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  renderGameBananaRequirementItem(requirement: { name: string; url: string }) {
-    const installedPlugin = this.findInstalledDependency(requirement.name);
-    const marketplacePlugin = this.findMarketplaceDependency(
-      requirement.name,
-      requirement.url,
-    );
-    const name = escapeHtml(requirement.name);
-    const url = escapeHtml(requirement.url);
-    const searchQuery = escapeHtml(
-      `${requirement.name} Super Smash Bros Ultimate GameBanana`,
-    );
-    const statusClass = installedPlugin
-      ? 'is-installed'
-      : marketplacePlugin
-        ? 'is-installable'
-        : 'is-external';
-    const statusText = installedPlugin
-      ? installedPlugin.status === 'disabled'
-        ? 'Installed disabled'
-        : 'Installed'
-      : marketplacePlugin
-        ? 'Not installed'
-        : 'Manual search';
-    const installButton =
-      !installedPlugin && marketplacePlugin
-        ? `<button class="social-gamebanana-requirement-install" data-plugin-name="${escapeHtml(marketplacePlugin.name)}" data-plugin-repo="${escapeHtml(marketplacePlugin.repo)}">
-            <i class="bi bi-download"></i>
-            <span>Install</span>
-          </button>`
-        : '';
-    const openButton = url
-      ? `<button class="social-gamebanana-requirement-link" data-url="${url}">
-          <i class="bi bi-box-arrow-up-right"></i>
-          <span>Open</span>
-        </button>`
-      : '';
-
-    return `
-      <div class="social-gamebanana-requirement ${statusClass}">
-        <div class="social-gamebanana-requirement-main">
-          <strong>${name}</strong>
-          <span>${statusText}</span>
-        </div>
-        <div class="social-gamebanana-requirement-actions">
-          ${installButton}
-          ${openButton}
-          ${
-            !marketplacePlugin
-              ? `<button class="social-gamebanana-requirement-search" data-query="${searchQuery}" data-provider="gamebanana">
-                  <i class="bi bi-search"></i>
-                  <span>GameBanana</span>
-                </button>
-                <button class="social-gamebanana-requirement-search" data-query="${searchQuery}" data-provider="google">
-                  <i class="bi bi-google"></i>
-                  <span>Google</span>
-                </button>`
-              : ''
-          }
-        </div>
-      </div>
-    `;
-  }
-
-  async installGameBananaRequirement(pluginName: string, repo: string) {
-    if (!window.pluginMarketplace) return;
-
-    const downloadInfo =
-      await window.pluginMarketplace.getLatestReleaseDownloadUrl(repo);
-    if (!downloadInfo) {
-      window.toastManager?.error(
-        `No downloadable release found for ${pluginName}`,
-      );
-      return;
-    }
-
-    await window.pluginMarketplace.downloadAndInstallPlugin(
-      pluginName,
-      repo,
-      downloadInfo,
-    );
-  }
-
-  getGameBananaRequirementSearchUrl(query: string, provider: string) {
-    const encodedQuery = encodeURIComponent(query);
-    if (provider === 'gamebanana') {
-      return `https://gamebanana.com/search?_sSearchString=${encodedQuery}`;
-    }
-
-    return `https://www.google.com/search?q=${encodedQuery}`;
-  }
-
-  getCurrentGameBananaMergedDetail() {
-    if (!this.gameBananaCurrentDetail) return [];
-
-    return {
-      ...this.gameBananaCurrentDetail.fallback,
-      ...this.gameBananaCurrentDetail.details,
-    } as GameBananaTopSubmission & { _aRequirements?: any };
-  }
-
-  getReadmeMentionText(downloadUrl = '') {
-    const merged = this.getCurrentGameBananaMergedDetail();
-    if (Array.isArray(merged)) return '';
-
-    const downloadId = this.getDownloadIdFromGameBananaUrl(downloadUrl);
-    const selectedFile = downloadId
-      ? this.getGameBananaFileByDownloadId(downloadId)
-      : null;
-
-    return [
-      this.getGameBananaSubmissionDescription(merged),
-      selectedFile?._sDescription || '',
-      selectedFile?._sFile || '',
-    ].join('\n');
-  }
-
-  shouldScanGameBananaReadme(downloadUrl = '') {
-    const mentionText = this.getReadmeMentionText(downloadUrl);
-    return /read[\s_-]*me|lisez[\s_-]*moi|dependencies listed|requirements listed/i.test(
-      mentionText,
-    );
-  }
-
-  getReadmeDependencyCatalog() {
-    const catalog = [
-      {
-        name: 'Skyline',
-        aliases: ['skyline'],
-      },
-      {
-        name: 'ARCropolis',
-        aliases: ['arcropolis', 'arcroplois'],
-      },
-      {
-        name: 'NRO Hook',
-        aliases: ['nro hook', 'nrohook', 'libnro_hook'],
-      },
-      {
-        name: 'Smashline 2',
-        aliases: ['smashline 2', 'smashline2', 'smashline'],
-      },
-      {
-        name: 'Param Config',
-        aliases: ['param config', 'paramconfig'],
-      },
-      {
-        name: 'One Slot Effects',
-        aliases: ['one slot effects', 'onesloteffects'],
-      },
-      {
-        name: 'The CSK Collection',
-        aliases: ['the csk collection', 'csk collection', 'cskcollection'],
-      },
-    ];
-
-    const marketplacePlugins = window.pluginMarketplace?.getPlugins?.() || [];
-    marketplacePlugins.forEach((plugin) => {
-      if (!plugin?.name) return;
-      catalog.push({
-        name: plugin.name,
-        aliases: [plugin.name, plugin.repo?.split('/').pop() || ''],
-      });
-    });
-
-    return catalog;
-  }
-
-  formatReadmeDependencyLine(line: string) {
-    return line
-      .replace(/^\s*[-*+•]\s*/, '')
-      .replace(/^\s*\d+[.)]\s*/, '')
-      .replace(/^\s*\[[ x-]\]\s*/i, '')
-      .replace(/\[[^\]]+\]\(([^)]+)\)/g, '')
-      .replace(/\s+-\s+https?:\/\/\S+.*$/i, '')
-      .replace(/\s*[:=-]\s*https?:\/\/\S+.*$/i, '')
-      .replace(/https?:\/\/\S+/gi, '')
-      .replace(/\s+-\s*$/, '')
-      .replace(
-        /\b(?:plugin|dependency|dependencies|required|requirement)\b/gi,
-        '',
-      )
-      .replace(/\s*\([^)]*(?:optional|already included)[^)]*\)\s*$/i, '')
-      .replace(/\s{2,}/g, ' ')
-      .trim();
-  }
-
-  getReadmeDependencyUrl(line: string) {
-    return line.match(/https?:\/\/\S+/i)?.[0]?.replace(/[),.;]+$/, '') || '';
-  }
-
-  canonicalizeReadmeDependencyName(name: string) {
-    const normalizedName = this.normalizeDependencyName(name);
-    if (!normalizedName) return '';
-
-    const catalogMatch = this.getReadmeDependencyCatalog().find((entry) => {
-      return entry.aliases.some((alias) => {
-        const normalizedAlias = this.normalizeDependencyName(alias);
-        return (
-          normalizedAlias.length >= 3 &&
-          (normalizedName === normalizedAlias ||
-            normalizedName.includes(normalizedAlias) ||
-            normalizedAlias.includes(normalizedName))
-        );
-      });
-    });
-
-    return catalogMatch?.name || name;
-  }
-
-  getReadmeDependencyFromLine(line: string) {
-    const cleanedName = this.formatReadmeDependencyLine(line);
-    if (!cleanedName) return null;
-
-    const canonicalName = this.canonicalizeReadmeDependencyName(cleanedName);
-    if (!canonicalName) return null;
-
-    return {
-      name: canonicalName,
-      url: this.getReadmeDependencyUrl(line),
-    };
-  }
-
-  getKnownReadmeDependencyFromLine(line: string) {
-    const normalizedLine = this.normalizeDependencyName(line);
-    const catalogMatch = this.getReadmeDependencyCatalog().find((entry) => {
-      return entry.aliases.some((alias) => {
-        const normalizedAlias = this.normalizeDependencyName(alias);
-        return (
-          normalizedAlias.length >= 3 &&
-          normalizedLine.includes(normalizedAlias)
-        );
-      });
-    });
-
-    if (!catalogMatch) return null;
-
-    return {
-      name: catalogMatch.name,
-      url: this.getReadmeDependencyUrl(line),
-    };
-  }
-
-  getKnownReadmeDependenciesFromText(text: string) {
-    const normalizedText = this.normalizeDependencyName(text);
-    const mentionsDependencySection =
-      /dependenc|requirement|prerequisite|required plugin/i.test(text) ||
-      /dependenc|requirement|prerequisite|requiredplugin/i.test(normalizedText);
-
-    if (!mentionsDependencySection) return [];
-
-    return this.getReadmeDependencyCatalog()
-      .filter((entry) => {
-        return entry.aliases.some((alias) => {
-          const normalizedAlias = this.normalizeDependencyName(alias);
-          return (
-            normalizedAlias.length >= 3 &&
-            normalizedText.includes(normalizedAlias)
-          );
-        });
-      })
-      .map((entry) => ({ name: entry.name, url: '' }));
-  }
-
-  extractReadmeDependencyRequirements(
-    readmes: { path: string; content: string }[] = [],
-  ) {
-    const byName = new Map<string, { name: string; url: string }>();
-    const text = readmes.map((readme) => readme.content || '').join('\n');
-    const lines = text.replace(/\r\n?/g, '\n').split('\n');
-    let inDependencyBlock = false;
-    let capturedFromBlock = 0;
-
-    const addRequirement = (requirement: { name: string; url: string }) => {
-      const normalized = this.normalizeDependencyName(requirement.name);
-      if (!normalized) return;
-
-      const existing = byName.get(normalized);
-      byName.set(normalized, {
-        ...requirement,
-        url: existing?.url || requirement.url,
-      });
-    };
-
-    this.getKnownReadmeDependenciesFromText(text).forEach(addRequirement);
-
-    lines.forEach((rawLine) => {
-      const line = rawLine.trim();
-      const headingMatch =
-        /^(?:#+\s*)?(?:dependencies|requirements|prerequisites|required plugins|needed plugins)\s*:?\s*(.*)$/i.exec(
-          line,
-        );
-
-      if (headingMatch) {
-        inDependencyBlock = true;
-        capturedFromBlock = 0;
-        const inlineText = headingMatch[1] || '';
-        const inlineRequirement =
-          this.getReadmeDependencyFromLine(inlineText) ||
-          this.getKnownReadmeDependencyFromLine(inlineText);
-        if (inlineRequirement) {
-          addRequirement(inlineRequirement);
-          capturedFromBlock += 1;
-        }
-        return;
-      }
-
-      if (!inDependencyBlock && /^https?:\/\//i.test(line)) return;
-      if (!inDependencyBlock && this.getReadmeDependencyUrl(line)) {
-        const knownRequirement = this.getKnownReadmeDependencyFromLine(line);
-        if (knownRequirement) addRequirement(knownRequirement);
-        return;
-      }
-
-      if (!inDependencyBlock) return;
-      if (!line) {
-        if (capturedFromBlock > 0) inDependencyBlock = false;
-        return;
-      }
-
-      if (
-        /^(the new|if you|duplicate|character id|name id|series id|amount of colors|color start index|join|https?:\/\/|credits?|thanks|support)\b/i.test(
-          line,
-        )
-      ) {
-        inDependencyBlock = false;
-        return;
-      }
-
-      if (capturedFromBlock >= 20) {
-        inDependencyBlock = false;
-        return;
-      }
-
-      const requirement =
-        this.getReadmeDependencyFromLine(line) ||
-        this.getKnownReadmeDependencyFromLine(line);
-      if (!requirement) return;
-
-      addRequirement(requirement);
-      capturedFromBlock += 1;
-    });
-
-    return Array.from(byName.values());
-  }
-
-  async getGameBananaReadmeRequirements(downloadUrl = '') {
-    if (!downloadUrl || !window.electronAPI?.scanGameBananaReadme) {
-      return [];
-    }
-
-    try {
-      const result = await window.electronAPI.scanGameBananaReadme(downloadUrl);
-      if (!result?.success || !Array.isArray(result.readmes)) {
-        console.warn('[Social] README scan failed:', result);
-        return [];
-      }
-
-      const requirements = this.extractReadmeDependencyRequirements(
-        result.readmes,
-      );
-
-      return requirements;
-    } catch (error) {
-      console.warn('[Social] Failed to scan GameBanana README:', error);
-      return [];
-    }
-  }
-
-  getMissingGameBananaRequirements(
-    extraRequirements: { name: string; url: string }[] = [],
-  ) {
-    const merged = this.getCurrentGameBananaMergedDetail();
-    if (Array.isArray(merged)) return [];
-
-    const requirementsByName = new Map<string, { name: string; url: string }>();
-    [...this.getGameBananaRequirements(merged), ...extraRequirements].forEach(
-      (requirement) => {
-        const normalized = this.normalizeDependencyName(requirement.name);
-        if (!normalized) return;
-        if (!requirementsByName.has(normalized)) {
-          requirementsByName.set(normalized, requirement);
-        }
-      },
-    );
-
-    return Array.from(requirementsByName.values())
-      .map((requirement) => {
-        const installedPlugin = this.findInstalledDependency(requirement.name);
-        const marketplacePlugin = this.findMarketplaceDependency(
-          requirement.name,
-          requirement.url,
-        );
-        const isDisabled = installedPlugin?.status === 'disabled';
-        const isMissing = !installedPlugin || isDisabled;
-
-        if (!isMissing) return null;
-
-        return {
-          ...requirement,
-          reason: isDisabled ? 'Installed but disabled' : 'Missing',
-          marketplacePlugin,
-        };
-      })
-      .filter(Boolean) as {
-      name: string;
-      url: string;
-      reason: string;
-      marketplacePlugin?: any;
-    }[];
-  }
-
   async confirmMissingGameBananaRequirements(downloadUrl = '') {
     const shouldCheckDependencies =
       await this.shouldCheckGameBananaDependenciesOnDownload();
@@ -2451,7 +1275,7 @@ class SocialGameBananaManager extends SocialManagerBase {
       });
     }, 20000);
 
-    const requirementsPromise = this.getGameBananaReadmeRequirements(
+    const requirementsPromise = this.requirements.getGameBananaReadmeRequirements(
       downloadUrl,
     ).then((requirements) => ({ type: 'requirements' as const, requirements }));
 
@@ -2475,7 +1299,7 @@ class SocialGameBananaManager extends SocialManagerBase {
 
     const readmeRequirements = dependencyCheckResult.requirements;
     const missingRequirements =
-      this.getMissingGameBananaRequirements(readmeRequirements);
+      this.requirements.getMissingGameBananaRequirements(readmeRequirements);
     if (!missingRequirements.length) return Promise.resolve(true);
 
     if (!window.modalManager?.showCustomModal) {
@@ -2578,83 +1402,6 @@ class SocialGameBananaManager extends SocialManagerBase {
     }
   }
 
-  getGameBananaDetailImageStyle(mod: GameBananaTopSubmission) {
-    const image = this.getGameBananaSubmissionImageInfo(mod);
-    const width = Number(image.width || 0);
-    const height = Number(image.height || 0);
-
-    if (width > 0 && height > 0) {
-      return ` style="aspect-ratio: ${width} / ${height};"`;
-    }
-
-    return '';
-  }
-
-  renderGameBananaImageGallery(mod: GameBananaTopSubmission, name: string) {
-    const images = this.getGameBananaPreviewImages(mod);
-    const fallbackImage = this.getGameBananaSubmissionImage(mod);
-    const galleryImages = images.length
-      ? images
-      : fallbackImage
-        ? [{ url: fallbackImage, thumbUrl: fallbackImage, caption: '' }]
-        : [];
-
-    if (!galleryImages.length) {
-      return '<div class="social-gamebanana-detail-image social-gamebanana-image-placeholder"><i class="bi bi-image"></i></div>';
-    }
-
-    const activeImage = galleryImages[0];
-    const activeCaption = escapeHtml(activeImage.caption || '');
-    const isNsfw = this.isGameBananaSubmissionNsfw(mod);
-    const imageStyle =
-      activeImage.width && activeImage.height
-        ? ` style="aspect-ratio: ${activeImage.width} / ${activeImage.height};"`
-        : this.getGameBananaDetailImageStyle(mod);
-
-    return `
-      <div class="social-gamebanana-gallery" data-gallery-index="0">
-        <div class="social-gamebanana-gallery-main">
-          ${this.renderGameBananaPreviewMedia(
-            `<img src="${escapeHtml(activeImage.url)}" alt="${name}" class="social-gamebanana-detail-image"${imageStyle}>`,
-            this.shouldBlurGameBananaPreview(isNsfw),
-          )}
-          <div class="social-gamebanana-gallery-loading" aria-hidden="true">
-            <div class="social-gamebanana-gallery-skeleton social-gamebanana-skeleton-block"></div>
-            <div class="social-gamebanana-gallery-skeleton-caption">
-              <span class="social-gamebanana-skeleton-block"></span>
-              <span class="social-gamebanana-skeleton-block"></span>
-            </div>
-          </div>
-          ${
-            galleryImages.length > 1
-              ? `<button class="social-gamebanana-gallery-nav is-prev" data-gallery-direction="-1" title="Previous image">
-                  <i class="bi bi-chevron-left"></i>
-                </button>
-                <button class="social-gamebanana-gallery-nav is-next" data-gallery-direction="1" title="Next image">
-                  <i class="bi bi-chevron-right"></i>
-                </button>`
-              : ''
-          }
-        </div>
-        ${activeCaption ? `<p class="social-gamebanana-gallery-caption">${activeCaption}</p>` : ''}
-        ${
-          galleryImages.length > 1
-            ? `<div class="social-gamebanana-gallery-thumbs">
-                ${galleryImages
-                  .map(
-                    (image, index) =>
-                      `<button class="social-gamebanana-gallery-thumb ${index === 0 ? 'active' : ''}" data-gallery-index="${index}" data-image-url="${escapeHtml(image.url)}" data-caption="${escapeHtml(image.caption)}" data-width="${escapeHtml(image.width || '')}" data-height="${escapeHtml(image.height || '')}" title="Image ${index + 1}">
-                        <img src="${escapeHtml(image.thumbUrl)}" alt="${name} ${index + 1}">
-                      </button>`,
-                  )
-                  .join('')}
-              </div>`
-            : ''
-        }
-      </div>
-    `;
-  }
-
   async showGameBananaSubmissionDetails(
     modelName: string,
     submissionId: string,
@@ -2673,19 +1420,19 @@ class SocialGameBananaManager extends SocialManagerBase {
     const fallback =
       this.getCachedGameBananaSubmission(modelName, submissionId) || null;
     const sourceRect =
-      sourceRectOverride || this.getGameBananaSourcePreviewRect(sourceCard);
+      sourceRectOverride || this.transitions.getGameBananaSourcePreviewRect(sourceCard);
 
     if (fallback) {
-      this.renderGameBananaDetailPage(null, fallback, false, [], true);
-      this.scrollGameBananaDetailToTop();
-      this.animateGameBananaPreviewToDetail(sourceCard, sourceRect);
-      void this.loadGameBananaUmc(requestId);
-      await this.fadeGameBananaDetailInfo('in');
+      this.detail.renderGameBananaDetailPage(null, fallback, false, [], true);
+      this.transitions.scrollGameBananaDetailToTop();
+      this.transitions.animateGameBananaPreviewToDetail(sourceCard, sourceRect);
+      void this.detail.loadGameBananaUmc(requestId);
+      await this.transitions.fadeGameBananaDetailInfo('in');
     } else {
-      this.renderGameBananaDetailPage(null, fallback, true);
-      this.scrollGameBananaDetailToTop();
-      void this.loadGameBananaUmc(requestId);
-      await this.fadeGameBananaDetailInfo('in');
+      this.detail.renderGameBananaDetailPage(null, fallback, true);
+      this.transitions.scrollGameBananaDetailToTop();
+      void this.detail.loadGameBananaUmc(requestId);
+      await this.transitions.fadeGameBananaDetailInfo('in');
     }
 
     try {
@@ -2723,1250 +1470,24 @@ class SocialGameBananaManager extends SocialManagerBase {
       }
 
       if (requestId !== this.gameBananaDetailRequestId) return;
-      await this.refreshSkylineDependencyStatus();
+      await this.requirements.refreshSkylineDependencyStatus();
       if (requestId !== this.gameBananaDetailRequestId) return;
-      this.renderGameBananaDetailPage(detailData, fallback, false, filesData);
-      this.scrollGameBananaDetailToTop();
+      this.detail.renderGameBananaDetailPage(detailData, fallback, false, filesData);
+      this.transitions.scrollGameBananaDetailToTop();
       if (!fallback) {
-        this.animateGameBananaPreviewToDetail(sourceCard, sourceRect);
+        this.transitions.animateGameBananaPreviewToDetail(sourceCard, sourceRect);
       }
-      await this.fadeGameBananaDetailInfo('in');
+      await this.transitions.fadeGameBananaDetailInfo('in');
     } catch (error) {
       if (requestId !== this.gameBananaDetailRequestId) return;
       console.error('[Social] Error loading GameBanana details:', error);
-      this.renderGameBananaDetailPage(null, fallback, false);
-      this.scrollGameBananaDetailToTop();
+      this.detail.renderGameBananaDetailPage(null, fallback, false);
+      this.transitions.scrollGameBananaDetailToTop();
       if (!fallback) {
-        this.animateGameBananaPreviewToDetail(sourceCard, sourceRect);
+        this.transitions.animateGameBananaPreviewToDetail(sourceCard, sourceRect);
       }
-      await this.fadeGameBananaDetailInfo('in');
+      await this.transitions.fadeGameBananaDetailInfo('in');
     }
-  }
-
-  getGameBananaSourcePreviewRect(sourceCard?: HTMLElement) {
-    const sourceImage = sourceCard?.querySelector<HTMLElement>(
-      '.social-gamebanana-featured-image, .social-gamebanana-card-image, .social-mod-image',
-    );
-    const source = sourceImage || sourceCard;
-    return source?.getBoundingClientRect() || null;
-  }
-
-  getSocialMainScrollTop() {
-    const mainContent = document.querySelector<HTMLElement>(
-      '.social-main-content',
-    );
-    return mainContent?.scrollTop || 0;
-  }
-
-  setSocialMainScrollTop(scrollTop: number) {
-    const mainContent = document.querySelector<HTMLElement>(
-      '.social-main-content',
-    );
-    if (mainContent) {
-      mainContent.scrollTop = scrollTop;
-    }
-  }
-
-  scrollGameBananaDetailToTop() {
-    this.setSocialMainScrollTop(0);
-    const discoverContent = document.querySelector<HTMLElement>(
-      '#social-discover-content',
-    );
-    if (discoverContent) {
-      discoverContent.scrollTop = 0;
-    }
-
-    requestAnimationFrame(() => {
-      this.setSocialMainScrollTop(0);
-      if (discoverContent) {
-        discoverContent.scrollTop = 0;
-      }
-    });
-  }
-
-  keepGameBananaTargetVisible(target: HTMLElement) {
-    const mainContent = document.querySelector<HTMLElement>(
-      '.social-main-content',
-    );
-    if (!mainContent) return;
-
-    const containerRect = mainContent.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-    const padding = 24;
-
-    if (targetRect.top < containerRect.top + padding) {
-      mainContent.scrollTop -= containerRect.top + padding - targetRect.top;
-    } else if (targetRect.bottom > containerRect.bottom - padding) {
-      mainContent.scrollTop +=
-        targetRect.bottom - (containerRect.bottom - padding);
-    }
-  }
-
-  getGameBananaCardSourceKind(card: HTMLElement): 'featured' | 'grid' {
-    return card.classList.contains('social-gamebanana-card-featured')
-      ? 'featured'
-      : 'grid';
-  }
-
-  findGameBananaReturnTarget(
-    source: NonNullable<SocialManagerBase['gameBananaLastDetailSource']>,
-  ) {
-    const cards = Array.from(
-      document.querySelectorAll<HTMLElement>('.social-gamebanana-card'),
-    ).filter(
-      (card) =>
-        card.getAttribute('data-gb-model') === source.modelName &&
-        card.getAttribute('data-gb-id') === source.submissionId,
-    );
-
-    return (
-      cards.find(
-        (card) => this.getGameBananaCardSourceKind(card) === source.sourceKind,
-      ) ||
-      cards[0] ||
-      null
-    );
-  }
-
-  captureGameBananaDiscoverSnapshot() {
-    const discoverContent = document.querySelector<HTMLElement>(
-      '#social-discover-content',
-    );
-    if (!discoverContent) return;
-
-    this.gameBananaDiscoverSnapshot = {
-      html: discoverContent.innerHTML,
-      page: this.gameBananaModsPage,
-      scrollTop: this.getSocialMainScrollTop(),
-    };
-  }
-
-  fadeGameBananaDetailInfo(direction: 'in' | 'out') {
-    const gsapRef = window.gsap;
-    const detailInfo = document.querySelector<HTMLElement>(
-      '.social-gamebanana-detail-info',
-    );
-    if (!detailInfo) return Promise.resolve();
-
-    if (!gsapRef) {
-      detailInfo.style.opacity = direction === 'in' ? '1' : '0';
-      return Promise.resolve();
-    }
-
-    return new Promise<void>((resolve) => {
-      gsapRef.to(detailInfo, {
-        autoAlpha: direction === 'in' ? 1 : 0,
-        y: direction === 'in' ? 0 : 8,
-        duration: 0.16,
-        ease: 'power1.out',
-        onComplete: resolve,
-      });
-    });
-  }
-
-  fadeGameBananaRestoredBackground() {
-    const gsapRef = window.gsap;
-    const discoverContent = document.querySelector<HTMLElement>(
-      '#social-discover-content',
-    );
-    if (!gsapRef || !discoverContent) return;
-
-    gsapRef.fromTo(
-      discoverContent,
-      { autoAlpha: 0.86 },
-      {
-        autoAlpha: 1,
-        duration: 0.18,
-        ease: 'power1.out',
-        overwrite: 'auto',
-      },
-    );
-  }
-
-  fadeGameBananaDetailOverlayOut(discoverContent: HTMLElement) {
-    const gsapRef = window.gsap;
-    if (!gsapRef) return;
-
-    const rect = discoverContent.getBoundingClientRect();
-    const overlay = discoverContent.cloneNode(true) as HTMLElement;
-    overlay.style.position = 'fixed';
-    overlay.style.left = `${rect.left}px`;
-    overlay.style.top = `${rect.top}px`;
-    overlay.style.width = `${rect.width}px`;
-    overlay.style.height = `${rect.height}px`;
-    overlay.style.margin = '0';
-    overlay.style.overflow = 'hidden';
-    overlay.style.pointerEvents = 'none';
-    overlay.style.zIndex = '9999';
-    document.body.appendChild(overlay);
-
-    gsapRef.to(overlay, {
-      autoAlpha: 0,
-      duration: 0.18,
-      ease: 'power1.out',
-      onComplete: () => overlay.remove(),
-    });
-  }
-
-  animateGameBananaPreviewToDetail(
-    sourceCard?: HTMLElement,
-    sourceRect?: DOMRect | null,
-  ) {
-    const gsapRef = window.gsap;
-    const targetImage = document.querySelector<HTMLElement>(
-      '.social-gamebanana-detail-image',
-    );
-    const sourceImage = sourceCard?.querySelector<HTMLImageElement>(
-      '.social-gamebanana-featured-image, .social-gamebanana-card-image, .social-mod-image',
-    );
-
-    if (!gsapRef || !sourceRect || !targetImage || !sourceImage?.src) {
-      this.gameBananaPreviewAnimation = null;
-      return Promise.resolve();
-    }
-
-    const targetRect = targetImage.getBoundingClientRect();
-    const clone = document.createElement('img');
-    clone.src = sourceImage.src;
-    clone.className = 'social-gamebanana-preview-flyout';
-    if (sourceCard?.querySelector('.social-gamebanana-preview-media.is-nsfw')) {
-      clone.classList.add('is-nsfw');
-    }
-    clone.style.objectFit = 'cover';
-    clone.style.objectPosition = 'center';
-    clone.style.left = `${sourceRect.left}px`;
-    clone.style.top = `${sourceRect.top}px`;
-    clone.style.width = `${sourceRect.width}px`;
-    clone.style.height = `${sourceRect.height}px`;
-    document.body.appendChild(clone);
-
-    gsapRef.set(targetImage, { autoAlpha: 0 });
-    this.gameBananaPreviewAnimation = new Promise<void>((resolve) => {
-      gsapRef.fromTo(
-        clone,
-        {
-          x: 0,
-          y: 0,
-          width: sourceRect.width,
-          height: sourceRect.height,
-        },
-        {
-          x: targetRect.left - sourceRect.left,
-          y: targetRect.top - sourceRect.top,
-          width: targetRect.width,
-          height: targetRect.height,
-          duration: 0.46,
-          ease: 'power3.out',
-          onComplete: () => {
-            clone.remove();
-            gsapRef.to(targetImage, {
-              autoAlpha: 1,
-              duration: 0.12,
-              ease: 'power1.out',
-              onComplete: () => {
-                this.gameBananaPreviewAnimation = null;
-                resolve();
-              },
-            });
-          },
-        },
-      );
-    });
-
-    gsapRef.fromTo(
-      '.social-gamebanana-detail-info',
-      { autoAlpha: 0, y: 14 },
-      { autoAlpha: 1, y: 0, duration: 0.28, delay: 0.12, ease: 'power2.out' },
-    );
-
-    return this.gameBananaPreviewAnimation;
-  }
-
-  async returnFromGameBananaDetail() {
-    if (this.gameBananaDetailReturnInProgress) return;
-    this.gameBananaDetailReturnInProgress = true;
-    this.gameBananaDetailRequestId++;
-    this.gameBananaUmcState = null;
-
-    try {
-      const detailImage = document.querySelector<HTMLImageElement>(
-        '.social-gamebanana-detail-image',
-      );
-      const firstGalleryImageSrc =
-        this.startGameBananaGalleryBackToFirstImage();
-      const source = this.gameBananaLastDetailSource;
-      const detailRect = detailImage?.getBoundingClientRect() || null;
-      const detailSrc = firstGalleryImageSrc || detailImage?.src || '';
-      const snapshot = this.gameBananaDiscoverSnapshot;
-      if (snapshot) {
-        const discoverContent = document.querySelector<HTMLElement>(
-          '#social-discover-content',
-        );
-        if (discoverContent) {
-          this.fadeGameBananaDetailOverlayOut(discoverContent);
-          discoverContent.innerHTML = snapshot.html;
-          discoverContent.style.opacity = '1';
-          discoverContent.style.visibility = 'visible';
-          discoverContent.style.transform = '';
-          discoverContent.style.transition = '';
-        }
-        this.gameBananaModsPage = snapshot.page;
-        this.setGameBananaFeaturedCardPositions();
-        this.setSocialMainScrollTop(snapshot.scrollTop);
-        this.fadeGameBananaRestoredBackground();
-      } else {
-        const pageToRestore = source?.page || 1;
-        await this.loadDiscover();
-        if (pageToRestore > 1) {
-          await this.loadGameBananaModsPage(pageToRestore);
-        }
-        this.setSocialMainScrollTop(source?.scrollTop || 0);
-        this.fadeGameBananaRestoredBackground();
-      }
-
-      const searchInput = document.querySelector<HTMLInputElement>(
-        '#social-gamebanana-search-input',
-      );
-      if (searchInput && this.gameBananaSearchQuery) {
-        searchInput.value = this.gameBananaSearchQuery;
-      }
-
-      this.gameBananaDiscoverSnapshot = null;
-      this.gameBananaCurrentDetail = null;
-      this.gameBananaLastDetailSource = null;
-
-      if (!source || !detailRect || !detailSrc) {
-        return;
-      }
-
-      const targetCard = this.findGameBananaReturnTarget(source);
-      const targetImage = targetCard?.querySelector<HTMLElement>(
-        '.social-gamebanana-featured-image, .social-gamebanana-card-image',
-      );
-      if (targetCard) {
-        this.keepGameBananaTargetVisible(targetCard);
-      }
-      const targetRect = targetImage?.getBoundingClientRect() || null;
-
-      if (!targetImage || !targetRect) return;
-
-      this.animateGameBananaDetailToPreview(detailRect, detailSrc, targetImage);
-    } finally {
-      this.gameBananaDetailReturnInProgress = false;
-    }
-  }
-
-  startGameBananaGalleryBackToFirstImage() {
-    const gallery = document.querySelector<HTMLElement>(
-      '.social-gamebanana-gallery',
-    );
-    const image = gallery?.querySelector<HTMLImageElement>(
-      '.social-gamebanana-detail-image',
-    );
-    const firstThumb = gallery?.querySelector<HTMLButtonElement>(
-      '.social-gamebanana-gallery-thumb[data-gallery-index="0"]',
-    );
-    if (!gallery || !image || !firstThumb) return '';
-
-    const currentIndex = Number(
-      gallery.getAttribute('data-gallery-index') || 0,
-    );
-    if (currentIndex === 0) return image.src || '';
-
-    const firstImageUrl = firstThumb.getAttribute('data-image-url');
-    if (!firstImageUrl) return image.src || '';
-    if (image.src === firstImageUrl) return firstImageUrl;
-
-    const width = Number(firstThumb.getAttribute('data-width'));
-    const height = Number(firstThumb.getAttribute('data-height'));
-    if (width > 0 && height > 0) {
-      image.style.aspectRatio = `${width} / ${height}`;
-    } else {
-      image.style.aspectRatio = '';
-    }
-
-    image.style.transition = 'opacity 0.18s ease';
-    image.style.opacity = '0.55';
-    image.src = firstImageUrl;
-    this.updateGameBananaGalleryCaption(
-      gallery,
-      firstThumb.getAttribute('data-caption') || '',
-    );
-    gallery.setAttribute('data-gallery-index', '0');
-    gallery
-      .querySelectorAll<HTMLButtonElement>('.social-gamebanana-gallery-thumb')
-      .forEach((thumb) => {
-        thumb.classList.toggle(
-          'active',
-          thumb.getAttribute('data-gallery-index') === '0',
-        );
-      });
-
-    requestAnimationFrame(() => {
-      image.style.opacity = '1';
-      window.setTimeout(() => {
-        image.style.transition = '';
-      }, 190);
-    });
-
-    return firstImageUrl;
-  }
-
-  animateGameBananaDetailToPreview(
-    detailRect: DOMRect,
-    detailSrc: string,
-    targetImage: HTMLElement,
-  ) {
-    const gsapRef = window.gsap;
-    const targetRect = targetImage.getBoundingClientRect();
-
-    if (!gsapRef || !targetRect) return;
-
-    const clone = document.createElement('img');
-    clone.src = detailSrc;
-    clone.className = 'social-gamebanana-preview-flyout';
-    if (targetImage.closest('.social-gamebanana-preview-media.is-nsfw')) {
-      clone.classList.add('is-nsfw');
-    }
-    clone.style.objectFit = 'cover';
-    clone.style.objectPosition = 'center';
-    clone.style.left = `${detailRect.left}px`;
-    clone.style.top = `${detailRect.top}px`;
-    clone.style.width = `${detailRect.width}px`;
-    clone.style.height = `${detailRect.height}px`;
-    document.body.appendChild(clone);
-
-    gsapRef.killTweensOf(targetImage);
-    gsapRef.set(targetImage, { autoAlpha: 0 });
-
-    gsapRef.fromTo(
-      clone,
-      {
-        x: 0,
-        y: 0,
-        width: detailRect.width,
-        height: detailRect.height,
-      },
-      {
-        x: targetRect.left - detailRect.left,
-        y: targetRect.top - detailRect.top,
-        width: targetRect.width,
-        height: targetRect.height,
-        duration: 0.42,
-        ease: 'power3.out',
-        onComplete: () => {
-          gsapRef.to(targetImage, {
-            autoAlpha: 1,
-            duration: 0.12,
-            ease: 'power1.out',
-            onComplete: () => {
-              clone.remove();
-            },
-          });
-        },
-      },
-    );
-  }
-
-  renderGameBananaDetailPage(
-    details: any,
-    fallback: GameBananaTopSubmission | null,
-    loading: boolean,
-    files: GameBananaFileEntry[] = [],
-    contentLoading = false,
-  ) {
-    const discoverContent = document.querySelector<HTMLElement>(
-      '#social-discover-content',
-    );
-    if (!discoverContent) return;
-
-    this.gameBananaCurrentDetail = loading
-      ? null
-      : {
-          details,
-          fallback,
-          files,
-        };
-
-    const merged = {
-      ...fallback,
-      ...details,
-      _aSubmitter: details?._aSubmitter || fallback?._aSubmitter,
-      _sModelName: details?._sModelName || fallback?._sModelName,
-      _aRootCategory:
-        details?._aRootCategory ||
-        details?._aCategory ||
-        fallback?._aRootCategory,
-      _aSubCategory: details?._aSubCategory || fallback?._aSubCategory,
-      _aPreviewMedia: details?._aPreviewMedia || fallback?._aPreviewMedia,
-    } as GameBananaTopSubmission & { _aAdditionalInfo?: any };
-
-    const name = escapeHtml(merged._sName || 'Unknown Mod');
-    const creator = escapeHtml(merged._aSubmitter?._sName || 'Unknown');
-    const model = escapeHtml(merged._sModelName || 'Mod');
-    const rootCategory = escapeHtml(
-      merged._aRootCategory?._sName || 'Unknown',
-    );
-    const subCategory = escapeHtml(merged._aSubCategory?._sName || '');
-    const profileUrl = escapeHtml(merged._sProfileUrl || '');
-    const description = escapeHtml(
-      this.getGameBananaSubmissionDescription(details, fallback || undefined) ||
-        this.getSocialTranslation(
-          'social.noDescriptionAvailable',
-          'No description available.',
-        ),
-    );
-    const likes = Number(merged._nLikeCount || 0);
-    const comments = Number(merged._nPostCount || 0);
-    const views = Number(merged._nViewCount || 0);
-    const dateAdded = escapeHtml(this.getGameBananaSubmissionDate(merged));
-
-    const detailImage = loading
-      ? '<div class="social-gamebanana-detail-image social-gamebanana-detail-image-skeleton social-gamebanana-skeleton-block"></div>'
-      : this.renderGameBananaImageGallery(merged, name);
-    const detailInfo = loading
-      ? this.renderGameBananaDetailSkeletonInfo()
-      : `
-        <div class="social-gamebanana-detail-info">
-          <div class="social-gamebanana-detail-meta">
-            <span>${model}</span>
-            <span>${rootCategory}${subCategory ? ` / ${subCategory}` : ''}</span>
-            ${dateAdded ? `<span>${dateAdded}</span>` : ''}
-          </div>
-          <h3 class="social-gamebanana-detail-name">${name}</h3>
-          <p class="social-gamebanana-detail-author">${escapeHtml(
-            this.getSocialTranslation('social.byAuthor', 'by {{author}}', {
-              author: creator,
-            }),
-          )}</p>
-          <div class="social-gamebanana-detail-stats">
-            <span><i class="bi bi-hand-thumbs-up"></i> ${likes}</span>
-            <span><i class="bi bi-chat-left"></i> ${comments}</span>
-            <span><i class="bi bi-eye"></i> ${views}</span>
-          </div>
-          ${
-            contentLoading
-              ? this.renderGameBananaDescriptionSkeleton()
-              : `<p class="social-gamebanana-detail-description">${description}</p>`
-          }
-          ${this.renderGameBananaUmcSection()}
-          ${this.renderGameBananaWipInfo(merged)}
-          ${this.renderGameBananaRequirements(merged)}
-          ${this.renderGameBananaFileList(files, contentLoading)}
-        </div>
-      `;
-
-    discoverContent.innerHTML = `
-      <div class="social-gamebanana-detail-page">
-        <div class="social-gamebanana-detail-toolbar">
-          <button class="social-back-button social-gamebanana-detail-back">
-            <i class="bi bi-arrow-left"></i> ${escapeHtml(
-              this.getSocialTranslation('social.back', 'Back'),
-            )}
-          </button>
-          ${
-            profileUrl
-              ? `<button class="social-gamebanana-external-btn" data-url="${profileUrl}">
-                  <i class="bi bi-box-arrow-up-right"></i>
-                  <span>GameBanana</span>
-                </button>`
-              : ''
-          }
-        </div>
-        <div class="social-gamebanana-detail-layout">
-          ${detailImage}
-          ${detailInfo}
-        </div>
-        ${loading ? this.renderGameBananaUmcSection() : ''}
-      </div>
-    `;
-  }
-
-  async loadGameBananaUmc(requestId: number) {
-    const state = this.gameBananaUmcState;
-    if (!state || requestId !== this.gameBananaDetailRequestId) return;
-    state.status = 'loading';
-    this.updateGameBananaUmcSection();
-    try {
-      const result = await window.electronAPI.getUmcMovesetsByGameBanana(
-        state.modId,
-        true,
-      );
-      if (
-        requestId !== this.gameBananaDetailRequestId ||
-        this.gameBananaUmcState !== state
-      )
-        return;
-      if (result.success) {
-        state.movesets = result.movesets;
-        state.status = 'ready';
-      } else {
-        state.status = 'error';
-      }
-    } catch {
-      if (
-        requestId !== this.gameBananaDetailRequestId ||
-        this.gameBananaUmcState !== state
-      )
-        return;
-      state.status = 'error';
-    }
-    this.updateGameBananaUmcSection();
-  }
-
-  updateGameBananaUmcSection() {
-    const section = document.querySelector<HTMLElement>(
-      '#social-discover-content [data-umc-section]',
-    );
-    if (!section || section.dataset.umcSection !== this.gameBananaUmcState?.key)
-      return;
-    section.outerHTML = this.renderGameBananaUmcSection();
-  }
-
-  renderGameBananaUmcSection() {
-    const state = this.gameBananaUmcState;
-    if (!state) return '';
-    const escape = (value: unknown) =>
-      escapeHtml(value).replace(/"/g, '&quot;');
-    const label = (key: string, fallback: string) =>
-      escape(this.getSocialTranslation(`social.umc.${key}`, fallback));
-    let content = '';
-    if (state.status === 'loading') {
-      content = `<p class="social-umc-status" role="status">${label('loading', 'Looking up moveset information…')}</p>`;
-    } else if (state.status === 'error') {
-      content = `<p class="social-umc-status" role="status">${label('unavailable', 'UMC is unavailable. Try again.')}</p>
-        <button class="social-gamebanana-external-btn" type="button" data-umc-retry>${label('retry', 'Retry')}</button>`;
-    } else if (!state.movesets.length) {
-      // Ordinary skins do not need a permanent empty moveset section.
-      return `<section data-umc-section="${state.key}" hidden></section>`;
-    } else {
-      content = state.movesets
-        .map((moveset) => {
-          const fields: [string, string][] = [
-            [label('fighter', 'Base fighter'), moveset.fighterName],
-            [label('series', 'Series'), moveset.series],
-            [label('state', 'Release status'), moveset.releaseState],
-            [label('date', 'Release date'), moveset.releaseDate],
-            [label('authors', 'Authors'), moveset.authors.join(', ')],
-            [label('characterId', 'Character ID'), moveset.slottedId],
-            [label('replacementId', 'Replacement ID'), moveset.replacementId],
-            [
-              label('slots', 'Slots'),
-              moveset.slotsStart !== null && moveset.slotsEnd !== null
-                ? `c${String(moveset.slotsStart).padStart(2, '0')} – c${String(moveset.slotsEnd).padStart(2, '0')}`
-                : '',
-            ],
-          ];
-          const link = (url: string, title: string) =>
-            `<button type="button" class="social-gamebanana-external-btn" data-url="${escape(url)}"><span>${escape(title)}</span><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></button>`;
-          return `<article class="social-umc-moveset">
-          ${moveset.imageUrl ? `<img class="social-umc-image" src="${escape(moveset.imageUrl)}" alt="${escape(moveset.name)}" loading="lazy" onerror="this.hidden=true;">` : ''}
-          <h5>${escape(moveset.name)}</h5>
-          <dl class="social-umc-facts">${fields
-            .filter(([, value]) => value)
-            .map(
-              ([title, value]) =>
-                `<div><dt>${title}</dt><dd>${escape(value)}</dd></div>`,
-            )
-            .join('')}</dl>
-          ${moveset.dependencies.length ? `<h6>${label('dependencies', 'Dependencies')}</h6><ul class="social-umc-dependencies">${moveset.dependencies.map((entry) => `<li>${entry.url ? link(entry.url, entry.name) : escape(entry.name)}</li>`).join('')}</ul>` : ''}
-          ${!moveset.detailsAvailable ? `<p class="social-umc-status">${label('partial', 'Additional UMC details are temporarily unavailable.')}</p>` : ''}
-          ${moveset.sourceUrl || moveset.wikiUrl ? `<div class="social-umc-links">${moveset.sourceUrl ? link(moveset.sourceUrl, this.getSocialTranslation('social.umc.sourceCode', 'Source code')) : ''}${moveset.wikiUrl ? link(moveset.wikiUrl, 'Mods Wiki') : ''}</div>` : ''}
-        </article>`;
-        })
-        .join('');
-    }
-    return `<section class="social-umc-section" data-umc-section="${state.key}" aria-busy="${state.status === 'loading'}">
-      <div class="social-umc-heading"><h4>${label('title', 'Moveset information')}</h4>
-      <button type="button" class="social-gamebanana-external-btn" data-url="https://lilylavender.github.io/UltimateMovesetCompatibility/#/"><span>Provided by UMC</span><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></button></div>
-      ${content}
-    </section>`;
-  }
-
-  renderGameBananaWipInfo(
-    mod: GameBananaTopSubmission & { _aAdditionalInfo?: any },
-  ) {
-    if (String(mod._sModelName || '').toLowerCase() !== 'wip') return '';
-
-    const additionalInfo = mod._aAdditionalInfo || {};
-    const state =
-      additionalInfo._sDevelopmentState || additionalInfo._akDevelopmentState;
-    const completion = Number(additionalInfo._iCompletionPercentage);
-    const hasCompletion = Number.isFinite(completion);
-    const finishedWork = additionalInfo._aFinishedWork || {};
-    const gameBananaWorks = Array.isArray(
-      finishedWork._aFinishedWorksOnGameBanana,
-    )
-      ? finishedWork._aFinishedWorksOnGameBanana
-      : [];
-    const remoteWorks = Array.isArray(finishedWork._aRemoteFinishedWorkUrls)
-      ? finishedWork._aRemoteFinishedWorkUrls
-      : [];
-
-    if (
-      !state &&
-      !hasCompletion &&
-      !gameBananaWorks.length &&
-      !remoteWorks.length
-    ) {
-      return '';
-    }
-
-    return `
-      <div class="social-gamebanana-wip-info">
-        <h4 class="social-gamebanana-wip-title">${escapeHtml(
-          this.getSocialTranslation('social.wipProgress', 'Work in progress'),
-        )}</h4>
-        <div class="social-gamebanana-wip-grid">
-          ${
-            state
-              ? `<div class="social-gamebanana-wip-item">
-                  <span>${escapeHtml(
-                    this.getSocialTranslation(
-                      'social.developmentState',
-                      'Development state',
-                    ),
-                  )}</span>
-                  <strong>${escapeHtml(state)}</strong>
-                </div>`
-              : ''
-          }
-          ${
-            hasCompletion
-              ? `<div class="social-gamebanana-wip-item">
-                  <span>${escapeHtml(
-                    this.getSocialTranslation(
-                      'social.completionLabel',
-                      'Completion',
-                    ),
-                  )}</span>
-                  <strong>${Math.max(0, Math.min(100, completion))}%</strong>
-                </div>`
-              : ''
-          }
-        </div>
-        ${
-          hasCompletion
-            ? `<div class="social-gamebanana-wip-progress" aria-label="${escapeHtml(
-                this.getSocialTranslation(
-                  'social.completion',
-                  'Completion {{percent}}%',
-                  {
-                    percent: String(
-                      Math.max(0, Math.min(100, completion)),
-                    ),
-                  },
-                ),
-              )}">
-                <span style="width: ${Math.max(0, Math.min(100, completion))}%"></span>
-              </div>`
-            : ''
-        }
-        ${this.renderGameBananaWipFinishedWork(gameBananaWorks, remoteWorks)}
-      </div>
-    `;
-  }
-
-  renderGameBananaWipFinishedWork(gameBananaWorks: any[], remoteWorks: any[]) {
-    const links = [
-      ...gameBananaWorks.map((work) => ({
-        label:
-          work?._sName ||
-          work?.name ||
-          work?._sProfileUrl ||
-          this.getSocialTranslation('social.finishedWork', 'Finished work'),
-        url: work?._sProfileUrl || work?.url || '',
-      })),
-      ...remoteWorks.map((work) => ({
-        label:
-          work?.description ||
-          work?.title ||
-          work?.url ||
-          this.getSocialTranslation('social.remoteWork', 'Remote work'),
-        url: work?.url || work?._sUrl || '',
-      })),
-    ].filter((work) => work.url);
-
-    if (!links.length) return '';
-
-    return `
-      <div class="social-gamebanana-wip-finished">
-        <span>${escapeHtml(
-          this.getSocialTranslation('social.finishedWork', 'Finished work'),
-        )}</span>
-        ${links
-          .map((work) => {
-            const gameBananaInfo = this.getGameBananaInfoFromProfileUrl(
-              work.url,
-            );
-            return gameBananaInfo
-              ? `<button class="social-gamebanana-finished-work-btn" data-url="${escapeHtml(work.url)}" data-gb-model="${escapeHtml(gameBananaInfo.modelName)}" data-gb-id="${escapeHtml(gameBananaInfo.submissionId)}">
-                <i class="bi bi-arrow-right-circle"></i>
-                <span>${escapeHtml(work.label)}</span>
-              </button>`
-              : `<button class="social-gamebanana-external-btn" data-url="${escapeHtml(work.url)}">
-                <i class="bi bi-box-arrow-up-right"></i>
-                <span>${escapeHtml(work.label)}</span>
-              </button>`;
-          })
-          .join('')}
-      </div>
-    `;
-  }
-
-  updateGameBananaGallery(gallery: HTMLElement, nextIndex: number) {
-    const thumbs = Array.from(
-      gallery.querySelectorAll<HTMLButtonElement>(
-        '.social-gamebanana-gallery-thumb',
-      ),
-    );
-    if (!thumbs.length) return;
-
-    const normalizedIndex = (nextIndex + thumbs.length) % thumbs.length;
-    const currentIndex = Number(
-      gallery.getAttribute('data-gallery-index') || 0,
-    );
-    if (
-      normalizedIndex === currentIndex ||
-      gallery.classList.contains('is-loading')
-    ) {
-      return;
-    }
-
-    const thumb = thumbs[normalizedIndex];
-    const image = gallery.querySelector<HTMLImageElement>(
-      '.social-gamebanana-detail-image',
-    );
-    const imageUrl = thumb.getAttribute('data-image-url');
-    if (!image || !imageUrl) return;
-
-    const width = Number(thumb.getAttribute('data-width'));
-    const height = Number(thumb.getAttribute('data-height'));
-    const nextCaption = thumb.getAttribute('data-caption') || '';
-    const direction = normalizedIndex > currentIndex ? 'next' : 'prev';
-    const preload = new Image();
-
-    gallery.classList.add('is-loading');
-
-    preload.onload = () => {
-      gallery.classList.remove('is-loading');
-      gallery.classList.remove('slide-next', 'slide-prev');
-
-      if (width > 0 && height > 0) {
-        image.style.aspectRatio = `${width} / ${height}`;
-      } else {
-        image.style.aspectRatio = '';
-      }
-      image.src = imageUrl;
-      image.classList.remove('is-sliding');
-      void image.offsetWidth;
-      gallery.classList.add(direction === 'next' ? 'slide-next' : 'slide-prev');
-      image.classList.add('is-sliding');
-
-      this.updateGameBananaGalleryCaption(gallery, nextCaption);
-
-      thumbs.forEach((item, index) => {
-        item.classList.toggle('active', index === normalizedIndex);
-      });
-      gallery.setAttribute('data-gallery-index', String(normalizedIndex));
-
-      window.setTimeout(() => {
-        image.classList.remove('is-sliding');
-        gallery.classList.remove('slide-next', 'slide-prev');
-      }, 260);
-    };
-
-    preload.onerror = () => {
-      gallery.classList.remove('is-loading');
-    };
-
-    preload.src = imageUrl;
-  }
-
-  updateGameBananaGalleryCaption(gallery: HTMLElement, nextCaption: string) {
-    const caption = gallery.querySelector<HTMLElement>(
-      '.social-gamebanana-gallery-caption',
-    );
-
-    if (caption) {
-      caption.textContent = nextCaption;
-      caption.style.display = nextCaption ? '' : 'none';
-      return;
-    }
-
-    if (nextCaption) {
-      const nextCaptionEl = document.createElement('p');
-      nextCaptionEl.className = 'social-gamebanana-gallery-caption';
-      nextCaptionEl.textContent = nextCaption;
-      gallery
-        .querySelector<HTMLElement>('.social-gamebanana-gallery-main')
-        ?.after(nextCaptionEl);
-    }
-  }
-
-  renderGameBananaDetailSkeletonInfo() {
-    return `
-      <div class="social-gamebanana-detail-info">
-        <div class="social-gamebanana-detail-meta social-gamebanana-skeleton-row">
-          <span class="social-gamebanana-skeleton-block social-gamebanana-skeleton-pill"></span>
-          <span class="social-gamebanana-skeleton-block social-gamebanana-skeleton-pill social-gamebanana-skeleton-pill-wide"></span>
-        </div>
-        <div class="social-gamebanana-skeleton-block social-gamebanana-skeleton-title"></div>
-        <div class="social-gamebanana-skeleton-block social-gamebanana-skeleton-author"></div>
-        <div class="social-gamebanana-detail-stats social-gamebanana-skeleton-row">
-          <span class="social-gamebanana-skeleton-block social-gamebanana-skeleton-stat"></span>
-          <span class="social-gamebanana-skeleton-block social-gamebanana-skeleton-stat"></span>
-          <span class="social-gamebanana-skeleton-block social-gamebanana-skeleton-stat"></span>
-        </div>
-        ${this.renderGameBananaDescriptionSkeleton()}
-        ${this.renderGameBananaFileList([], true)}
-      </div>
-    `;
-  }
-
-  renderGameBananaDescriptionSkeleton() {
-    return `
-      <div class="social-gamebanana-detail-description social-gamebanana-description-skeleton">
-        <span class="social-gamebanana-skeleton-block"></span>
-        <span class="social-gamebanana-skeleton-block"></span>
-        <span class="social-gamebanana-skeleton-block"></span>
-        <span class="social-gamebanana-skeleton-block social-gamebanana-skeleton-line-short"></span>
-      </div>
-    `;
-  }
-
-  renderGameBananaFileList(files: GameBananaFileEntry[], loading = false) {
-    const filesTitle = escapeHtml(
-      this.getSocialTranslation('social.files', 'Files'),
-    );
-    if (loading) {
-      return `
-        <div class="social-gamebanana-files">
-          <h4 class="social-gamebanana-files-title">${filesTitle}</h4>
-          <div class="social-gamebanana-files-list">
-            ${Array.from({ length: 3 }, () => this.renderGameBananaFileSkeletonCard()).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    if (!Array.isArray(files) || files.length === 0) {
-      return `
-        <div class="social-gamebanana-files">
-          <h4 class="social-gamebanana-files-title">${filesTitle}</h4>
-          <p class="social-gamebanana-files-empty">${escapeHtml(
-            this.getSocialTranslation(
-              'social.noDownloadableFiles',
-              'No downloadable files found.',
-            ),
-          )}</p>
-        </div>
-      `;
-    }
-
-    return `
-      <div class="social-gamebanana-files">
-        <h4 class="social-gamebanana-files-title">${filesTitle}</h4>
-        <div class="social-gamebanana-files-list">
-          ${files.map((file) => this.renderGameBananaFileCard(file)).join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  renderGameBananaFileSkeletonCard() {
-    return `
-      <div class="social-gamebanana-file-card social-gamebanana-file-card-skeleton">
-        <div class="social-gamebanana-file-info">
-          <div class="social-gamebanana-skeleton-block social-gamebanana-skeleton-file-name"></div>
-          <div class="social-gamebanana-skeleton-block social-gamebanana-skeleton-file-description"></div>
-          <div class="social-gamebanana-file-meta social-gamebanana-skeleton-row">
-            <span class="social-gamebanana-skeleton-block social-gamebanana-skeleton-file-meta"></span>
-            <span class="social-gamebanana-skeleton-block social-gamebanana-skeleton-file-meta"></span>
-          </div>
-        </div>
-        <div class="social-gamebanana-skeleton-block social-gamebanana-skeleton-download-btn"></div>
-      </div>
-    `;
-  }
-
-  renderGameBananaFileCard(file: GameBananaFileEntry) {
-    const downloadText = this.getSocialTranslation(
-      'social.download',
-      'Download',
-    );
-    const fileName = escapeHtml(file._sFile || downloadText);
-    const description = escapeHtml(file._sDescription || '');
-    const size = escapeHtml(
-      this.formatGameBananaFileSize(file._nFilesize),
-    );
-    const downloads = Number(file._nDownloadCount || 0);
-    const downloadUrl = escapeHtml(this.getGameBananaFileInstallUrl(file));
-    const analysis = escapeHtml(file._sAnalysisResult || '');
-    const av = escapeHtml(file._sAvResult || '');
-
-    return `
-      <div class="social-gamebanana-file-card">
-        <div class="social-gamebanana-file-info">
-          <h5 class="social-gamebanana-file-name">${fileName}</h5>
-          ${description ? `<p class="social-gamebanana-file-description">${description}</p>` : ''}
-          <div class="social-gamebanana-file-meta">
-            ${size ? `<span>${size}</span>` : ''}
-            <span><i class="bi bi-download"></i> ${downloads}</span>
-            ${analysis ? `<span>${analysis}</span>` : ''}
-            ${av ? `<span>${av}</span>` : ''}
-          </div>
-        </div>
-        <button class="social-gamebanana-file-download-btn" data-download-url="${downloadUrl}" data-file-id="${escapeHtml(file._idRow || '')}" ${downloadUrl ? '' : 'disabled'}>
-          <i class="bi bi-download"></i>
-          <span>${escapeHtml(downloadText)}</span>
-        </button>
-      </div>
-    `;
-  }
-
-  getDownloadIdFromGameBananaUrl(url: string) {
-    return (
-      url.match(/\/dl\/(\d+)/)?.[1] || url.match(/\/mmdl\/(\d+)/)?.[1] || ''
-    );
-  }
-
-  getGameBananaFileExtension(fileName: string) {
-    const extension = fileName.split('.').pop()?.trim();
-    return extension || 'zip';
-  }
-
-  getGameBananaFileByDownloadId(downloadId: string) {
-    const files = this.gameBananaCurrentDetail?.files || [];
-    return files.find((file) => {
-      const fileId = file._idRow ? String(file._idRow) : '';
-      const urlId = file._sDownloadUrl
-        ? this.getDownloadIdFromGameBananaUrl(file._sDownloadUrl)
-        : '';
-      const protocolId = file._sFightPlannerDownloadUrl
-        ? this.getDownloadIdFromGameBananaUrl(file._sFightPlannerDownloadUrl)
-        : '';
-      return (
-        fileId === downloadId ||
-        urlId === downloadId ||
-        protocolId === downloadId
-      );
-    });
-  }
-
-  getGameBananaFileInstallUrl(file: GameBananaFileEntry) {
-    return file._sFightPlannerDownloadUrl || file._sDownloadUrl || '';
-  }
-
-  createGameBananaSocialPayload(downloadUrl: string) {
-    if (!this.gameBananaCurrentDetail || !this.gameBananaLastDetailSource) {
-      return null;
-    }
-
-    const downloadId = this.getDownloadIdFromGameBananaUrl(downloadUrl);
-    if (!downloadId) return null;
-
-    const { details, fallback, files } = this.gameBananaCurrentDetail;
-    const merged = {
-      ...fallback,
-      ...details,
-      _aSubmitter: details?._aSubmitter || fallback?._aSubmitter,
-      _aPreviewMedia: details?._aPreviewMedia || fallback?._aPreviewMedia,
-    } as GameBananaTopSubmission;
-    const selectedFile = this.getGameBananaFileByDownloadId(downloadId);
-    const fileName = selectedFile?._sFile || 'download.zip';
-    const modId = String(
-      merged._idRow || this.gameBananaLastDetailSource.submissionId,
-    );
-    const extension = this.getGameBananaFileExtension(fileName);
-    const link = `fightplanner:https://gamebanana.com/mmdl/${downloadId},${merged._sModelName || 'Mod'},${modId},${extension}`;
-    const imageUrl = this.getGameBananaSubmissionImage(merged);
-    const availableFiles = files.map((file) => ({
-      id: file._idRow || '',
-      name: file._sFile || 'Download',
-      description: file._sDescription || '',
-      size: Number(file._nFilesize || 0),
-      downloads: Number(file._nDownloadCount || 0),
-    }));
-
-    return {
-      link,
-      downloadId,
-      modId,
-      modName: merged._sName || 'Unknown Mod',
-      creator: merged._aSubmitter?._sName || 'Unknown',
-      imageUrl,
-      availableFiles,
-    };
-  }
-
-  formatGameBananaFileSize(bytes?: number) {
-    const value = Number(bytes || 0);
-    if (!value) return '';
-
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let size = value;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-
-    return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
-  }
-
-  formatGameBananaPeriod(period?: string) {
-    const labels = {
-      today: 'Today',
-      week: 'This week',
-      month: 'This month',
-      '3month': '3 months',
-      '6month': '6 months',
-      year: 'This year',
-      alltime: 'All time',
-    };
-
-    return period && labels[period] ? labels[period] : 'Featured';
-  }
-
-  updateGameBananaFeaturedStack(index: number, direction = 0) {
-    if (this.gameBananaFeaturedMods.length === 0) return;
-
-    const total = this.gameBananaFeaturedMods.length;
-    const previousIndex = this.gameBananaFeaturedIndex;
-    this.gameBananaFeaturedIndex = (index + total) % total;
-
-    const carousel = document.querySelector<HTMLElement>(
-      '#social-gamebanana-carousel',
-    );
-    if (!carousel) return;
-
-    const cards = carousel.querySelectorAll<HTMLElement>(
-      '.social-gamebanana-card-featured',
-    );
-
-    if (cards.length === 0) {
-      carousel.innerHTML = this.renderGameBananaFeaturedStack();
-      return;
-    }
-
-    cards.forEach((card) => {
-      const cardIndex = Number(card.getAttribute('data-featured-index'));
-      const position = this.getGameBananaFeaturedPosition(cardIndex);
-
-      card.classList.remove(
-        'is-active',
-        'is-previous',
-        'is-next',
-        'is-hidden',
-        'was-active',
-      );
-      card.classList.add(`is-${position}`);
-      if (
-        cardIndex === previousIndex &&
-        previousIndex !== this.gameBananaFeaturedIndex
-      ) {
-        card.classList.add('was-active');
-      }
-      card.setAttribute('data-featured-position', position);
-    });
-
-    this.animateGameBananaFeaturedCards(direction);
-  }
-
-  scrollGameBananaCarousel(direction: number) {
-    this.updateGameBananaFeaturedStack(
-      this.gameBananaFeaturedIndex + direction,
-      direction,
-    );
-  }
-
-  getGameBananaFeaturedOffset() {
-    const carousel = document.querySelector<HTMLElement>(
-      '#social-gamebanana-carousel',
-    );
-    const activeCard = carousel?.querySelector<HTMLElement>(
-      '.social-gamebanana-card-featured.is-active',
-    );
-    const width = carousel?.clientWidth || 900;
-    const cardWidth = activeCard?.offsetWidth || Math.min(560, width * 0.68);
-    const containedOffset = Math.max(0, (width - cardWidth * 0.88) / 2 - 12);
-    const preferredOffset = Math.max(120, Math.min(300, width * 0.24));
-
-    return Math.min(preferredOffset, containedOffset);
-  }
-
-  getGameBananaFeaturedCardState(position: string) {
-    const offset = this.getGameBananaFeaturedOffset();
-    const isSmall = window.innerWidth <= 720;
-    const sideY = isSmall ? 16 : 18;
-    const sideRotation = isSmall ? 6 : 8;
-
-    switch (position) {
-      case 'active':
-        return {
-          xPercent: -50,
-          x: 0,
-          y: 0,
-          scale: 1,
-          rotationY: 0,
-          autoAlpha: 1,
-          zIndex: 4,
-          filter: 'brightness(1)',
-        };
-      case 'previous':
-        return {
-          xPercent: -50,
-          x: -offset,
-          y: sideY,
-          scale: 0.88,
-          rotationY: sideRotation,
-          autoAlpha: 0.72,
-          zIndex: 2,
-          filter: 'brightness(0.78)',
-        };
-      case 'next':
-        return {
-          xPercent: -50,
-          x: offset,
-          y: sideY,
-          scale: 0.88,
-          rotationY: -sideRotation,
-          autoAlpha: 0.72,
-          zIndex: 2,
-          filter: 'brightness(0.78)',
-        };
-      default:
-        return {
-          xPercent: -50,
-          x: 0,
-          y: 42,
-          scale: 0.78,
-          rotationY: 0,
-          autoAlpha: 0,
-          zIndex: 1,
-          filter: 'brightness(0.65)',
-        };
-    }
-  }
-
-  setGameBananaFeaturedCardPositions() {
-    const gsapRef = window.gsap;
-    const cards = document.querySelectorAll<HTMLElement>(
-      '#social-gamebanana-carousel .social-gamebanana-card-featured',
-    );
-
-    cards.forEach((card) => {
-      const position = card.getAttribute('data-featured-position') || 'hidden';
-      const state = this.getGameBananaFeaturedCardState(position);
-
-      if (gsapRef) {
-        gsapRef.set(card, state);
-      } else {
-        card.style.zIndex = `${state.zIndex}`;
-      }
-    });
   }
 
   animateGameBananaFeaturedCards(direction: number) {
@@ -3978,7 +1499,7 @@ class SocialGameBananaManager extends SocialManagerBase {
     );
 
     if (!gsapRef || cards.length === 0) {
-      this.setGameBananaFeaturedCardPositions();
+      this.featured.setGameBananaFeaturedCardPositions();
       return;
     }
 
@@ -4000,7 +1521,7 @@ class SocialGameBananaManager extends SocialManagerBase {
 
     cards.forEach((card) => {
       const position = card.getAttribute('data-featured-position') || 'hidden';
-      const state = this.getGameBananaFeaturedCardState(position);
+      const state = this.featured.getGameBananaFeaturedCardState(position);
 
       gsapRef.set(card, { zIndex: state.zIndex });
 
