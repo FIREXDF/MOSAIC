@@ -354,7 +354,7 @@
   gap: 12px;
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-transparent-10);
 }
 
 .ignored-conflicts-header {
@@ -400,7 +400,7 @@
 .ignored-conflict-list {
   max-height: 220px;
   overflow-y: auto;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-transparent-10);
   border-radius: 8px;
 }
 
@@ -417,7 +417,7 @@
 }
 
 .ignored-conflict-item + .ignored-conflict-item {
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-transparent-10);
 }
 
 .ignored-conflict-path {
