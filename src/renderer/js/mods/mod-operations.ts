@@ -71,7 +71,6 @@ class ModOperations {
           const result = await window.electronAPI.renameMod(mod.path, newName);
 
           if (result.success) {
-            console.log('Mod renamed successfully');
             if (window.toastManager) {
               window.toastManager.success('toasts.modRenamed', 3000, {
                 name: newName,
@@ -110,9 +109,6 @@ class ModOperations {
       );
 
       if (result.success) {
-        console.log(
-          `Mod ${result.isNowActive ? 'enabled' : 'disabled'} successfully`,
-        );
         if (window.toastManager) {
           window.toastManager.success(
             result.isNowActive ? 'toasts.modEnabled' : 'toasts.modDisabled',
@@ -288,8 +284,6 @@ class ModOperations {
         const { successCount, failedMods } = await this.deleteMods([mod]);
 
         if (successCount > 0) {
-          console.log('Mod uninstalled successfully');
-
           if (window.toastManager) {
             window.toastManager.success('toasts.modUninstalled');
           }

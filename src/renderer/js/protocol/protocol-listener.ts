@@ -248,8 +248,6 @@ class ProtocolListener {
     }
 
     window.electronAPI.onModInstallStart((data) => {
-      console.log('Mod installation started:', data);
-
       if (window.downloadManager) {
         const rendererId = window.downloadManager.startDownload(
           data.url,
@@ -280,14 +278,6 @@ class ProtocolListener {
     window.electronAPI.onModDownloadProgress((data) => {
       if (window.downloadManager && data.downloadId) {
         const rendererId = this.idMap.get(data.downloadId) || data.downloadId;
-        if (data.statusText?.toLowerCase().includes('extract')) {
-          console.log('[extract-progress][renderer-ipc] received', {
-            mainDownloadId: data.downloadId,
-            rendererId,
-            progress: data.progress,
-            statusText: data.statusText,
-          });
-        }
         window.downloadManager.updateProgress(
           rendererId,
           data.progress,
@@ -335,10 +325,6 @@ class ProtocolListener {
     window.electronAPI.onModExtractStart((data) => {
       if (window.downloadManager && data.downloadId) {
         const rendererId = this.idMap.get(data.downloadId) || data.downloadId;
-        console.log('[extract-progress][renderer-ipc] extract start', {
-          mainDownloadId: data.downloadId,
-          rendererId,
-        });
         window.downloadManager.markExtracting(rendererId);
       }
     });
@@ -350,8 +336,6 @@ class ProtocolListener {
     });
 
     window.electronAPI.onModInstallSuccess(async (data) => {
-      console.log('Mod installed successfully:', data);
-
       const gameBananaName =
         this.gameBananaNames.get(data.downloadId) || null;
       await this.resolveUnnamedMods(data.resultingMods, gameBananaName);
@@ -381,7 +365,6 @@ class ProtocolListener {
 
       setTimeout(() => {
         if (window.modManager) {
-          console.log('Refreshing mod list...');
           window.modManager.fetchMods();
         }
       }, 500);
@@ -418,7 +401,6 @@ class ProtocolListener {
 
 if (typeof window !== 'undefined') {
   window.protocolListener = new ProtocolListener();
-  console.log('Protocol Listener initialized');
 }
 
 export { type ProtocolListener };

@@ -1,14 +1,11 @@
 if (window.electronAPI && window.electronAPI.onModInstallConfirmRequest) {
   window.electronAPI.onModInstallConfirmRequest(async (data) => {
-    console.log('Received install confirmation request:', data);
-
     let installConfirmEnabled = true;
 
     try {
       const setting = await window.electronAPI.store.get(
         'installConfirmEnabled',
       );
-      console.log('Install confirm setting:', setting);
 
       if (setting === false) {
         installConfirmEnabled = false;
@@ -18,8 +15,6 @@ if (window.electronAPI && window.electronAPI.onModInstallConfirmRequest) {
     }
 
     if (!installConfirmEnabled) {
-      console.log('Install confirmation disabled, proceeding directly...');
-
       if (window.electronAPI) {
         await window.electronAPI.confirmProtocolInstall(
           data.url,
@@ -27,8 +22,6 @@ if (window.electronAPI && window.electronAPI.onModInstallConfirmRequest) {
         );
       }
     } else {
-      console.log('Showing install confirmation modal');
-
       if (window.modalManager) {
         window.modalManager.openInstallConfirmModal(
           data.url,
@@ -42,7 +35,6 @@ if (window.electronAPI && window.electronAPI.onModInstallConfirmRequest) {
     }
   });
 
-  console.log('Protocol install listener initialized');
 }
 
 if (window.electronAPI && window.electronAPI.onGameBananaPairingSuccess) {

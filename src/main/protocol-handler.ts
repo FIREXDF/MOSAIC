@@ -202,46 +202,24 @@ export default class ProtocolHandler {
               path.resolve(process.argv[1]),
             ]);
           }
-          console.log('MOSAIC protocol registered (dev mode)');
         }
       } else {
         for (const scheme of PROTOCOL_SCHEMES) {
           app.setAsDefaultProtocolClient(scheme);
         }
-        console.log('MOSAIC protocol registered (production)');
       }
 
       this.registerProtocolInRegistry();
     } else if (process.platform === 'darwin') {
       try {
         for (const scheme of PROTOCOL_SCHEMES) {
-          const before = app.isDefaultProtocolClient
-            ? app.isDefaultProtocolClient(scheme)
-            : undefined;
-          console.log(
-            `[protocol][${process.platform}] before registration isDefault(${scheme})=${before}`,
-          );
           if (process.defaultApp && process.argv.length >= 2) {
-            const ok = app.setAsDefaultProtocolClient(
-              scheme,
-              process.execPath,
-              [path.resolve(process.argv[1])],
-            );
-            console.log(
-              `[protocol][${process.platform}] register dev returned=${ok}`,
-            );
+            app.setAsDefaultProtocolClient(scheme, process.execPath, [
+              path.resolve(process.argv[1]),
+            ]);
           } else {
-            const ok = app.setAsDefaultProtocolClient(scheme);
-            console.log(
-              `[protocol][${process.platform}] register prod returned=${ok}`,
-            );
+            app.setAsDefaultProtocolClient(scheme);
           }
-          const after = app.isDefaultProtocolClient
-            ? app.isDefaultProtocolClient(scheme)
-            : undefined;
-          console.log(
-            `[protocol][${process.platform}] after registration isDefault(${scheme})=${after}`,
-          );
         }
       } catch (e) {
         console.warn(
@@ -251,15 +229,6 @@ export default class ProtocolHandler {
       }
     } else if (process.platform === 'linux') {
       try {
-        console.log(
-          `[protocol][${process.platform}] before registration isDefault=%j`,
-          app.isDefaultProtocolClient
-            ? PROTOCOL_SCHEMES.map((scheme) =>
-                app.isDefaultProtocolClient(scheme),
-              )
-            : 'n/a',
-        );
-
         const executable = process.env.APPIMAGE || process.execPath;
         let electronAppMainScriptPath: string | null = null;
         let execArgs: string[] = [];
@@ -313,15 +282,10 @@ export default class ProtocolHandler {
 
           fs.writeFileSync(electronAppDesktopFilePath, desktopFileContent);
 
-          console.log(
-            `[protocol][linux] Created .desktop file: ${electronAppDesktopFilePath}`,
-          );
-
           try {
             execSync(
               `update-desktop-database ${path.dirname(electronAppDesktopFilePath)}`,
             );
-            console.log(`[protocol][linux] Updated desktop database`);
           } catch (updateError) {
             console.warn(
               `[protocol][linux] Desktop database update failed:`,
@@ -333,9 +297,6 @@ export default class ProtocolHandler {
             try {
               execSync(
                 `xdg-mime default ${electronAppDesktopFileName} x-scheme-handler/${scheme}`,
-              );
-              console.log(
-                `[protocol][linux] Registered with xdg-mime (${scheme})`,
               );
             } catch (xdgError) {
               console.warn(
@@ -353,21 +314,7 @@ export default class ProtocolHandler {
 
         // also try the electron method as fallback
         for (const scheme of PROTOCOL_SCHEMES) {
-          const ok = app.setAsDefaultProtocolClient(
-            scheme,
-            executable,
-            execArgs,
-          );
-          console.log(
-            `[protocol][${process.platform}] register returned(${scheme})=${ok}`,
-          );
-
-          const after = app.isDefaultProtocolClient
-            ? app.isDefaultProtocolClient(scheme)
-            : undefined;
-          console.log(
-            `[protocol][${process.platform}] after registration isDefault(${scheme})=${after}`,
-          );
+          app.setAsDefaultProtocolClient(scheme, executable, execArgs);
         }
       } catch (e) {
         console.warn(
@@ -386,14 +333,10 @@ export default class ProtocolHandler {
         const exePath = process.execPath.replace(/\\/g, '\\\\');
         const scriptPath = path.resolve(process.argv[1]).replace(/\\/g, '\\\\');
         commandString = `\\"${exePath}\\" \\"${scriptPath}\\" \\"%1\\"`;
-        console.log('Registering protocol in registry (dev mode)...');
       } else {
         const exePath = process.execPath.replace(/\\/g, '\\\\');
         commandString = `\\"${exePath}\\" \\"%1\\"`;
-        console.log('Registering protocol in registry (production)...');
       }
-
-      console.log('Command string:', commandString);
 
       const registryKeys = PROTOCOL_SCHEMES.map(
         (scheme) => `HKCU\\Software\\Classes\\${scheme}`,
@@ -409,36 +352,13 @@ export default class ProtocolHandler {
         `reg add "${registryKey}\\shell\\open\\command" /ve /d "${commandString}" /f`,
       ]);
 
-      let commandsExecuted = 0;
       commands.forEach((cmd, index) => {
-        exec(cmd, (error, _stdout, _stderr) => {
-          commandsExecuted++;
-
+        exec(cmd, (error) => {
           if (error) {
             console.error(
               `Registry command ${index + 1} failed:`,
               error.message,
             );
-          } else {
-            console.log(
-              `✓ Registry command ${index + 1} executed successfully`,
-            );
-          }
-
-          if (commandsExecuted === commands.length) {
-            console.log('Protocol registration in registry completed!');
-
-            for (const registryKey of registryKeys) {
-              exec(
-                `reg query "${registryKey}\\shell\\open\\command"`,
-                (error, stdout, _stderr) => {
-                  if (!error) {
-                    console.log('✓ Protocol verified in registry:');
-                    console.log(stdout);
-                  }
-                },
-              );
-            }
           }
         });
       });
@@ -458,7 +378,6 @@ export default class ProtocolHandler {
       if (pairingMatch) {
         const memberId = pairingMatch[1];
         const secretKey = pairingMatch[2];
-        console.log('[protocol] Parsed pairing info - memberId:', memberId);
 
         sharedStore.set('gb_secret_key', secretKey);
         sharedStore.set('gb_member_id', memberId);
@@ -473,10 +392,6 @@ export default class ProtocolHandler {
       const dedupeKey = isRemoteInstall ? cleanUrl : cleanUrl;
 
       if (this.processingUrls.has(dedupeKey)) {
-        console.log(
-          '[protocol] URL already being processed, skipping duplicate:',
-          dedupeKey,
-        );
         return;
       }
 
@@ -497,10 +412,6 @@ export default class ProtocolHandler {
         this.showError('Invalid URL format');
         return;
       }
-
-      console.log('[protocol] Download URL:', downloadUrl);
-      console.log('[protocol] Mod ID:', modId);
-      console.log('[protocol] Mod Type:', modType);
 
       this.sendToRenderer('mod-install-confirm-request', {
         url: downloadUrl,
@@ -532,11 +443,8 @@ export default class ProtocolHandler {
     const memberId = sharedStore.get('gb_member_id') as string | undefined;
 
     if (!secretKey || !memberId) {
-      console.log('[protocol] Remote install credentials missing, polling not started');
       return;
     }
-
-    console.log('[protocol] Starting Remote Install polling for member:', memberId);
 
     this.pollRemoteInstalls(memberId, secretKey);
 
@@ -549,7 +457,6 @@ export default class ProtocolHandler {
     if (this.pollingIntervalId) {
       clearInterval(this.pollingIntervalId);
       this.pollingIntervalId = null;
-      console.log('[protocol] Stopped Remote Install polling');
     }
   }
 
@@ -693,9 +600,6 @@ export default class ProtocolHandler {
               );
             }
           }
-          console.log(
-            `[proceedWithInstall] Disabled ${disabledCount} mods before download`,
-          );
         } catch (disableError) {
           console.error(
             '[proceedWithInstall] Failed to disable mods:',
@@ -712,10 +616,6 @@ export default class ProtocolHandler {
       }
 
       console.log('Downloaded to:', filePath);
-      console.log('[extract-progress][protocol] extract start', {
-        downloadId,
-        filePath,
-      });
 
       this.sendToRenderer('mod-extract-start', { downloadId });
       this.sendToRenderer('mod-download-progress', {
@@ -733,10 +633,6 @@ export default class ProtocolHandler {
           onExtractProgress: ({ percent }) => {
             if (this.activeDownloads.get(downloadId)?.cancelled) return;
 
-            console.log('[extract-progress][protocol] send renderer progress', {
-              downloadId,
-              percent,
-            });
             this.sendToRenderer('mod-download-progress', {
               downloadId,
               progress: percent,
@@ -754,10 +650,6 @@ export default class ProtocolHandler {
           throw new Error('Installation cancelled');
         }
 
-        console.log('[extract-progress][protocol] extract complete', {
-          downloadId,
-          resultingMods: modInstallResult.resultingMods.map((mod) => mod.modName),
-        });
         this.sendToRenderer('mod-extract-complete', { downloadId });
 
         if (modId) {
@@ -790,7 +682,6 @@ export default class ProtocolHandler {
       }
     } catch (error) {
       if (error?.message === 'Download paused') {
-        console.log('[protocol][download] paused, keeping pending install:', downloadId);
         return;
       }
 
@@ -798,7 +689,6 @@ export default class ProtocolHandler {
         error?.message === 'Download cancelled' ||
         error?.message === 'Installation cancelled'
       ) {
-        console.log('[protocol][download] cancelled:', downloadId);
         const cancelledDownload = this.activeDownloads.get(downloadId);
         const cancelledFilePath = cancelledDownload?.filePath;
 
@@ -999,8 +889,6 @@ export default class ProtocolHandler {
         }
       }
 
-      console.log('[protocol][download] to:', filePath);
-
       const protocol = url.startsWith('https') ? https : http;
 
       let file: fs.WriteStream | null = null;
@@ -1075,11 +963,6 @@ export default class ProtocolHandler {
         }
 
         if (response.statusCode === 301 || response.statusCode === 302) {
-          console.log(
-            '[protocol][download] redirect to:',
-            response.headers.location,
-          );
-
           this.downloadMod(response.headers.location as string, downloadId)
             .then(resolve)
             .catch(reject);
@@ -1191,7 +1074,6 @@ export default class ProtocolHandler {
           // Check if download was cancelled before finishing
           const downloadCheck = this.activeDownloads.get(downloadId);
           if (downloadCheck && downloadCheck.cancelled) {
-            console.log('[protocol][download] cancelled during transfer');
             fail(new Error(downloadCheck.paused ? 'Download paused' : 'Download cancelled'), !downloadCheck.paused);
             return;
           }
@@ -1213,7 +1095,6 @@ export default class ProtocolHandler {
               }
             }
 
-            console.log('[protocol][download] complete');
             if (downloadCheck) {
               downloadCheck.request = null;
               downloadCheck.file = null;
@@ -1243,8 +1124,6 @@ export default class ProtocolHandler {
 
   async fetchAndSaveModMetadata(modId, modFolderPath, modType = 'Mod') {
     try {
-      console.log(`Fetching metadata for ${modType} ${modId}...`);
-
       const hasPreview = this.hasPreviewImage(modFolderPath);
 
       const apiUrl = `https://gamebanana.com/apiv11/${modType}/${modId}?_csvProperties=%40gbprofile`;
@@ -1281,7 +1160,6 @@ export default class ProtocolHandler {
         const firstImage = data._aPreviewMedia?._aImages?.[0];
         if (firstImage?._sBaseUrl && firstImage?._sFile) {
           const imageUrl = firstImage._sBaseUrl + '/' + firstImage._sFile;
-          console.log('Downloading preview from:', imageUrl);
           try {
             await this.downloadPreviewImage(imageUrl, modFolderPath);
           } catch (previewError) {
@@ -1290,7 +1168,6 @@ export default class ProtocolHandler {
         }
       }
 
-      console.log('✓ Metadata saved successfully');
     } catch (error) {
       console.error('Failed to fetch mod metadata:', error.message);
     }
@@ -1419,7 +1296,6 @@ export default class ProtocolHandler {
     }
 
     fs.writeFileSync(tomlPath, content, 'utf8');
-    console.log('[createInfoToml] info.toml created');
   }
 
   private saveDownloadedModUrl(modFolderPath: string, source: string, modId?: string | null, modType = 'Mod') {

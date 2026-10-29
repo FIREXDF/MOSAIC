@@ -30,8 +30,6 @@ class CustomizationManager {
   }
 
   setupEventListeners() {
-    console.log('Setting up customization event listeners...');
-
     // Render lists
     this.renderCssList();
     this.renderJsList();
@@ -55,12 +53,9 @@ class CustomizationManager {
       reloadAllCssBtn.dataset.listenerAttached = 'true';
     }
 
-    console.log('Customization event listeners setup complete');
   }
 
   async loadSavedCustomizations() {
-    console.log('Loading saved customizations...');
-
     if (!window.electronAPI) {
       console.warn('electronAPI not available yet, retrying...');
       setTimeout(() => this.loadSavedCustomizations(), 500);
@@ -81,27 +76,20 @@ class CustomizationManager {
         ((await window.electronAPI.store.get('customJsPaths')) as [] | null) ||
         [];
 
-      console.log('Saved CSS paths:', customCssPaths);
-      console.log('Saved JS paths:', customJsPaths);
-
       for (const cssPath of customCssPaths) {
-        console.log('Loading custom CSS from:', cssPath);
         await this.loadCustomCssFile(cssPath);
       }
 
       for (const jsPath of customJsPaths) {
-        console.log('Loading custom JS from:', jsPath);
         await this.loadCustomJsFile(jsPath);
       }
 
-      console.log('All customizations loaded');
     } catch (error) {
       console.error('Error loading saved customizations:', error);
     }
   }
 
   async addCustomCss() {
-    console.log('Add CSS clicked');
     if (!window.electronAPI || !window.electronAPI.selectCustomFile) {
       console.error('Electron API not available');
       return;
@@ -140,7 +128,6 @@ class CustomizationManager {
   }
 
   async addCustomJs() {
-    console.log('Add JS clicked');
     if (!window.electronAPI || !window.electronAPI.selectCustomFile) {
       console.error('Electron API not available');
       return;
@@ -165,10 +152,6 @@ class CustomizationManager {
 
       this.pendingJsPaths = newPaths;
       this.pendingJsPath = newPaths[0] || null;
-      console.log(
-        '[CustomizationManager] Pending JS paths set:',
-        this.pendingJsPaths,
-      );
       this.showJsWarningModal();
     } catch (error) {
       console.error('[CustomizationManager] Error adding custom JS:', error);
@@ -405,10 +388,6 @@ class CustomizationManager {
   }
 
   async confirmLoadJs() {
-    console.log(
-      '[CustomizationManager] confirmLoadJs called, pending paths:',
-      this.pendingJsPaths,
-    );
     if (this.pendingJsPaths.length === 0 && !this.pendingJsPath) {
       console.warn('[CustomizationManager] No pending JS path to confirm');
       return;
@@ -452,8 +431,6 @@ class CustomizationManager {
   }
 
   async loadCustomCssFile(filePath) {
-    console.log('loadCustomCssFile called with:', filePath);
-
     if (!window.electronAPI || !window.electronAPI.readCustomFile) {
       console.error('Electron API not available');
       return;
@@ -472,7 +449,6 @@ class CustomizationManager {
       document.head.appendChild(element);
 
       this.customCssFiles.push({ path: filePath, element });
-      console.log('Custom CSS file added:', filePath);
     } catch (error) {
       console.error('Error loading custom CSS file:', error);
       if (window.toastManager) {
@@ -483,8 +459,6 @@ class CustomizationManager {
   }
 
   async loadCustomJsFile(filePath) {
-    console.log('loadCustomJsFile called with:', filePath);
-
     if (!window.electronAPI || !window.electronAPI.readCustomFile) {
       console.error('Electron API not available');
       return;
@@ -506,9 +480,6 @@ class CustomizationManager {
       element.type = 'text/javascript';
 
       element.onload = () => {
-        console.log(
-          '[CustomizationManager] Custom JS script loaded successfully',
-        );
         URL.revokeObjectURL(url);
       };
 
@@ -523,10 +494,6 @@ class CustomizationManager {
       document.body.appendChild(element);
 
       this.customJsFiles.push({ path: filePath, element });
-      console.log(
-        '[CustomizationManager] Custom JS file added to state:',
-        filePath,
-      );
     } catch (error) {
       console.error(
         '[CustomizationManager] Error loading custom JS file:',
@@ -584,7 +551,6 @@ class CustomizationManager {
   }
 
   async reloadCustomJsFile(filePath: string) {
-    console.log('[CustomizationManager] reloadCustomJsFile called:', filePath);
     const index = this.customJsFiles.findIndex((f) => f.path === filePath);
     if (index === -1) return;
 
@@ -669,16 +635,8 @@ class CustomizationManager {
 
   renderJsList() {
     const container = document.querySelector<HTMLElement>('#custom-js-list');
-    console.log(
-      '[CustomizationManager] renderJsList container:',
-      container ? 'found' : 'NOT FOUND',
-    );
     if (!container) return;
 
-    console.log(
-      '[CustomizationManager] renderJsList files count:',
-      this.customJsFiles.length,
-    );
     if (this.customJsFiles.length === 0) {
       container.innerHTML = `
         <div class="custom-files-empty">
@@ -741,10 +699,7 @@ class CustomizationManager {
   }
 
   async loadCustomCss(filePath) {
-    console.log('loadCustomCss called with path:', filePath);
-
     if (this.customCssElement) {
-      console.log('Removing existing custom CSS element');
       this.customCssElement.remove();
     }
 
@@ -754,10 +709,7 @@ class CustomizationManager {
     }
 
     try {
-      console.log('Reading custom CSS file...');
       const result = await window.electronAPI.readCustomFile(filePath);
-
-      console.log('Read result:', result);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to read CSS file');
@@ -768,11 +720,6 @@ class CustomizationManager {
       this.customCssElement.textContent = result.content;
       document.head.appendChild(this.customCssElement);
 
-      console.log(
-        'Custom CSS element added to head, content length:',
-        result.content.length,
-      );
-      console.log('Custom CSS applied successfully from:', filePath);
     } catch (error) {
       console.error('Error loading custom CSS:', error);
 
@@ -821,7 +768,6 @@ class CustomizationManager {
 
       document.body.appendChild(this.customJsElement);
 
-      console.log('Custom JavaScript loaded from:', filePath);
     } catch (error) {
       console.error('Error loading custom JavaScript:', error);
       throw error;
@@ -927,24 +873,20 @@ class CustomizationManager {
   }
 
   updateCssPathUI(path) {
-    console.log('Updating CSS path UI with:', path);
     const input = document.querySelector<HTMLInputElement>('#custom-css-path');
     if (input) {
       input.value = path || '';
       input.placeholder = path ? '' : 'No custom CSS loaded';
-      console.log('CSS path UI updated');
     } else {
       console.warn('custom-css-path input not found');
     }
   }
 
   updateJsPathUI(path) {
-    console.log('Updating JS path UI with:', path);
     const input = document.querySelector<HTMLInputElement>('#custom-js-path');
     if (input) {
       input.value = path || '';
       input.placeholder = path ? '' : 'No custom JavaScript loaded';
-      console.log('JS path UI updated');
     } else {
       console.warn('custom-js-path input not found');
     }
@@ -953,7 +895,6 @@ class CustomizationManager {
 
 if (typeof window !== 'undefined') {
   window.customizationManager = new CustomizationManager();
-  console.log('Customization Manager initialized');
 }
 
 export { type CustomizationManager };

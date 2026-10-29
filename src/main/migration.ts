@@ -106,14 +106,9 @@ export async function migrateFromV3() {
     const storeDir = path.dirname(storePath);
     const oldConfigPath = path.join(storeDir, 'config.json');
 
-    console.log('Checking for FightPlanner 3 config at:', oldConfigPath);
-
     if (!fs.existsSync(oldConfigPath)) {
-      console.log('✓ No FightPlanner 3 config found, skipping migration');
       return { migrated: false };
     }
-
-    console.log('Potential legacy config found, validating contents...');
 
     const oldConfigContent = fs.readFileSync(oldConfigPath, 'utf8');
     const oldConfig = JSON.parse(oldConfigContent);
@@ -138,18 +133,14 @@ export async function migrateFromV3() {
 
     const alreadyMigrated = store.get('migrationCompleted');
     if (alreadyMigrated) {
-      console.log('✓ Migration already completed, skipping');
       return { migrated: false, alreadyDone: true };
     }
 
     if (!isPlainObject(oldConfig) || !looksLikeFightPlanner3Config(oldConfig)) {
-      console.log(
-        'config.json does not look like a FightPlanner 3 config, skipping migration',
-      );
       return { migrated: false };
     }
 
-    console.log('FightPlanner 3 config found! Starting migration...');
+    console.log('Migrating FightPlanner 3 config');
 
     const migratedSettings: {
       modsPath?: string;
@@ -166,65 +157,51 @@ export async function migrateFromV3() {
     if (modsPath) {
       store.set('modsPath', modsPath);
       migratedSettings.modsPath = modsPath;
-      console.log('Migrated modsPath:', modsPath);
     }
 
     const pluginsPath = getNonEmptyString(oldConfig, 'pluginsPath');
     if (pluginsPath) {
       store.set('pluginsPath', pluginsPath);
       migratedSettings.pluginsPath = pluginsPath;
-      console.log('Migrated pluginsPath:', pluginsPath);
     }
 
     const selectedEmulator = getNonEmptyString(oldConfig, 'selectedEmulator');
     if (selectedEmulator) {
       store.set('selectedEmulator', selectedEmulator);
       migratedSettings.selectedEmulator = selectedEmulator;
-      console.log('Migrated selectedEmulator:', selectedEmulator);
     }
 
     const emulatorPath = getNonEmptyString(oldConfig, 'emulatorPath');
     if (emulatorPath) {
       store.set('emulatorPath', emulatorPath);
       migratedSettings.emulatorPath = emulatorPath;
-      console.log('Migrated emulatorPath:', emulatorPath);
     }
 
     const gamePath = getNonEmptyString(oldConfig, 'gamePath');
     if (gamePath) {
       store.set('gamePath', gamePath);
       migratedSettings.gamePath = gamePath;
-      console.log('Migrated gamePath:', gamePath);
     }
 
     if (typeof oldConfig.protocolConfirmEnabled === 'boolean') {
       store.set('protocolConfirmEnabled', oldConfig.protocolConfirmEnabled);
       migratedSettings.protocolConfirmEnabled =
         oldConfig.protocolConfirmEnabled;
-      console.log(
-        'Migrated protocolConfirmEnabled:',
-        oldConfig.protocolConfirmEnabled,
-      );
     }
 
     if (typeof oldConfig.discordRpcEnabled === 'boolean') {
       store.set('discordRpcEnabled', oldConfig.discordRpcEnabled);
       migratedSettings.discordRpcEnabled = oldConfig.discordRpcEnabled;
-      console.log('Migrated discordRpcEnabled:', oldConfig.discordRpcEnabled);
     }
 
     if (typeof oldConfig.volume === 'number') {
       store.set('volume', oldConfig.volume);
       migratedSettings.volume = oldConfig.volume;
-      console.log('Migrated volume:', oldConfig.volume);
     }
 
     const migratedSettingKeys = Object.keys(migratedSettings);
 
     if (migratedSettingKeys.length === 0) {
-      console.log(
-        'FightPlanner 3 config found, but no supported settings to migrate',
-      );
       return { migrated: false };
     }
 
@@ -237,7 +214,6 @@ export async function migrateFromV3() {
     fs.renameSync(oldConfigPath, backupPath);
     console.log('Old config backed up to:', backupPath);
 
-    console.log('Migration completed successfully!');
     console.log('Migrated settings:', migratedSettingKeys);
 
     return {

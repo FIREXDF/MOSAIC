@@ -58,7 +58,6 @@ class SettingsMaintenanceSection {
         }
       });
       restartTutorialBtn.dataset.listenerAttached = 'true';
-      console.log('Restart tutorial button listener attached');
     }
 
     const restartTutorialModsBtn = document.querySelector<HTMLElement>(
@@ -80,7 +79,6 @@ class SettingsMaintenanceSection {
         }
       });
       restartTutorialModsBtn.dataset.listenerAttached = 'true';
-      console.log('Restart tutorial + mods redirect button listener attached');
     }
 
     const clearTempFilesBtn = document.querySelector<HTMLElement>(
@@ -91,7 +89,6 @@ class SettingsMaintenanceSection {
         await this.clearTempFiles();
       });
       clearTempFilesBtn.dataset.listenerAttached = 'true';
-      console.log('Clear temp files button listener attached');
     }
 
     const exportDebugReportBtn = document.querySelector<HTMLButtonElement>(

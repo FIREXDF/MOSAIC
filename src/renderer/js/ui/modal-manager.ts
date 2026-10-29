@@ -461,7 +461,6 @@ class ModalManager {
 if (typeof window !== 'undefined') {
   (window as any).ModalManagerClass = ModalManager;
   const modalManager = (window.modalManager = new ModalManager());
-  console.log('[ModalManager] initialized');
 
   document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.querySelector<HTMLElement>('#modal-overlay');

@@ -351,7 +351,6 @@ const ProtocolHandlers = {
       }
 
       const scanId = `gamebanana_readme_${Date.now()}`;
-      console.log('[GameBanana README] scanning:', resolvedUrl);
       downloadedPath = await protocolHandler.downloadMod(
         resolvedUrl,
         scanId,
@@ -360,17 +359,6 @@ const ProtocolHandlers = {
 
       const archiveEntries = await FileExtractor.listFppContents(downloadedPath);
       const readmeEntries = findReadmeArchiveEntries(archiveEntries);
-      console.log(
-        `[GameBanana README] archive entries: ${archiveEntries.length}, readme entries: ${readmeEntries.length}`,
-      );
-      if (!readmeEntries.length) {
-        console.log(
-          '[GameBanana README] no README found. First entries:',
-          archiveEntries.slice(0, 20),
-        );
-      } else {
-        console.log('[GameBanana README] README entries:', readmeEntries);
-      }
 
       if (!readmeEntries.length) {
         return { success: true, readmes: [] };
@@ -382,9 +370,6 @@ const ProtocolHandlers = {
           const buffer = await FileExtractor.readArchiveFile(
             downloadedPath,
             entry,
-          );
-          console.log(
-            `[GameBanana README] read stdout bytes for ${entry}: ${buffer.length}`,
           );
           if (buffer.length > 256 * 1024) continue;
 
@@ -398,17 +383,6 @@ const ProtocolHandlers = {
             readError,
           );
         }
-      }
-
-      console.log(
-        `[GameBanana README] read ${readmes.length}/${readmeEntries.length} README file(s):`,
-        readmes.map((readme) => readme.path),
-      );
-      if (readmes[0]?.content) {
-        console.log(
-          '[GameBanana README] full README content:',
-          readmes[0].content,
-        );
       }
 
       return { success: true, readmes };

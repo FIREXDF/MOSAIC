@@ -56,12 +56,7 @@ export function createTutorialWindow(parentWindow?: BrowserWindow | null) {
 
   tutorialWindow.setMenuBarVisibility(false);
 
-  tutorialWindow.webContents.on('did-finish-load', () => {
-    console.log('Tutorial window loaded successfully');
-  });
-
   tutorialWindow.on('closed', () => {
-    console.log('Tutorial window "closed" event triggered');
     tutorialWindow = null;
     if (parentWindow && !parentWindow.isDestroyed()) {
       if (!store.get('tutorial.setupProgress')) {
@@ -81,18 +76,13 @@ export function completeTutorialWindow() {
 }
 
 export function closeTutorialWindow() {
-  console.log('closeTutorialWindow called');
   if (tutorialWindow && !tutorialWindow.isDestroyed()) {
-    console.log('Tutorial window exists, destroying...');
     try {
       tutorialWindow.destroy();
-      console.log('Tutorial window destroyed');
     } catch (error) {
       console.error('Error destroying tutorial window:', error);
     }
     tutorialWindow = null;
-  } else {
-    console.log('No tutorial window to close or already destroyed');
   }
 }
 

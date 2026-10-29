@@ -1399,7 +1399,6 @@ export {};
       const shouldShake = pointerStartedOnOverlay && e.target === overlay;
       pointerStartedOnOverlay = false;
       if (shouldShake) {
-        console.log('[openPluginUpdateIntroModal] Shake handler triggered');
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();

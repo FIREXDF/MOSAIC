@@ -152,7 +152,6 @@ class SocialManagerBase {
         this.cache[k].timestamp = 0;
       });
     }
-    console.log('[Social] Cache invalidated:', key || 'all');
   }
 
   escapeHtml(value) {
@@ -169,7 +168,6 @@ class SocialManagerBase {
     const translation = window.i18n?.t?.(key, params);
     return translation && translation !== key ? translation : fallback;
   }
-
 
   async parseJsonResponse(response: Response) {
     const text = await response.text();

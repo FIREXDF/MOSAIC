@@ -104,12 +104,6 @@ class ToastManager {
       const timeSince = now - lastShown!;
 
       if (timeSince < this.toastCooldown) {
-        console.log(
-          '[ToastManager] Skipping duplicate toast (shown',
-          timeSince,
-          'ms ago):',
-          message,
-        );
         return;
       }
     }
@@ -302,7 +296,6 @@ ${actionButtonHtml}
 
 if (typeof window !== 'undefined') {
   window.toastManager = new ToastManager();
-  console.log('[ToastManager] initialized');
 }
 
 export { type ToastManager };

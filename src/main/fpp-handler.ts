@@ -40,7 +40,6 @@ export interface FppSummary {
 }
 
 export default class FppHandler {
-
     static generateHash(folderName: string): string {
         return crypto.createHash('sha256').update(folderName).digest('hex').substring(0, 12);
     }
@@ -96,10 +95,8 @@ export default class FppHandler {
 
                 if (dls[hash]) {
                     downloads[hash] = dls[hash];
-                    console.log(`[FppHandler] Mod "${modName}" has download link, adding to downloads.json`);
                 } else {
                     embeddedMods.push({ name: modName, fullPath: modPath });
-                    console.log(`[FppHandler] Mod "${modName}" has no download link, embedding in archive`);
                 }
             }
 

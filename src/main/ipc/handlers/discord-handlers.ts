@@ -11,8 +11,6 @@ const DiscordHandlers = {
     }>,
     data: { tab: string | null; modCount?: number },
   ) => {
-    console.log('Received discord-rpc-update:', data);
-
     if (!common.discordRPC) {
       console.warn('Discord RPC manager not initialized');
       return;
@@ -22,32 +20,26 @@ const DiscordHandlers = {
 
     switch (tab) {
       case 'tools':
-        console.log(`Setting Mods tab with ${modCount} mods`);
         common.discordRPC.setModsTab(modCount || 0);
         break;
 
       case 'plugins':
-        console.log('Setting Plugins tab');
         common.discordRPC.setPluginsTab();
         break;
 
       case 'characters':
-        console.log('Setting Characters tab');
         common.discordRPC.setCharactersTab();
         break;
 
       case 'downloads':
-        console.log('Setting Downloads tab');
         common.discordRPC.setDownloadsTab();
         break;
 
       case 'settings':
-        console.log('Setting Settings tab');
         common.discordRPC.setSettingsTab();
         break;
 
       default:
-        console.log('Setting Idle state');
         common.discordRPC.setIdleState();
         break;
     }

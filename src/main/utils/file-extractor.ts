@@ -117,40 +117,6 @@ export class FileExtractor {
     return '';
   }
 
-  private static listExtractedFiles(extractDir: string) {
-    const files: { path: string; size: number }[] = [];
-    const stack = [extractDir];
-
-    while (stack.length) {
-      const currentDir = stack.pop();
-      if (!currentDir) continue;
-
-      let entries: fs.Dirent[];
-      try {
-        entries = fs.readdirSync(currentDir, { withFileTypes: true });
-      } catch {
-        continue;
-      }
-
-      for (const entry of entries) {
-        const fullPath = path.join(currentDir, entry.name);
-        if (entry.isDirectory()) {
-          stack.push(fullPath);
-          continue;
-        }
-
-        if (entry.isFile()) {
-          files.push({
-            path: path.relative(extractDir, fullPath).replace(/\\/g, '/'),
-            size: fs.statSync(fullPath).size,
-          });
-        }
-      }
-    }
-
-    return files;
-  }
-
   private static async extractArchiveFilesWithArgs(
     sevenZipPath: string,
     filePath: string,
@@ -263,10 +229,6 @@ export class FileExtractor {
           fs.chmodSync(temporaryPath, 0o755);
           fs.renameSync(temporaryPath, executablePath);
           this.preparedBundled7ZipPath = executablePath;
-          console.log('[FileExtractor] Prepared bundled 7-Zip executable', {
-            source: bundledPath,
-            executablePath,
-          });
           return executablePath;
         } catch (error) {
           try {
@@ -307,7 +269,6 @@ export class FileExtractor {
           .split(/\r?\n/)
           .map((line) => line.trim())
           .find(Boolean);
-        console.log(`Found ${binaryName} in system PATH`);
         return resolvedPath || binaryName;
       } catch {}
     }
@@ -332,13 +293,6 @@ export class FileExtractor {
       let lastLoggedPercent = -1;
       let settled = false;
 
-      console.log('[extract-progress][7z] starting', {
-        archive: filePath,
-        extractTo,
-        sevenZipPath,
-        node7zProgressEnabled: !!options.onProgress,
-      });
-
       const seven = Seven.extractFull(filePath, extractTo, {
         $progress: !!options.onProgress,
         $bin: sevenZipPath,
@@ -349,9 +303,6 @@ export class FileExtractor {
 
         settled = true;
         clearInterval(cancelTimer);
-        console.log('[extract-progress][7z] cancelled, destroying stream', {
-          archive: filePath,
-        });
         seven.destroy(new Error('Extraction cancelled'));
         reject(new Error('Extraction cancelled'));
       }, 200);
@@ -368,11 +319,6 @@ export class FileExtractor {
           percent - lastLoggedPercent >= 5
         ) {
           lastLoggedPercent = percent;
-          console.log('[extract-progress][7z] progress event', {
-            percent,
-            fileCount: progress.fileCount,
-            file: progress.file,
-          });
         }
         options.onProgress?.({
           percent,
@@ -397,7 +343,6 @@ export class FileExtractor {
         }
 
         options.onProgress?.({ percent: 100 });
-        console.log('[extract-progress][7z] complete', { archive: filePath });
         resolve();
       });
 
@@ -477,7 +422,6 @@ export class FileExtractor {
         );
       });
 
-      console.log('Extracted contents:', contents);
       return contents.length > 0;
     } catch (error) {
       console.error('Verification error:', error);
@@ -616,14 +560,6 @@ export class FileExtractor {
         return output || '7-Zip produced no output';
       };
 
-      console.log('[extract-progress][system-7z] starting', {
-        archive: filePath,
-        extractTo,
-        command: commandToUse,
-        args,
-        progressEnabled: !!options.onProgress,
-      });
-
       const handleOutput = (data: Buffer, stream: 'stdout' | 'stderr') => {
         const text = data.toString();
         if (stream === 'stdout') {
@@ -641,9 +577,6 @@ export class FileExtractor {
             percent - lastLoggedPercent >= 5
           ) {
             lastLoggedPercent = percent;
-            console.log('[extract-progress][system-7z] progress output', {
-              percent,
-            });
           }
           options.onProgress?.({ percent });
         }
@@ -655,13 +588,6 @@ export class FileExtractor {
       const cancelTimer = setInterval(() => {
         if (!options.isCancelled?.() || settled) return;
 
-        console.log(
-          '[extract-progress][system-7z] cancelled, killing process',
-          {
-            archive: filePath,
-            pid: child.pid,
-          },
-        );
         child.kill('SIGTERM');
       }, 200);
 
@@ -691,7 +617,6 @@ export class FileExtractor {
         if (code === 0) {
           if (this.verifyExtraction(extractTo)) {
             options.onProgress?.({ percent: 100 });
-            console.log('[extract-progress][system-7z] complete', logDetails);
             resolve();
           } else {
             console.warn(
@@ -761,25 +686,11 @@ export class FileExtractor {
           .toLowerCase()
           .includes('cancelled')
       ) {
-        console.log(
-          '[extract-progress][archive] cancelled, skipping extraction fallbacks',
-          {
-            archive: filePath,
-          },
-        );
         throw new Error('Extraction cancelled');
       }
 
-      console.log(
-        '[FileExtractor] bundled 7-Zip extraction failed or binary missing, trying fallback...',
-        sevenZipError?.message || sevenZipError,
-      );
-
       const archiveKind = this.getArchiveKind(filePath);
       const ext = path.extname(filePath).toLowerCase();
-      console.log(
-        `[FileExtractor] Detected archive kind: ${archiveKind} (${ext || 'no extension'})`,
-      );
 
       if (archiveKind === 'zip') {
         try {
@@ -793,17 +704,10 @@ export class FileExtractor {
       }
 
       if (archiveKind === '7z' || archiveKind === 'rar') {
-        console.log(
-          `[FileExtractor] Trying to extract ${archiveKind} using system 7z/7zz/7za...`,
-        );
         try {
           await this.extractWithSystem7Zip(filePath, extractTo, options);
           return;
         } catch (system7zError: any) {
-          console.log(
-            '[FileExtractor] System 7z/7za fallback failed:',
-            system7zError?.message || system7zError,
-          );
           throw system7zError;
         }
       }
@@ -833,9 +737,6 @@ export class FileExtractor {
       sevenZipPath = this.get7ZipPath();
     } catch (error) {
       if (process.platform === 'linux' || process.platform === 'darwin') {
-        console.log(
-          '[FileExtractor] 7-Zip not found, falling back to native unzip for metadata extraction.',
-        );
         return new Promise((resolve, reject) => {
           const child = child_process.spawn('unzip', [
             '-q',
@@ -891,9 +792,6 @@ export class FileExtractor {
       sevenZipPath = this.get7ZipPath();
     } catch (error) {
       if (process.platform === 'linux' || process.platform === 'darwin') {
-        console.log(
-          '[FileExtractor] 7-Zip not found, falling back to native unzip for listing contents.',
-        );
         return new Promise((resolve, reject) => {
           const child = child_process.spawn('unzip', ['-Z1', filePath]);
           let output = '';
@@ -954,13 +852,6 @@ export class FileExtractor {
     } catch {
       try {
         const fallbackSize = fs.statSync(filePath).size;
-        console.log(
-          '[extract-progress][estimate] 7z unavailable, using archive size',
-          {
-            archive: filePath,
-            fallbackSize,
-          },
-        );
         return fallbackSize;
       } catch {
         console.warn('[extract-progress][estimate] failed, returning 0', {
@@ -971,10 +862,6 @@ export class FileExtractor {
     }
 
     return new Promise((resolve) => {
-      console.log('[extract-progress][estimate] listing archive', {
-        archive: filePath,
-        sevenZipPath,
-      });
       const child = child_process.spawn(sevenZipPath!, ['l', '-slt', filePath]);
       let output = '';
 
@@ -994,26 +881,12 @@ export class FileExtractor {
         }
 
         if (totalSize > 0) {
-          console.log(
-            '[extract-progress][estimate] uncompressed size detected',
-            {
-              archive: filePath,
-              totalSize,
-            },
-          );
           resolve(totalSize);
           return;
         }
 
         try {
           const fallbackSize = fs.statSync(filePath).size;
-          console.log(
-            '[extract-progress][estimate] no listed size, using archive size',
-            {
-              archive: filePath,
-              fallbackSize,
-            },
-          );
           resolve(fallbackSize);
         } catch {
           console.warn(
@@ -1165,19 +1038,12 @@ export class FileExtractor {
       ];
 
       for (const args of variants) {
-        const result = await this.extractArchiveFilesWithArgs(
+        await this.extractArchiveFilesWithArgs(
           sevenZipPath!,
           filePath,
           extractDir,
           args,
         );
-        const extractedFiles = this.listExtractedFiles(extractDir);
-        console.log('[FileExtractor] README fallback extract:', {
-          args,
-          code: result.code,
-          files: extractedFiles.slice(0, 10),
-          stderr: result.stderr.trim().slice(0, 500),
-        });
 
         const extractedPath = this.findExtractedEntry(extractDir, entry);
         if (extractedPath) {
@@ -1187,35 +1053,14 @@ export class FileExtractor {
       }
 
       if (this.commandExists('unar')) {
-        const unarResult = await new Promise<{
-          code: number;
-          stdout: string;
-          stderr: string;
-        }>((resolve, reject) => {
-          const child = child_process.spawn('unar', [
-            '-q',
-            '-f',
-            '-D',
-            '-o',
-            extractDir,
-            filePath,
-            entry,
-          ]);
-          let stdout = '';
-          let stderr = '';
-
-          child.stdout.on('data', (data) => (stdout += data.toString()));
-          child.stderr.on('data', (data) => (stderr += data.toString()));
-          child.on('close', (code) =>
-            resolve({ code: code || 0, stdout, stderr }),
+        await new Promise<void>((resolve, reject) => {
+          const child = child_process.spawn(
+            'unar',
+            ['-q', '-f', '-D', '-o', extractDir, filePath, entry],
+            { stdio: 'ignore' },
           );
+          child.on('close', () => resolve());
           child.on('error', reject);
-        });
-        const extractedFiles = this.listExtractedFiles(extractDir);
-        console.log('[FileExtractor] README unar fallback extract:', {
-          code: unarResult.code,
-          files: extractedFiles.slice(0, 10),
-          stderr: unarResult.stderr.trim().slice(0, 500),
         });
 
         const extractedPath = this.findExtractedEntry(extractDir, entry);

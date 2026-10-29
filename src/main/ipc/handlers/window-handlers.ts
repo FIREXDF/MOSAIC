@@ -12,8 +12,6 @@ const WindowEventHandlers = {
   ['maximize-window']: (common: BaseHandlerArg) => {
     const win = BrowserWindow.fromWebContents(common.event.sender)!;
 
-    console.log('Toggling maximize for window:', win?.id);
-
     if (win) {
       if (win.isMaximized()) {
         win.unmaximize();

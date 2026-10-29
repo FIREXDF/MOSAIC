@@ -75,7 +75,6 @@ const waitForProcessStart = (
       clearTimeout(timer);
       childProcess.off('error', onError);
       childProcess.off('exit', onExit);
-      childProcess.off('spawn', onSpawn);
     };
 
     const settle = (
@@ -94,15 +93,6 @@ const waitForProcessStart = (
       EMULATOR_START_TIMEOUT_MS,
     );
 
-    const onSpawn = () => {
-      if (childProcess.pid) {
-        console.log(
-          '[launch-emulator] Spawned emulator process PID:',
-          childProcess.pid,
-        );
-      }
-    };
-
     const onError = (error: Error) => {
       settle({ success: false, error: error.message });
     };
@@ -120,7 +110,6 @@ const waitForProcessStart = (
       settle({ success: false, error: `Emulator ${exitReason}` });
     };
 
-    childProcess.once('spawn', onSpawn);
     childProcess.once('error', onError);
     childProcess.once('exit', onExit);
   });
@@ -373,11 +362,6 @@ const SystemHandlers = {
       if (!force && emulatorProcess && emulatorProcess.pid) {
         try {
           process.kill(emulatorProcess.pid, 0);
-          console.log(
-            '[launch-emulator] Emulator process is already running (PID:',
-            emulatorProcess.pid,
-            ')',
-          );
           return createErrorResponse(
             'EMULATOR_ALREADY_RUNNING' as any,
             'emulator_already_running',
@@ -418,8 +402,6 @@ const SystemHandlers = {
 
       console.log('[launch-emulator] Launching emulator:', emulatorType);
       console.log('[launch-emulator] Emulator path:', launchPath);
-      console.log('[launch-emulator] With game:', gamePath);
-      console.log('[launch-emulator] Fullscreen:', fullscreen);
 
       const args = getEmulatorArgs(emulatorType, gamePath, fullscreen);
 
@@ -431,12 +413,10 @@ const SystemHandlers = {
       emulatorProcess = childProcess;
 
       childProcess.on('exit', () => {
-        console.log('[launch-emulator] Emulator process exited');
         emulatorProcess = null;
       });
 
       childProcess.on('error', () => {
-        console.log('[launch-emulator] Emulator process error');
         emulatorProcess = null;
       });
 
@@ -492,7 +472,6 @@ const SystemHandlers = {
 
       const content = fs.readFileSync(localePath, 'utf8');
       const translations = JSON.parse(content);
-      console.log(`Locale loaded successfully: ${locale}`);
       return { success: true, translations };
     } catch (error) {
       handleError(error, 'load-locale');

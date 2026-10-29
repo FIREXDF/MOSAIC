@@ -87,7 +87,6 @@ class FightPlannerManager {
       },
     ];
     this.applySidebarPrideTabsEnabled(this.areSidebarPrideTabsEnabled());
-    console.log('MOSAIC Manager created');
   }
 
   async initialize() {
@@ -96,7 +95,6 @@ class FightPlannerManager {
       return;
     }
 
-    console.log('Initializing MOSAIC tab...');
     this.applySavedLogoVariant();
     await this.loadVersionInfo();
     this.setupOldTestersToggle();
@@ -221,22 +219,18 @@ class FightPlannerManager {
 
   async loadVersionInfo() {
     try {
-      console.log('Loading version info...');
-
       if (!window.electronAPI || !window.electronAPI.getAppVersion) {
         console.error('Electron API not available');
         return;
       }
 
       const versionInfo = await window.electronAPI.getAppVersion();
-      console.log('Version info received:', versionInfo);
 
       const headerVersion = document.querySelector<HTMLElement>(
         '#app-version-display',
       );
       if (headerVersion && versionInfo.version) {
         headerVersion.textContent = versionInfo.version;
-        console.log('Header version updated:', versionInfo.version);
       } else {
         console.warn('Header version element not found or no version');
       }
@@ -470,7 +464,6 @@ class FightPlannerManager {
   }
 
   async reinitialize() {
-    console.log('Reinitializing MOSAIC tab...');
     this.applySavedLogoVariant();
     await this.loadVersionInfo();
     this.setupOldTestersToggle();
@@ -482,7 +475,6 @@ class FightPlannerManager {
 if (typeof window !== 'undefined') {
   window.fightPlannerManager = new FightPlannerManager();
   window.fightPlannerManager.applySavedLogoVariant();
-  console.log('MOSAIC Manager initialized globally');
 }
 
 export { type FightPlannerManager };

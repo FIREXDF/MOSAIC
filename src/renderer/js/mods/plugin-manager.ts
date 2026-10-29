@@ -54,7 +54,6 @@ class PluginManager {
       return;
     }
 
-    console.log('Plugin Manager initialized');
     this.setupEventListeners();
   }
 
@@ -119,7 +118,6 @@ class PluginManager {
   }
 
   reinitialize() {
-    console.log('Reinitializing Plugin Manager...');
     this.initContainer();
 
     if (this.plugins.length > 0) {
@@ -166,7 +164,6 @@ class PluginManager {
   }
 
   async loadPlugins(pluginsData) {
-    console.log('Loading plugins:', pluginsData);
     this.plugins = pluginsData;
     this.renderPluginList();
   }
@@ -203,8 +200,6 @@ class PluginManager {
       console.warn('Plugin list container not found, skipping render');
       return;
     }
-
-    console.log('Rendering plugins, count:', this.plugins.length);
 
     // Check if plugins path is configured
     if (!this.pluginsPath) {
@@ -280,15 +275,10 @@ class PluginManager {
     this.pluginListContainer.innerHTML = '';
 
     this.plugins.forEach((plugin, index) => {
-      console.log(`Creating element for plugin ${index}:`, plugin);
       const pluginElement = this.createPluginElement(plugin);
       this.pluginListContainer!.appendChild(pluginElement);
     });
 
-    console.log(
-      'Plugin list rendered, total items:',
-      this.pluginListContainer.children.length,
-    );
     this.updatePluginCount(this.plugins.length);
   }
 
@@ -434,7 +424,6 @@ ${plugin.status === 'active'
       );
 
       if (result.success) {
-        console.log('Plugin added successfully');
         if (window.toastManager) {
           window.toastManager.success('toasts.pluginAddedSuccessfully');
         }
@@ -475,8 +464,6 @@ ${plugin.status === 'active'
       );
 
       if (result.success) {
-        console.log('Plugin toggled successfully');
-
         const wasActive = plugin.status === 'active';
         if (window.toastManager) {
           window.toastManager.success(
@@ -539,8 +526,6 @@ ${plugin.status === 'active'
       const result = await window.electronAPI.deletePlugin(plugin.filePath);
 
       if (result.success) {
-        console.log('Plugin deleted successfully');
-
         setTimeout(() => {
           if (window.toastManager) {
             window.toastManager.success(
@@ -583,7 +568,6 @@ ${plugin.status === 'active'
 
   async loadPluginsFromFolder(pluginsPath: string) {
     if (this.isBatchTestingLocked()) {
-      console.log('[PluginManager] Skipping folder refresh while batch testing is active');
       return;
     }
 
@@ -637,7 +621,6 @@ ${plugin.status === 'active'
 
   async refreshPlugins() {
     if (this.isBatchTestingLocked()) {
-      console.log('[PluginManager] Ignoring refresh request during batch testing');
       return;
     }
 
@@ -648,18 +631,15 @@ ${plugin.status === 'active'
       const pluginsPath = window.settingsManager.getPluginsPath();
 
       if (pluginsPath) {
-        console.log('Refreshing plugins from saved path:', pluginsPath);
         await this.loadPluginsFromFolder(pluginsPath);
         return;
       }
     }
 
-    console.log('No plugins path set');
   }
 
   async fetchPlugins() {
     if (this.isBatchTestingLocked()) {
-      console.log('[PluginManager] Ignoring fetch request during batch testing');
       return;
     }
 
@@ -670,7 +650,6 @@ ${plugin.status === 'active'
       const pluginsPath = window.settingsManager.getPluginsPath();
       this.pluginsPath = pluginsPath;
       if (pluginsPath) {
-        console.log('Loading plugins from saved path:', pluginsPath);
         await this.loadPluginsFromFolder(pluginsPath);
         void this.checkRecordedVersions();
         return;
@@ -679,7 +658,6 @@ ${plugin.status === 'active'
       this.pluginsPath = null;
     }
 
-    console.log('No plugins path configured');
     // Render the plugin list to show the "path not configured" message
     this.plugins = [];
     this.renderPluginList();
@@ -1081,7 +1059,6 @@ ${plugin.status === 'active'
 
   async checkForUpdatesOnStartup() {
     if (!window.settingsManager) {
-      console.log('Settings manager not available for auto-check');
       return;
     }
 
@@ -1092,16 +1069,10 @@ ${plugin.status === 'active'
     const pluginsPath = settings.pluginsPath;
 
     if (!autoCheck) {
-      console.log(
-        'Auto-check plugin updates is disabled. Checking update prompt conditions...',
-      );
-      console.log(`introShown: ${introShown}, pluginsPath: ${pluginsPath}`);
-
       // Check if we should propose to enable it
       if (!introShown && pluginsPath) {
         try {
           // We removed the check for !hasVersions to allow users with existing plugins to see the intro
-          console.log('Triggering Plugin Update Intro Modal');
           if (
             window.modalManager &&
             window.modalManager.openPluginUpdateIntroModal
@@ -1119,7 +1090,6 @@ ${plugin.status === 'active'
                 );
 
                 // Open Marketplace so user can reinstall plugins
-                console.log('Opening marketplace from intro...');
                 this.openMarketplace();
 
                 // Force overlay to stay visible
@@ -1150,17 +1120,12 @@ ${plugin.status === 'active'
       return;
     }
 
-    console.log('Auto-checking plugin updates on startup...');
     setTimeout(() => {
       this.checkForUpdates(false);
     }, 5000); // Increased delay to ensure everything is loaded
   }
 
   openMarketplace() {
-    console.log(
-      'openMarketplace called',
-      window.modalManager ? 'ModalManager OK' : 'ModalManager MISSING',
-    );
     if (window.modalManager) {
       window.modalManager.openPluginMarketplaceModal();
     }
@@ -1169,7 +1134,6 @@ ${plugin.status === 'active'
 
 if (typeof window !== 'undefined') {
   window.pluginManager = new PluginManager();
-  console.log('Plugin Manager initialized');
 }
 
 export { type PluginManager };

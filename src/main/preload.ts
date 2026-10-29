@@ -352,7 +352,5 @@ if (windowType === 'main') {
 }
 
 if (windowType === 'tutorial') {
-  console.log('Tutorial preload.js loaded!');
   contextBridge.exposeInMainWorld('tutorialAPI', tutorialAPI);
-  console.log('tutorialAPI exposed to window');
 }

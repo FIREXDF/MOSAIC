@@ -159,8 +159,6 @@ class DownloadManager {
   }
 
   initialize() {
-    console.log('Initializing Download Manager...');
-
     this.activeDownloadsList = document.querySelector<HTMLElement>(
       '#active-downloads-list',
     );
@@ -191,7 +189,6 @@ class DownloadManager {
 
     this.updateUI();
 
-    console.log('Download Manager initialized');
   }
 
   /**
@@ -328,18 +325,6 @@ class DownloadManager {
     download.progress = progress;
     download.receivedBytes = receivedBytes;
     download.totalBytes = totalBytes;
-    const isExtractProgress = download.statusText
-      ?.toLowerCase()
-      .includes('extract');
-    if (isExtractProgress) {
-      console.log('[extract-progress][download-manager] updateProgress', {
-        downloadId,
-        progress,
-        receivedBytes,
-        totalBytes,
-        statusText: download.statusText,
-      });
-    }
 
     const element = document.querySelector<HTMLElement>(
       `[data-download-id="${downloadId}"]`,
@@ -370,21 +355,9 @@ class DownloadManager {
         if (isExtracting && progress <= 0) {
           progressBar.classList.add('download-progress-indeterminate');
           progressBar.style.width = '';
-          console.log(
-            '[extract-progress][download-manager] using indeterminate bar',
-            {
-              downloadId,
-            },
-          );
         } else {
           progressBar.classList.remove('download-progress-indeterminate');
           progressBar.style.width = `${progress}%`;
-          if (isExtractProgress) {
-            console.log('[extract-progress][download-manager] set bar width', {
-              downloadId,
-              width: `${progress}%`,
-            });
-          }
         }
       }
 
@@ -484,9 +457,6 @@ class DownloadManager {
     download.receivedBytes = 0;
     download.totalBytes = 0;
     download.speedBytesPerSecond = 0;
-    console.log('[extract-progress][download-manager] markExtracting', {
-      downloadId,
-    });
 
     const element = document.querySelector<HTMLElement>(
       `[data-download-id="${downloadId}"]`,
@@ -886,7 +856,6 @@ ${subItemsHtml}
     });
 
     if (!mod) {
-      console.log('[navigateToMod] Mod not found:', modName);
       if (window.toastManager) {
         window.toastManager.warning('Mod not found in your library');
       }
@@ -1587,7 +1556,6 @@ ${subItemsHtml}
 
 if (typeof window !== 'undefined') {
   window.downloadManager = new DownloadManager();
-  console.log('Download Manager created');
 }
 
 export { type DownloadManager };

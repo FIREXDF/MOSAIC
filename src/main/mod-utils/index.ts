@@ -361,9 +361,6 @@ export default class ModUtils {
 
     const userUltimateDir = path.dirname(modsPath);
     for (const entry of siblingDirs) {
-      console.log(
-        `[installFromArchive] Copying ${entry.name} into ultimate folder...`,
-      );
       await this.copyRecursive(
         path.join(archiveUltimateDir, entry.name),
         path.join(userUltimateDir, entry.name),
@@ -395,13 +392,6 @@ export default class ModUtils {
   ) {
     const requestedFolderPath = folderPath;
     folderPath = resolveVirtualPath(folderPath);
-    if (folderPath !== requestedFolderPath) {
-      console.log('[ModUtils] Folder path resolved:', {
-        requestedPath: requestedFolderPath,
-        resolvedPath: folderPath,
-        status,
-      });
-    }
 
     const mods: Mod[] = [];
 
@@ -462,13 +452,6 @@ export default class ModUtils {
         error: error?.message || String(error),
       });
     }
-
-    console.log('[ModUtils] Mods folder scanned:', {
-      requestedPath: requestedFolderPath,
-      resolvedPath: folderPath,
-      status,
-      count: mods.length,
-    });
 
     return mods;
   }
@@ -607,9 +590,6 @@ export default class ModUtils {
 
     const disabledModsPath = this.getDisabledModsFolder(activeModsPath);
     const disabledMods = this.readModsFromFolder(disabledModsPath, 'disabled');
-
-    console.log(`Found ${activeMods.length} active mods`);
-    console.log(`Found ${disabledMods.length} disabled mods`);
 
     return {
       activeMods,
@@ -1083,11 +1063,6 @@ export default class ModUtils {
       await FileExtractor.estimateArchiveUncompressedSize(sourceArchivePath);
     let lastProgress = -1;
     let lastLoggedProgress = -1;
-    console.log('[extract-progress][mod-utils] extraction prepared', {
-      archive: sourceArchivePath,
-      tempExtractDir,
-      estimatedSize,
-    });
 
     const reportProgress = (
       percent: number,
@@ -1105,14 +1080,6 @@ export default class ModUtils {
         nextProgress - lastLoggedProgress >= 5
       ) {
         lastLoggedProgress = nextProgress;
-        console.log('[extract-progress][mod-utils] report', {
-          source,
-          percent: nextProgress,
-          archive: sourceArchivePath,
-          file,
-          extractedSize,
-          estimatedSize,
-        });
       }
       options.onExtractProgress?.({ percent: nextProgress, file });
     };
@@ -1230,9 +1197,6 @@ export default class ModUtils {
 
       try {
         await fsPromises.access(modPath);
-        console.log(
-          `[installFromArchive] Mod ${modName} already exists, removing old version`,
-        );
         await fsPromises.rm(modPath, { recursive: true, force: true });
       } catch {}
 
@@ -1240,9 +1204,6 @@ export default class ModUtils {
     }
 
     if (!dirsWithModFiles.length && !archiveUltimateRoot) {
-      console.log(
-        '[installFromArchive] Copying multiple items to mods folder...',
-      );
       await this.copyRecursive(
         tempExtractDir,
         await _prepareModPath(tempExtractDir),
@@ -1253,10 +1214,6 @@ export default class ModUtils {
         if (options.isCancelled?.()) {
           throw new Error('Installation cancelled');
         }
-
-        console.log(
-          `[installFromArchive] Copying mod files from ${dir} to mods folder...`,
-        );
 
         const modPath = await _prepareModPath(dir);
         await this.copyRecursive(dir, modPath, options.isCancelled);
@@ -1271,9 +1228,6 @@ export default class ModUtils {
               await fsPromises.access(infoTomlDest);
             } catch {
               await fsPromises.copyFile(infoTomlSource, infoTomlDest);
-              console.log(
-                '[installFromArchive] Copied info.toml from top level directory',
-              );
             }
           } catch {}
 
@@ -1293,9 +1247,6 @@ export default class ModUtils {
               await fsPromises.access(textFileDest);
             } catch {
               await fsPromises.copyFile(textFileSource, textFileDest);
-              console.log(
-                `[installFromArchive] Copied ${textFile.name} from top level directory`,
-              );
             }
           }
 
@@ -1306,7 +1257,6 @@ export default class ModUtils {
             try {
               await fsPromises.access(previewSource);
               await fsPromises.copyFile(previewSource, previewDest, fs.constants.COPYFILE_EXCL);
-              console.log(`[installFromArchive] Copied ${previewName} from top level directory`);
               break;
             } catch {}
           }
@@ -1327,7 +1277,6 @@ export default class ModUtils {
 
     try {
       await fsPromises.unlink(sourceArchivePath);
-      console.log('[installFromArchive] Deleted original archive file');
     } catch (err) {
       console.warn(
         '[installFromArchive] Failed to delete original archive:',
@@ -1340,17 +1289,14 @@ export default class ModUtils {
 
   static async installFromDirectory(sourceDirPath: string, modsPath: string) {
     modsPath = resolveVirtualPath(modsPath);
-    console.log('Installing mod from directory:', sourceDirPath);
     const modName = path.basename(sourceDirPath);
 
     let modPath = path.join(modsPath, modName);
 
     if (fs.existsSync(modPath)) {
-      console.log('Mod already exists, removing old version');
       fs.rmSync(modPath, { recursive: true, force: true });
     }
 
-    console.log('Moving mod directory to mods folder...');
     fs.renameSync(sourceDirPath, modPath);
 
     return { modPath, modName };
@@ -1368,12 +1314,7 @@ export default class ModUtils {
     options: ModInstallOptions = {},
   ): Promise<ModInstallResult> {
     try {
-      console.log('[ModUtils] Install mod requested:', {
-        sourcePath,
-        modsPath,
-      });
       modsPath = resolveVirtualPath(modsPath);
-      console.log('[ModUtils] Install mod destination resolved:', modsPath);
       if (!fs.existsSync(sourcePath)) {
         throw new Error(`Source path does not exist: ${sourcePath}`);
       }
@@ -1445,7 +1386,7 @@ export default class ModUtils {
           }
         }
 
-        console.log('Mod installed successfully to:', modPath);
+        console.log('Mod installed to:', modPath);
 
         if (sharedStore.get('autoDisableNewMods')) {
           try {

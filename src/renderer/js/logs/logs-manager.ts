@@ -85,7 +85,6 @@ class LogsManager {
       window.electronAPI.onMainLog((logData) => {
         this.addLog(logData.level || 'log', [logData.message], true);
       });
-      console.log('Main process logs listener initialized');
     }
   }
 
@@ -382,7 +381,6 @@ class LogsManager {
 
 if (typeof window !== 'undefined') {
   window.logsManager = new LogsManager();
-  console.log('Logs Manager initialized');
 }
 
 export { type LogsManager };

@@ -229,7 +229,6 @@ class MTPTransferClient {
         processedCount++;
         processedBytes += file.size;
         reportProgress(file);
-        console.log(`Skipped identical MTP file: ${file.remotePath}`);
         continue;
       }
 

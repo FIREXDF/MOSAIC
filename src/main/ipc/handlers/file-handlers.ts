@@ -145,18 +145,10 @@ const FileHandlers = {
     folderPath: string,
   ): HandlerResponse => {
     try {
-      console.log('[FileHandlers] Open folder requested:', folderPath);
       const resolvedFolderPath = resolveVirtualPath(folderPath);
-      if (resolvedFolderPath !== folderPath) {
-        console.log('[FileHandlers] Open folder path resolved:', {
-          requestedPath: folderPath,
-          resolvedPath: resolvedFolderPath,
-        });
-      }
 
       if (fs.existsSync(resolvedFolderPath)) {
         await openPathDetached(resolvedFolderPath);
-        console.log('[FileHandlers] Folder opened:', resolvedFolderPath);
         return { success: true };
       } else {
         console.error('[FileHandlers] Folder does not exist:', {
@@ -179,18 +171,11 @@ const FileHandlers = {
     folderPath: string,
   ): HandlerResponse<{ exists: boolean }> => {
     try {
-      console.log('[FileHandlers] Folder exists check:', folderPath);
       const resolvedFolderPath = folderPath ? resolveVirtualPath(folderPath) : '';
       const exists =
         !!folderPath &&
         fs.existsSync(resolvedFolderPath) &&
         fs.statSync(resolvedFolderPath).isDirectory();
-
-      console.log('[FileHandlers] Folder exists result:', {
-        requestedPath: folderPath,
-        resolvedPath: resolvedFolderPath,
-        exists,
-      });
 
       return { success: true, exists };
     } catch (error) {

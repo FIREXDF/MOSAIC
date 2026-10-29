@@ -40,7 +40,6 @@ export function initPosthog(): void {
         });
 
         distinctId = getDistinctId();
-        console.log('[PostHog] Initialized');
     } catch (error) {
         console.error('[PostHog] Init failed:', error);
     }
@@ -66,7 +65,6 @@ export function identifyUser(): void {
             },
         });
 
-        console.log('[PostHog] User identified v' + appVersion);
     } catch (error) {
         console.error('[PostHog] Identify failed:', error);
     }
@@ -110,7 +108,6 @@ export function captureError(
             ...context,
         });
 
-        console.log('[PostHog] Error captured: ' + errorObj.message);
     } catch (captureErr) {
         console.error('[PostHog] Error capture failed:', captureErr);
     }
@@ -121,7 +118,6 @@ export async function shutdownPosthog(): Promise<void> {
 
     try {
         await posthogClient.shutdown();
-        console.log('[PostHog] Shutdown complete');
     } catch (error) {
         console.error('[PostHog] Shutdown failed:', error);
     }

@@ -242,14 +242,8 @@ const ModHandlers = {
     disabledMods: Mod[];
   }> => {
     try {
-      console.log('[ModHandlers] Reading mods folder:', modsPath);
       const result = ModUtils.readAllMods(modsPath);
       captureModsDebugSnapshot(modsPath, result);
-      console.log('[ModHandlers] Mods folder read complete:', {
-        modsPath,
-        activeCount: result.activeMods.length,
-        disabledCount: result.disabledMods.length,
-      });
 
       return {
         success: true,
@@ -289,7 +283,6 @@ const ModHandlers = {
     modsPath: string,
   ): HandlerResponse => {
     try {
-      console.log('[ModHandlers] Ensuring mods folder is available:', modsPath);
       const resolvedModsPath = modsPath ? resolveVirtualPath(modsPath) : '';
       if (!resolvedModsPath || !fs.existsSync(resolvedModsPath) || !fs.statSync(resolvedModsPath).isDirectory()) {
         console.error('[ModHandlers] Mods folder unavailable:', {
@@ -301,11 +294,6 @@ const ModHandlers = {
           `Mods folder is not available. Reconnect your Switch and make sure this folder exists: ${modsPath}`,
         );
       }
-
-      console.log('[ModHandlers] Mods folder is available:', {
-        requestedPath: modsPath,
-        resolvedPath: resolvedModsPath,
-      });
 
       return { success: true };
     } catch (error) {
@@ -576,10 +564,6 @@ const ModHandlers = {
     isNowActive: boolean;
   }> => {
     try {
-      console.log('[ModHandlers] Toggle mod requested:', {
-        modPath,
-        modsBasePath,
-      });
       const resolvedModsBasePath = resolveVirtualPath(modsBasePath);
       const modName = path.basename(modPath);
       const parentDir = path.dirname(resolvedModsBasePath);
@@ -605,11 +589,6 @@ const ModHandlers = {
       }
 
       await renameModFolderWithRetry(modPath, targetPath);
-      console.log('[ModHandlers] Toggle mod complete:', {
-        modPath,
-        targetPath,
-        isNowActive: !isInActiveMods,
-      });
 
       return {
         success: true,

@@ -730,7 +730,6 @@ class ModProfileManager {
 
 if (typeof window !== 'undefined') {
   (window as any).modProfileManager = new ModProfileManager();
-  console.log('Mod Profile Manager initialized');
 }
 
 export { type ModProfileManager };

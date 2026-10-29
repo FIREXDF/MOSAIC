@@ -19,14 +19,11 @@ class DiscordRPCClient {
   }
 
   setupListeners() {
-    console.log('Setting up Discord RPC listeners...');
     const tabButtons = document.querySelectorAll<HTMLElement>('.sidebar-btn');
-    console.log(`Found ${tabButtons.length} tab buttons`);
 
     tabButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
         const tab = btn.dataset.tab;
-        console.log(`Tab switched to: ${tab}`);
         this.updateTab(tab);
       });
     });
@@ -50,11 +47,6 @@ class DiscordRPCClient {
 
   sendUpdate() {
     if (window.electronAPI && window.electronAPI.updateDiscordRPC) {
-      console.log('Sending Discord RPC update:', {
-        tab: this.currentTab,
-        modCount: this.modCount,
-      });
-
       window.electronAPI.updateDiscordRPC({
         tab: this.currentTab,
         modCount: this.modCount,
@@ -67,7 +59,6 @@ class DiscordRPCClient {
 
 if (typeof window !== 'undefined') {
   window.discordRPCClient = new DiscordRPCClient();
-  console.log('Discord RPC Client initialized');
 }
 
 export { type DiscordRPCClient };

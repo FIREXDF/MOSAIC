@@ -240,9 +240,6 @@ export class SlotChanger {
       }
 
       // Step 3: Move all files from temp paths to final paths
-      console.log(
-        '[changeSlots] Moving files from temporary to final paths...',
-      );
 
       for (const mapping of topLevelMappings) {
         try {
@@ -525,7 +522,6 @@ export class SlotChanger {
       `${outputDir}/msg_name.xmsbt`,
       xmlContent,
     );
-    console.log('[writeMsgName] Successfully wrote msg_name.xmsbt');
   }
 
   static getBackupPath(modPath: string): string {

@@ -219,7 +219,6 @@ function createWindow(options: CreateWindowOptions = {}) {
   const showTimeout = setTimeout(
     () => {
       if (!windowShown && mainWindow && !mainWindow.isDestroyed()) {
-        console.log('[linux] Force showing window after timeout');
         showWindow();
       }
     },
@@ -233,9 +232,6 @@ function createWindow(options: CreateWindowOptions = {}) {
 
   mainWindow.webContents.once('did-finish-load', () => {
     if (!windowShown && process.platform === 'linux') {
-      console.log(
-        '[linux] Window not shown yet, showing after did-finish-load',
-      );
       clearTimeout(showTimeout);
       showWindow();
     }
@@ -318,7 +314,6 @@ function createStartupWindow() {
     return;
   }
 
-  console.log('Opening unfinished setup tutorial');
   const tutWindow = createTutorialWindow();
   tutWindow.once('closed', () => {
     if (isQuitting) return;
@@ -373,15 +368,10 @@ if (!gotTheLock) {
     initPosthog();
     identifyUser();
 
-    console.log('Checking for FightPlanner 3 settings...');
     const migrationResult = await migrateFromV3();
 
     if (migrationResult.migrated) {
       console.log('Settings migrated from FightPlanner 3');
-      console.log(
-        'Migrated:',
-        Object.keys(migrationResult.settings || {}).join(', '),
-      );
     }
 
     createStartupWindow();

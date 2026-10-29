@@ -27,12 +27,6 @@ export default class PluginUtils {
   static readAllPlugins(pluginsPath: string) {
     const requestedPluginsPath = pluginsPath;
     pluginsPath = resolveVirtualPath(pluginsPath);
-    if (pluginsPath !== requestedPluginsPath) {
-      console.log('[PluginUtils] Plugins path resolved:', {
-        requestedPath: requestedPluginsPath,
-        resolvedPath: pluginsPath,
-      });
-    }
 
     const result: {
       activePlugins: SimplePlugin[];
@@ -83,13 +77,6 @@ export default class PluginUtils {
           }
         });
       }
-
-      console.log('[PluginUtils] Plugins folders scanned:', {
-        requestedPath: requestedPluginsPath,
-        resolvedPath: pluginsPath,
-        activeCount: result.activePlugins.length,
-        disabledCount: result.disabledPlugins.length,
-      });
 
       return result;
     } catch (error) {
@@ -254,10 +241,6 @@ export default class PluginUtils {
    */
   static togglePlugin(pluginPath: string, pluginsBasePath: string) {
     try {
-      console.log('[PluginUtils] Toggle plugin requested:', {
-        pluginPath,
-        pluginsBasePath,
-      });
       pluginsBasePath = resolveVirtualPath(pluginsBasePath);
       const pluginName = path.basename(pluginPath);
       const parentDir = path.dirname(pluginsBasePath);
@@ -284,11 +267,6 @@ export default class PluginUtils {
       }
 
       fs.renameSync(pluginPath, targetPath);
-      console.log('[PluginUtils] Toggle plugin complete:', {
-        pluginPath,
-        targetPath,
-        isNowActive: !isActive,
-      });
       return {
         success: true,
         newPath: targetPath,

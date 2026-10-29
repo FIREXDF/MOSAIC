@@ -49,7 +49,6 @@ export default class FTPClient {
 
   disconnect() {
     this.client.close();
-    console.log('FTP connection closed');
   }
 
   async uploadDirectory(
@@ -123,7 +122,6 @@ export default class FTPClient {
         fileStats.size,
       ))
     ) {
-      console.log(`Skipped identical FTP file: ${normalizedRemotePath}`);
       options.onFileProcessed?.({
         currentFileName,
         fileSize: fileStats.size,
@@ -146,7 +144,6 @@ export default class FTPClient {
       fileSize: fileStats.size,
       copied: true,
     });
-    console.log(`Uploaded FTP file: ${normalizedRemotePath}`);
     return true;
   }
 

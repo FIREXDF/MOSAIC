@@ -309,14 +309,12 @@ export async function sendModsToDrive(
           (await filesMatch(file.sourcePath, file.destinationPath));
 
         if (matches) {
-          console.log(`Skipped existing file: ${file.destinationPath}`);
         } else {
           await fs.mkdir(path.dirname(file.destinationPath), {
             recursive: true,
           });
           await fs.copyFile(file.sourcePath, file.destinationPath);
           copiedCount++;
-          console.log(`Copied file: ${file.destinationPath}`);
         }
 
         processedCount++;
@@ -343,7 +341,7 @@ export async function sendModsToDrive(
     }
 
     console.log(
-      `Successfully copied ${copiedCount} files to drive ${config.switchDriveLetter}`,
+      `Copied ${copiedCount} files to drive ${config.switchDriveLetter}`,
     );
     return { success: true, transferredCount: copiedCount };
   } catch (error) {

@@ -48,13 +48,11 @@ const TutorialHandlers = {
   },
 
   ['close-tutorial-window']: async (common: BaseHandlerArg) => {
-    console.log('Received close-tutorial-window event');
     closeTutorialWindow();
     return { success: true };
   },
 
   ['skip-tutorial']: async (common: BaseHandlerArg) => {
-    console.log('Received skip-tutorial event');
     completeTutorialWindow();
     return { success: true };
   },

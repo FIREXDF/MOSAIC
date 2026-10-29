@@ -2349,16 +2349,6 @@ class SocialGameBananaManager extends SocialManagerBase {
       const requirements = this.extractReadmeDependencyRequirements(
         result.readmes,
       );
-      console.log(
-        '[Social] README content received:',
-        result.readmes
-          .map((readme) => `--- ${readme.path} ---\n${readme.content}`)
-          .join('\n\n'),
-      );
-      console.log('[Social] README scan result:', {
-        readmes: result.readmes.map((readme) => readme.path),
-        requirements: requirements.map((requirement) => requirement.name),
-      });
 
       return requirements;
     } catch (error) {

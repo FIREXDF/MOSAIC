@@ -139,7 +139,6 @@ class ModManager {
       this.keybindsHandler = new window.ModKeybindsHandler(this);
     }
 
-    console.log('Mod Manager components initialized');
   }
 
   reinitialize() {
@@ -1297,15 +1296,11 @@ class ModManager {
 
     if (mod.path && window.electronAPI?.getModInfo) {
       try {
-        console.log('Loading mod info for:', mod.path);
         const modInfo = await window.electronAPI.getModInfo(mod.path);
 
         if (updateToken !== this.selectionUpdateToken) return;
 
-        console.log('Received mod info from main process:', modInfo);
-
         if (modInfo) {
-          console.log('Displaying mod info:', modInfo);
           window.modInfoManager.displayModInfo(modInfo, mod.path);
           return;
         }
@@ -1611,9 +1606,6 @@ class ModManager {
     forcedChangedPaths: string[] = [],
   ) {
     if (this.isBatchTestingLocked()) {
-      console.log(
-        '[ModManager] Skipping folder refresh while batch testing is active',
-      );
       return;
     }
 
@@ -1845,7 +1837,6 @@ class ModManager {
 
   async fetchMods(forcedChangedPaths: string[] = []) {
     if (this.isBatchTestingLocked()) {
-      console.log('[ModManager] Ignoring fetch request during batch testing');
       return;
     }
 
@@ -1871,7 +1862,6 @@ class ModManager {
       }
 
       this.setHardwareLibraryBlockedState(false);
-      console.log('Loading mods from saved path:', modsPath);
       await this.loadModsFromFolder(modsPath, forcedChangedPaths);
         return;
       }
@@ -2396,7 +2386,6 @@ class ModManager {
 
 if (typeof window !== 'undefined') {
   window.modManager = new ModManager();
-  console.log('Mod Manager initialized');
 }
 
 export { type ModManager };

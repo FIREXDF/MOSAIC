@@ -104,7 +104,6 @@ class SettingsLibrarySection {
     if (browseMods && !browseMods.dataset.listenerAttached) {
       browseMods.addEventListener('click', () => this.browseModsFolder());
       browseMods.dataset.listenerAttached = 'true';
-      console.log('Browse mods button listener attached');
     }
 
     const modsPathInput =
@@ -161,7 +160,6 @@ class SettingsLibrarySection {
     if (browsePlugins && !browsePlugins.dataset.listenerAttached) {
       browsePlugins.addEventListener('click', () => this.browsePluginsFolder());
       browsePlugins.dataset.listenerAttached = 'true';
-      console.log('Browse plugins button listener attached');
     }
 
     const pluginsPathInput = document.querySelector<HTMLInputElement>(
@@ -184,7 +182,6 @@ class SettingsLibrarySection {
         }
       });
       exportModsListBtn.dataset.listenerAttached = 'true';
-      console.log('Export mods list button listener attached');
     }
 
     const bulkEnableModsBtn = document.querySelector<HTMLElement>(
@@ -197,7 +194,6 @@ class SettingsLibrarySection {
         }
       });
       bulkEnableModsBtn.dataset.listenerAttached = 'true';
-      console.log('Bulk enable mods button listener attached');
     }
 
     const bulkDisableModsBtn = document.querySelector<HTMLElement>(
@@ -210,7 +206,6 @@ class SettingsLibrarySection {
         }
       });
       bulkDisableModsBtn.dataset.listenerAttached = 'true';
-      console.log('Bulk disable mods button listener attached');
     }
 
     const batchTestingBtn =
@@ -222,7 +217,6 @@ class SettingsLibrarySection {
         }
       });
       batchTestingBtn.dataset.listenerAttached = 'true';
-      console.log('Batch testing button listener attached');
     }
 
     const batchTestingResumeBtn = document.querySelector<HTMLElement>(
@@ -238,7 +232,6 @@ class SettingsLibrarySection {
         }
       });
       batchTestingResumeBtn.dataset.listenerAttached = 'true';
-      console.log('Batch testing resume button listener attached');
     }
 
     const batchTestingCancelBtn = document.querySelector<HTMLElement>(
@@ -254,7 +247,6 @@ class SettingsLibrarySection {
         }
       });
       batchTestingCancelBtn.dataset.listenerAttached = 'true';
-      console.log('Batch testing cancel button listener attached');
     }
 
     if ((window as any).batchTestingManager?.refreshControlState) {
@@ -268,18 +260,11 @@ class SettingsLibrarySection {
       return;
     }
 
-    console.log('[SettingsManager] Browse mods folder requested');
     const folder = await window.electronAPI.selectFolder();
     if (folder) {
-      console.log('[SettingsManager] Mods folder selected:', {
-        previousPath: this.manager.settings.primaryModsPath,
-        nextPath: folder,
-      });
       await this.saveLibraryFolderPath('modsPath', folder, 'primary');
       this.updateModsFolderUI();
       this.checkModsPath(folder, { force: true });
-    } else {
-      console.log('[SettingsManager] Mods folder selection cancelled');
     }
   }
 
@@ -289,18 +274,10 @@ class SettingsLibrarySection {
       ? this.manager.settings.modsPath
       : this.manager.settings.primaryModsPath;
     if (!folder || folder === currentPath) {
-      console.log('[SettingsManager] Mods folder manual change ignored:', {
-        value,
-        currentPath: this.manager.settings.primaryModsPath,
-      });
       this.updateModsFolderUI();
       return;
     }
 
-    console.log('[SettingsManager] Mods folder changed manually:', {
-      previousPath: this.manager.settings.primaryModsPath,
-      nextPath: folder,
-    });
     await this.saveLibraryFolderPath('modsPath', folder, 'primary');
     this.updateModsFolderUI();
     this.checkModsPath(folder, { force: true });
@@ -358,9 +335,7 @@ class SettingsLibrarySection {
     }
 
     try {
-      console.log('[SettingsManager] Refreshing mods list for path:', modsPath);
       await window.modManager.loadModsFromFolder(modsPath);
-      console.log('[SettingsManager] Mods list refreshed:', modsPath);
     } catch (error) {
       console.error('Failed to refresh mods after path change:', error);
     }
@@ -688,35 +663,20 @@ class SettingsLibrarySection {
       return;
     }
 
-    console.log('[SettingsManager] Browse plugins folder requested');
     const folder = await window.electronAPI.selectFolder();
     if (folder) {
-      console.log('[SettingsManager] Plugins folder selected:', {
-        previousPath: this.manager.settings.pluginsPath,
-        nextPath: folder,
-      });
       await this.saveLibraryFolderPath('pluginsPath', folder);
       this.updatePluginsFolderUI();
-    } else {
-      console.log('[SettingsManager] Plugins folder selection cancelled');
     }
   }
 
   async updatePluginsFolderFromInput(value) {
     const folder = value.trim();
     if (!folder || folder === this.manager.settings.pluginsPath) {
-      console.log('[SettingsManager] Plugins folder manual change ignored:', {
-        value,
-        currentPath: this.manager.settings.pluginsPath,
-      });
       this.updatePluginsFolderUI();
       return;
     }
 
-    console.log('[SettingsManager] Plugins folder changed manually:', {
-      previousPath: this.manager.settings.pluginsPath,
-      nextPath: folder,
-    });
     await this.saveLibraryFolderPath('pluginsPath', folder);
     this.updatePluginsFolderUI();
   }
@@ -726,12 +686,7 @@ class SettingsLibrarySection {
       return;
     }
     try {
-      console.log(
-        '[SettingsManager] Refreshing plugins list for path:',
-        folder,
-      );
       await window.pluginManager?.loadPluginsFromFolder?.(folder);
-      console.log('[SettingsManager] Plugins list refreshed:', folder);
     } catch (error) {
       console.error('Failed to refresh plugins after path change:', error);
     }

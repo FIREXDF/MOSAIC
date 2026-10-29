@@ -26,7 +26,6 @@ export async function detectWindowsDrives() {
     const { stdout } = await execAsync(
       'wmic logicaldisk get name,volumename,drivetype',
     );
-    console.log('WMIC output:', stdout);
 
     const drives: Drive[] = [];
 
@@ -51,7 +50,6 @@ export async function detectWindowsDrives() {
       // Example: "3          C:    OS" or "2          I:" (no volume name)
       const match = line.match(/^(\d+)\s+([A-Z]:)\s*(.*)$/i);
       if (!match) {
-        console.log('No match for line:', line);
         continue;
       }
 
@@ -59,10 +57,6 @@ export async function detectWindowsDrives() {
       const driveName = match[2].toUpperCase();
       const letter = driveName.charAt(0);
       const volumeName = match[3] ? match[3].trim() : 'Local Disk';
-
-      console.log(
-        `Drive found: ${letter}:, label: ${volumeName}, type: ${driveType}`,
-      );
 
       // Filter for removable drives (type 2) and fixed drives (type 3)
       // Type 2 = Removable, Type 3 = Fixed, Type 4 = Network, Type 5 = CD-ROM
@@ -81,7 +75,6 @@ export async function detectWindowsDrives() {
 
     // If no drives found with wmic, try fallback
     if (drives.length === 0) {
-      console.log('No drives found with wmic, trying fallback method...');
       return await fallbackWindowsDetection();
     }
 
@@ -96,7 +89,6 @@ export async function detectWindowsDrives() {
  * Fallback method for Windows drive detection
  */
 async function fallbackWindowsDetection() {
-  console.log('Using fallback drive detection...');
   const fallbackDrives: Drive[] = [];
   const driveLetters = 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -130,7 +122,6 @@ async function fallbackWindowsDetection() {
           type: 'unknown',
           path: drivePath,
         });
-        console.log(`Fallback: Found drive ${letter}:`);
       }
     } catch (e) {
       // Drive doesn't exist or isn't accessible

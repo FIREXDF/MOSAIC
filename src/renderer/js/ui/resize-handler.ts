@@ -113,7 +113,6 @@ class ResizeHandler {
 
 if (typeof window !== 'undefined') {
   window.resizeHandler = new ResizeHandler();
-  console.log('Resize Handler initialized');
 }
 
 export { type ResizeHandler };

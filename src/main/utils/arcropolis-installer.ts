@@ -481,7 +481,6 @@ export async function extractAndInstallArcropolis(
     }
 
     if (!romfsSource) {
-      // Log directory structure for debugging
       console.error('ARCropolis extraction failed - directory structure:');
       const logDirStructure = (dir: string, indent = '') => {
         try {
@@ -490,7 +489,7 @@ export async function extractAndInstallArcropolis(
           });
           entries.forEach((entry) => {
             console.error(
-              `${indent}${entry.isDirectory() ? '📁' : '📄'} ${entry.name}`,
+              `${indent}${entry.name}${entry.isDirectory() ? '/' : ''}`,
             );
             if (entry.isDirectory() && indent.length < 20) {
               logDirStructure(path.join(dir, entry.name), indent + '  ');

@@ -212,14 +212,8 @@ const PluginHandlers = {
     disabledPlugins: SimplePlugin[];
   }> => {
     try {
-      console.log('[PluginHandlers] Reading plugins folder:', pluginsPath);
       const result = PluginUtils.readAllPlugins(pluginsPath);
       capturePluginsDebugSnapshot(pluginsPath, result);
-      console.log('[PluginHandlers] Plugins folder read complete:', {
-        pluginsPath,
-        activeCount: result.activePlugins.length,
-        disabledCount: result.disabledPlugins.length,
-      });
 
       return { success: true, ...result };
     } catch (error) {
@@ -263,10 +257,6 @@ const PluginHandlers = {
     pluginsPath: string,
   ): HandlerResponse => {
     try {
-      console.log(
-        '[PluginHandlers] Ensuring plugins folder is available:',
-        pluginsPath,
-      );
       const resolvedPluginsPath = pluginsPath
         ? resolveVirtualPath(pluginsPath)
         : '';
@@ -284,11 +274,6 @@ const PluginHandlers = {
           `Plugins folder is not available. Reconnect your Switch and make sure this folder exists: ${pluginsPath}`,
         );
       }
-
-      console.log('[PluginHandlers] Plugins folder is available:', {
-        requestedPath: pluginsPath,
-        resolvedPath: resolvedPluginsPath,
-      });
 
       return { success: true };
     } catch (error) {

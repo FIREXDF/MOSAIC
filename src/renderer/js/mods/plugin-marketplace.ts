@@ -232,8 +232,6 @@ class PluginMarketplace {
         return null;
       }
 
-      console.log(`Fetching releases for ${owner}/${repoName}...`);
-
       const repoCheckUrl = `https://api.github.com/repos/${owner}/${repoName}`;
       const repoCheckResponse = await fetch(repoCheckUrl, {
         headers: {
@@ -252,11 +250,6 @@ class PluginMarketplace {
         return null;
       }
 
-      const repoInfo = await repoCheckResponse.json();
-      console.log(
-        `Repository found: ${repoInfo.full_name} (${repoInfo.private ? 'private' : 'public'})`,
-      );
-
       let release: {
         tag_name: string;
         assets: Array<{
@@ -270,7 +263,6 @@ class PluginMarketplace {
       const latestUrl = tag
         ? `https://api.github.com/repos/${owner}/${repoName}/releases/tags/${encodeURIComponent(tag)}`
         : `https://api.github.com/repos/${owner}/${repoName}/releases/latest`;
-      console.log('Fetching latest release from:', latestUrl);
 
       const latestResponse = await fetch(latestUrl, {
         headers: {
@@ -281,7 +273,6 @@ class PluginMarketplace {
 
       if (latestResponse.ok) {
         release = await latestResponse.json();
-        console.log('Found latest release:', release!.tag_name);
       } else {
         if (tag) {
           console.error(`Release ${tag} unavailable for ${repo}: ${latestResponse.status}`);
@@ -304,10 +295,8 @@ class PluginMarketplace {
 
         if (allReleasesResponse.ok) {
           const releases = await allReleasesResponse.json();
-          console.log(`Found ${releases.length} releases`);
           if (releases && releases.length > 0) {
             release = releases[0];
-            console.log('Using first release:', release!.tag_name);
           }
         } else {
           const allReleasesError = await allReleasesResponse.text();
@@ -323,11 +312,6 @@ class PluginMarketplace {
         return null;
       }
 
-      console.log('Release data:', {
-        tag: release.tag_name,
-        assets: release.assets?.map((a) => a.name) || [],
-      });
-
       if (!release.assets || release.assets.length === 0) {
         console.warn('No assets found in release');
         return null;
@@ -335,10 +319,8 @@ class PluginMarketplace {
 
       for (const asset of release.assets) {
         const assetName = asset.name.toLowerCase();
-        console.log(`Checking asset: ${asset.name} (${asset.size} bytes)`);
 
         if (assetName.endsWith('.nro')) {
-          console.log(`Found .nro file: ${asset.name}`);
           return {
             url: asset.browser_download_url,
             version: release.tag_name.replace(/^v/, ''),
@@ -346,7 +328,6 @@ class PluginMarketplace {
         }
 
         if (assetName.endsWith('.zip')) {
-          console.log(`Found .zip file: ${asset.name}`);
           return {
             url: asset.browser_download_url,
             version: release.tag_name.replace(/^v/, ''),

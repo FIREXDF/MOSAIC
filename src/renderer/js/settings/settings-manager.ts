@@ -627,14 +627,12 @@ class SettingsManager {
     if (browseEmulator && !browseEmulator.dataset.listenerAttached) {
       browseEmulator.addEventListener('click', () => this.browseEmulatorPath());
       browseEmulator.dataset.listenerAttached = 'true';
-      console.log('Browse emulator button listener attached');
     }
 
     const browseGame = document.querySelector<HTMLElement>('#browse-game-path');
     if (browseGame && !browseGame.dataset.listenerAttached) {
       browseGame.addEventListener('click', () => this.browseGamePath());
       browseGame.dataset.listenerAttached = 'true';
-      console.log('Browse game button listener attached');
     }
 
     const emulatorTypeSelect = document.querySelector<HTMLElement>(
@@ -712,13 +710,10 @@ class SettingsManager {
       !installConfirmToggle.dataset.listenerAttached
     ) {
       installConfirmToggle.addEventListener('change', async () => {
-        console.log('Install confirm toggle changed!');
         const enabled = installConfirmToggle.checked;
-        console.log('New value:', enabled);
 
         try {
           await window.electronAPI.store.set('installConfirmEnabled', enabled);
-          console.log('Setting saved successfully');
 
           if (window.toastManager) {
             window.toastManager.success('toasts.settingSaved');
@@ -733,14 +728,8 @@ class SettingsManager {
         }
       });
       installConfirmToggle.dataset.listenerAttached = 'true';
-      console.log('Install confirm toggle listener attached');
 
       this.loadInstallConfirmSetting();
-    } else {
-      console.log(
-        'Install confirm toggle:',
-        installConfirmToggle ? 'already has listener' : 'not found',
-      );
     }
 
     const discordRpcToggle = document.querySelector<HTMLInputElement>(
@@ -885,7 +874,6 @@ class SettingsManager {
         }
       });
       checkUpdatesBtn.dataset.listenerAttached = 'true';
-      console.log('Check updates button listener attached');
     }
 
     const autoCheckAppUpdates = document.querySelector<HTMLInputElement>(
@@ -946,7 +934,6 @@ class SettingsManager {
 
           if (window.electronAPI && window.electronAPI.setUpdateChannel) {
             await window.electronAPI.setUpdateChannel(value);
-            console.log('Update channel set to:', value);
 
             if (window.toastManager) {
               window.toastManager.success('toasts.settingSaved');
@@ -2463,7 +2450,6 @@ class SettingsManager {
       if (installConfirmToggle) {
         installConfirmToggle.checked = installConfirmEnabled !== false;
       }
-      console.log('Loaded install confirm setting:', installConfirmEnabled);
     } catch (error) {
       console.error('Failed to load install confirm setting:', error);
     }
@@ -2581,7 +2567,6 @@ class SettingsManager {
 
 if (typeof window !== 'undefined') {
   window.settingsManager = new SettingsManager();
-  console.log('Settings Manager initialized');
 
   if (window.electronAPI && window.electronAPI.store) {
     window.electronAPI.store

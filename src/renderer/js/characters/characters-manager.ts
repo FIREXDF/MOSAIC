@@ -232,7 +232,6 @@ class CharactersManager {
       }
     });
 
-    console.log('Characters Manager created');
   }
 
   preloadCssLayout() {
@@ -303,14 +302,12 @@ class CharactersManager {
 
   async initialize() {
     if (this.initialized) {
-      console.log('Characters already initialized, skipping refresh.');
       this.setupEventListeners();
       this.renderCharacters();
       this.renderMovesetRefreshNotice();
       return;
     }
 
-    console.log('Initializing Characters Manager...');
     this.showLoading();
     await this.scanMods();
     this.setupEventListeners();
@@ -703,8 +700,6 @@ class CharactersManager {
   }
 
   async scanMods(): Promise<boolean> {
-    console.log('Scanning mods for character data...');
-
     if (!window.settingsManager || !window.settingsManager.hasModsPath()) {
       console.warn('No mods path configured');
       this.renderEmptyState();
@@ -766,7 +761,6 @@ class CharactersManager {
         },
       );
 
-      console.log(`Found ${this.characters.size} characters with mods`);
       return true;
     } catch (error) {
       console.error('Failed to scan mods:', error);
@@ -1464,8 +1458,6 @@ ${this.renderCharacterSlotBadges(mod.slots, 'Slot unknown')}
   }
 
   openModInToolsTab(modPath) {
-    console.log('Opening mod in tools tab:', modPath);
-
     const toolsBtn = document.querySelector<HTMLElement>('[data-tab="tools"]');
     if (toolsBtn) {
       toolsBtn.click();
@@ -5526,7 +5518,6 @@ ${image}
   }
 
   async refresh() {
-    console.log('Refreshing characters...');
     this.showLoading();
     this.characters.clear();
     this.movesetCharacters.clear();
@@ -5575,7 +5566,6 @@ ${image}
 
 if (typeof window !== 'undefined') {
   window.charactersManager = new CharactersManager();
-  console.log('Characters Manager initialized globally');
 }
 
 export { type CharactersManager };

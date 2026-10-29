@@ -47,7 +47,6 @@ export class FppManager {
         if (window.electronAPI && window.electronAPI.onFppDownloadLink) {
             window.electronAPI.onFppDownloadLink((data: any) => {
                 if (data.url) {
-                    console.log('[FppManager] Triggering download for:', data.url);
                     if (window.electronAPI.openFightPlannerLink) {
                         window.electronAPI.openFightPlannerLink(`fightplanner:${data.url}`);
                     }
@@ -57,7 +56,6 @@ export class FppManager {
 
         if (window.electronAPI && window.electronAPI.onOpenFppFile) {
             window.electronAPI.onOpenFppFile((data: { filePath: string }) => {
-                console.log('[FppManager] Opening FPP file:', data.filePath);
                 this.openInstallModal(data.filePath);
             });
         }
@@ -72,7 +70,6 @@ export class FppManager {
         }
 
         if ((window as any).pluginManager && !(window as any).pluginManager.plugins?.length) {
-            console.log('[FppManager] Pre-fetching plugins before opening creator modal...');
             await (window as any).pluginManager.fetchPlugins();
         }
 
@@ -550,10 +547,6 @@ export class FppManager {
 
                 if (window.toastManager) {
                     window.toastManager.success('fpp.installed');
-                }
-
-                if (result.downloadedLinks && result.downloadedLinks.length > 0) {
-                    console.log('[FppManager] Downloads to trigger:', result.downloadedLinks.length);
                 }
 
                 if (window.modManager && window.modManager.modsPath) {

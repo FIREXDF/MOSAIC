@@ -282,7 +282,6 @@ class TutorialManager {
   }
 
   async initialize() {
-    console.log('Tutorial manager initialized');
     if (window.electronAPI?.onTutorialWindowClosed) {
       window.electronAPI.onTutorialWindowClosed(() => {
         if (!this.pendingInAppAfterSetup) return;
@@ -296,7 +295,6 @@ class TutorialManager {
     try {
       if (window.electronAPI?.openTutorialWindow) {
         await window.electronAPI.openTutorialWindow();
-        console.log('✓ Tutorial window opened');
       }
     } catch (error) {
       console.error('Failed to open tutorial window:', error);
@@ -931,8 +929,6 @@ class TutorialManager {
       await window.electronAPI.store.delete('tutorial.setupProgress');
       await window.electronAPI.store.delete('tutorial.guideProgress');
     }
-    console.log('✓ Tutorial reset!');
-    console.log('   The setup tutorial will open before the app next launch.');
   }
 
   async resetToTestFirstLaunch() {
@@ -941,7 +937,6 @@ class TutorialManager {
 
   forceShow() {
     this.show();
-    console.log('✓ Tutorial window opened. In-app guide will follow.');
   }
 }
 

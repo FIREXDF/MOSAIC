@@ -305,7 +305,6 @@ const SwitchTransferHandlers = {
             );
           }
 
-          console.log(`Successfully processed ${item.kind}: ${item.itemName}`);
         } catch (modError) {
           console.error(`Error sending ${item.itemName}:`, modError);
           failedItems.push(
@@ -341,7 +340,7 @@ const SwitchTransferHandlers = {
       await ftpClient.disconnect();
 
       console.log(
-        `Successfully copied ${copiedCount} files to Switch over FTP`,
+        `Copied ${copiedCount} files to Switch over FTP`,
       );
       return { success: true, transferredCount: copiedCount };
     } catch (error) {

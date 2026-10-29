@@ -295,16 +295,9 @@ export default class PluginUpdateChecker {
         };
       }
 
-      console.log(
-        `[PluginUpdate] Checking ${pluginName} from ${owner}/${repoName}`,
-      );
-
       let latestInfo = await this.getLatestRelease(owner, repoName);
 
       if (!latestInfo || !latestInfo.downloadUrl) {
-        console.log(
-          `[PluginUpdate] No release with download URL found, trying tags for ${pluginName}`,
-        );
         latestInfo = await this.getLatestTag(owner, repoName);
       }
 

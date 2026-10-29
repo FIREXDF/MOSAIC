@@ -65,8 +65,6 @@ function updatePlayActionButtonForMode(btn: HTMLButtonElement) {
 }
 
 function initializeTabFeatures(tabName) {
-  console.log(`Initializing features for tab: ${tabName}`);
-
   if (tabName === 'tools') {
     const searchInput =
       document.querySelector<HTMLInputElement>('#search-mods-input');
@@ -565,7 +563,6 @@ function initializeTabFeatures(tabName) {
     }
 
     if (window.pluginManager) {
-      console.log('Fetching plugins...');
       window.pluginManager.fetchPlugins();
     }
 
@@ -591,7 +588,6 @@ function initializeTabFeatures(tabName) {
 
   if (tabName === 'fightplanner') {
     if (window.fightPlannerManager) {
-      console.log('Initializing MOSAIC tab...');
       window.fightPlannerManager.initialize();
     }
 
@@ -602,7 +598,6 @@ function initializeTabFeatures(tabName) {
 
   if (tabName === 'characters') {
     if (window.charactersManager) {
-      console.log('Initializing Characters tab...');
       window.charactersManager.initialize();
     }
 
@@ -628,7 +623,6 @@ function initializeTabFeatures(tabName) {
 
   if (tabName === 'downloads') {
     if (window.downloadManager) {
-      console.log('Initializing Downloads tab...');
       window.downloadManager.initialize();
     }
 
@@ -646,7 +640,6 @@ async function loadTabContent(tabName) {
   }
 
   if (tabElement.dataset.loaded === 'true') {
-    console.log(`Tab already loaded: ${tabName} - reinitializing features`);
     // Reapply theme when reinitializing tab
     if (window.settingsManager) {
       const currentTheme = window.settingsManager.settings.theme || 'dark';
@@ -666,12 +659,10 @@ async function loadTabContent(tabName) {
   }
 
   try {
-    console.log(`Loading tab content for: ${tabName} from ${htmlFile}`);
     const response = await fetch(htmlFile);
     const html = await response.text();
     tabElement.innerHTML = html;
     tabElement.dataset.loaded = 'true';
-    console.log(`✓ Successfully loaded content for tab: ${tabName}`);
 
     await new Promise((resolve) => setTimeout(resolve, 50));
 

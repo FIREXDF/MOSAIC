@@ -81,8 +81,6 @@ export function resolveVirtualPath(inputPath: string) {
     return inputPath;
   }
 
-  console.log('[VirtualPath] Resolving MTP path:', inputPath);
-
   if (process.platform !== 'linux') {
     console.error('[VirtualPath] MTP path rejected on unsupported platform:', {
       platform: process.platform,
@@ -95,8 +93,6 @@ export function resolveVirtualPath(inputPath: string) {
 
   const segments = getMtpUriSegments(inputPath);
   const roots = getLinuxGvfsRoots();
-  console.log('[VirtualPath] Linux GVFS roots:', roots);
-  console.log('[VirtualPath] MTP path segments:', segments);
 
   const resolvedPath = findExistingMtpPath(segments);
   if (resolvedPath) {

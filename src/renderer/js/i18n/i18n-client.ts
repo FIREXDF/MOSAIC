@@ -19,14 +19,9 @@ class I18nClient {
   async loadTranslations(locale) {
     try {
       if (window.electronAPI && window.electronAPI.loadLocale) {
-        console.log(`Loading locale via IPC: ${locale}`);
         const result = await window.electronAPI.loadLocale(locale);
         if (result.success) {
           this.translations = result.translations;
-          console.log(
-            `Translations loaded successfully for locale: ${locale} via IPC`,
-            Object.keys(this.translations),
-          );
           return true;
         } else {
           throw new Error(result.error || 'Failed to load locale via IPC');
@@ -42,14 +37,9 @@ class I18nClient {
       let lastError: Error | null = null;
       for (const url of urls) {
         try {
-          console.log(`Trying to load translations from: ${url}`);
           const response = await fetch(url);
           if (response.ok) {
             this.translations = await response.json();
-            console.log(
-              `Translations loaded successfully for locale: ${locale} from ${url}`,
-              Object.keys(this.translations),
-            );
             return true;
           } else {
             lastError = new Error(
@@ -58,7 +48,6 @@ class I18nClient {
           }
         } catch (err) {
           lastError = err;
-          console.log(`Failed to load from ${url}, trying next...`);
         }
       }
 
@@ -69,7 +58,6 @@ class I18nClient {
     } catch (error) {
       console.error(`Failed to load translations for locale: ${locale}`, error);
       if (locale !== 'en') {
-        console.log('Falling back to English...');
         return await this.loadTranslations('en');
       }
       return false;
@@ -82,7 +70,6 @@ class I18nClient {
       return false;
     }
 
-    console.log(`Changing locale to: ${locale}`);
     this.currentLocale = locale;
     const loaded = await this.loadTranslations(locale);
 
@@ -91,12 +78,10 @@ class I18nClient {
       return false;
     }
 
-    console.log('Translations loaded, updating DOM...');
     this.updateDOM();
 
     setTimeout(() => {
       this.updateDOM();
-      console.log('DOM updated (retry)');
     }, 100);
 
     localStorage.setItem('fightplanner_locale', locale);
@@ -148,7 +133,6 @@ class I18nClient {
 
   updateDOM() {
     const elements = document.querySelectorAll<HTMLElement>('[data-i18n]');
-    console.log(`Updating ${elements.length} elements with data-i18n`);
 
     let updatedCount = 0;
     elements.forEach((element) => {
@@ -185,7 +169,6 @@ class I18nClient {
       }
     });
 
-    console.log(`Updated ${updatedCount} elements`);
     document.documentElement.lang = this.currentLocale;
   }
 

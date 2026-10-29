@@ -33,11 +33,9 @@ class AnimationManager {
   checkInitialAnimation() {
     // Check if class was added by inline script (from query param)
     if (document.body.classList.contains('app-entrance-animation')) {
-      console.log('Initial entrance animation detected');
       // Set cleanup timer
       setTimeout(() => {
         document.body.classList.remove('app-entrance-animation');
-        console.log('Initial entrance animation sequence completed');
       }, 2500); // 2s animation + buffer
     }
   }
@@ -158,7 +156,6 @@ class AnimationManager {
     if (this.isReducedMotion) return Promise.resolve();
 
     void this.preloadAssets();
-    console.log('Playing entrance animation sequence (manual trigger)');
 
     if (playAudio) {
       this.playIntroAudio();
@@ -182,7 +179,6 @@ class AnimationManager {
         setTimeout(() => {
           body.classList.remove('app-entrance-animation');
           body.classList.remove('app-entrance-prepared');
-          console.log('Entrance animation sequence completed');
           resolve();
         }, 2500);
       });

@@ -14,34 +14,16 @@ class UpdateManager {
       return;
     }
 
-    window.electronAPI.onUpdateChecking(() => {
-      console.log('[UpdateManager] Checking for updates...');
-    });
-
     window.electronAPI.onUpdateAvailable((data) => {
-      console.log('[UpdateManager] Update available:', data);
-      console.log('[UpdateManager] New version:', data.version);
       this.updateInfo = data;
       this.showUpdateAvailable(data);
     });
 
-    window.electronAPI.onUpdateNotAvailable((data) => {
-      console.log('[UpdateManager] No updates available');
-      console.log('[UpdateManager] Current version:', data.version);
-      console.log('[UpdateManager] Latest version:', data.latestVersion);
-      console.log('[UpdateManager] Update data:', data);
-    });
-
     window.electronAPI.onUpdateDownloadProgress((data) => {
-      console.log(
-        '[UpdateManager] Download progress:',
-        data.percent.toFixed(2) + '%',
-      );
       this.updateDownloadProgress(data);
     });
 
     window.electronAPI.onUpdateDownloaded((data) => {
-      console.log('[UpdateManager] Update downloaded:', data);
       this.showUpdateDownloaded(data);
     });
 
@@ -281,7 +263,6 @@ class UpdateManager {
   }
 
   async checkForUpdatesManually() {
-    console.log('[UpdateManager] Manual update check initiated');
     window.appSoundManager?.play('loading', { volume: 0.55 });
 
     if (window.toastManager) {
@@ -290,10 +271,8 @@ class UpdateManager {
 
     try {
       const result = await window.electronAPI.checkForUpdates();
-      console.log('[UpdateManager] Manual check result:', result);
 
       if (result.checking) {
-        console.log('[UpdateManager] Already checking for updates');
         if (window.toastManager) {
           window.toastManager.info('toasts.alreadyCheckingUpdates', 3000);
         }
@@ -306,10 +285,6 @@ class UpdateManager {
       }
 
       if (result.updateAvailable && result.updateInfo) {
-        console.log(
-          '[UpdateManager] Update found via manual check:',
-          result.updateInfo,
-        );
         // The main process normally emitted update-available before this IPC
         // call resolved. Only render here as a fallback to avoid duplicate
         // modals and notifications.
@@ -318,7 +293,6 @@ class UpdateManager {
           this.showUpdateAvailable(result.updateInfo);
         }
       } else {
-        console.log('[UpdateManager] No update found via manual check');
         if (window.toastManager) {
           window.toastManager.success('toasts.noUpdatesAvailable', 3000);
         }
@@ -336,7 +310,6 @@ class UpdateManager {
 
 if (typeof window !== 'undefined') {
   window.updateManager = new UpdateManager();
-  console.log('Update Manager initialized');
 }
 
 export { type UpdateManager };

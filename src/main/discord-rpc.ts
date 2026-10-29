@@ -41,28 +41,24 @@ export default class DiscordRPCManager {
 
   async connect() {
     if (this.connected) {
-      console.log('Discord RPC already connected');
       return;
     }
 
     try {
-      console.log('Attempting to connect to Discord RPC...');
       this.client = new RPC.Client({ transport: 'ipc' });
 
       this.client.on('ready', () => {
-        console.log('✅ Discord RPC connected successfully!');
         this.connected = true;
         this.updatePresence();
       });
 
       this.client.on('disconnected', () => {
-        console.log('❌ Discord RPC disconnected');
         this.connected = false;
       });
 
       await this.client.login({ clientId: this.clientId });
     } catch (error) {
-      console.error('❌ Failed to connect to Discord RPC:', error.message);
+      console.error('Failed to connect to Discord RPC:', error.message);
       console.error(
         'Make sure Discord is running and you have a valid Client ID',
       );
@@ -116,10 +112,9 @@ export default class DiscordRPCManager {
     }
 
     try {
-      console.log('Updating Discord presence:', this.currentActivity);
       this.sendActivity(activity);
     } catch (error) {
-      console.error('❌ Error updating Discord presence:', error.message);
+      console.error('Error updating Discord presence:', error.message);
     }
   }
 
@@ -150,7 +145,7 @@ export default class DiscordRPCManager {
         instance: activity.instance,
       });
     } catch (error) {
-      console.error('❌ Error updating Discord presence:', error.message);
+      console.error('Error updating Discord presence:', error.message);
     }
   }
 

@@ -91,8 +91,6 @@ async function switchTab(tabName) {
     activeButton.classList.add('active');
   }
 
-  console.log(`Switched to tab: ${tabName}`);
-
   // Reapply theme after tab switch
   if (window.settingsManager) {
     const currentTheme = window.settingsManager.settings.theme || 'dark';
@@ -111,13 +109,6 @@ sidebarButtons.forEach((btn) => {
     if (tabName) {
       switchTab(tabName);
     }
-  });
-});
-
-const actionButtons = document.querySelectorAll<HTMLElement>('.action-btn');
-actionButtons.forEach((btn) => {
-  btn.addEventListener('click', () => {
-    console.log('Action button clicked:', btn.title);
   });
 });
 

@@ -552,7 +552,6 @@ class SmartRenameManager {
 
 if (typeof window !== 'undefined') {
   window.smartRenameManager = new SmartRenameManager();
-  console.log('Smart Rename Manager initialized');
 }
 
 export { type SmartRenameManager };

@@ -2940,16 +2940,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function initializeTutorial() {
-    console.log('ðŸ” Initializing tutorial...');
-    console.log('ðŸ” window.tutorialAPI:', window.tutorialAPI);
-
     await initializeWelcomeBranding();
 
     if (window.tutorialAPI && window.tutorialAPI.getMigrationStatus) {
       try {
-        console.log('ðŸ” Calling getMigrationStatus...');
         const migrationStatus = await window.tutorialAPI.getMigrationStatus();
-        console.log('ðŸ” Migration status received:', migrationStatus);
 
         const migratedSettingKeys =
           migrationStatus.success && Array.isArray(migrationStatus.settingKeys)
@@ -2965,8 +2960,6 @@ document.addEventListener('DOMContentLoaded', () => {
           migratedSettingKeys.length > 0;
 
         if (hasFightPlanner3Migration) {
-          console.log('✅ Migration detected! Adding migration step...');
-
           const migrationStep = {
             icon: 'bi-arrow-repeat',
             title: 'Settings Migrated',
@@ -3005,25 +2998,11 @@ document.addEventListener('DOMContentLoaded', () => {
           };
 
           steps.splice(1, 0, migrationStep);
-          console.log('✓ Migration step added to tutorial');
-        } else {
-          console.log('â„¹ï¸ No migration detected or already processed');
-          console.log('   - success:', migrationStatus.success);
-          console.log('   - from:', migrationFrom);
-          console.log('   - imported settings:', migratedSettingKeys.length);
-          console.log(
-            '   - completed:',
-            'completed' in migrationStatus && migrationStatus.completed,
-          );
         }
       } catch (error) {
         console.error('Error checking migration status:', error);
       }
-    } else {
-      console.log('tutorialAPI or getMigrationStatus not available');
     }
-
-    console.log('Total tutorial steps:', steps.length);
 
     let resumeSavedStep = false;
     if (!tutorialDevMode && window.tutorialAPI) {
@@ -3674,11 +3653,7 @@ ${step.content}
   }
 
   async function closeTutorial(action: 'close' | 'complete' | 'skip' = 'close') {
-    console.log('Closing tutorial...');
-    console.log('window.tutorialAPI:', window.tutorialAPI);
-
     if (window.tutorialAPI) {
-      console.log('Calling tutorialAPI.closeTutorial()');
       try {
         if (action === 'complete') {
           await window.tutorialAPI.completeTutorial();
@@ -3687,7 +3662,6 @@ ${step.content}
         } else {
           await window.tutorialAPI.closeTutorial();
         }
-        console.log('✓ Close event sent');
       } catch (error) {
         console.error('Error calling closeTutorial:', error);
       }
@@ -3696,7 +3670,6 @@ ${step.content}
       console.error('Available window properties:', Object.keys(window));
 
       if (window.close) {
-        console.log('Trying window.close() as fallback');
         window.close();
       }
     }
@@ -3707,9 +3680,6 @@ ${step.content}
       void closeTutorial('skip');
     }
   }
-
-  console.log('Tutorial DOM loaded');
-  console.log('tutorialAPI available:', !!window.tutorialAPI);
 
   setTimeout(() => {
     initializeTutorial();
@@ -3722,28 +3692,24 @@ ${step.content}
 
   if (closeBtn) {
     closeBtn.addEventListener('click', () => {
-      console.log('Close button clicked');
       closeTutorial();
     });
   }
 
   if (skipBtn) {
     skipBtn.addEventListener('click', () => {
-      console.log('Skip button clicked');
       skipTutorial();
     });
   }
 
   if (prevBtn) {
     prevBtn.addEventListener('click', () => {
-      console.log('Previous button clicked');
       previousStep();
     });
   }
 
   if (nextBtn) {
     nextBtn.addEventListener('click', () => {
-      console.log('Next button clicked');
       nextStep();
     });
   }
