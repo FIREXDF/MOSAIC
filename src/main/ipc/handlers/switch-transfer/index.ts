@@ -502,10 +502,6 @@ const MtpHandlers = {
 
 export type MtpHandlers = typeof MtpHandlers;
 
-/**
- * Register all IPC handlers related to Switch transfers.
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- */
 export function registerSwitchTransferHandlers(ipcMain: IpcMain) {
   const handlers = { ...SwitchTransferHandlers, ...MtpHandlers };
 

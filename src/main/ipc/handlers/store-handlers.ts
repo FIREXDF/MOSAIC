@@ -88,10 +88,6 @@ const StoreHandlers = {
   },
 } as const;
 
-/**
- * Register all IPC handlers related to store operations
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- */
 export function registerStoreHandlers(ipcMain: IpcMain) {
   for (const channel of Object.keys(StoreHandlers) as Array<
     keyof typeof StoreHandlers

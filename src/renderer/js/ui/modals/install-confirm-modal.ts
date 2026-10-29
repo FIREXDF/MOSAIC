@@ -214,7 +214,6 @@ M.prototype._updateInstallQueueUI = function () {
   if (total > 1) {
     const cardsToShow = Math.min(total - 1, 2);
     
-    // Remove excess cards
     for (let i = cardsToShow; i < existingCards.length; i++) {
         existingCards[i].remove();
     }

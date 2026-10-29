@@ -201,7 +201,6 @@ class PluginManager {
       return;
     }
 
-    // Check if plugins path is configured
     if (!this.pluginsPath) {
       const t = (key: string) => {
         return window.i18n && window.i18n.t ? window.i18n.t(key) : key;
@@ -251,7 +250,6 @@ class PluginManager {
         </div>
       `;
 
-      // Add event listener to the button
       const goToSettingsBtn = document.querySelector<HTMLElement>(
         '#go-to-plugins-settings-btn',
       );
@@ -283,7 +281,6 @@ class PluginManager {
   }
 
   async navigateToPluginsSettings() {
-    // Navigate to settings tab
     const settingsBtn = document.querySelector<HTMLElement>(
       '[data-tab="settings"]',
     );
@@ -295,43 +292,36 @@ class PluginManager {
       await window.tabLoader.loadTabContent('settings');
     }
 
-    // Wait for settings to finish initializing, then switch to Library and highlight plugins path.
     setTimeout(() => {
       if (window.settingsManager) {
         window.settingsManager.setupEventListeners();
         window.settingsManager.switchSettingsTab('library');
 
-        // Wait for the tab to show and highlight the plugins path field
         setTimeout(() => {
           const pluginsPathContainer = document.querySelector<HTMLElement>(
             '#browse-plugins-folder',
           );
           if (pluginsPathContainer) {
-            // Find the parent settings-section
             const settingsSection = pluginsPathContainer.closest('.settings-section') as HTMLElement;
             if (settingsSection) {
               settingsSection.classList.add('highlight-setting');
               settingsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-              // Function to fade out the highlight smoothly
               const fadeOutHighlight = () => {
                 settingsSection.classList.remove('highlight-setting');
                 settingsSection.classList.add('highlight-fade-out');
 
-                // Remove fade-out class after animation completes
                 setTimeout(() => {
                   settingsSection.classList.remove('highlight-fade-out');
                 }, 500);
               };
 
-              // Add click listener to browse button to fade out on click
               const browseClickHandler = () => {
                 fadeOutHighlight();
                 pluginsPathContainer.removeEventListener('click', browseClickHandler);
               };
               pluginsPathContainer.addEventListener('click', browseClickHandler);
 
-              // Also fade out automatically after 3 seconds if not clicked
               setTimeout(() => {
                 if (settingsSection.classList.contains('highlight-setting')) {
                   fadeOutHighlight();
@@ -652,7 +642,6 @@ ${plugin.status === 'active'
       this.pluginsPath = null;
     }
 
-    // Render the plugin list to show the "path not configured" message
     this.plugins = [];
     this.renderPluginList();
   }
@@ -1063,17 +1052,14 @@ ${plugin.status === 'active'
     const pluginsPath = settings.pluginsPath;
 
     if (!autoCheck) {
-      // Check if we should propose to enable it
       if (!introShown && pluginsPath) {
         try {
-          // We removed the check for !hasVersions to allow users with existing plugins to see the intro
           if (
             window.modalManager &&
             window.modalManager.openPluginUpdateIntroModal
           ) {
             window.modalManager.openPluginUpdateIntroModal(
               async () => {
-                // On Enable
                 await window.settingsManager.setSetting(
                   'autoCheckPluginUpdates',
                   true,
@@ -1083,10 +1069,8 @@ ${plugin.status === 'active'
                   true,
                 );
 
-                // Open Marketplace so user can reinstall plugins
                 this.openMarketplace();
 
-                // Force overlay to stay visible
                 setTimeout(() => {
                   if (window.modalManager) {
                     window.modalManager.showOverlay();
@@ -1099,7 +1083,6 @@ ${plugin.status === 'active'
                 return true; // Keep overlay open for marketplace
               },
               async () => {
-                // On Disable
                 await window.settingsManager.setSetting(
                   'pluginUpdateIntroShown',
                   true,

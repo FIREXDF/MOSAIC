@@ -158,7 +158,6 @@ export default class PluginUpdateInstaller {
         }
         actualFileName = path.basename(nroFilePath);
       } else {
-        // Try to determine filename from URL
         try {
           const urlUrl = new URL(downloadUrl);
           const urlFilename = path.basename(urlUrl.pathname);
@@ -169,7 +168,6 @@ export default class PluginUpdateInstaller {
           console.error('Error parsing filename from URL:', e);
         }
 
-        // Fallback to pluginPath basename if URL parsing failed
         if (!actualFileName) {
           actualFileName = path.basename(pluginPath);
         }
@@ -186,7 +184,6 @@ export default class PluginUpdateInstaller {
         };
       }
 
-      // actualFileName is already set correctly above
       const pluginDir = path.dirname(pluginPath);
       const finalPluginPath = path.join(pluginDir, actualFileName);
 

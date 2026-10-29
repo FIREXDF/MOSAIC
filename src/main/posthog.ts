@@ -20,7 +20,6 @@ function getDistinctId(): string {
 }
 
 export function isAnalyticsEnabled(): boolean {
-    // Default to true if not explicitly set
     const enabled = store.get('analyticsEnabled');
     return enabled !== false;
 }

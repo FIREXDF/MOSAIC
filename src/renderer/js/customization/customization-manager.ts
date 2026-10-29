@@ -30,7 +30,6 @@ class CustomizationManager {
   }
 
   setupEventListeners() {
-    // Render lists
     this.renderCssList();
     this.renderJsList();
 
@@ -589,7 +588,6 @@ class CustomizationManager {
   async reloadAllCss() {
     const paths = [...this.customCssFiles.map((f) => f.path)];
 
-    // Remove all
     for (const file of this.customCssFiles) {
       if (file.element) {
         file.element.remove();
@@ -597,7 +595,6 @@ class CustomizationManager {
     }
     this.customCssFiles = [];
 
-    // Reload all
     for (const path of paths) {
       await this.loadCustomCssFile(path);
     }

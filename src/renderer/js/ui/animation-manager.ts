@@ -24,16 +24,13 @@ class AnimationManager {
   }
 
   checkReducedMotion() {
-    // Check if user has enabled reduced animations in app settings
     this.isReducedMotion =
       document.body.classList.contains('reduced-animations') ||
       document.body.classList.contains('no-animations');
   }
 
   checkInitialAnimation() {
-    // Check if class was added by inline script (from query param)
     if (document.body.classList.contains('app-entrance-animation')) {
-      // Set cleanup timer
       setTimeout(() => {
         document.body.classList.remove('app-entrance-animation');
       }, 2500); // 2s animation + buffer
@@ -41,7 +38,6 @@ class AnimationManager {
   }
 
   setupListeners() {
-    // Listen for intro animation trigger from main process (manual trigger)
     if (window.electronAPI) {
       window.electronAPI.onStartIntroAnimation(() => {
         void this.playIntroAnimation();
@@ -185,14 +181,12 @@ class AnimationManager {
     });
   }
 
-  // Helper for GSAP tab switches to keep renderer.js clean
   animateTabSwitch(currentTab, selectedTab, tabName) {
     if (this.isReducedMotion) {
       this.handleReducedMotionTabSwitch(currentTab, selectedTab);
       return;
     }
 
-    // If entrance animation is playing, don't run tab switch animation yet
     if (document.body.classList.contains('app-entrance-animation')) {
       this.handleReducedMotionTabSwitch(currentTab, selectedTab);
       return;
@@ -202,7 +196,6 @@ class AnimationManager {
   }
 
   handleReducedMotionTabSwitch(currentTab, selectedTab) {
-    // Instant switch logic
     document.querySelectorAll<HTMLElement>('.tab-content').forEach((tab) => {
       tab.classList.remove('active');
       tab.style.cssText = 'display: none;';
@@ -216,7 +209,6 @@ class AnimationManager {
   }
 
   handleFullMotionTabSwitch(currentTab, selectedTab) {
-    // GSAP animation logic
     document.querySelectorAll<HTMLElement>('.tab-content').forEach((tab) => {
       if (tab !== selectedTab && tab !== currentTab) {
         gsap.set(tab, { display: 'none', zIndex: -1 });

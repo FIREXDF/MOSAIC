@@ -21,11 +21,6 @@ import { registerFeedbackHandlers } from './handlers/feedback-handlers';
 import { registerUmcHandlers } from './handlers/umc-handlers';
 import DiscordRPCManager from '../discord-rpc';
 
-/**
- * Register all IPC handlers for the application
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- * @param getDiscordRPC - Resolver returning the current Discord RPC manager (optional)
- */
 export function registerAllHandlers(
   ipcMain: IpcMain,
   getDiscordRPC: () => DiscordRPCManager | null = () => null,

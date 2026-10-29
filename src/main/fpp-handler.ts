@@ -20,7 +20,6 @@ export interface FppModEntry {
 }
 
 export interface FppManifest {
-    // Updated FppManifest definition
     fpp_version: string;
     name: string;
     pack_version?: string;
@@ -185,7 +184,6 @@ export default class FppHandler {
             const manifestPath = path.join(tempDir, 'manifest.xml');
             const downloadsPath = path.join(tempDir, 'downloads.json');
 
-            // Look for any thumbnail file
             let thumbnailPath: string | undefined = undefined;
             const tempFiles = fs.readdirSync(tempDir);
             for (const file of tempFiles) {

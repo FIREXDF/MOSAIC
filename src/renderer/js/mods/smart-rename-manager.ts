@@ -19,7 +19,6 @@ interface SmartRenameModEntry {
 function formatSlotRanges(slots: string[]): string {
   if (slots.length === 0) return '';
 
-  // Sort numerically
   const sorted = [...slots].sort((a, b) => {
     const numA = parseInt(a.replace('c', ''));
     const numB = parseInt(b.replace('c', ''));
@@ -51,9 +50,6 @@ function formatSlotRanges(slots: string[]): string {
   return ranges.join(', ');
 }
 
-/**
- * Resolves a raw fighter ID to a display name using the SSBU_CHARACTERS lookup.
- */
 function getCharacterDisplayName(rawFighterId: string): string {
   const resolvedId = window.resolveFolderName
     ? window.resolveFolderName(rawFighterId)
@@ -75,12 +71,10 @@ function computeNewName(
   const parts: string[] = [];
 
   if (characterNames.length > 0) {
-    // Deduplicate character names while preserving order
     const unique = [...new Set(characterNames)];
     parts.push(`[${unique.join(', ')}]`);
   }
 
-  // Filter out 'unknown' slots
   const validSlots = slots.filter((s) => s !== 'unknown');
   if (validSlots.length > 0) {
     parts.push(`[${formatSlotRanges(validSlots)}]`);
@@ -90,9 +84,6 @@ function computeNewName(
   return parts.join(' ');
 }
 
-/**
- * Sanitizes a file/folder name by removing characters that are invalid on Windows.
- */
 function sanitizeFolderName(name: string): string {
   return name
     .replace(/[<>:"/\\|?*]/g, '')
@@ -102,8 +93,6 @@ function sanitizeFolderName(name: string): string {
 
 class SmartRenameManager {
   private entries: SmartRenameModEntry[] = [];
-
-  // ──────────────── SELECT MODAL ────────────────
 
   openSelectModal() {
     const mods = window.modManager?.mods;
@@ -221,8 +210,6 @@ class SmartRenameManager {
   closeSelectModal() {
     window.modalManager.closeModal('smart-rename-modal');
   }
-
-  // ──────────────── PREVIEW MODAL ────────────────
 
   private showLoadingOverlay(): HTMLElement {
     const overlay = document.createElement('div');
@@ -397,7 +384,6 @@ class SmartRenameManager {
     this.entries.forEach((entry) => {
       const tr = document.createElement('tr');
 
-      // Checkbox cell
       const tdCb = document.createElement('td');
       const cb = document.createElement('input');
       cb.type = 'checkbox';
@@ -410,7 +396,6 @@ class SmartRenameManager {
       tdCb.appendChild(cb);
       tr.appendChild(tdCb);
 
-      // Base Mod Name cell (editable)
       const tdBase = document.createElement('td');
       const baseInput = document.createElement('input');
       baseInput.type = 'text';
@@ -426,13 +411,11 @@ class SmartRenameManager {
       tdBase.appendChild(baseInput);
       tr.appendChild(tdBase);
 
-      // Original Name cell
       const tdOrig = document.createElement('td');
       tdOrig.classList.add('smart-rename-original');
       tdOrig.textContent = entry.originalName;
       tr.appendChild(tdOrig);
 
-      // New Name cell
       const tdNew = document.createElement('td');
       const newNameSpan = document.createElement('span');
       newNameSpan.classList.add('smart-rename-new-name');
@@ -460,8 +443,6 @@ class SmartRenameManager {
     window.modalManager.closeModal('smart-rename-preview-modal');
   }
 
-  // ──────────────── APPLY RENAME ────────────────
-
   async applyRenames() {
     const toRename = this.entries.filter((e) => e.selected);
 
@@ -477,7 +458,6 @@ class SmartRenameManager {
 
     for (const entry of toRename) {
       try {
-        // If the mod didn't have an info.toml or its display_name differs, update it
         if (
           !entry.hadInfoToml ||
           !entry.existingInfo?.display_name ||
@@ -503,7 +483,6 @@ class SmartRenameManager {
           await window.electronAPI.saveModInfo(entry.mod.path, infoData);
         }
 
-        // Rename the folder if the name changed
         const sanitizedNewName = sanitizeFolderName(entry.newName);
         if (sanitizedNewName && sanitizedNewName !== entry.originalName) {
           const result = await window.electronAPI.renameMod(
@@ -527,10 +506,8 @@ class SmartRenameManager {
       }
     }
 
-    // Close preview modal
     this.closePreviewModal();
 
-    // Show results toast
     if (window.toastManager) {
       if (errorCount === 0) {
         window.toastManager.success(
@@ -543,7 +520,6 @@ class SmartRenameManager {
       }
     }
 
-    // Refresh mod list
     if (window.modManager) {
       window.modManager.fetchMods();
     }

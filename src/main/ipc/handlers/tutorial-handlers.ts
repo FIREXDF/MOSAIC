@@ -294,7 +294,6 @@ const TutorialHandlers = {
     try {
       const win = BrowserWindow.fromWebContents(common.event.sender)!;
 
-      // Show custom dialog or use file picker
       const result = await dialog.showOpenDialog(win, {
         title: 'Select SD Card Drive',
         properties: ['openDirectory'],
@@ -320,10 +319,6 @@ const TutorialHandlers = {
   },
 } as const;
 
-/**
- * Register all IPC handlers related to tutorial operations
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- */
 export function registerTutorialHandlers(ipcMain: IpcMain) {
   for (const channel of Object.keys(TutorialHandlers) as Array<
     keyof typeof TutorialHandlers

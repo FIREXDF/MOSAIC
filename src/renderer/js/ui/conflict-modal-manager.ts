@@ -520,7 +520,6 @@ export class ConflictModalManager {
       return window.i18n && window.i18n.t ? window.i18n.t(key, params) : key;
     };
 
-    // Calculate total conflicts
     const totalConflicts = conflictGroups.reduce(
       (sum, group) => sum + group.conflicts.length,
       0,
@@ -538,9 +537,7 @@ export class ConflictModalManager {
     this.selectedConflictFiles.clear();
     this.updateSelectedConflictFilesFooter();
 
-    // Create grouped display
     conflictGroups.forEach((group) => {
-      // Create group header
       const groupHeader = document.createElement('div');
       groupHeader.className = 'conflict-group-header';
 
@@ -575,7 +572,6 @@ export class ConflictModalManager {
       groupHeader.appendChild(groupBadge);
       container.appendChild(groupHeader);
 
-      // Create table for this group
       const table = document.createElement('table');
       table.className = 'conflict-table';
 

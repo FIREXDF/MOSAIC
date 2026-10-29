@@ -27,10 +27,6 @@ const WindowEventHandlers = {
   },
 } as const;
 
-/**
- * Register all IPC event handlers related to window operations
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- */
 export function registerWindowHandlers(ipcMain: IpcMain) {
   for (const channel of Object.keys(WindowEventHandlers) as Array<
     keyof typeof WindowEventHandlers

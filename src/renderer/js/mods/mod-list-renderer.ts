@@ -87,7 +87,6 @@ class ModListRenderer {
 
     modItem.dataset.processed = 'false';
 
-    // Set CSS variable for staggered animation
     modItem.style.setProperty('--mod-index', index);
 
     if (mod.status) {

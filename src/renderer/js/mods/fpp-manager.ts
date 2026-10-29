@@ -78,7 +78,6 @@ export class FppManager {
         const modal = document.getElementById('fpp-create-modal');
         if (!modal) return;
 
-        // Reset inputs
         const nameInput = document.getElementById('fpp-name-input') as HTMLInputElement;
         if (nameInput) nameInput.value = '';
 
@@ -144,7 +143,6 @@ export class FppManager {
             modsListContainer.innerHTML = '';
             pluginsListContainer.innerHTML = '';
 
-            // Add mods
             for (const mod of mods) {
                 const item = document.createElement('div');
                 item.className = 'smart-rename-select-item';
@@ -171,7 +169,6 @@ export class FppManager {
                 modsListContainer.appendChild(item);
             }
 
-            // Add plugins
             if ((window as any).pluginManager && (window as any).pluginManager.plugins) {
                 const plugins = (window as any).pluginManager.plugins;
                 for (const plugin of plugins) {

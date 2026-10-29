@@ -264,10 +264,6 @@ const FileHandlers = {
   },
 } as const;
 
-/**
- * Register all IPC handlers related to file operations
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- */
 export function registerFileHandlers(ipcMain: IpcMain) {
   for (const channel of Object.keys(FileHandlers) as Array<
     keyof typeof FileHandlers

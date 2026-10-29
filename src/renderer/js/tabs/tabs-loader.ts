@@ -8,7 +8,6 @@ const tabConfigs = {
   fightplanner: 'tabs/fightplanner.html',
 };
 
-// Track document click listeners to prevent duplicates
 let categoryFilterDocumentListener: ((e: Event) => void) | null = null;
 let modSortOrderDocumentListener: ((e: Event) => void) | null = null;
 
@@ -404,12 +403,10 @@ function initializeTabFeatures(tabName) {
           });
         }
 
-        // Remove any existing document click listener before adding a new one
         if (categoryFilterDocumentListener) {
           document.removeEventListener('click', categoryFilterDocumentListener);
         }
 
-        // Create and add new document click listener
         categoryFilterDocumentListener = (e) => {
           const target = e.target as HTMLElement;
 
@@ -640,7 +637,6 @@ async function loadTabContent(tabName) {
   }
 
   if (tabElement.dataset.loaded === 'true') {
-    // Reapply theme when reinitializing tab
     if (window.settingsManager) {
       const currentTheme = window.settingsManager.settings.theme || 'dark';
       window.settingsManager.applyTheme(currentTheme);
@@ -666,7 +662,6 @@ async function loadTabContent(tabName) {
 
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    // Reapply theme after loading tab content
     if (window.settingsManager) {
       const currentTheme = window.settingsManager.settings.theme || 'dark';
       window.settingsManager.applyTheme(currentTheme);

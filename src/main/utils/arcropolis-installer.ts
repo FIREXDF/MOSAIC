@@ -56,12 +56,6 @@ export function getArcropolisDirectoryForLibrary(
   return path.join(pluginsDirectory, 'ultimate', 'arcropolis');
 }
 
-/**
- * Get a GitHub release, defaulting to the latest release.
- * @param {string} repo - Repository in format "owner/repo"
- * @param {string} tag - Optional exact release tag
- * @returns {Promise<{tag: string, downloadUrl: string, version: string, name: string}>}
- */
 async function getGitHubRelease(repo: string, tag?: string): Promise<{
   tag: string;
   downloadUrl: string;
@@ -126,10 +120,6 @@ async function getGitHubRelease(repo: string, tag?: string): Promise<{
   });
 }
 
-/**
- * Get the ARCropolis release used by the Latest installation option.
- * @returns {Promise<{tag: string, downloadUrl: string, version: string}>}
- */
 export async function getLatestArcropolisRelease() {
   return getGitHubRelease('Raytwo/ARCropolis', 'v4.1.1');
 }
@@ -138,10 +128,6 @@ export async function getArcropolisRelease(tag: string) {
   return getGitHubRelease('Raytwo/ARCropolis', tag);
 }
 
-/**
- * Get the latest Skyline release from GitHub
- * @returns {Promise<{tag: string, downloadUrl: string, version: string}>}
- */
 export async function getLatestSkylineRelease() {
   return getGitHubRelease('skyline-dev/skyline');
 }
@@ -180,13 +166,6 @@ function cleanup(dir: string) {
   }
 }
 
-/**
- * Download ARCropolis release ZIP
- * @param {string} downloadUrl - URL to download from
- * @param {string} targetPath - Path to save the ZIP file
- * @param {Function} progressCallback - Optional progress callback (bytesReceived, totalBytes)
- * @returns {Promise<string>} Path to downloaded file
- */
 export function downloadArcropolis(
   downloadUrl: string,
   targetPath: string,
@@ -206,7 +185,6 @@ export function downloadArcropolis(
           },
         },
         (res) => {
-          // Handle redirects
           if (res.statusCode === 302 || res.statusCode === 301) {
             file.close();
             fs.unlinkSync(targetPath);
@@ -256,11 +234,6 @@ export function downloadArcropolis(
   });
 }
 
-/**
- * Extract Skyline ZIP and copy exefs files to target directory
- * @param {string} zipPath - Path to Skyline ZIP file
- * @param {string} targetDir - Target directory (e.g., atmosphere/contents/01006A800016E000/)
- */
 export async function extractAndInstallSkyline(
   zipPath: string,
   targetDir: string,
@@ -270,14 +243,12 @@ export async function extractAndInstallSkyline(
       throw new Error(`ZIP file does not exist: ${zipPath}`);
     }
 
-    // Create temp extraction directory using os.tmpdir() for better compatibility
     const os = require('os');
     const tempDir = path.join(os.tmpdir(), `skyline-extract-${Date.now()}`);
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
 
-    // Extract ZIP
     try {
       await FileExtractor.extractArchive(zipPath, tempDir);
     } catch (error) {
@@ -291,7 +262,6 @@ export async function extractAndInstallSkyline(
       throw new Error(`Failed to extract ZIP: ${error.message}`);
     }
 
-    // Find exefs folder in extracted content
     const findExefsFolder = (dir, depth = 0, maxDepth = 5) => {
       if (depth > maxDepth) return null;
 
@@ -308,7 +278,6 @@ export async function extractAndInstallSkyline(
                 return fullPath;
               }
             } catch (e) {
-              // Continue searching
             }
           }
 
@@ -329,7 +298,6 @@ export async function extractAndInstallSkyline(
 
     let exefsSource = findExefsFolder(tempDir);
 
-    // Try common paths
     if (!exefsSource) {
       const commonPaths = [
         path.join(tempDir, 'exefs'),
@@ -352,7 +320,6 @@ export async function extractAndInstallSkyline(
               break;
             }
           } catch (e) {
-            // Continue
           }
         }
       }
@@ -362,7 +329,6 @@ export async function extractAndInstallSkyline(
       throw new Error('exefs folder not found in Skyline release');
     }
 
-    // Ensure target directory exists
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
@@ -394,7 +360,6 @@ export async function extractAndInstallArcropolis(
       throw new Error(`ZIP file does not exist: ${zipPath}`);
     }
 
-    // Create temp extraction directory using os.tmpdir() for better compatibility
     const os = require('os');
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'arcropolis-extract-'));
 
@@ -404,7 +369,6 @@ export async function extractAndInstallArcropolis(
       throw new Error(`Failed to extract ZIP: ${error.message}`);
     }
 
-    // Find romfs folder in extracted content - ARCropolis provides romfs
     const findRomfsFolder = (
       dir: string,
       depth = 0,
@@ -418,22 +382,17 @@ export async function extractAndInstallArcropolis(
         for (const entry of entries) {
           const fullPath = path.join(dir, entry.name);
 
-          // Check if this is the romfs folder
           if (entry.isDirectory() && entry.name.toLowerCase() === 'romfs') {
-            // Verify it contains files (not empty)
             try {
               const romfsContents = fs.readdirSync(fullPath);
               if (romfsContents.length > 0) {
                 return fullPath;
               }
             } catch (e) {
-              // Continue searching
             }
           }
 
-          // Recursively search subdirectories
           if (entry.isDirectory()) {
-            // Skip common non-relevant directories
             const skipDirs = ['__macosx', '.ds_store', 'exefs'];
             if (!skipDirs.includes(entry.name.toLowerCase())) {
               const found = findRomfsFolder(fullPath, depth + 1, maxDepth);
@@ -450,7 +409,6 @@ export async function extractAndInstallArcropolis(
 
     let romfsSource = findRomfsFolder(tempDir);
 
-    // Try common ARCropolis folder structures
     if (!romfsSource) {
       const commonPaths = [
         path.join(tempDir, 'romfs'),
@@ -474,7 +432,6 @@ export async function extractAndInstallArcropolis(
               break;
             }
           } catch (e) {
-            // Continue
           }
         }
       }
@@ -565,16 +522,11 @@ export async function extractAndInstallArcropolis(
   }
 }
 
-/**
- * Check if ARCropolis is installed by looking for exefs (Skyline) and romfs (ARCropolis) files
- * @param {string} targetDir - Directory to check (e.g., atmosphere/contents/01006A800016E000/)
- */
 export function checkArcropolisInstalled(targetDir: string) {
   try {
     const exefsPath = path.join(targetDir, 'exefs');
     const romfsPath = path.join(targetDir, 'romfs');
 
-    // Both exefs (Skyline) and romfs (ARCropolis) should exist
     const hasExefs =
       fs.existsSync(exefsPath) && fs.readdirSync(exefsPath).length > 0;
     const hasRomfs =
@@ -586,10 +538,6 @@ export function checkArcropolisInstalled(targetDir: string) {
   }
 }
 
-/**
- * Check if arcropolis folder exists in ultimate directory
- * @param {string} ultimatePath - Path to ultimate folder (e.g., sd:/ultimate/ or yuzu/sdmc/ultimate/)
- */
 export function checkArcropolisFolder(ultimatePath: string) {
   try {
     const arcropolisPath = path.join(ultimatePath, 'arcropolis');
@@ -601,10 +549,6 @@ export function checkArcropolisFolder(ultimatePath: string) {
   }
 }
 
-/**
- * Create directory structure recursively
- * @param {string} dirPath - Directory path to create
- */
 export async function createDirectory(dirPath: string) {
   try {
     if (!fs.existsSync(dirPath)) {

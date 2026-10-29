@@ -3024,7 +3024,6 @@ class SocialGameBananaManager extends SocialManagerBase {
         this.fadeGameBananaRestoredBackground();
       }
 
-      // Restore search query value to the search input
       const searchInput = document.querySelector<HTMLInputElement>(
         '#social-gamebanana-search-input',
       );

@@ -299,15 +299,4 @@ ${escapeHtml(modData.url)}
 
 window.modInfoManager = new ModInfoManager();
 
-/*
-window.modInfoManager.displayModInfo({
-name: "Super Smash Bros Ultimate Mod",
-version: "1.0.0",
-author: "ModAuthor",
-description: "An awesome mod for Smash Ultimate",
-size: "250 MB",
-date: "2024-01-15"
-});
-*/
-
 export { type ModInfoManager };

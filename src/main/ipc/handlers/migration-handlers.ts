@@ -29,10 +29,6 @@ const MigrationHandlers = {
   },
 } as const;
 
-/**
- * Register all IPC handlers related to migration operations
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- */
 export function registerMigrationHandlers(ipcMain: IpcMain) {
   for (const channel of Object.keys(MigrationHandlers) as Array<
     keyof typeof MigrationHandlers

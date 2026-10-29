@@ -181,7 +181,6 @@ export default class ProtocolHandler {
     this.processingUrls = new Set();
     this.seenRemoteInstalls = new Set();
 
-    // Start polling automatically if credentials exist
     setTimeout(() => {
       this.startRemoteInstallPolling();
     }, 2000);
@@ -936,7 +935,6 @@ export default class ProtocolHandler {
         reject(error);
       };
 
-      // Store download info for cancel
       this.activeDownloads.set(downloadId, {
         request: null, // Will be set after request is created
         file: null,
@@ -948,13 +946,11 @@ export default class ProtocolHandler {
       });
 
       const request = protocol.get(requestOptions, (response) => {
-        // Update stored request
         const download = this.activeDownloads.get(downloadId);
         if (download) {
           download.request = request;
         }
 
-        // Check if cancelled before processing response
         if (download && download.cancelled) {
           response.destroy();
           fail(new Error(download.paused ? 'Download paused' : 'Download cancelled'), !download.paused);
@@ -1040,7 +1036,6 @@ export default class ProtocolHandler {
         }
 
         response.on('data', (chunk) => {
-          // Check if cancelled during download
           const downloadCheck = this.activeDownloads.get(downloadId);
           if (downloadCheck && downloadCheck.cancelled) {
             return;
@@ -1071,7 +1066,6 @@ export default class ProtocolHandler {
         response.pipe(file);
 
         file.on('finish', () => {
-          // Check if download was cancelled before finishing
           const downloadCheck = this.activeDownloads.get(downloadId);
           if (downloadCheck && downloadCheck.cancelled) {
             fail(new Error(downloadCheck.paused ? 'Download paused' : 'Download cancelled'), !downloadCheck.paused);
@@ -1414,7 +1408,6 @@ export default class ProtocolHandler {
 
         completedCount++;
 
-        // Remove this installed item from subItems if present
         const idMatch = originalUrl.match(/mmdl\/(\d+)/) || originalUrl.match(/(\d+)/);
         if (idMatch) {
           const modBadge = `Mod #${idMatch[1]}`;
@@ -1456,7 +1449,6 @@ export default class ProtocolHandler {
 
     this.sendToRenderer('mod-extract-complete', { downloadId });
 
-    // After all downloads in batch complete
     if (resultingMods.length > 0) {
       this.sendToRenderer('mod-install-success', {
         url: fppPath,
@@ -1497,7 +1489,6 @@ export default class ProtocolHandler {
     download.cancelled = true;
     download.paused = true;
 
-    // Destroy the request to stop data flow
     if (download.request) {
       download.request.destroy();
       download.request = null;

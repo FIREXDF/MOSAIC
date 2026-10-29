@@ -514,10 +514,6 @@ const SystemHandlers = {
   },
 } as const;
 
-/**
- * Register all IPC handlers related to system operations
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- */
 export function registerSystemHandlers(ipcMain: IpcMain) {
   for (const channel of Object.keys(SystemHandlers)) {
     const handler = SystemHandlers[channel] as GenericHandler;

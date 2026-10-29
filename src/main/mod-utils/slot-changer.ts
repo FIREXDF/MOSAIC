@@ -239,8 +239,6 @@ export class SlotChanger {
         }
       }
 
-      // Step 3: Move all files from temp paths to final paths
-
       for (const mapping of topLevelMappings) {
         try {
           await ModFileOperations.renameModFile(
@@ -584,7 +582,6 @@ export class SlotChanger {
     slotCustomNames: Record<string, CustomData>,
     defaultCustomNames: CustomData,
   ): string[] {
-    // Prepare XML content
     const xmlEntries: string[] = [];
 
     for (const slot of slots) {
@@ -686,7 +683,6 @@ export class SlotChanger {
     });
 
     try {
-      // First, read ui_chara_db.prcxml to get the actual labelIndex for each slot
       const slotToLabelIndex = {};
       const prcxmlPath = `${modPath}/ui/param/database/ui_chara_db.prcxml`;
 
@@ -696,18 +692,14 @@ export class SlotChanger {
         try {
           const prcxmlData = parser.parse(prcxmlContent);
 
-          // Navigate to the struct array (assuming it's under a root element)
-          // Adjust this path based on actual XML structure
           const structs = prcxmlData?.struct || [];
           const structArray = Array.isArray(structs) ? structs : [structs];
 
           for (const slot of slots) {
             const slotNum = parseInt(slot.replace('c', ''));
 
-            // Look for byte elements with hash="nXY_index"
             let nxyIndexValue: number | null = null;
 
-            // Search through structs for the byte element
             for (const struct of structArray) {
               if (!struct || !struct.byte) continue;
 
@@ -715,12 +707,10 @@ export class SlotChanger {
                 ? struct.byte
                 : [struct.byte];
 
-              // Try without leading zeros first
               let nxyByte = bytes.find(
                 (b) => b?.['@_hash'] === `n${slotNum}_index`,
               );
 
-              // If not found, try with leading zeros
               if (!nxyByte) {
                 nxyByte = bytes.find(
                   (b) =>
@@ -738,7 +728,6 @@ export class SlotChanger {
             if (nxyIndexValue !== null) {
               slotToLabelIndex[slot] = nxyIndexValue;
             } else {
-              // Fallback to default calculation
               slotToLabelIndex[slot] = slotNum + 8;
             }
           }
@@ -747,21 +736,18 @@ export class SlotChanger {
             '[readExistingCustomNames] Error parsing prcxml:',
             parseError,
           );
-          // If there's a parser error, use default calculation for all slots
           for (const slot of slots) {
             const slotNum = parseInt(slot.replace('c', ''));
             slotToLabelIndex[slot] = slotNum + 8;
           }
         }
       } else {
-        // If prcxml doesn't exist, use default calculation for all slots
         for (const slot of slots) {
           const slotNum = parseInt(slot.replace('c', ''));
           slotToLabelIndex[slot] = slotNum + 8;
         }
       }
 
-      // Read msg_name.xmsbt if it exists
       const msgNamePath = `${modPath}/ui/message/msg_name.xmsbt`;
 
       if (await ModFileOperations.fileExists(msgNamePath)) {
@@ -770,7 +756,6 @@ export class SlotChanger {
         try {
           const msgData = parser.parse(msgContent);
 
-          // Get the entries array
           const entries = msgData?.xmsbt?.entry || [];
           const entryArray = Array.isArray(entries) ? entries : [entries];
 
@@ -779,7 +764,6 @@ export class SlotChanger {
             const labelIndexPadded = String(labelIndexRaw).padStart(2, '0');
             const labelIndexUnpadded = String(labelIndexRaw);
 
-            // Find entries with specific labels - try both with and without leading zeros
             const cspEntry = entryArray.find(
               (e) =>
                 e?.['@_label'] ===
@@ -804,7 +788,6 @@ export class SlotChanger {
                   `nam_stage_name_${labelIndexUnpadded}_${fighterName}`,
             );
 
-            // Convert actual newlines to \n escape sequences for editing
             const cspText = (cspEntry?.text || '').replace(/\n/g, '\\n');
             const vsText = (vsEntry?.text || '').replace(/\n/g, '\\n');
             const boxingText = (boxingEntry?.text || '').replace(/\n/g, '\\n');
@@ -826,14 +809,12 @@ export class SlotChanger {
         }
       }
 
-      // Read announcer info from ui_chara_db.prcxml
       if (await ModFileOperations.fileExists(prcxmlPath)) {
         const prcxmlContent = await ModFileOperations.readModFile(prcxmlPath);
 
         try {
           const prcxmlData = parser.parse(prcxmlContent);
 
-          // Get the structs and hash40 elements
           const structs = prcxmlData?.struct || [];
           const structArray = Array.isArray(structs) ? structs : [structs];
 
@@ -841,7 +822,6 @@ export class SlotChanger {
             const labelIndex = slotToLabelIndex[slot];
             const labelPadded = String(labelIndex).padStart(2, '0');
 
-            // Search through structs for the hash40 element
             let announcerText = '';
 
             for (const struct of structArray) {
@@ -883,22 +863,15 @@ export class SlotChanger {
       }
     } catch (error) {
       console.error('[readExistingCustomNames] Error:', error);
-      // Return empty customNames on error
     }
 
     return customNames;
   }
 
-  /**
-   * Gets default custom names from messages.data file
-   * @param {string} fighterNameInternal - Internal fighter name (e.g., 'mario', 'link')
-   * @returns {Object} - Object with cspName, vsName, and boxingRing properties
-   */
   static async getDefaultCustomNames(
     fighterNameInternal: string,
   ): Promise<CustomData> {
     try {
-      // Get the path to messages.data
       const messagesPath = path.join(PATHS.dataDir(), 'messages.data');
 
       if (!(await ModFileOperations.fileExists(messagesPath))) {
@@ -906,7 +879,6 @@ export class SlotChanger {
         return {};
       }
 
-      // Read and parse the XML file
       const xmlContent = await ModFileOperations.readModFile(messagesPath);
       const parser = new XMLParser({
         ignoreAttributes: false,
@@ -919,16 +891,13 @@ export class SlotChanger {
       try {
         const xmlData = parser.parse(xmlContent);
 
-        // Build label patterns
         const cspLabel = `nam_chr1_08_${fighterNameInternal}`;
         const vsLabel = `nam_chr2_08_${fighterNameInternal}`;
         const boxingRingLabel = `nam_stage_name_08_${fighterNameInternal}`;
 
-        // Get entries array
         const entries = xmlData?.xmsbt?.entry || [];
         const entryArray = Array.isArray(entries) ? entries : [entries];
 
-        // Find matching entries
         const cspEntry = entryArray.find((e) => e?.['@_label'] === cspLabel);
         const vsEntry = entryArray.find((e) => e?.['@_label'] === vsLabel);
         const boxingRingEntry = entryArray.find(

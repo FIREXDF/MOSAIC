@@ -140,14 +140,12 @@ class PluginMarketplace {
       return false;
     }
 
-    // Support old call style (downloadInfo is string url)
     const downloadUrl =
       typeof downloadInfo === 'string' ? downloadInfo : downloadInfo.url;
 
     const targetVersion =
       typeof downloadInfo === 'object' ? downloadInfo.version : null;
 
-    // Use the actualFileName for the final path if provided, otherwise default to pluginName.nro
     const finalPluginFileName = actualFileName || `${pluginName}.nro`;
     const pluginPath =
       pluginsPath.endsWith('\\') || pluginsPath.endsWith('/')

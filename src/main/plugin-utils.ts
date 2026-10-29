@@ -19,11 +19,6 @@ interface BatchPluginMove {
 }
 
 export default class PluginUtils {
-  /**
-   * Read all plugins from a folder (active and disabled)
-   * @param {string} pluginsPath - Path to the plugins folder
-   * @returns {object} Object with activePlugins and disabledPlugins arrays
-   */
   static readAllPlugins(pluginsPath: string) {
     const requestedPluginsPath = pluginsPath;
     pluginsPath = resolveVirtualPath(pluginsPath);
@@ -218,11 +213,6 @@ export default class PluginUtils {
     return this.readAllPlugins(pluginsBasePath);
   }
 
-  /**
-   * Format file size in human readable format
-   * @param {number} bytes - File size in bytes
-   * @returns {string} Formatted file size
-   */
   static formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
 
@@ -233,12 +223,6 @@ export default class PluginUtils {
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   }
 
-  /**
-   * Toggle plugin status (enable/disable)
-   * @param {string} pluginPath - Full path to the plugin file
-   * @param {string} pluginsBasePath - Base path of the plugins folder
-   * @returns {object} Result with success status
-   */
   static togglePlugin(pluginPath: string, pluginsBasePath: string) {
     try {
       pluginsBasePath = resolveVirtualPath(pluginsBasePath);
@@ -278,11 +262,6 @@ export default class PluginUtils {
     }
   }
 
-  /**
-   * Delete a plugin file
-   * @param {string} pluginPath - Full path to the plugin file
-   * @returns {object} Result with success status
-   */
   static deletePlugin(pluginPath) {
     try {
       if (!fs.existsSync(pluginPath)) {
@@ -297,12 +276,6 @@ export default class PluginUtils {
     }
   }
 
-  /**
-   * Copy a plugin file to the plugins folder
-   * @param {string} sourcePath - Source file path
-   * @param {string} targetFolder - Target plugins folder
-   * @returns {object} Result with success status
-   */
   static copyPlugin(sourcePath, targetFolder) {
     try {
       targetFolder = resolveVirtualPath(targetFolder);

@@ -61,7 +61,6 @@ function flushPendingProtocolUrls() {
   }
 }
 
-// Register protocol (async on Linux)
 ProtocolHandler.registerProtocol().catch((err) => {
   console.error('[protocol] Registration failed:', err);
 });

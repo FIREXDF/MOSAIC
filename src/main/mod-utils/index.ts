@@ -275,7 +275,6 @@ export default class ModUtils {
 
     const modDirs: string[] = [];
 
-    // If the root directory itself contains mod files, return it and skip subdirectories
     if (checkIfModDir(rootDir)) {
       return [rootDir];
     }
@@ -290,10 +289,8 @@ export default class ModUtils {
 
       if (stats.isDirectory()) {
         if (checkIfModDir(itemPath)) {
-          // Found a directory with mod files, add it and skip its subdirectories
           modDirs.push(itemPath);
         } else {
-          // This directory doesn't have mod files, recursively search its subdirectories
           const nested = this._gatherDirsWithModFiles(itemPath);
           modDirs.push(...nested);
         }
@@ -369,23 +366,12 @@ export default class ModUtils {
     }
   }
 
-  /**
-   * Get the path to the disabled mods folder
-   * @param {string} activeModsPath - Path to the active mods folder
-   * @returns {string} Path to the disabled mods folder
-   */
   static getDisabledModsFolder(activeModsPath) {
     activeModsPath = resolveVirtualPath(activeModsPath);
     const parentDir = path.dirname(activeModsPath);
     return path.join(parentDir, '{disabled_mod}');
   }
 
-  /**
-   * Read all mods from a folder
-   * @param {string} folderPath - Path to the folder containing mods
-   * @param {string} status - Status of the mods ('active' or 'disabled')
-   * @returns {Array<Object>} Array of mod objects with name, path, and status
-   */
   static readModsFromFolder(
     folderPath: string,
     status: 'active' | 'disabled' = 'active',
@@ -456,11 +442,6 @@ export default class ModUtils {
     return mods;
   }
 
-  /**
-   * Get the path to the preview image for a mod
-   * @param {string} modPath - Path to the mod folder
-   * @returns {string|null} Path to the preview image or null if not found
-   */
   static getPreviewImagePath(modPath: string) {
     try {
       for (const extension of ['webp', 'jpg', 'jpeg', 'png']) {
@@ -475,11 +456,6 @@ export default class ModUtils {
     }
   }
 
-  /**
-   * Convert a file path to a file:// URL
-   * @param {string} filePath - File path to convert
-   * @returns {string|null} File URL or null if path is invalid
-   */
   static pathToFileUrl(filePath: string) {
     if (!filePath) return null;
 
@@ -487,11 +463,6 @@ export default class ModUtils {
     return 'file://' + normalizedPath;
   }
 
-  /**
-   * Read mod information from info.toml file
-   * @param {string} modPath - Path to the mod folder
-   * @returns {Object|null} Mod info object or null if not found/error
-   */
   static readModInfo(modPath: string): ModInfo | null {
     try {
       const infoPath = path.join(modPath, 'info.toml');
@@ -579,11 +550,6 @@ export default class ModUtils {
     }
   }
 
-  /**
-   * Read all mods (active and disabled) from a mods directory
-   * @param {string} activeModsPath - Path to the active mods folder
-   * @returns {Object} Object with activeMods and disabledMods arrays
-   */
   static readAllMods(activeModsPath: string) {
     activeModsPath = resolveVirtualPath(activeModsPath);
     const activeMods = this.readModsFromFolder(activeModsPath, 'active');
@@ -889,7 +855,6 @@ export default class ModUtils {
       }
     }
 
-    // Convert to array format for return
     return Array.from(conflictGroups.values()).sort((groupA, groupB) => {
       if (groupA.fighter === groupB.fighter) {
         return groupA.slot.localeCompare(groupB.slot);
@@ -1302,12 +1267,6 @@ export default class ModUtils {
     return { modPath, modName };
   }
 
-  /**
-   * Install a mod from a source path (archive or directory) to the mods directory
-   * @param {string} sourcePath - Source path (archive file or directory)
-   * @param {string} modsPath - Destination mods directory
-   * @returns {Promise<Object>} Result object with success status, modPath, and modName
-   */
   static async installModFromPath(
     sourcePath: string,
     modsPath: string,

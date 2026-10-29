@@ -46,11 +46,6 @@ const DiscordHandlers = {
   },
 } as const;
 
-/**
- * Register all IPC event handlers related to Discord RPC operations
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- * @param getDiscordRPC - Resolver returning the current Discord RPC manager
- */
 export function registerDiscordHandlers(
   ipcMain: IpcMain,
   getDiscordRPC: () => DiscordRPCManager | null,

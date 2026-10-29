@@ -162,10 +162,6 @@ const AppHandlers = {
   },
 } as const;
 
-/**
- * Register all IPC handlers related to app operations
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- */
 export function registerAppHandlers(ipcMain: IpcMain) {
   for (const channel of Object.keys(AppHandlers) as Array<
     keyof typeof AppHandlers

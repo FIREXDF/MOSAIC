@@ -208,7 +208,6 @@ const electronAPI = {
   setDiscordRpcEnabled: (enabled: boolean) =>
     ipcRenderer.invoke('set-discord-rpc-enabled', enabled),
 
-  // Analytics
   trackEvent: invokeAnalyticsHandler('analytics-track-event'),
   trackError: invokeAnalyticsHandler('analytics-track-error'),
   testPosthogEvent: invokeAnalyticsHandler('analytics-test-event'),
@@ -303,12 +302,10 @@ const tutorialAPI = {
   getAppVersion: invokeAppHandler('get-app-version'),
   loadLocale: invokeSystemHandler('load-locale'),
 
-  // Settings & File System
   selectFolder: invokeFileHandler('select-folder'),
   saveSetting: invokeStoreHandler('store-set'),
   getSetting: invokeStoreHandler('store-get'),
 
-  // ARCropolis Installation
   detectSdDrives: invokeTutorialHandler('detect-sd-drives'),
   detectYuzuPath: invokeTutorialHandler('detect-yuzu-path'),
   detectRyujinxPath: invokeTutorialHandler('detect-ryujinx-path'),

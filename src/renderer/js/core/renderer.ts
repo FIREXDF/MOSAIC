@@ -1,4 +1,3 @@
-// Global Renderer Error Tracking
 window.addEventListener('error', (event) => {
   console.error('[Renderer] Uncaught Error:', event.error || event.message);
   if (window.electronAPI && window.electronAPI.trackError) {
@@ -65,11 +64,9 @@ async function switchTab(tabName) {
     await window.tabLoader.loadTabContent(tabName);
   }
 
-  // Use Animation Manager if available
   if (window.animationManager) {
     window.animationManager.animateTabSwitch(currentTab, selectedTab, tabName);
   } else {
-    // Fallback if Animation Manager isn't loaded for some reason
     if (selectedTab) {
       selectedTab.classList.add('active');
       selectedTab.style.display = 'flex';
@@ -91,7 +88,6 @@ async function switchTab(tabName) {
     activeButton.classList.add('active');
   }
 
-  // Reapply theme after tab switch
   if (window.settingsManager) {
     const currentTheme = window.settingsManager.settings.theme || 'dark';
     window.settingsManager.applyTheme(currentTheme);
@@ -118,7 +114,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     await window.hardwareConnectionManager.initialize();
   }
 
-  // Initialize Animation Manager
   if (window.animationManager) {
     window.animationManager.initialize();
   }

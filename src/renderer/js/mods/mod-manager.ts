@@ -1949,7 +1949,6 @@ class ModManager {
 
       if (window.statusBarManager) {
         if (result.success && result.totalConflicts > 0) {
-          // Collect unique mods from all conflict groups
           const modsWithConflicts = this.conflictGroups.reduce<Set<string>>(
             (mods, group) => {
               group.conflicts.forEach((conflict) => {
@@ -2191,7 +2190,6 @@ class ModManager {
       return;
     }
 
-    // Get all enabled mods
     const enabledMods = this.mods.filter((mod) => mod.status === 'active');
 
     if (enabledMods.length === 0) {
@@ -2205,13 +2203,11 @@ class ModManager {
       return;
     }
 
-    // Ask for export format
     const format = await this.askExportFormat();
     if (!format) {
       return; // User cancelled
     }
 
-    // Group mods by character
     const modsByCharacter: Map<
       string,
       {
@@ -2226,12 +2222,10 @@ class ModManager {
       }
 
       try {
-        // Get mod info
         const modInfo = await window.electronAPI.getModInfo(mod.path);
         const modName = modInfo?.display_name || mod.name;
         const modUrl = modInfo?.url || '';
 
-        // Scan for characters
         const scanModResult = await window.electronAPI.scanMod(mod.path);
 
         if (
@@ -2259,7 +2253,6 @@ class ModManager {
             });
           });
         } else {
-          // Mod doesn't have character folders, add to "Other" category
           if (!modsByCharacter.has('Other')) {
             modsByCharacter.set('Other', []);
           }
@@ -2274,7 +2267,6 @@ class ModManager {
       }
     }
 
-    // Build the content based on format
     const t = (key, params = {}) => {
       return window.i18n && window.i18n.t ? window.i18n.t(key, params) : key;
     };
@@ -2288,25 +2280,21 @@ class ModManager {
       content = `${enabledMods.length} mods loaded\n\n`;
     }
 
-    // Sort characters alphabetically
     const sortedCharacters = Array.from(modsByCharacter.keys()).sort((a, b) => {
       if (a === 'Other') return 1;
       if (b === 'Other') return -1;
       return a.localeCompare(b);
     });
 
-    // Write mods grouped by character
     for (const charName of sortedCharacters) {
       const mods = modsByCharacter.get(charName)!;
 
-      // Format character name based on format
       if (isMarkdown) {
         content += `## ${charName}\n\n`;
       } else {
         content += `${charName}\n`;
       }
 
-      // Remove duplicates (same mod name)
       const uniqueMods: {
         name: string;
         url: string;
@@ -2340,7 +2328,6 @@ class ModManager {
       content += '\n';
     }
 
-    // Save to file
     try {
       const extension = format === 'md' ? 'md' : 'txt';
       const fileName = `mods_list.${extension}`;

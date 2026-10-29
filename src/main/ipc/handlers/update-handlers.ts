@@ -57,10 +57,6 @@ const UpdateHandlers = {
   },
 } as const;
 
-/**
- * Register all IPC handlers related to update operations
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- */
 export function registerUpdateHandlers(ipcMain: IpcMain) {
   for (const channel of Object.keys(UpdateHandlers) as Array<
     keyof typeof UpdateHandlers

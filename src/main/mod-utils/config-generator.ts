@@ -210,7 +210,6 @@ export class ConfigGenerator {
       return acc;
     }, []);
 
-    // Generate `new-dir-infos` and `new-dir-infos-base`
     for (const slotNumber of extraSlots) {
       const slot = `c${slotNumber.toString().padStart(2, '0')}`;
 
@@ -341,7 +340,6 @@ export class ConfigGenerator {
             const cValue = fileInfo.slot;
             let dirPath = '';
 
-            // Determine the directory based on the fixedFile type
             if (fixedFile.startsWith(`camera/fighter/${this.fighterName}/`)) {
               dirPath = `fighter/${this.fighterName}/camera/${cValue}`;
             } else if (
@@ -376,7 +374,6 @@ export class ConfigGenerator {
               return;
             }
 
-            // Add the fixedFile to the appropriate directory in `newDirFiles`
             if (dirPath) {
               if (!newDirFiles[dirPath]) {
                 newDirFiles[dirPath] = [];
@@ -460,7 +457,6 @@ export class ConfigGenerator {
       }
     });
 
-    // Sort `new-dir-files` by directory keys and file names
     const sortedNewDirFiles = {};
     Object.keys(newDirFiles)
       .sort() // Sort directory keys alphabetically
@@ -468,10 +464,8 @@ export class ConfigGenerator {
         sortedNewDirFiles[dir] = newDirFiles[dir].sort(); // Sort file names within each directory
       });
 
-    // Update the global resulting configuration
     this.resultingConfig['new-dir-files'] = sortedNewDirFiles;
 
-    // Sort `share-to-vanilla` and `share-to-added`
     const sortedShareToVanilla = {};
     Object.keys(shareToVanilla)
       .sort() // Sort keys alphabetically
@@ -486,7 +480,6 @@ export class ConfigGenerator {
         sortedShareToAdded[key] = shareToAdded[key].sort(); // Sort file paths within each key
       });
 
-    // Update the global resulting configuration
     this.resultingConfig['new-dir-infos'] = newDirInfos;
     this.resultingConfig['new-dir-infos-base'] = newDirInfosBase;
     this.resultingConfig['share-to-vanilla'] = sortedShareToVanilla;
@@ -916,7 +909,6 @@ export class ConfigGenerator {
       return acc;
     }
 
-    // Check within 'dirs' for entries related to the fighter
     if (fighterDir) {
       this.fighterData.fighterFiles = (fighterDir.c00?.files || []).reduce(
         _getFileNameFromFilesArray,
@@ -956,7 +948,6 @@ export class ConfigGenerator {
   }
 
   private initializeResultingConfig() {
-    // Initialize the resulting configuration
     this.resultingConfig = {
       'new-dir-infos': [],
       'new-dir-infos-base': {},

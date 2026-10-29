@@ -12,7 +12,6 @@ import { PATHS } from './config';
 import autoUpdater from './auto-updater';
 import { initPosthog, identifyUser, shutdownPosthog, captureError, captureEvent } from './posthog';
 
-// Global Error Catchers for PostHog
 process.on('uncaughtException', (error) => {
   console.error('[Main] Uncaught Exception:', error);
   captureError(error, { source: 'main_uncaught_exception', fatal: true });
@@ -364,7 +363,6 @@ if (!gotTheLock) {
       },
     );
 
-    // Initialize PostHog analytics
     initPosthog();
     identifyUser();
 

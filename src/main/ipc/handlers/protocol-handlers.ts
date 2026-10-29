@@ -405,10 +405,6 @@ const ProtocolHandlers = {
   },
 } as const;
 
-/**
- * Register all IPC handlers related to protocol operations
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- */
 export function registerProtocolHandlers(ipcMain: IpcMain) {
   for (const channel of Object.keys(ProtocolHandlers) as Array<
     keyof typeof ProtocolHandlers

@@ -79,9 +79,7 @@ export class StatusBarManager {
     this.claimManagedStatusNode();
     this.setupCollapsedStatusClickHandler();
 
-    // Start global monitoring for downloads
     setInterval(() => {
-      // Always check
       this.checkActiveDownloads();
     }, 500);
   }
@@ -2408,7 +2406,6 @@ export class StatusBarManager {
         this.triggerIslandPulse(bottomBar, 'success');
       }
 
-      // Ensure content is visible
       (content as HTMLElement).style.display = 'flex';
 
       content.innerHTML = `
@@ -2464,7 +2461,6 @@ export class StatusBarManager {
         this.triggerIslandPulse(bottomBar, 'conflict');
       }
 
-      // Ensure content is visible
       contentEl.style.display = 'flex';
 
       if (contentEl.dataset.extendedSignature !== conflictSignature) {
@@ -2550,7 +2546,6 @@ export class StatusBarManager {
     try {
       if (!window.downloadManager) return false;
 
-      // Check for a Switch transfer first
       if (window.downloadManager.switchTransfer) {
         const transfer = window.downloadManager.switchTransfer;
         const progress = Math.max(
@@ -2623,7 +2618,6 @@ export class StatusBarManager {
         .activeDownloads;
 
       if (!activeDownloadsMap) {
-        // If activeDownloads is missing, assume no downloads
         return false;
       }
 
@@ -2636,7 +2630,6 @@ export class StatusBarManager {
         const active: any = activeDownloads[0];
         this.hasActiveDownloads = true;
 
-        // Detection of data change for downloads
         const downloadIds = activeDownloads
           .map((d: any) => d.id || d.fileName)
           .sort()
@@ -2649,7 +2642,6 @@ export class StatusBarManager {
         }
 
         if (!this.userDismissedExtendedBar) {
-          // Update extended bar
           const dlItems: DownloadItem[] = activeDownloads.map((d: any) => ({
             id: d.id,
             fileName: d.fileName,
@@ -2661,7 +2653,6 @@ export class StatusBarManager {
           this.updateExtendedBar({ type: 'download', downloads: dlItems });
         }
 
-        // Also update standard status bar as fallback or complement
         if (this.currentTab !== 'downloads') {
           const dlName =
             active.modName ||
@@ -2704,13 +2695,11 @@ export class StatusBarManager {
           statusText.classList.remove('status-downloading');
         }
 
-        // Check if a download JUST finished to show success state
         if (wasActive) {
           const completed =
             (window.downloadManager as any).completedDownloads || [];
           if (completed.length > 0) {
             const last = completed[0];
-            // If finished within last 5 seconds AND it's a new completion
             if (Date.now() - (last.endTime || 0) < 5000 && this.lastHandledSuccessId !== last.id) {
               this.lastHandledSuccessId = last.id; // Mark this download as handled for success UI
               this.userDismissedExtendedBar = false; // Always show success
@@ -2721,7 +2710,6 @@ export class StatusBarManager {
 
               this.refreshStandardStatus(); // Update the background text instantly
 
-              // Wait 2 seconds then retract
               setTimeout(() => {
                 const bottomBar = document.getElementById('main-status-bar');
                 if (bottomBar && bottomBar.classList.contains('success-mode')) {
@@ -2735,7 +2723,6 @@ export class StatusBarManager {
         }
 
         if (!wasActive) {
-          // Only verify conflicts if we weren't just downloading (avoid flashing)
           if (window.modManager && window.modManager.conflictGroups) {
             const conflicts = window.modManager.conflictGroups;
 
@@ -2769,7 +2756,6 @@ export class StatusBarManager {
               }
               return false;
             } else {
-              // No conflicts, reset dismissal for next time
               if (this.lastExtendedBarData?.startsWith('conflict:')) {
                 this.lastExtendedBarData = null;
                 this.userDismissedExtendedBar = false;
@@ -2779,11 +2765,9 @@ export class StatusBarManager {
         }
 
         if (wasActive) {
-          // Immediate cleanup if no success state needed
           this.updateExtendedBar({ type: 'none' });
           this.refreshStandardStatus();
         } else {
-          // Routine cleanup
           const bottomBar = document.getElementById('main-status-bar');
           if (
             bottomBar &&
@@ -2876,7 +2860,6 @@ export class StatusBarManager {
       }
 
       try {
-        // Check for a Switch transfer first
         if (window.downloadManager && window.downloadManager.switchTransfer) {
           const transfer = window.downloadManager.switchTransfer;
           const dots = '.'.repeat(animationFrame % 4);
@@ -3107,9 +3090,6 @@ export class StatusBarManager {
     }, 500);
   }
 
-  /**
-   * Format bytes to human readable format
-   */
   formatBytes(bytes) {
     if (!bytes || bytes === 0) return '0 B';
     const k = 1024;
@@ -3118,9 +3098,6 @@ export class StatusBarManager {
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   }
 
-  /**
-   * Format download speed
-   */
   formatSpeed(bytesPerSecond) {
     if (!bytesPerSecond || bytesPerSecond === 0) return '';
     return this.formatBytes(bytesPerSecond) + '/s';
@@ -3178,9 +3155,6 @@ export class StatusBarManager {
     this.updateInterval = setInterval(updateStatus, 10000);
   }
 
-  /**
-   * Update status for Plugins tab
-   */
   updatePluginsStatus(statusText) {
     const cycleId = this.beginStatusCycle();
     this.applySnapshot(this.getPluginsSnapshot(), { cycleId });
@@ -3237,9 +3211,6 @@ export class StatusBarManager {
     this.setStatusText(this.t('statusBar.settings'));
   }
 
-  /**
-   * Update status for Characters tab
-   */
   updateCharactersStatus(statusText) {
     const cycleId = this.beginStatusCycle();
     this.applySnapshot(this.getCharactersSnapshot(), { cycleId });
@@ -3297,7 +3268,6 @@ export class StatusBarManager {
     checkingText.style.alignItems = 'center';
     checkingText.style.gap = '6px';
 
-    // Spinner
     const spinner = document.createElement('i');
     spinner.className = 'fas fa-circle-notch fa-spin';
     spinner.style.fontSize = '12px';
@@ -3305,7 +3275,6 @@ export class StatusBarManager {
 
     statusRight.appendChild(checkingText);
 
-    // Small delay to allow check to perform
     setTimeout(() => {
       if (window.modManager && window.modManager.conflictGroups) {
         const conflicts = window.modManager.conflictGroups;
@@ -3324,7 +3293,6 @@ export class StatusBarManager {
         );
 
         if (conflictCount > 0) {
-          // Update extended bar
           this.updateExtendedBar({
             type: 'conflict',
             conflictCount,
@@ -3343,7 +3311,6 @@ export class StatusBarManager {
           };
           statusRight.appendChild(warning);
         } else {
-          // Clear extended bar if no downloads
           if (!this.hasActiveDownloads) {
             this.updateExtendedBar({ type: 'none' });
           }

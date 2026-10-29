@@ -581,7 +581,6 @@ class SettingsManager {
         this.settings.enhancedStatusBar = enhancedStatusBarToggle.checked;
         this.saveSettings();
         if (window.statusBarManager) {
-          // Refresh logic if needed
         }
       });
       enhancedStatusBarToggle.dataset.listenerAttached = 'true';

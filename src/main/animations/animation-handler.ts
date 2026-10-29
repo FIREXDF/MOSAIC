@@ -17,10 +17,7 @@ export default class AnimationHandler {
   }
 
   setupListeners() {
-    // Listen for tutorial close event to trigger intro animation
     ipcMain.on('close-tutorial-window', () => {
-      // We assume the tutorial window close logic is handled elsewhere (in main.js or tutorial-window.js)
-      // This handler solely focuses on triggering the main window animation
       this.triggerIntroAnimation();
     });
   }

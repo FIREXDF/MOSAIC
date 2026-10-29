@@ -85,7 +85,6 @@ export const ModScanner = {
             }
           }
 
-          // Construct the relative path from the mod folder
           const absolutePath = path.join(
             fileOrDirectory.parentPath,
             fileOrDirectory.name,
@@ -94,7 +93,6 @@ export const ModScanner = {
           const relativePath = path.relative(modPath, absolutePath);
 
           if (fileOrDirectory.name.startsWith('.')) {
-            // Ignore hidden files and folders (like .DS_Store or .git)
             return;
           }
 
@@ -172,9 +170,6 @@ export const ModScanner = {
     }
   },
 
-  /**
-   * Extracts fighter name and slot information from a given file path.
-   */
   async extractFighterAndSlotInfo(filePath: string): Promise<{
     slot: string | null;
     fighterName: string | null;
@@ -337,7 +332,6 @@ export const ModScanner = {
       return detectedFighterName;
     }
 
-    // Check original files
     const kirbyCopyMatch =
       /kirby[\/\\]model[\/\\]copy_(\w+)_|fighter[\/\\]kirby[\/\\]motion[\/\\](\w+)body/.exec(
         filePath,

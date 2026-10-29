@@ -715,7 +715,6 @@ const ModHandlers = {
         whitelistPatterns,
       );
 
-      // Calculate total conflicts across all groups
       const totalConflicts = conflictGroups.reduce(
         (sum, group) => sum + group.conflicts.length,
         0,
@@ -847,10 +846,6 @@ const ModHandlers = {
   },
 } as const;
 
-/**
- * Register all IPC handlers related to mod operations
- * @param {Electron.IpcMain} ipcMain - Electron IPC main instance
- */
 export function registerModHandlers(ipcMain: IpcMain) {
   for (const channel of Object.keys(ModHandlers) as Array<
     keyof typeof ModHandlers

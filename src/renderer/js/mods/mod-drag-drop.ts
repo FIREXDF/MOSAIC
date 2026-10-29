@@ -68,7 +68,6 @@ class ModDragDropHandler {
       this.statusBar.classList.add('drag-active');
     }
 
-    // Add hover effect if entering the status bar itself
     if (this.statusBar.contains(e.target as Node)) {
       this.statusBar.classList.add('drag-hover');
     }
@@ -79,7 +78,6 @@ class ModDragDropHandler {
     e.preventDefault();
     e.stopPropagation();
 
-    // Ensure data details show it's a copy operation
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'copy';
     }
@@ -94,7 +92,6 @@ class ModDragDropHandler {
       this.statusBar.classList.remove('drag-active');
     }
 
-    // Remove hover effect if leaving the status bar
     if (!this.statusBar.contains(e.relatedTarget as Node)) {
       this.statusBar.classList.remove('drag-hover');
     }

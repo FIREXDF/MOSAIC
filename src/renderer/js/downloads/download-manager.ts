@@ -191,9 +191,6 @@ class DownloadManager {
 
   }
 
-  /**
-   * Render all stored downloads (called when tab is opened)
-   */
   renderAllDownloads() {
     if (this.activeDownloadsList) {
       this.activeDownloadsList.innerHTML = '';
@@ -225,9 +222,6 @@ class DownloadManager {
     }
   }
 
-  /**
-   * Start a new download
-   */
   startDownload(
     url: string,
     forcedId: string,
@@ -296,9 +290,6 @@ class DownloadManager {
     return downloadId;
   }
 
-  /**
-   * Update download progress
-   */
   updateProgress(downloadId, progress, receivedBytes, totalBytes) {
     const download = this.activeDownloads.get(downloadId);
     if (!download) {
@@ -380,9 +371,6 @@ class DownloadManager {
     }
   }
 
-  /**
-   * Update download status and subitems
-   */
   updateStatus(downloadId: string, statusText?: string, subItems?: string[]) {
     const download = this.activeDownloads.get(downloadId);
     if (!download) return;
@@ -399,7 +387,6 @@ class DownloadManager {
     );
 
     if (element) {
-      // Update status text
       const statusTextEl = element.querySelector<HTMLElement>(
         '.download-status-text',
       );
@@ -407,7 +394,6 @@ class DownloadManager {
         statusTextEl.textContent = download.statusText;
       }
 
-      // Update subitems
       const infoContainer =
         element.querySelector<HTMLElement>('.download-info');
       let subItemsContainer =
@@ -424,7 +410,6 @@ class DownloadManager {
         if (subItemsContainer) {
           subItemsContainer.innerHTML = subItemsHtml;
         } else if (infoContainer) {
-          // Find the URL element to insert after
           const urlEl = infoContainer.querySelector('.download-url');
           if (urlEl) {
             urlEl.insertAdjacentHTML(
@@ -438,15 +423,11 @@ class DownloadManager {
           }
         }
       } else if (subItemsContainer) {
-        // Remove container if no subitems left
         subItemsContainer.remove();
       }
     }
   }
 
-  /**
-   * Mark extracting phase
-   */
   markExtracting(downloadId) {
     const download = this.activeDownloads.get(downloadId);
     if (!download) return;
@@ -493,9 +474,6 @@ class DownloadManager {
     }
   }
 
-  /**
-   * Complete a download
-   */
   completeDownload(
     downloadId: string,
     resultingMods: {
@@ -556,9 +534,6 @@ class DownloadManager {
     }
   }
 
-  /**
-   * Fail a download
-   */
   failDownload(downloadId, error) {
     const download = this.activeDownloads.get(downloadId);
     if (!download) {
@@ -730,9 +705,6 @@ class DownloadManager {
       ?.addEventListener('click', () => this.cancelDownload(download.id));
   }
 
-  /**
-   * Render active download
-   */
   renderActiveDownload(download) {
     if (!this.activeDownloadsList) return;
 
@@ -784,9 +756,6 @@ ${subItemsHtml}
     this.activeDownloadsList.appendChild(element);
   }
 
-  /**
-   * Render completed download
-   */
   renderCompletedDownload(download) {
     if (!this.completedDownloadsList) return;
 
@@ -794,7 +763,6 @@ ${subItemsHtml}
     element.className = 'download-item download-completed';
     element.setAttribute('data-download-id', download.id);
 
-    // Safely format duration
     let duration = 'N/A';
     if (download.endTime && download.startTime) {
       try {
@@ -804,7 +772,6 @@ ${subItemsHtml}
       }
     }
 
-    // Safely format file size
     let fileSize = 'Unknown';
     if (download.totalBytes) {
       try {
@@ -917,9 +884,6 @@ ${subItemsHtml}
     }, 300);
   }
 
-  /**
-   * Update UI visibility
-   */
   updateUI() {
     const hasActiveDownloads = this.activeDownloads.size > 0;
     const hasCompletedDownloads = this.completedDownloads.length > 0;
@@ -960,9 +924,6 @@ ${subItemsHtml}
     }
   }
 
-  /**
-   * Update notification badge
-   */
   updateBadge() {
     const downloadsBtn = document.querySelector<HTMLElement>(
       '[data-tab="downloads"]',
@@ -988,9 +949,6 @@ ${subItemsHtml}
     }
   }
 
-  /**
-   * Switch to downloads tab
-   */
   switchToDownloadsTab() {
     const downloadsBtn = document.querySelector<HTMLElement>(
       '[data-tab="downloads"]',
@@ -1001,9 +959,6 @@ ${subItemsHtml}
     }
   }
 
-  /**
-   * Clear completed downloads
-   */
   clearCompleted() {
     this.completedDownloads = [];
     if (this.completedDownloadsList) {
@@ -1037,9 +992,6 @@ ${subItemsHtml}
     }
   }
 
-  /**
-   * Extract filename from URL
-   */
   extractFileName(url) {
     if (!/^https?:/i.test(url)) {
       return url.split(/[\\/]/).pop() || 'mod.zip';
@@ -1055,9 +1007,6 @@ ${subItemsHtml}
     }
   }
 
-  /**
-   * Shorten URL for display
-   */
   shortenUrl(url) {
     if (url.length > 60) {
       return url.substring(0, 57) + '...';
@@ -1065,9 +1014,6 @@ ${subItemsHtml}
     return url;
   }
 
-  /**
-   * Format bytes
-   */
   formatBytes(bytes) {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -1076,9 +1022,6 @@ ${subItemsHtml}
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
-  /**
-   * Format duration
-   */
   formatDuration(ms) {
     const seconds = Math.floor(ms / 1000);
     if (seconds < 60) {
@@ -1089,9 +1032,6 @@ ${subItemsHtml}
     return `${minutes}m ${remainingSeconds}s`;
   }
 
-  /**
-   * Send installed mods using the configured Switch transfer method.
-   */
   async sendToSwitch() {
     if (!window.settingsManager || !window.settingsManager.hasSwitchConfig()) {
       if (window.toastManager) {
@@ -1195,7 +1135,6 @@ ${subItemsHtml}
       return;
     }
 
-    // Call the Electron API to send mods to Switch
     if (!window.electronAPI || !window.electronAPI.sendModsToSwitch) {
       if (window.toastManager) {
         window.toastManager.error('toasts.ftpNotAvailable');
@@ -1217,7 +1156,6 @@ ${subItemsHtml}
       }
       window.appSoundManager?.play('loading', { volume: 0.55 });
 
-      // Update Switch transfer status
       this.switchTransfer = {
         id: Date.now().toString(),
         status: 'uploading',
@@ -1266,7 +1204,6 @@ ${subItemsHtml}
         )}`;
       }
 
-      // Clear Switch transfer status
       this.switchTransfer = null;
 
       if (result.success) {
@@ -1510,9 +1447,6 @@ ${subItemsHtml}
     }
   }
 
-  /**
-   * Cancel a download
-   */
   async cancelDownload(downloadId) {
     const download = this.activeDownloads.get(downloadId);
     if (!download) return;

@@ -12,31 +12,23 @@ interface Drive {
   path: string;
 }
 
-/**
- * Detect available drives on Windows
- * @returns {Promise<Array<{letter: string, label: string, type: string, path: string}>>}
- */
 export async function detectWindowsDrives() {
   if (process.platform !== 'win32') {
     return [];
   }
 
   try {
-    // Use wmic to get drive information
     const { stdout } = await execAsync(
       'wmic logicaldisk get name,volumename,drivetype',
     );
 
     const drives: Drive[] = [];
 
-    // Parse the WMIC output - format is columns: DriveType  Name  VolumeName
-    // Split by lines and process each
     const lines = stdout.split('\n').map((line) => line.trim());
 
     for (const line of lines) {
       if (!line) continue;
 
-      // Skip header line
       const upperLine = line.toUpperCase();
       if (
         upperLine.includes('DRIVETYPE') ||
@@ -46,8 +38,6 @@ export async function detectWindowsDrives() {
         continue;
       }
 
-      // Parse line using regex - format: "DriveType  Name  VolumeName"
-      // Example: "3          C:    OS" or "2          I:" (no volume name)
       const match = line.match(/^(\d+)\s+([A-Z]:)\s*(.*)$/i);
       if (!match) {
         continue;
@@ -58,9 +48,7 @@ export async function detectWindowsDrives() {
       const letter = driveName.charAt(0);
       const volumeName = match[3] ? match[3].trim() : 'Local Disk';
 
-      // Filter for removable drives (type 2) and fixed drives (type 3)
       // Type 2 = Removable, Type 3 = Fixed, Type 4 = Network, Type 5 = CD-ROM
-      // Exclude C: drive (system drive)
       if ((driveType === '2' || driveType === '3') && letter !== 'C') {
         drives.push({
           letter: letter,
@@ -73,7 +61,6 @@ export async function detectWindowsDrives() {
 
     console.log('Detected drives:', drives);
 
-    // If no drives found with wmic, try fallback
     if (drives.length === 0) {
       return await fallbackWindowsDetection();
     }
@@ -85,21 +72,16 @@ export async function detectWindowsDrives() {
   }
 }
 
-/**
- * Fallback method for Windows drive detection
- */
 async function fallbackWindowsDetection() {
   const fallbackDrives: Drive[] = [];
   const driveLetters = 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
   for (const letter of driveLetters) {
-    // Exclude C: drive (system drive)
     if (letter === 'C') continue;
 
     const drivePath = `${letter}:\\`;
     try {
       if (fs.existsSync(drivePath)) {
-        // Try to get volume label
         let label = 'Unknown';
         try {
           const { stdout } = await execAsync(
@@ -113,7 +95,6 @@ async function fallbackWindowsDetection() {
             label = labelLines[0];
           }
         } catch (e) {
-          // Keep default label
         }
 
         fallbackDrives.push({
@@ -124,7 +105,6 @@ async function fallbackWindowsDetection() {
         });
       }
     } catch (e) {
-      // Drive doesn't exist or isn't accessible
     }
   }
 
@@ -132,17 +112,12 @@ async function fallbackWindowsDetection() {
   return fallbackDrives;
 }
 
-/**
- * Detect available drives on Linux
- * @returns {Promise<Array<{letter: string, label: string, type: string, path: string}>>}
- */
 export async function detectLinuxDrives() {
   if (process.platform !== 'linux') {
     return [];
   }
 
   try {
-    // Use lsblk to get mounted drives
     const { stdout } = await execAsync('lsblk -n -o MOUNTPOINT,LABEL,TYPE');
     const lines = stdout.split('\n').filter((line) => line.trim());
 
@@ -155,7 +130,6 @@ export async function detectLinuxDrives() {
         const label = parts[1] || 'Unknown';
         const type = parts[2] || 'unknown';
 
-        // Skip root filesystem and system mounts
         if (
           mountPoint === '/' ||
           mountPoint.startsWith('/boot') ||
@@ -165,7 +139,6 @@ export async function detectLinuxDrives() {
           continue;
         }
 
-        // Extract a simple identifier from mount point
         const mountName =
           path.basename(mountPoint) || mountPoint.replace(/\//g, '_');
 
@@ -182,7 +155,6 @@ export async function detectLinuxDrives() {
   } catch (error) {
     console.error('Error detecting drives on Linux:', error);
 
-    // Fallback: use df to get mounted filesystems
     try {
       const { stdout } = await execAsync(
         'df -h | grep -E "^/dev/" | awk \'{print $6}\'',
@@ -204,23 +176,16 @@ export async function detectLinuxDrives() {
   }
 }
 
-/**
- * Detect available drives on macOS
- * @returns {Promise<Array<{letter: string, label: string, type: string, path: string}>>}
- */
 export async function detectMacOSDrives() {
   if (process.platform !== 'darwin') {
     return [];
   }
 
   try {
-    // Use diskutil to list mounted volumes
     const { stdout } = await execAsync(
       'diskutil list -plist external physical',
     );
 
-    // Parse plist output (simplified - for production, use a plist parser)
-    // For now, use df as a simpler alternative
     const { stdout: dfOutput } = await execAsync(
       'df -h | grep -E "^/dev/disk"',
     );
@@ -233,7 +198,6 @@ export async function detectMacOSDrives() {
       if (parts.length >= 6) {
         const mountPoint = parts[parts.length - 1];
 
-        // Skip system volumes
         if (
           mountPoint === '/' ||
           mountPoint.startsWith('/System') ||
@@ -242,7 +206,6 @@ export async function detectMacOSDrives() {
           continue;
         }
 
-        // Get volume name
         let label = 'Unknown';
         try {
           const { stdout: labelOutput } = await execAsync(
@@ -250,7 +213,6 @@ export async function detectMacOSDrives() {
           );
           label = labelOutput.trim() || 'Unknown';
         } catch (e) {
-          // Use mount point name as fallback
           label = path.basename(mountPoint) || 'Unknown';
         }
 
@@ -270,10 +232,6 @@ export async function detectMacOSDrives() {
   }
 }
 
-/**
- * Detect available drives on all platforms
- * @returns {Promise<Array<{letter: string, label: string, type: string, path: string}>>}
- */
 export async function detectDrives() {
   if (process.platform === 'win32') {
     return await detectWindowsDrives();
@@ -365,11 +323,6 @@ export async function resolveDrivePath(driveIdentifier: string) {
   return matchingDrive?.path || null;
 }
 
-/**
- * Check if a drive path exists and is accessible
- * @param {string} drivePath - Path to check (e.g., "E:\\" on Windows, "/media/user/disk" on Linux)
- * @returns {boolean}
- */
 export function isDriveAccessible(drivePath: string) {
   try {
     return fs.existsSync(drivePath);
@@ -378,11 +331,6 @@ export function isDriveAccessible(drivePath: string) {
   }
 }
 
-/**
- * Check if a path contains Switch SD card structure
- * @param {string} basePath - Base path to check
- * @returns {boolean}
- */
 export function isSwitchSdCard(basePath: string) {
   try {
     const atmospherePath = path.join(basePath, 'atmosphere');
