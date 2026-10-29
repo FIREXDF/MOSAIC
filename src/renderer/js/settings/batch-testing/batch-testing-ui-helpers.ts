@@ -165,32 +165,7 @@ class BatchTestingUiHelpers {
     badgeEl: HTMLElement,
     tone: BatchTestingUiSummary['tone'],
   ) {
-    const styles = {
-      neutral: {
-        background: 'rgba(255,255,255,0.06)',
-        border: 'rgba(255,255,255,0.12)',
-        color: 'var(--text-secondary)',
-      },
-      info: {
-        background: 'rgba(var(--primary-rgb), 0.12)',
-        border: 'rgba(var(--primary-rgb), 0.28)',
-        color: 'var(--primary-color)',
-      },
-      warning: {
-        background: 'rgba(245, 158, 11, 0.12)',
-        border: 'rgba(245, 158, 11, 0.28)',
-        color: '#f59e0b',
-      },
-      success: {
-        background: 'rgba(34, 197, 94, 0.12)',
-        border: 'rgba(34, 197, 94, 0.28)',
-        color: '#22c55e',
-      },
-    }[tone];
-
-    badgeEl.style.background = styles.background;
-    badgeEl.style.borderColor = styles.border;
-    badgeEl.style.color = styles.color;
+    badgeEl.dataset.tone = tone;
   }
 
   renderInfoCard(title: string, value: string) {

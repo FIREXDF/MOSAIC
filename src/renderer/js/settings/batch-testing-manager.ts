@@ -315,6 +315,13 @@ class BatchTestingManager {
     const sessionDesc = document.querySelector<HTMLElement>(
       '#batch-testing-session-desc',
     );
+    const sessionCard = document.querySelector<HTMLElement>(
+      '#batch-testing-session-card',
+    );
+
+    if (sessionCard) {
+      sessionCard.hidden = !hasRunningSession;
+    }
 
     if (startButton) {
       startButton.disabled = hasRunningSession;
