@@ -1117,11 +1117,10 @@ body.no-animations .settings-tab-btn.active::before {
 #batch-testing-modal.modal {
   display: flex !important;
   flex-direction: column;
-  width: min(1180px, calc(100vw - 48px));
-  min-width: min(600px, calc(100vw - 48px));
+  width: min(820px, calc(100vw - 48px));
+  min-width: min(560px, calc(100vw - 48px));
   max-width: calc(100vw - 48px);
-  height: min(860px, calc(100vh - 48px));
-  max-height: calc(100vh - 48px);
+  max-height: calc(100vh - 120px);
 }
 
 #batch-testing-modal .modal-body {
