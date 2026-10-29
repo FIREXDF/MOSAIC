@@ -468,12 +468,6 @@
   margin: 0 0 8px 0;
 }
 
-.social-section-subtitle {
-  font-size: 16px;
-  color: var(--text-muted);
-  margin: 0;
-}
-
 .social-loading {
   display: flex;
   flex-direction: column;
