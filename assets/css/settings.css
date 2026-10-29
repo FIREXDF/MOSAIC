@@ -349,14 +349,12 @@
 }
 
 .ignored-conflicts {
-  margin-top: 16px;
-  padding: 18px;
-  border-radius: 12px;
-  border: 1px solid var(--bg-transparent-08);
-  background: var(--bg-transparent-05);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
 }
 
 .ignored-conflicts-header {
@@ -370,21 +368,22 @@
 .ignored-conflicts-title {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .ignored-conflicts-title i {
-  font-size: 18px;
-  color: var(--accent-color);
+  color: var(--text-secondary);
 }
 
-.ignored-conflict-clear-btn {
+.ignored-conflict-clear-btn,
+.ignored-conflict-add-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .ignored-conflicts-input {
@@ -398,23 +397,15 @@
   flex: 1 1 240px;
 }
 
-.ignored-conflict-add-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-
 .ignored-conflict-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
   max-height: 220px;
   overflow-y: auto;
-  border-radius: 10px;
-  border: 1px solid var(--bg-transparent-08);
-  padding: 12px;
-  background: var(--bg-transparent-03);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.ignored-conflict-list:has(.ignored-conflicts-empty) {
+  border: none;
 }
 
 .ignored-conflict-item {
@@ -422,10 +413,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--bg-transparent-05);
-  border: 1px solid var(--bg-transparent-10);
+  padding: 6px 6px 6px 12px;
+}
+
+.ignored-conflict-item + .ignored-conflict-item {
+  border-top: 1px solid var(--border-color);
 }
 
 .ignored-conflict-path {
@@ -439,35 +431,29 @@
 .ignored-conflict-actions {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
 }
 
 .ignored-conflict-remove-btn {
-  background: rgba(var(--accent-rgb), 0.08);
-  border: 1px solid rgba(var(--accent-rgb), 0.25);
-  border-radius: 8px;
-  width: 32px;
-  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent-color);
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .ignored-conflict-remove-btn:hover {
-  background: rgba(var(--accent-rgb), 0.16);
-  border-color: rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--danger-rgb), 0.12);
+  color: var(--danger-color);
 }
 
 .ignored-conflicts-empty {
-  text-align: center;
-  padding: 18px 12px;
   color: var(--text-muted);
-  background: var(--bg-transparent-05);
-  border: 1px dashed var(--bg-transparent-12);
-  border-radius: 10px;
   font-size: 13px;
 }
 
