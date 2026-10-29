@@ -9,8 +9,18 @@ class SettingsManager {
   pathFixModalOpen: boolean;
   libraryLocaleListenerAttached: boolean;
   directLibraryPathsApplied: boolean | null;
+  switchSettings: SettingsSwitchSection;
+  librarySettings: SettingsLibrarySection;
+  ignoredConflicts: SettingsIgnoredConflictsSection;
+  maintenance: SettingsMaintenanceSection;
+  developerSettings: SettingsDeveloperSection;
 
   constructor() {
+    this.switchSettings = new SettingsSwitchSection(this);
+    this.librarySettings = new SettingsLibrarySection(this);
+    this.ignoredConflicts = new SettingsIgnoredConflictsSection(this);
+    this.maintenance = new SettingsMaintenanceSection(this);
+    this.developerSettings = new SettingsDeveloperSection(this);
     this.settings = {
       modsPath: null,
       pluginsPath: null,
@@ -78,8 +88,8 @@ class SettingsManager {
 
   async initSettings() {
     this.settings = await this.loadSettings();
-    this.applyHardwareLibraryModePaths();
-    this.applyActiveModsLibraryPath();
+    this.librarySettings.applyHardwareLibraryModePaths();
+    this.librarySettings.applyActiveModsLibraryPath();
     this.applyTheme(this.settings.theme);
     this.applySidebarPrideTabsSetting(this.settings.sidebarPrideTabsEnabled);
     this.applyAppSoundSettings();
@@ -114,10 +124,10 @@ class SettingsManager {
       this.settings.modsLibrarySwitcherEnabled === true,
     );
     this.setupEventListeners();
-    this.renderIgnoredConflictPaths();
-    await this.showPendingConfigRestoreToast();
+    this.ignoredConflicts.renderIgnoredConflictPaths();
+    await this.maintenance.showPendingConfigRestoreToast();
     setTimeout(() => {
-      this.validateConfiguredLibraryPaths();
+      this.librarySettings.validateConfiguredLibraryPaths();
     }, 1200);
   }
 
@@ -157,296 +167,6 @@ class SettingsManager {
 
   normalizeActiveModsLibrary(activeLibrary) {
     return activeLibrary === 'secondary' ? 'secondary' : 'primary';
-  }
-
-  getConfiguredModsLibraryPath(library) {
-    const normalizedLibrary = this.normalizeActiveModsLibrary(library);
-    return normalizedLibrary === 'secondary'
-      ? this.settings.secondaryModsPath || null
-      : this.settings.primaryModsPath || null;
-  }
-
-  setConfiguredModsLibraryPath(library, path) {
-    const normalizedLibrary = this.normalizeActiveModsLibrary(library);
-    if (normalizedLibrary === 'secondary') {
-      this.settings.secondaryModsPath = path || null;
-    } else {
-      this.settings.primaryModsPath = path || null;
-    }
-
-    if (
-      !this.isDirectSwitchLibraryMode() &&
-      this.normalizeActiveModsLibrary(this.settings.activeModsLibrary) ===
-      normalizedLibrary
-    ) {
-      this.settings.modsPath = path || null;
-    }
-  }
-
-  setLibraryFolderPath(
-    key: 'modsPath' | 'pluginsPath',
-    folder: string,
-    modsLibrary = this.settings.activeModsLibrary,
-  ) {
-    if (this.isDirectSwitchLibraryMode()) {
-      this.settings[key === 'modsPath' ? 'directModsPath' : 'directPluginsPath'] =
-        folder;
-      this.settings[key] = folder;
-      const driveRoot = this.getSwitchDriveRootFromLibraryPath(folder);
-      if (driveRoot && (driveRoot.startsWith('/') || driveRoot.includes(':\\'))) {
-        this.settings.switchDriveLetter = driveRoot;
-      }
-    } else if (key === 'modsPath') {
-      this.setConfiguredModsLibraryPath(modsLibrary, folder);
-      if (
-        this.normalizeActiveModsLibrary(modsLibrary) ===
-        this.normalizeActiveModsLibrary(this.settings.activeModsLibrary)
-      ) {
-        this.settings.localModsPath = folder;
-      }
-    } else {
-      this.settings.pluginsPath = folder;
-      this.settings.localPluginsPath = folder;
-    }
-  }
-
-  async saveLibraryFolderPath(
-    key: 'modsPath' | 'pluginsPath',
-    folder: string,
-    modsLibrary = this.settings.activeModsLibrary,
-  ) {
-    const previousModsPath = this.settings.modsPath;
-    const previousPluginsPath = this.settings.pluginsPath;
-    this.setLibraryFolderPath(key, folder, modsLibrary);
-    await this.saveSettings();
-
-    if (this.settings.modsPath !== previousModsPath) {
-      await this.refreshModsListForPath(this.settings.modsPath);
-    }
-    if (this.settings.pluginsPath !== previousPluginsPath) {
-      await this.refreshPluginsListForPath(this.settings.pluginsPath);
-    }
-  }
-
-  applyActiveModsLibraryPath() {
-    if (this.isDirectSwitchLibraryMode()) {
-      return;
-    }
-
-    const activeLibrary = this.normalizeActiveModsLibrary(
-      this.settings.activeModsLibrary,
-    );
-    this.settings.activeModsLibrary = activeLibrary;
-    const activePath = this.getConfiguredModsLibraryPath(activeLibrary);
-    if (activePath) {
-      this.settings.modsPath = activePath;
-    }
-  }
-
-  sanitizeIgnoredConflictPath(value: string) {
-    return value
-      .split(/[\\/]/)
-      .map((segment) => segment.trim())
-      .filter((segment) => segment.length > 0)
-      .join('/');
-  }
-
-  async updateIgnoredConflictPathsStorage(
-    options = { refreshConflicts: true },
-  ) {
-    if (!this.initialized) {
-      return false;
-    }
-
-    try {
-      await window.electronAPI.store.set(
-        'ignoredConflictPaths',
-        this.settings.ignoredConflictPaths,
-      );
-      this.renderIgnoredConflictPaths();
-
-      if (options.refreshConflicts) {
-        await this.refreshConflictDetection();
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Failed to persist ignored conflict paths:', error);
-      this.showToast(this.translate('toasts.failedToSaveSetting'), 'error');
-      this.renderIgnoredConflictPaths();
-      return false;
-    }
-  }
-
-  async addIgnoredConflictPath(
-    value: string,
-    options = { refreshConflicts: true },
-  ) {
-    const sanitized = this.sanitizeIgnoredConflictPath(value.trim());
-    if (!sanitized) {
-      this.showToast(this.translate('settings.invalidPath'), 'error');
-      return false;
-    }
-
-    if (this.settings.ignoredConflictPaths.includes(sanitized)) {
-      this.showToast(this.translate('settings.ignoredConflictExists'), 'info');
-      return false;
-    }
-
-    this.settings.ignoredConflictPaths.push(sanitized);
-    const saved = await this.updateIgnoredConflictPathsStorage(options);
-    if (saved) {
-      this.showToast(
-        this.translate('settings.ignoredConflictAdded'),
-        'success',
-      );
-    }
-    return saved;
-  }
-
-  async removeIgnoredConflictPath(value: string) {
-    const nextList = this.settings.ignoredConflictPaths.filter(
-      (entry) => entry !== value,
-    );
-
-    if (nextList.length === this.settings.ignoredConflictPaths.length) {
-      return false;
-    }
-
-    this.settings.ignoredConflictPaths = nextList;
-    const saved = await this.updateIgnoredConflictPathsStorage();
-    if (saved) {
-      this.showToast(
-        this.translate('settings.ignoredConflictRemoved'),
-        'success',
-      );
-    }
-    return saved;
-  }
-
-  async clearIgnoredConflictPaths() {
-    if (!this.settings.ignoredConflictPaths.length) {
-      return false;
-    }
-
-    this.settings.ignoredConflictPaths = [];
-    const saved = await this.updateIgnoredConflictPathsStorage();
-    if (saved) {
-      this.showToast(
-        this.translate('settings.ignoredConflictsCleared'),
-        'success',
-      );
-    }
-    return saved;
-  }
-
-  async refreshConflictDetection() {
-    if (
-      !this.settings.conflictDetectionEnabled ||
-      !window.modManager?.checkConflicts
-    ) {
-      return;
-    }
-
-    const whitelistPatterns = this.settings.conflictWhitelistPatterns || [];
-    await window.modManager.checkConflicts(whitelistPatterns);
-  }
-
-  initializeIgnoredConflictsUI() {
-    const addButton = document.querySelector<HTMLElement>(
-      '#ignored-conflict-add-btn',
-    );
-    const input = document.querySelector<HTMLInputElement>(
-      '#ignored-conflict-input',
-    );
-    const clearButton = document.querySelector<HTMLElement>(
-      '#ignored-conflict-clear-btn',
-    );
-
-    if (addButton && !addButton.dataset.listenerAttached) {
-      addButton.addEventListener('click', async () => {
-        if (!input) {
-          return;
-        }
-
-        const added = await this.addIgnoredConflictPath(input.value);
-        if (added) {
-          input.value = '';
-        }
-      });
-      addButton.dataset.listenerAttached = 'true';
-    }
-
-    if (input && !input.dataset.listenerAttached) {
-      input.addEventListener('keydown', async (event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          const added = await this.addIgnoredConflictPath(input.value);
-          if (added) {
-            input.value = '';
-          }
-        }
-      });
-      input.dataset.listenerAttached = 'true';
-    }
-
-    if (clearButton && !clearButton.dataset.listenerAttached) {
-      clearButton.addEventListener('click', async () => {
-        await this.clearIgnoredConflictPaths();
-      });
-      clearButton.dataset.listenerAttached = 'true';
-    }
-
-    this.renderIgnoredConflictPaths();
-  }
-
-  renderIgnoredConflictPaths() {
-    const listContainer = document.querySelector<HTMLElement>(
-      '#ignored-conflict-list',
-    );
-
-    if (!listContainer) {
-      return;
-    }
-
-    listContainer.innerHTML = '';
-
-    if (!this.settings.ignoredConflictPaths.length) {
-      const empty = document.createElement('div');
-      empty.className = 'ignored-conflicts-empty';
-      empty.textContent = this.translate('settings.ignoredConflictEmpty');
-      listContainer.appendChild(empty);
-      return;
-    }
-
-    this.settings.ignoredConflictPaths
-      .slice()
-      .sort((a, b) => a.localeCompare(b))
-      .forEach((value) => {
-        const item = document.createElement('div');
-        item.className = 'ignored-conflict-item';
-
-        const pathText = document.createElement('span');
-        pathText.className = 'ignored-conflict-path';
-        pathText.textContent = value;
-
-        const actions = document.createElement('div');
-        actions.className = 'ignored-conflict-actions';
-
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'ignored-conflict-remove-btn';
-        removeBtn.setAttribute('aria-label', this.translate('common.remove'));
-        removeBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
-        removeBtn.addEventListener('click', () => {
-          this.removeIgnoredConflictPath(value);
-        });
-
-        actions.appendChild(removeBtn);
-        item.appendChild(pathText);
-        item.appendChild(actions);
-        listContainer.appendChild(item);
-      });
   }
 
   initializeFeedbackUI() {
@@ -585,46 +305,6 @@ class SettingsManager {
       });
   }
 
-  askDebugReportAnonymization(): Promise<boolean | null> {
-    const message = this.translate('settings.debugReportAnonymizeQuestion');
-    if (!window.modalManager?.showCustomModal) {
-      return Promise.resolve(window.confirm(message));
-    }
-
-    return new Promise((resolve) => {
-      let settled = false;
-      const finish = (choice: boolean | null) => {
-        if (settled) return;
-        settled = true;
-        resolve(choice);
-      };
-
-      window.modalManager.showCustomModal({
-        id: 'debug-report-anonymization-modal',
-        title: this.translate('settings.debugReportAnonymizeTitle'),
-        body: `<p>${message}</p>`,
-        buttons: [
-          {
-            text: this.translate('common.cancel'),
-            type: 'cancel',
-            onClick: () => finish(null),
-          },
-          {
-            text: this.translate('settings.debugReportKeepPaths'),
-            type: 'secondary',
-            onClick: () => finish(false),
-          },
-          {
-            text: this.translate('settings.debugReportAnonymize'),
-            type: 'primary',
-            onClick: () => finish(true),
-          },
-        ],
-        onClose: () => finish(null),
-      });
-    });
-  }
-
   setupEventListeners() {
     this.organizeSettingsLayout();
     this.initializeFeedbackUI();
@@ -654,6 +334,23 @@ class SettingsManager {
       this.tabSwitchingAttached = true;
     }
 
+    this.bindAppearanceSettings();
+    this.librarySettings.bindLibrarySettings();
+    this.maintenance.bindMaintenanceSettings();
+    this.bindInstallAndDiscordSettings();
+    this.switchSettings.bindSwitchSettings();
+    this.bindValidationSettings();
+    this.bindModBehaviorSettings();
+    this.bindUpdateSettings();
+    this.bindLanguageAndThemeSettings();
+    this.bindRunModeSettings();
+    this.bindEmulatorSettings();
+    this.refreshSettingsUI();
+    this.developerSettings.bindDeveloperSettings();
+    this.bindDiscoverSettings();
+  }
+
+  bindAppearanceSettings() {
     const animationSelector = document.querySelector<HTMLElement>(
       '#animation-preference',
     );
@@ -921,170 +618,9 @@ class SettingsManager {
       });
       cssUmcImagesToggle.dataset.listenerAttached = 'true';
     }
+  }
 
-    const browseMods = document.querySelector<HTMLElement>(
-      '#browse-mods-folder',
-    );
-    if (browseMods && !browseMods.dataset.listenerAttached) {
-      browseMods.addEventListener('click', () => this.browseModsFolder());
-      browseMods.dataset.listenerAttached = 'true';
-      console.log('Browse mods button listener attached');
-    }
-
-    const modsPathInput =
-      document.querySelector<HTMLInputElement>('#mods-folder-path');
-    if (modsPathInput && !modsPathInput.dataset.manualListenerAttached) {
-      modsPathInput.addEventListener('change', () =>
-        this.updateModsFolderFromInput(modsPathInput.value),
-      );
-      modsPathInput.dataset.manualListenerAttached = 'true';
-    }
-
-    const browseSecondaryMods = document.querySelector<HTMLElement>(
-      '#browse-secondary-mods-folder',
-    );
-    if (browseSecondaryMods && !browseSecondaryMods.dataset.listenerAttached) {
-      browseSecondaryMods.addEventListener('click', () =>
-        this.browseSecondaryModsFolder(),
-      );
-      browseSecondaryMods.dataset.listenerAttached = 'true';
-    }
-
-    const secondaryModsPathInput = document.querySelector<HTMLInputElement>(
-      '#secondary-mods-folder-path',
-    );
-    if (
-      secondaryModsPathInput &&
-      !secondaryModsPathInput.dataset.manualListenerAttached
-    ) {
-      secondaryModsPathInput.addEventListener('change', () =>
-        this.updateSecondaryModsFolderFromInput(secondaryModsPathInput.value),
-      );
-      secondaryModsPathInput.dataset.manualListenerAttached = 'true';
-    }
-
-    const modsLibrarySwitcherToggle = document.querySelector<HTMLInputElement>(
-      '#mods-library-switcher-enabled',
-    );
-    if (
-      modsLibrarySwitcherToggle &&
-      !modsLibrarySwitcherToggle.dataset.listenerAttached
-    ) {
-      modsLibrarySwitcherToggle.addEventListener('change', async () => {
-        this.settings.modsLibrarySwitcherEnabled =
-          modsLibrarySwitcherToggle.checked;
-        await this.saveSettings();
-        this.updateModsLibrarySwitcherUI();
-      });
-      modsLibrarySwitcherToggle.dataset.listenerAttached = 'true';
-    }
-
-    const browsePlugins = document.querySelector<HTMLElement>(
-      '#browse-plugins-folder',
-    );
-    if (browsePlugins && !browsePlugins.dataset.listenerAttached) {
-      browsePlugins.addEventListener('click', () => this.browsePluginsFolder());
-      browsePlugins.dataset.listenerAttached = 'true';
-      console.log('Browse plugins button listener attached');
-    }
-
-    const pluginsPathInput = document.querySelector<HTMLInputElement>(
-      '#plugins-folder-path',
-    );
-    if (pluginsPathInput && !pluginsPathInput.dataset.manualListenerAttached) {
-      pluginsPathInput.addEventListener('change', () =>
-        this.updatePluginsFolderFromInput(pluginsPathInput.value),
-      );
-      pluginsPathInput.dataset.manualListenerAttached = 'true';
-    }
-
-    const exportModsListBtn = document.querySelector<HTMLElement>(
-      '#export-mods-list-btn',
-    );
-    if (exportModsListBtn && !exportModsListBtn.dataset.listenerAttached) {
-      exportModsListBtn.addEventListener('click', async () => {
-        if (window.modManager) {
-          await window.modManager.exportModsList();
-        }
-      });
-      exportModsListBtn.dataset.listenerAttached = 'true';
-      console.log('Export mods list button listener attached');
-    }
-
-    const bulkEnableModsBtn = document.querySelector<HTMLElement>(
-      '#bulk-enable-mods-btn',
-    );
-    if (bulkEnableModsBtn && !bulkEnableModsBtn.dataset.listenerAttached) {
-      bulkEnableModsBtn.addEventListener('click', async () => {
-        if (window.modManager) {
-          await window.modManager.setAllModsEnabled(true);
-        }
-      });
-      bulkEnableModsBtn.dataset.listenerAttached = 'true';
-      console.log('Bulk enable mods button listener attached');
-    }
-
-    const bulkDisableModsBtn = document.querySelector<HTMLElement>(
-      '#bulk-disable-mods-btn',
-    );
-    if (bulkDisableModsBtn && !bulkDisableModsBtn.dataset.listenerAttached) {
-      bulkDisableModsBtn.addEventListener('click', async () => {
-        if (window.modManager) {
-          await window.modManager.setAllModsEnabled(false);
-        }
-      });
-      bulkDisableModsBtn.dataset.listenerAttached = 'true';
-      console.log('Bulk disable mods button listener attached');
-    }
-
-    const batchTestingBtn =
-      document.querySelector<HTMLElement>('#batch-testing-btn');
-    if (batchTestingBtn && !batchTestingBtn.dataset.listenerAttached) {
-      batchTestingBtn.addEventListener('click', async () => {
-        if ((window as any).batchTestingManager) {
-          await (window as any).batchTestingManager.openStartModal();
-        }
-      });
-      batchTestingBtn.dataset.listenerAttached = 'true';
-      console.log('Batch testing button listener attached');
-    }
-
-    const batchTestingResumeBtn = document.querySelector<HTMLElement>(
-      '#batch-testing-resume-btn',
-    );
-    if (
-      batchTestingResumeBtn &&
-      !batchTestingResumeBtn.dataset.listenerAttached
-    ) {
-      batchTestingResumeBtn.addEventListener('click', async () => {
-        if ((window as any).batchTestingManager) {
-          await (window as any).batchTestingManager.resumeSession();
-        }
-      });
-      batchTestingResumeBtn.dataset.listenerAttached = 'true';
-      console.log('Batch testing resume button listener attached');
-    }
-
-    const batchTestingCancelBtn = document.querySelector<HTMLElement>(
-      '#batch-testing-cancel-btn',
-    );
-    if (
-      batchTestingCancelBtn &&
-      !batchTestingCancelBtn.dataset.listenerAttached
-    ) {
-      batchTestingCancelBtn.addEventListener('click', async () => {
-        if ((window as any).batchTestingManager) {
-          await (window as any).batchTestingManager.cancelSession();
-        }
-      });
-      batchTestingCancelBtn.dataset.listenerAttached = 'true';
-      console.log('Batch testing cancel button listener attached');
-    }
-
-    if ((window as any).batchTestingManager?.refreshControlState) {
-      (window as any).batchTestingManager.refreshControlState();
-    }
-
+  bindEmulatorSettings() {
     const browseEmulator = document.querySelector<HTMLElement>(
       '#browse-emulator-path',
     );
@@ -1101,142 +637,73 @@ class SettingsManager {
       console.log('Browse game button listener attached');
     }
 
-    const restartTutorialBtn = document.querySelector<HTMLElement>(
-      '#restart-tutorial-btn',
+    const emulatorTypeSelect = document.querySelector<HTMLElement>(
+      '#emulator-type-select',
     );
-    if (restartTutorialBtn && !restartTutorialBtn.dataset.listenerAttached) {
-      restartTutorialBtn.addEventListener('click', async () => {
-        if (window.tutorial) {
-          window.tutorial.show();
+    if (emulatorTypeSelect && !emulatorTypeSelect.dataset.listenerAttached) {
+      const trigger = emulatorTypeSelect.querySelector<HTMLElement>(
+        '.custom-select-trigger',
+      );
+      const options = emulatorTypeSelect.querySelectorAll<HTMLElement>(
+        '.custom-select-option',
+      );
+      const selectedValue =
+        emulatorTypeSelect.querySelector<HTMLElement>('.selected-value');
+
+      if (trigger) {
+        trigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          emulatorTypeSelect.classList.toggle('open');
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+
+        if (!emulatorTypeSelect.contains(target)) {
+          emulatorTypeSelect.classList.remove('open');
         }
       });
-      restartTutorialBtn.dataset.listenerAttached = 'true';
-      console.log('Restart tutorial button listener attached');
-    }
 
-    const restartTutorialModsBtn = document.querySelector<HTMLElement>(
-      '#restart-tutorial-mods-btn',
-    );
-    if (
-      restartTutorialModsBtn &&
-      !restartTutorialModsBtn.dataset.listenerAttached
-    ) {
-      restartTutorialModsBtn.addEventListener('click', async () => {
-        const modsTabBtn = document.querySelector<HTMLElement>(
-          '.sidebar-btn[data-tab="tools"]',
-        );
-        if (modsTabBtn) {
-          modsTabBtn.click();
-        }
-        if (window.tutorial) {
-          window.tutorial.show();
-        }
-      });
-      restartTutorialModsBtn.dataset.listenerAttached = 'true';
-      console.log('Restart tutorial + mods redirect button listener attached');
-    }
+      options.forEach((option) => {
+        option.addEventListener('click', () => {
+          const value = option.dataset.value;
+          const text = option.querySelector<HTMLElement>('span')!.textContent;
 
-    const clearTempFilesBtn = document.querySelector<HTMLElement>(
-      '#clear-temp-files-btn',
-    );
-    if (clearTempFilesBtn && !clearTempFilesBtn.dataset.listenerAttached) {
-      clearTempFilesBtn.addEventListener('click', async () => {
-        await this.clearTempFiles();
-      });
-      clearTempFilesBtn.dataset.listenerAttached = 'true';
-      console.log('Clear temp files button listener attached');
-    }
-
-    const exportDebugReportBtn = document.querySelector<HTMLButtonElement>(
-      '#export-debug-report-btn',
-    );
-    if (
-      exportDebugReportBtn &&
-      !exportDebugReportBtn.dataset.listenerAttached
-    ) {
-      exportDebugReportBtn.addEventListener('click', async () => {
-        if (exportDebugReportBtn.disabled) return;
-        const icon = exportDebugReportBtn.querySelector<HTMLElement>('i');
-        const title = exportDebugReportBtn.querySelector<HTMLElement>(
-          '.settings-btn-action-title',
-        );
-        const originalIconClass = icon?.className;
-        exportDebugReportBtn.disabled = true;
-        try {
-          const anonymizeUserPaths = await this.askDebugReportAnonymization();
-          if (anonymizeUserPaths === null) return;
-
-          exportDebugReportBtn.classList.add('is-loading');
-          exportDebugReportBtn.setAttribute('aria-busy', 'true');
-          if (icon) icon.className = 'bi bi-arrow-clockwise';
-          if (title) {
-            title.dataset.i18n = 'settings.debugReportExporting';
-            title.textContent = this.translate('settings.debugReportExporting');
+          if (selectedValue) {
+            selectedValue.textContent = text;
           }
 
-          const result = await window.electronAPI.exportDebugReport(
-            anonymizeUserPaths,
-          );
-          if (result.success) {
-            this.showToast(
-              this.translate('settings.debugReportExported'),
-              'success',
-            );
-          } else if (!result.canceled) {
-            this.showToast(
-              result.error ||
-                this.translate('settings.debugReportExportFailed'),
-              'error',
-            );
-          }
-        } catch (error) {
-          console.error('Failed to export debug report:', error);
-          this.showToast(
-            this.translate('settings.debugReportExportFailed'),
-            'error',
-          );
-        } finally {
-          exportDebugReportBtn.disabled = false;
-          exportDebugReportBtn.classList.remove('is-loading');
-          exportDebugReportBtn.removeAttribute('aria-busy');
-          if (icon && originalIconClass !== undefined) {
-            icon.className = originalIconClass;
-          }
-          if (title) {
-            title.dataset.i18n = 'settings.exportDebugReport';
-            title.textContent = this.translate('settings.exportDebugReport');
-          }
-        }
+          options.forEach((opt) => opt.classList.remove('active'));
+          option.classList.add('active');
+
+          emulatorTypeSelect.classList.remove('open');
+
+          this.settings.emulatorType = value;
+          this.saveSettings();
+          this.updateFullscreenVisibility();
+        });
       });
-      exportDebugReportBtn.dataset.listenerAttached = 'true';
+
+      emulatorTypeSelect.dataset.listenerAttached = 'true';
     }
 
-    const exportConfigBackupBtn = document.querySelector<HTMLButtonElement>(
-      '#export-config-backup-btn',
+    const emulatorFullscreenToggle = document.querySelector<HTMLInputElement>(
+      '#emulator-fullscreen-enabled',
     );
     if (
-      exportConfigBackupBtn &&
-      !exportConfigBackupBtn.dataset.listenerAttached
+      emulatorFullscreenToggle &&
+      !emulatorFullscreenToggle.dataset.listenerAttached
     ) {
-      exportConfigBackupBtn.addEventListener('click', async () => {
-        await this.exportConfigBackup(exportConfigBackupBtn);
+      emulatorFullscreenToggle.addEventListener('change', () => {
+        this.settings.emulatorFullscreen = emulatorFullscreenToggle.checked;
+        this.saveSettings();
       });
-      exportConfigBackupBtn.dataset.listenerAttached = 'true';
+      emulatorFullscreenToggle.dataset.listenerAttached = 'true';
     }
+  }
 
-    const restoreConfigBackupBtn = document.querySelector<HTMLButtonElement>(
-      '#restore-config-backup-btn',
-    );
-    if (
-      restoreConfigBackupBtn &&
-      !restoreConfigBackupBtn.dataset.listenerAttached
-    ) {
-      restoreConfigBackupBtn.addEventListener('click', async () => {
-        await this.restoreConfigBackup(restoreConfigBackupBtn);
-      });
-      restoreConfigBackupBtn.dataset.listenerAttached = 'true';
-    }
-
+  bindInstallAndDiscordSettings() {
     const installConfirmToggle = document.querySelector<HTMLInputElement>(
       '#install-confirm-enabled',
     );
@@ -1289,216 +756,9 @@ class SettingsManager {
       discordRpcToggle.dataset.listenerAttached = 'true';
       this.loadDiscordRpcSetting();
     }
+  }
 
-    const switchIp = document.querySelector<HTMLInputElement>('#switch-ip');
-    if (switchIp && !switchIp.dataset.listenerAttached) {
-      switchIp.addEventListener('change', () => {
-        this.settings.switchIp = switchIp.value;
-        this.saveSettings();
-      });
-      switchIp.dataset.listenerAttached = 'true';
-    }
-
-    const switchPort = document.querySelector<HTMLInputElement>('#switch-port');
-    if (switchPort && !switchPort.dataset.listenerAttached) {
-      switchPort.addEventListener('change', () => {
-        this.settings.switchPort = switchPort.value || '5000';
-        this.saveSettings();
-      });
-      switchPort.dataset.listenerAttached = 'true';
-    }
-
-    const switchFtpUser =
-      document.querySelector<HTMLInputElement>('#switch-ftp-user');
-    if (switchFtpUser && !switchFtpUser.dataset.listenerAttached) {
-      switchFtpUser.addEventListener('change', () => {
-        this.settings.switchFtpUser = switchFtpUser.value.trim() || null;
-        this.saveSettings();
-      });
-      switchFtpUser.dataset.listenerAttached = 'true';
-    }
-
-    const switchFtpPassword = document.querySelector<HTMLInputElement>(
-      '#switch-ftp-password',
-    );
-    if (switchFtpPassword && !switchFtpPassword.dataset.listenerAttached) {
-      switchFtpPassword.addEventListener('change', () => {
-        this.settings.switchFtpPassword = switchFtpPassword.value || null;
-        this.saveSettings();
-      });
-      switchFtpPassword.dataset.listenerAttached = 'true';
-    }
-
-    const switchFtpPath =
-      document.querySelector<HTMLInputElement>('#switch-ftp-path');
-    if (switchFtpPath && !switchFtpPath.dataset.listenerAttached) {
-      switchFtpPath.addEventListener('change', () => {
-        this.settings.switchFtpModsPath = switchFtpPath.value.trim() || null;
-        this.saveSettings();
-      });
-      switchFtpPath.dataset.listenerAttached = 'true';
-    }
-
-    const switchFtpPluginsPath = document.querySelector<HTMLInputElement>(
-      '#switch-ftp-plugins-path',
-    );
-    if (
-      switchFtpPluginsPath &&
-      !switchFtpPluginsPath.dataset.listenerAttached
-    ) {
-      switchFtpPluginsPath.addEventListener('change', () => {
-        this.settings.switchFtpPluginsPath =
-          switchFtpPluginsPath.value.trim() || null;
-        this.saveSettings();
-      });
-      switchFtpPluginsPath.dataset.listenerAttached = 'true';
-    }
-
-    const switchTransferMethodSelect = document.querySelector<HTMLElement>(
-      '#switch-transfer-method-select',
-    );
-    if (
-      switchTransferMethodSelect &&
-      !switchTransferMethodSelect.dataset.listenerAttached
-    ) {
-      const trigger = switchTransferMethodSelect.querySelector<HTMLElement>(
-        '.custom-select-trigger',
-      );
-      const options = switchTransferMethodSelect.querySelectorAll<HTMLElement>(
-        '.custom-select-option',
-      );
-      const selectedValue =
-        switchTransferMethodSelect.querySelector<HTMLElement>(
-          '.selected-value',
-        );
-
-      if (trigger) {
-        trigger.addEventListener('click', (e) => {
-          e.stopPropagation();
-          switchTransferMethodSelect.classList.toggle('open');
-        });
-      }
-
-      document.addEventListener('click', (e) => {
-        const target = e.target as HTMLElement;
-        if (!switchTransferMethodSelect.contains(target)) {
-          switchTransferMethodSelect.classList.remove('open');
-        }
-      });
-
-      options.forEach((option) => {
-        option.addEventListener('click', async () => {
-          const value = this.normalizeSwitchTransferMethod(
-            option.dataset.value,
-          );
-          const previousDirectMode = this.isDirectSwitchLibraryMode();
-          const text = option.querySelector<HTMLElement>('span')!.textContent;
-          const i18nKey =
-            option.querySelector<HTMLElement>('span')!.dataset.i18n;
-
-          if (selectedValue) {
-            selectedValue.textContent = text;
-            if (i18nKey) {
-              selectedValue.dataset.i18n = i18nKey;
-            }
-          }
-
-          options.forEach((opt) => opt.classList.remove('active'));
-          option.classList.add('active');
-
-          switchTransferMethodSelect.classList.remove('open');
-
-          this.settings.switchTransferMethod = value;
-          await this.saveSettings();
-          this.updateSwitchTransferMethodUI();
-          if (previousDirectMode && !this.isDirectSwitchLibraryMode()) {
-            await this.refreshCurrentLibraryLists();
-          }
-        });
-      });
-
-      switchTransferMethodSelect.dataset.listenerAttached = 'true';
-    }
-
-    const switchSyncModeSelect = document.querySelector<HTMLElement>(
-      '#switch-sync-mode-select',
-    );
-    if (
-      switchSyncModeSelect &&
-      !switchSyncModeSelect.dataset.listenerAttached
-    ) {
-      const trigger = switchSyncModeSelect.querySelector<HTMLElement>(
-        '.custom-select-trigger',
-      );
-      const options = switchSyncModeSelect.querySelectorAll<HTMLElement>(
-        '.custom-select-option',
-      );
-
-      trigger?.addEventListener('click', (event) => {
-        event.stopPropagation();
-        switchSyncModeSelect.classList.toggle('open');
-      });
-      document.addEventListener('click', (event) => {
-        if (!switchSyncModeSelect.contains(event.target as Node)) {
-          switchSyncModeSelect.classList.remove('open');
-        }
-      });
-      options.forEach((option) => {
-        option.addEventListener('click', () => {
-          this.settings.switchSyncMode = this.normalizeSwitchSyncMode(
-            option.dataset.value,
-          );
-          switchSyncModeSelect.classList.remove('open');
-          this.updateSwitchSyncModeUI();
-          this.saveSettings();
-        });
-      });
-      switchSyncModeSelect.dataset.listenerAttached = 'true';
-    }
-
-    const switchDriveLetterSelect = document.querySelector<HTMLElement>(
-      '#switch-drive-letter-select',
-    );
-    if (
-      switchDriveLetterSelect &&
-      !switchDriveLetterSelect.dataset.listenerAttached
-    ) {
-      const trigger = switchDriveLetterSelect.querySelector<HTMLElement>(
-        '.custom-select-trigger',
-      );
-      const optionsContainer = document.querySelector<HTMLElement>(
-        '#switch-drive-letter-options',
-      );
-      const selectedValue =
-        switchDriveLetterSelect.querySelector<HTMLElement>('.selected-value');
-
-      if (trigger) {
-        trigger.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          switchDriveLetterSelect.classList.toggle('open');
-
-          if (
-            switchDriveLetterSelect.classList.contains('open') &&
-            optionsContainer
-          ) {
-            if (!this.drivesLoaded) {
-              await this.loadAvailableDrives();
-              this.drivesLoaded = true;
-            }
-          }
-        });
-      }
-
-      document.addEventListener('click', (e) => {
-        const target = e.target as HTMLElement;
-        if (!switchDriveLetterSelect.contains(target)) {
-          switchDriveLetterSelect.classList.remove('open');
-        }
-      });
-
-      switchDriveLetterSelect.dataset.listenerAttached = 'true';
-    }
-
+  bindValidationSettings() {
     const conflictDetectionEnabled = document.querySelector<HTMLInputElement>(
       '#conflict-detection-enabled',
     );
@@ -1546,17 +806,9 @@ class SettingsManager {
       });
       libraryPathValidationEnabled.dataset.listenerAttached = 'true';
     }
+  }
 
-    const switchDriveGuideBtn = document.querySelector<HTMLButtonElement>(
-      '#switch-drive-guide-btn',
-    );
-    if (switchDriveGuideBtn && !switchDriveGuideBtn.dataset.listenerAttached) {
-      switchDriveGuideBtn.addEventListener('click', () => {
-        this.showSwitchDriveGuideChoiceModal();
-      });
-      switchDriveGuideBtn.dataset.listenerAttached = 'true';
-    }
-
+  bindModBehaviorSettings() {
     const autoCheckPluginUpdates = document.querySelector<HTMLInputElement>(
       '#auto-check-plugin-updates-enabled',
     );
@@ -1621,7 +873,9 @@ class SettingsManager {
       });
       reviewSlotChanges.dataset.listenerAttached = 'true';
     }
+  }
 
+  bindUpdateSettings() {
     const checkUpdatesBtn =
       document.querySelector<HTMLElement>('#check-updates-btn');
     if (checkUpdatesBtn && !checkUpdatesBtn.dataset.listenerAttached) {
@@ -1704,7 +958,9 @@ class SettingsManager {
       updateChannelSelect.dataset.listenerAttached = 'true';
       this.updateChannelUI();
     }
+  }
 
+  bindLanguageAndThemeSettings() {
     const languageTypeSelect = document.querySelector<HTMLElement>(
       '#language-type-select',
     );
@@ -1807,6 +1063,26 @@ class SettingsManager {
       this.updateThemeUI();
     }
 
+    const sidebarPrideTabsToggle = document.querySelector<HTMLInputElement>(
+      '#sidebar-pride-tabs-enabled',
+    );
+    if (
+      sidebarPrideTabsToggle &&
+      !sidebarPrideTabsToggle.dataset.listenerAttached
+    ) {
+      sidebarPrideTabsToggle.checked =
+        this.settings.sidebarPrideTabsEnabled !== false;
+      sidebarPrideTabsToggle.addEventListener('change', async () => {
+        const enabled = sidebarPrideTabsToggle.checked;
+        this.settings.sidebarPrideTabsEnabled = enabled;
+        this.applySidebarPrideTabsSetting(enabled);
+        await window.electronAPI.store.set('sidebarPrideTabsEnabled', enabled);
+      });
+      sidebarPrideTabsToggle.dataset.listenerAttached = 'true';
+    }
+  }
+
+  bindRunModeSettings() {
     const appRunModeSelect = document.querySelector<HTMLElement>(
       '#app-run-mode-select',
     );
@@ -1854,8 +1130,8 @@ class SettingsManager {
           appRunModeSelect.classList.remove('open');
 
           this.settings.appRunMode = value;
-          this.applyHardwareLibraryModePaths();
-          this.updateHardwareLibraryModeVisibility();
+          this.librarySettings.applyHardwareLibraryModePaths();
+          this.librarySettings.updateHardwareLibraryModeVisibility();
           this.updateRunModeTabsVisibility();
           this.saveSettings();
         });
@@ -1921,118 +1197,37 @@ class SettingsManager {
           hardwareLibraryModeSelect.classList.remove('open');
 
           this.settings.hardwareLibraryMode = value;
-          this.applyHardwareLibraryModePaths();
+          this.librarySettings.applyHardwareLibraryModePaths();
           await this.saveSettings();
-          await this.refreshCurrentLibraryLists();
+          await this.librarySettings.refreshCurrentLibraryLists();
 
           if (previousMode === 'direct' && value === 'local') {
-            this.showSwitchSyncReconnectModal();
+            this.switchSettings.showSwitchSyncReconnectModal();
           }
         });
       });
 
       hardwareLibraryModeSelect.dataset.listenerAttached = 'true';
-      this.updateHardwareLibraryModeUI();
+      this.librarySettings.updateHardwareLibraryModeUI();
     }
+  }
 
-    const sidebarPrideTabsToggle = document.querySelector<HTMLInputElement>(
-      '#sidebar-pride-tabs-enabled',
-    );
-    if (
-      sidebarPrideTabsToggle &&
-      !sidebarPrideTabsToggle.dataset.listenerAttached
-    ) {
-      sidebarPrideTabsToggle.checked =
-        this.settings.sidebarPrideTabsEnabled !== false;
-      sidebarPrideTabsToggle.addEventListener('change', async () => {
-        const enabled = sidebarPrideTabsToggle.checked;
-        this.settings.sidebarPrideTabsEnabled = enabled;
-        this.applySidebarPrideTabsSetting(enabled);
-        await window.electronAPI.store.set('sidebarPrideTabsEnabled', enabled);
-      });
-      sidebarPrideTabsToggle.dataset.listenerAttached = 'true';
-    }
-
-    const emulatorTypeSelect = document.querySelector<HTMLElement>(
-      '#emulator-type-select',
-    );
-    if (emulatorTypeSelect && !emulatorTypeSelect.dataset.listenerAttached) {
-      const trigger = emulatorTypeSelect.querySelector<HTMLElement>(
-        '.custom-select-trigger',
-      );
-      const options = emulatorTypeSelect.querySelectorAll<HTMLElement>(
-        '.custom-select-option',
-      );
-      const selectedValue =
-        emulatorTypeSelect.querySelector<HTMLElement>('.selected-value');
-
-      if (trigger) {
-        trigger.addEventListener('click', (e) => {
-          e.stopPropagation();
-          emulatorTypeSelect.classList.toggle('open');
-        });
-      }
-
-      document.addEventListener('click', (e) => {
-        const target = e.target as HTMLElement;
-
-        if (!emulatorTypeSelect.contains(target)) {
-          emulatorTypeSelect.classList.remove('open');
-        }
-      });
-
-      options.forEach((option) => {
-        option.addEventListener('click', () => {
-          const value = option.dataset.value;
-          const text = option.querySelector<HTMLElement>('span')!.textContent;
-
-          if (selectedValue) {
-            selectedValue.textContent = text;
-          }
-
-          options.forEach((opt) => opt.classList.remove('active'));
-          option.classList.add('active');
-
-          emulatorTypeSelect.classList.remove('open');
-
-          this.settings.emulatorType = value;
-          this.saveSettings();
-          this.updateFullscreenVisibility();
-        });
-      });
-
-      emulatorTypeSelect.dataset.listenerAttached = 'true';
-    }
-
-    const emulatorFullscreenToggle = document.querySelector<HTMLInputElement>(
-      '#emulator-fullscreen-enabled',
-    );
-    if (
-      emulatorFullscreenToggle &&
-      !emulatorFullscreenToggle.dataset.listenerAttached
-    ) {
-      emulatorFullscreenToggle.addEventListener('change', () => {
-        this.settings.emulatorFullscreen = emulatorFullscreenToggle.checked;
-        this.saveSettings();
-      });
-      emulatorFullscreenToggle.dataset.listenerAttached = 'true';
-    }
-
-    this.updateModsFolderUI();
-    this.updatePluginsFolderUI();
+  refreshSettingsUI() {
+    this.librarySettings.updateModsFolderUI();
+    this.librarySettings.updatePluginsFolderUI();
     this.updateLanguageTypeUI();
     this.updateAppRunModeUI();
-    this.updateHardwareLibraryModeVisibility();
+    this.librarySettings.updateHardwareLibraryModeVisibility();
     this.updateRunModeTabsVisibility();
-    this.updateHardwareLibraryModeUI();
+    this.librarySettings.updateHardwareLibraryModeUI();
     this.updateEmulatorTypeUI();
     this.updateEmulatorPathUI();
     this.updateGamePathUI();
     this.updateEmulatorFullscreenUI();
     this.updateFullscreenVisibility();
-    this.updateSwitchSettingsUI();
-    this.updateSwitchTransferMethodUI();
-    this.updateSwitchSyncModeUI();
+    this.switchSettings.updateSwitchSettingsUI();
+    this.switchSettings.updateSwitchTransferMethodUI();
+    this.switchSettings.updateSwitchSyncModeUI();
     this.updateConflictDetectionUI();
     this.updateNroLimitCheckUI();
     this.updateLibraryPathValidationUI();
@@ -2042,265 +1237,19 @@ class SettingsManager {
     this.updateAutoUseGameBananaModNameUI();
     this.updateReviewSlotChangesUI();
     this.updateEnhancedStatusBarUI();
+    const cssUmcImagesToggle = document.querySelector<HTMLInputElement>(
+      '#css-umc-images-enabled',
+    );
     if (cssUmcImagesToggle)
       cssUmcImagesToggle.checked = this.settings.cssUmcImagesEnabled !== false;
     this.updateStartupSplashUI();
     this.updateStartupSplashSoundUI();
     this.updateAppSoundsUI();
-    this.updateDeveloperModeUI();
-    this.initializeIgnoredConflictsUI();
+    this.developerSettings.updateDeveloperModeUI();
+    this.ignoredConflicts.initializeIgnoredConflictsUI();
+  }
 
-    // Analytics toggle
-    const analyticsToggle =
-      document.querySelector<HTMLInputElement>('#analytics-enabled');
-    if (analyticsToggle && !analyticsToggle.dataset.listenerAttached) {
-      // Load current value
-      if (window.electronAPI && window.electronAPI.getAnalyticsEnabled) {
-        window.electronAPI.getAnalyticsEnabled().then((enabled: boolean) => {
-          analyticsToggle.checked = enabled;
-        });
-      }
-
-      analyticsToggle.addEventListener('change', async () => {
-        if (window.electronAPI && window.electronAPI.setAnalyticsEnabled) {
-          await window.electronAPI.setAnalyticsEnabled(analyticsToggle.checked);
-          this.showToast(this.translate('toasts.settingSaved'), 'success');
-        }
-      });
-      analyticsToggle.dataset.listenerAttached = 'true';
-    }
-
-    const devModeToggle = document.querySelector<HTMLInputElement>(
-      '#developer-mode-enabled',
-    );
-    if (devModeToggle) {
-      devModeToggle.addEventListener('change', (e) => {
-        this.settings.devMode = devModeToggle.checked;
-        this.saveSettings();
-        this.updateDeveloperModeUI();
-      });
-    }
-
-    const devShowModHashToggle = document.querySelector<HTMLInputElement>(
-      '#developer-show-mod-hash',
-    );
-    if (devShowModHashToggle) {
-      devShowModHashToggle.addEventListener('change', (e) => {
-        this.settings.devShowModHash = devShowModHashToggle.checked;
-        this.saveSettings();
-        if (window.modManager) {
-          window.modManager.renderModList();
-        }
-      });
-    }
-
-    const fakeVersionInput = document.querySelector<HTMLInputElement>(
-      '#fake-version-input',
-    );
-    const saveDevSettingsBtn = document.querySelector<HTMLElement>(
-      '#save-dev-settings-btn',
-    );
-    const resetDevSettingsBtn = document.querySelector<HTMLElement>(
-      '#reset-dev-settings-btn',
-    );
-
-    if (fakeVersionInput && saveDevSettingsBtn) {
-      // Load current fake version
-      window.electronAPI.store
-        .get('developer.fakeVersion')
-        .then((fakeVersion: string | null) => {
-          if (fakeVersion) {
-            fakeVersionInput.value = fakeVersion;
-          }
-        });
-
-      saveDevSettingsBtn.addEventListener('click', () => {
-        const fakeVersion = fakeVersionInput.value.trim();
-        window.electronAPI.store.set('developer.fakeVersion', fakeVersion);
-        this.showToast(this.translate('devSettingsSaved'), 'success');
-      });
-
-      if (resetDevSettingsBtn) {
-        resetDevSettingsBtn.addEventListener('click', () => {
-          fakeVersionInput.value = '';
-          window.electronAPI.store.set('developer.fakeVersion', '');
-          this.showToast(this.translate('settingSaved'), 'success');
-        });
-      }
-
-      const simulateUpdateBtn = document.querySelector<HTMLElement>(
-        '#simulate-update-btn',
-      );
-      if (simulateUpdateBtn) {
-        simulateUpdateBtn.addEventListener('click', async () => {
-          if (window.electronAPI && window.electronAPI.simulateUpdate) {
-            await window.electronAPI.simulateUpdate();
-            this.showToast('Update simulation started', 'success');
-          }
-        });
-      }
-
-      const testHardwareOverlayBtn = document.querySelector<HTMLElement>(
-        '#test-hardware-overlay-btn',
-      );
-      if (
-        testHardwareOverlayBtn &&
-        !testHardwareOverlayBtn.dataset.listenerAttached
-      ) {
-        testHardwareOverlayBtn.addEventListener('click', () => {
-          window.hardwareConnectionManager?.showTestOverlay?.();
-        });
-        testHardwareOverlayBtn.dataset.listenerAttached = 'true';
-      }
-
-      const testNroLimitModalBtn = document.querySelector<HTMLElement>(
-        '#test-nro-limit-modal-btn',
-      );
-      if (
-        testNroLimitModalBtn &&
-        !testNroLimitModalBtn.dataset.listenerAttached
-      ) {
-        testNroLimitModalBtn.addEventListener('click', () => {
-          window.modManager?.showNroLimitWarningModal?.({
-            success: true,
-            limit: 64,
-            totalNroFiles: 70,
-            exceedsLimit: true,
-            activeModsCount: 8,
-            files: [
-              {
-                modName: 'Example Skyline Plugin Pack',
-                modPath: '/example/mods/Example Skyline Plugin Pack',
-                relativePath: 'ultimate/plugins/example_one.nro',
-              },
-              {
-                modName: 'Example Training Tools',
-                modPath: '/example/mods/Example Training Tools',
-                relativePath: 'ultimate/plugins/example_two.nro',
-              },
-            ],
-          });
-        });
-        testNroLimitModalBtn.dataset.listenerAttached = 'true';
-      }
-
-      const openConfigBtn =
-        document.querySelector<HTMLElement>('#open-config-btn');
-      if (openConfigBtn) {
-        openConfigBtn.addEventListener('click', async () => {
-          if (window.electronAPI && window.electronAPI.openConfigFile) {
-            await window.electronAPI.openConfigFile();
-          }
-        });
-      }
-
-      const forceUpdateToggle = document.querySelector<HTMLInputElement>(
-        '#force-update-enabled',
-      );
-      if (
-        forceUpdateToggle &&
-        window.electronAPI &&
-        window.electronAPI.getForceUpdate
-      ) {
-        // Load initial state
-        window.electronAPI.getForceUpdate().then((isEnabled) => {
-          forceUpdateToggle.checked = isEnabled;
-        });
-
-        // Add listener
-        forceUpdateToggle.addEventListener('change', async (e) => {
-          if (window.electronAPI) {
-            await window.electronAPI.setForceUpdate(forceUpdateToggle.checked);
-            this.showToast('Force update setting saved', 'success');
-          }
-        });
-      }
-    }
-
-    // PostHog test buttons
-    const posthogTestEventBtn = document.querySelector<HTMLElement>(
-      '#posthog-test-event-btn',
-    );
-    const posthogTestErrorBtn = document.querySelector<HTMLElement>(
-      '#posthog-test-error-btn',
-    );
-    const posthogTestStatus = document.querySelector<HTMLElement>(
-      '#posthog-test-status',
-    );
-
-    if (posthogTestEventBtn && !posthogTestEventBtn.dataset.listenerAttached) {
-      posthogTestEventBtn.addEventListener('click', async () => {
-        try {
-          if (window.electronAPI && window.electronAPI.testPosthogEvent) {
-            const result = await window.electronAPI.testPosthogEvent();
-            if (result?.success) {
-              this.showToast('Test event sent to PostHog', 'success');
-              if (posthogTestStatus) {
-                const span = posthogTestStatus.querySelector('span');
-                if (span) span.textContent = 'Test event sent successfully!';
-                posthogTestStatus.style.display = 'flex';
-              }
-            }
-          }
-        } catch (err) {
-          this.showToast('Failed to send test event', 'error');
-          console.error('PostHog test event failed:', err);
-        }
-      });
-      posthogTestEventBtn.dataset.listenerAttached = 'true';
-    }
-
-    if (posthogTestErrorBtn && !posthogTestErrorBtn.dataset.listenerAttached) {
-      posthogTestErrorBtn.addEventListener('click', async () => {
-        try {
-          if (window.electronAPI && window.electronAPI.testPosthogError) {
-            const result = await window.electronAPI.testPosthogError();
-            if (result?.success) {
-              this.showToast('Test error sent to PostHog', 'success');
-              if (posthogTestStatus) {
-                const span = posthogTestStatus.querySelector('span');
-                if (span) span.textContent = 'Test error sent successfully!';
-                posthogTestStatus.style.display = 'flex';
-              }
-            }
-          }
-        } catch (err) {
-          this.showToast('Failed to send test error', 'error');
-          console.error('PostHog test error failed:', err);
-        }
-      });
-      posthogTestErrorBtn.dataset.listenerAttached = 'true';
-    }
-
-    const logRetentionInput = document.querySelector<HTMLInputElement>(
-      '#log-retention-days',
-    );
-    if (logRetentionInput && !logRetentionInput.dataset.listenerAttached) {
-      window.electronAPI.store.get('logRetentionDays').then((value: number) => {
-        logRetentionInput.value = String(value || 7);
-      });
-
-      logRetentionInput.addEventListener('change', async () => {
-        const value = parseInt(logRetentionInput.value, 10);
-        if (value >= 1 && value <= 365) {
-          await window.electronAPI.store.set('logRetentionDays', value);
-          this.showToast(this.translate('toasts.settingSaved'), 'success');
-        }
-      });
-      logRetentionInput.dataset.listenerAttached = 'true';
-    }
-
-    // Reset Electron Store button
-    const resetStoreBtn = document.querySelector<HTMLElement>(
-      '#reset-electron-store-btn',
-    );
-    if (resetStoreBtn && !resetStoreBtn.dataset.listenerAttached) {
-      resetStoreBtn.addEventListener('click', () => {
-        this.showResetStoreConfirmModal();
-      });
-      resetStoreBtn.dataset.listenerAttached = 'true';
-    }
-
+  bindDiscoverSettings() {
     const discoverSettings = [
       {
         selector: '#check-dependencies-on-discover-download-enabled',
@@ -2339,38 +1288,6 @@ class SettingsManager {
       });
       toggle.dataset.listenerAttached = 'true';
     });
-  }
-
-  updateDeveloperModeUI() {
-    const devTabBtn = document.querySelector<HTMLElement>(
-      '#settings-tab-developer',
-    );
-    const devModeToggle = document.querySelector<HTMLInputElement>(
-      '#developer-mode-enabled',
-    );
-
-    if (devModeToggle) {
-      devModeToggle.checked = this.settings.devMode;
-    }
-
-    const devShowModHashToggle = document.querySelector<HTMLInputElement>(
-      '#developer-show-mod-hash',
-    );
-    if (devShowModHashToggle) {
-      devShowModHashToggle.checked = this.settings.devShowModHash || false;
-    }
-
-    if (devTabBtn) {
-      devTabBtn.style.display = this.settings.devMode ? 'block' : 'none';
-
-      // If we are on the developer tab and disable dev mode, switch to general
-      if (!this.settings.devMode && devTabBtn.classList.contains('active')) {
-        const generalBtn = document.querySelector<HTMLButtonElement>(
-          '[data-settings-tab="general"]',
-        );
-        if (generalBtn) generalBtn.click();
-      }
-    }
   }
 
   updateAutoDisableModsUI() {
@@ -2470,7 +1387,7 @@ class SettingsManager {
         contentArea.scrollTop = 0;
       }
 
-      this.maybeWarnForCurrentModsPath();
+      this.librarySettings.maybeWarnForCurrentModsPath();
     };
 
     if (this.switchTabTimeout) {
@@ -2515,526 +1432,13 @@ class SettingsManager {
       this.switchTabTimeout = setTimeout(() => {
         resetTransitionClasses();
         newActive.classList.add('active');
-        this.maybeWarnForCurrentModsPath();
+        this.librarySettings.maybeWarnForCurrentModsPath();
         this.switchTabTimeout = null;
       }, 360);
     } else {
       resetTransitionClasses();
       activateTab();
     }
-  }
-
-  async browseModsFolder() {
-    if (!window.electronAPI || !window.electronAPI.selectFolder) {
-      console.error('Electron API not available');
-      return;
-    }
-
-    console.log('[SettingsManager] Browse mods folder requested');
-    const folder = await window.electronAPI.selectFolder();
-    if (folder) {
-      console.log('[SettingsManager] Mods folder selected:', {
-        previousPath: this.settings.primaryModsPath,
-        nextPath: folder,
-      });
-      await this.saveLibraryFolderPath('modsPath', folder, 'primary');
-      this.updateModsFolderUI();
-      this.checkModsPath(folder, { force: true });
-    } else {
-      console.log('[SettingsManager] Mods folder selection cancelled');
-    }
-  }
-
-  async updateModsFolderFromInput(value) {
-    const folder = value.trim();
-    const currentPath = this.isDirectSwitchLibraryMode()
-      ? this.settings.modsPath
-      : this.settings.primaryModsPath;
-    if (!folder || folder === currentPath) {
-      console.log('[SettingsManager] Mods folder manual change ignored:', {
-        value,
-        currentPath: this.settings.primaryModsPath,
-      });
-      this.updateModsFolderUI();
-      return;
-    }
-
-    console.log('[SettingsManager] Mods folder changed manually:', {
-      previousPath: this.settings.primaryModsPath,
-      nextPath: folder,
-    });
-    await this.saveLibraryFolderPath('modsPath', folder, 'primary');
-    this.updateModsFolderUI();
-    this.checkModsPath(folder, { force: true });
-  }
-
-  async browseSecondaryModsFolder() {
-    if (!window.electronAPI?.selectFolder) {
-      console.error('Electron API not available');
-      return;
-    }
-
-    const folder = await window.electronAPI.selectFolder();
-    if (!folder) {
-      return;
-    }
-
-    this.setConfiguredModsLibraryPath('secondary', folder);
-    await this.saveSettings();
-    this.updateModsFolderUI();
-    if (
-      !this.isDirectSwitchLibraryMode() &&
-      this.settings.activeModsLibrary === 'secondary'
-    ) {
-      await this.refreshModsListForPath(folder);
-    }
-    this.checkModsPath(folder, { force: true });
-  }
-
-  async updateSecondaryModsFolderFromInput(value) {
-    const folder = value.trim();
-    if (!folder || folder === this.settings.secondaryModsPath) {
-      this.updateModsFolderUI();
-      return;
-    }
-
-    this.setConfiguredModsLibraryPath('secondary', folder);
-    await this.saveSettings();
-    this.updateModsFolderUI();
-    if (
-      !this.isDirectSwitchLibraryMode() &&
-      this.settings.activeModsLibrary === 'secondary'
-    ) {
-      await this.refreshModsListForPath(folder);
-    }
-    this.checkModsPath(folder, { force: true });
-  }
-
-  async refreshModsListForPath(modsPath) {
-    if (!modsPath || !window.modManager?.loadModsFromFolder) {
-      console.warn('[SettingsManager] Cannot refresh mods list:', {
-        modsPath,
-        hasModManager: !!window.modManager,
-      });
-      return;
-    }
-
-    try {
-      console.log('[SettingsManager] Refreshing mods list for path:', modsPath);
-      await window.modManager.loadModsFromFolder(modsPath);
-      console.log('[SettingsManager] Mods list refreshed:', modsPath);
-    } catch (error) {
-      console.error('Failed to refresh mods after path change:', error);
-    }
-  }
-
-  maybeWarnForCurrentModsPath() {
-    const libraryTab = document.querySelector<HTMLElement>('#settings-library');
-    if (!libraryTab?.classList.contains('active')) {
-      return;
-    }
-
-    if (this.settings.modsPath) {
-      this.checkModsPath(this.settings.modsPath);
-    }
-  }
-
-  hasExpectedModsPathStructure(path) {
-    const normalizedPath = path.toLowerCase().replace(/\\/g, '/');
-    return (
-      normalizedPath.includes('ultimate/mods') ||
-      normalizedPath.includes('ultimate\\mods')
-    );
-  }
-
-  shouldEnforceUltimateModsPath() {
-    return !(
-      this.getAppRunMode() === 'hardware' &&
-      this.normalizeHardwareLibraryMode(this.settings.hardwareLibraryMode) ===
-        'local'
-    );
-  }
-
-  checkModsPath(path, options: { force?: boolean } = {}) {
-    if (
-      !path ||
-      this.settings.libraryPathValidationEnabled === false ||
-      !this.shouldEnforceUltimateModsPath() ||
-      this.hasExpectedModsPathStructure(path)
-    ) {
-      return;
-    }
-
-    if (!options.force && this.lastModsPathWarningPath === path) {
-      return;
-    }
-
-    if (document.querySelector('.mods-path-warning-modal')) {
-      return;
-    }
-
-    this.lastModsPathWarningPath = path;
-    this.showLibraryPathFixModal([
-      {
-        key: 'modsPath',
-        label: this.translate('settings.modsFolder'),
-        currentPath: path,
-        reason: this.translate('settings.pathIssueWrongModsFolder'),
-        required: true,
-      },
-    ]);
-  }
-
-  async validateConfiguredLibraryPaths() {
-    if (
-      this.pathFixModalOpen ||
-      this.settings.libraryPathValidationEnabled === false ||
-      this.isDirectSwitchLibraryMode() ||
-      !window.electronAPI?.checkPathAccessible
-    ) {
-      return;
-    }
-
-    const issues: Array<{
-      key: 'modsPath' | 'pluginsPath';
-      label: string;
-      currentPath: string;
-      reason: string;
-      required: boolean;
-    }> = [];
-
-    const checkPath = async (
-      key: 'modsPath' | 'pluginsPath',
-      label: string,
-      pathValue: string | null,
-      required: boolean,
-    ) => {
-      if (!pathValue) {
-        return;
-      }
-
-      const result = await window.electronAPI.checkPathAccessible(pathValue);
-      if (!result.success || !result.accessible) {
-        issues.push({
-          key,
-          label,
-          currentPath: pathValue,
-          reason: this.translate('settings.pathIssueMissing'),
-          required,
-        });
-        return;
-      }
-
-      if (
-        key === 'modsPath' &&
-        this.shouldEnforceUltimateModsPath() &&
-        !this.hasExpectedModsPathStructure(pathValue)
-      ) {
-        issues.push({
-          key,
-          label,
-          currentPath: pathValue,
-          reason: this.translate('settings.pathIssueWrongModsFolder'),
-          required,
-        });
-      }
-    };
-
-    try {
-      await checkPath(
-        'modsPath',
-        this.translate('settings.modsFolder'),
-        this.settings.modsPath,
-        true,
-      );
-      await checkPath(
-        'pluginsPath',
-        this.translate('settings.pluginsFolder'),
-        this.settings.pluginsPath,
-        true,
-      );
-    } catch (error) {
-      console.error('Failed to validate configured library paths:', error);
-      return;
-    }
-
-    if (issues.length > 0) {
-      this.showLibraryPathFixModal(issues);
-    }
-  }
-
-  showLibraryPathFixModal(
-    issues: Array<{
-      key: 'modsPath' | 'pluginsPath';
-      label: string;
-      currentPath: string;
-      reason: string;
-      required: boolean;
-    }>,
-  ) {
-    if (this.pathFixModalOpen || issues.length === 0) {
-      return;
-    }
-
-    if (!window.modalManager?.showCustomModal) {
-      this.showToast(this.translate('settings.pathWarning'), 'error');
-      return;
-    }
-
-    this.pathFixModalOpen = true;
-    const selectedPaths = new Map<string, string>();
-
-    const body = document.createElement('div');
-    body.className = 'library-path-fix-modal';
-    body.innerHTML = `
-      <p class="library-path-fix-intro">${this.escapeHtml(this.translate('settings.libraryPathFixIntro'))}</p>
-      ${issues
-        .map(
-          (issue) => `
-          <div class="library-path-fix-row" data-path-key="${issue.key}">
-            <div class="library-path-fix-header">
-              <strong>${this.escapeHtml(issue.label)}</strong>
-              <span>${this.escapeHtml(issue.reason)}</span>
-            </div>
-            <code>${this.escapeHtml(issue.currentPath)}</code>
-            <div class="library-path-fix-picker">
-              <input class="settings-input" type="text" readonly value="" placeholder="${this.escapeHtml(this.translate('settings.chooseReplacementPath'))}">
-              <button type="button" class="settings-btn" data-path-browse="${issue.key}">
-                <i class="bi bi-folder2-open"></i>
-                <span>${this.escapeHtml(this.translate('settings.browse'))}</span>
-              </button>
-            </div>
-            <p class="settings-hint">${this.escapeHtml(
-              issue.key === 'modsPath'
-                ? this.translate('settings.modsPathFixHint')
-                : this.translate('settings.pluginsPathFixHint'),
-            )}</p>
-          </div>
-        `,
-        )
-        .join('')}
-    `;
-
-    const modal = window.modalManager.showCustomModal({
-      id: 'library-path-fix-modal',
-      title: this.translate('settings.libraryPathFixTitle'),
-      body,
-      clickOverlayToClose: false,
-      escapeToClose: false,
-      buttons: [
-        {
-          text: this.translate('settings.saveCorrectedPaths'),
-          type: 'primary',
-          closeOnClick: false,
-          onClick: async (_event, modalElement) => {
-            const saved = await this.saveCorrectedLibraryPaths(
-              issues,
-              selectedPaths,
-            );
-            if (!saved) {
-              return;
-            }
-
-            window.modalManager.closeModal(modalElement, {
-              onModalClosed: () => {
-                modalElement.remove();
-                this.pathFixModalOpen = false;
-              },
-            });
-          },
-        },
-        {
-          text: this.translate('common.cancel') || 'Cancel',
-          type: 'secondary',
-          onClick: () => {
-            this.pathFixModalOpen = false;
-          },
-        },
-      ],
-    });
-
-    modal
-      .querySelectorAll<HTMLElement>('[data-path-browse]')
-      .forEach((button) => {
-        button.addEventListener('click', async () => {
-          const key = button.dataset.pathBrowse;
-          if (!key || !window.electronAPI?.selectFolder) {
-            return;
-          }
-
-          const folder = await window.electronAPI.selectFolder();
-          if (!folder) {
-            return;
-          }
-
-          selectedPaths.set(key, folder);
-          const row = modal.querySelector<HTMLElement>(
-            `.library-path-fix-row[data-path-key="${key}"]`,
-          );
-          const input = row?.querySelector<HTMLInputElement>('input');
-          if (input) {
-            input.value = folder;
-          }
-        });
-      });
-  }
-
-  async saveCorrectedLibraryPaths(
-    issues: Array<{
-      key: 'modsPath' | 'pluginsPath';
-      label: string;
-      currentPath: string;
-      reason: string;
-      required: boolean;
-    }>,
-    selectedPaths: Map<string, string>,
-  ) {
-    for (const issue of issues) {
-      const nextPath = selectedPaths.get(issue.key);
-
-      if (!nextPath) {
-        if (issue.required) {
-          this.showToast(
-            this.translate('settings.selectReplacementPathRequired'),
-            'error',
-          );
-          return false;
-        }
-        continue;
-      }
-
-      if (
-        issue.key === 'modsPath' &&
-        this.shouldEnforceUltimateModsPath() &&
-        !this.hasExpectedModsPathStructure(nextPath)
-      ) {
-        this.showToast(
-          this.translate('settings.pathIssueWrongModsFolder'),
-          'error',
-        );
-        return false;
-      }
-
-      if (window.electronAPI?.folderExists) {
-        const existsResult = await window.electronAPI.folderExists(nextPath);
-        if (!existsResult.success || !existsResult.exists) {
-          this.showToast(this.translate('settings.pathIssueMissing'), 'error');
-          return false;
-        }
-      }
-
-      this.setLibraryFolderPath(issue.key, nextPath);
-    }
-
-    await this.saveSettings();
-    this.updateModsFolderUI();
-    this.updatePluginsFolderUI();
-    await this.refreshCurrentLibraryLists();
-    this.showToast(this.translate('toasts.libraryPathsUpdated'), 'success');
-    return true;
-  }
-
-  async browsePluginsFolder() {
-    if (!window.electronAPI || !window.electronAPI.selectFolder) {
-      console.error('Electron API not available');
-      return;
-    }
-
-    console.log('[SettingsManager] Browse plugins folder requested');
-    const folder = await window.electronAPI.selectFolder();
-    if (folder) {
-      console.log('[SettingsManager] Plugins folder selected:', {
-        previousPath: this.settings.pluginsPath,
-        nextPath: folder,
-      });
-      await this.saveLibraryFolderPath('pluginsPath', folder);
-      this.updatePluginsFolderUI();
-    } else {
-      console.log('[SettingsManager] Plugins folder selection cancelled');
-    }
-  }
-
-  async updatePluginsFolderFromInput(value) {
-    const folder = value.trim();
-    if (!folder || folder === this.settings.pluginsPath) {
-      console.log('[SettingsManager] Plugins folder manual change ignored:', {
-        value,
-        currentPath: this.settings.pluginsPath,
-      });
-      this.updatePluginsFolderUI();
-      return;
-    }
-
-    console.log('[SettingsManager] Plugins folder changed manually:', {
-      previousPath: this.settings.pluginsPath,
-      nextPath: folder,
-    });
-    await this.saveLibraryFolderPath('pluginsPath', folder);
-    this.updatePluginsFolderUI();
-  }
-
-  async refreshPluginsListForPath(folder: string | null) {
-    if (!folder) {
-      return;
-    }
-    try {
-      console.log(
-        '[SettingsManager] Refreshing plugins list for path:',
-        folder,
-      );
-      await window.pluginManager?.loadPluginsFromFolder?.(folder);
-      console.log('[SettingsManager] Plugins list refreshed:', folder);
-    } catch (error) {
-      console.error('Failed to refresh plugins after path change:', error);
-    }
-  }
-
-  showSwitchSyncReconnectModal() {
-    if (!window.modalManager?.showCustomModal) {
-      window.toastManager?.warning?.(
-        'toasts.reconnectSwitchBeforeSyncToPc',
-        8000,
-      );
-      return;
-    }
-
-    const body = document.createElement('div');
-    body.className = 'switch-sync-reconnect-modal';
-
-    const message = document.createElement('p');
-    message.textContent = this.translate('settings.switchSyncReconnectMessage');
-
-    const hint = document.createElement('p');
-    hint.className = 'settings-hint';
-    hint.textContent = this.translate('settings.switchSyncReconnectHint');
-
-    body.append(message, hint);
-
-    window.modalManager.showCustomModal({
-      id: 'switch-sync-reconnect-modal',
-      title: this.translate('settings.switchSyncReconnectTitle'),
-      body,
-      size: 'normal',
-      buttons: [
-        {
-          text: this.translate('settings.switchDriveGuideButton'),
-          type: 'primary',
-          onClick: (_event, modal) => {
-            window.modalManager.closeModal(modal, {
-              onModalClosed: () => {
-                modal.remove();
-                this.showSwitchDriveGuideChoiceModal();
-              },
-            });
-            return false;
-          },
-        },
-        {
-          text: this.translate('common.close') || 'Close',
-          type: 'secondary',
-        },
-      ],
-    });
   }
 
   async browseEmulatorPath() {
@@ -3062,156 +1466,6 @@ class SettingsManager {
       this.settings.gamePath = file;
       this.saveSettings();
       this.updateGamePathUI();
-    }
-  }
-
-  updateModsFolderUI() {
-    const primaryInput =
-      document.querySelector<HTMLInputElement>('#mods-folder-path');
-    if (primaryInput) {
-      primaryInput.value = this.isDirectSwitchLibraryMode()
-        ? this.settings.modsPath || ''
-        : this.settings.primaryModsPath || '';
-    }
-
-    const secondaryInput = document.querySelector<HTMLInputElement>(
-      '#secondary-mods-folder-path',
-    );
-    if (secondaryInput) {
-      secondaryInput.value = this.settings.secondaryModsPath || '';
-    }
-
-    const switcherToggle = document.querySelector<HTMLInputElement>(
-      '#mods-library-switcher-enabled',
-    );
-    if (switcherToggle) {
-      switcherToggle.checked =
-        this.settings.modsLibrarySwitcherEnabled === true;
-    }
-
-    this.updateModsLibrarySwitcherUI();
-    this.maybeWarnForCurrentModsPath();
-  }
-
-  initializeModsLibrarySwitcher() {
-    const button = document.querySelector<HTMLButtonElement>(
-      '#mods-library-switch-btn',
-    );
-    if (!button) {
-      return;
-    }
-
-    if (!button.dataset.listenerAttached) {
-      button.addEventListener('click', () => this.switchModsLibrary());
-      button.dataset.listenerAttached = 'true';
-    }
-
-    if (!this.libraryLocaleListenerAttached) {
-      window.addEventListener('localeChanged', () => {
-        this.updateModsLibrarySwitcherUI();
-      });
-      this.libraryLocaleListenerAttached = true;
-    }
-
-    this.readyPromise.then(() => this.updateModsLibrarySwitcherUI());
-  }
-
-  updateModsLibrarySwitcherUI() {
-    const switcherEnabled = this.settings.modsLibrarySwitcherEnabled === true;
-    const secondaryFolderSection = document.querySelector<HTMLElement>(
-      '#secondary-mods-folder-section',
-    );
-    if (secondaryFolderSection) {
-      secondaryFolderSection.hidden = !switcherEnabled;
-    }
-
-    const button = document.querySelector<HTMLButtonElement>(
-      '#mods-library-switch-btn',
-    );
-    if (!button) {
-      return;
-    }
-
-    button.hidden = !switcherEnabled;
-    if (button.hidden) {
-      return;
-    }
-
-    const label = button.querySelector<HTMLElement>(
-      '.mods-library-switch-label',
-    );
-    const directMode = this.isDirectSwitchLibraryMode();
-    const activeLibrary = this.normalizeActiveModsLibrary(
-      this.settings.activeModsLibrary,
-    );
-    const targetLibrary = activeLibrary === 'primary' ? 'secondary' : 'primary';
-    const targetPath = this.getConfiguredModsLibraryPath(targetLibrary);
-    const activeLabel = directMode
-      ? this.translate('tools.directSwitchLibrary')
-      : this.translate(`tools.${activeLibrary}Library`);
-    const targetLabel = this.translate(`tools.${targetLibrary}Library`);
-
-    if (label) {
-      label.removeAttribute('data-i18n');
-      label.textContent = activeLabel;
-    }
-
-    button.dataset.activeLibrary = directMode ? 'direct' : activeLibrary;
-    button.classList.toggle('is-unconfigured', !directMode && !targetPath);
-    button.disabled = directMode;
-
-    const accessibleLabel = directMode
-      ? this.translate('tools.directSwitchLibraryHint')
-      : targetPath
-        ? `${this.translate('tools.switchLibrary')} ${targetLabel}`
-        : `${this.translate('tools.configureLibrary')} ${targetLabel}`;
-    button.title = accessibleLabel;
-    button.setAttribute('aria-label', accessibleLabel);
-  }
-
-  async switchModsLibrary() {
-    await this.readyPromise;
-
-    if (this.isDirectSwitchLibraryMode()) {
-      return;
-    }
-
-    const currentLibrary = this.normalizeActiveModsLibrary(
-      this.settings.activeModsLibrary,
-    );
-    const targetLibrary =
-      currentLibrary === 'primary' ? 'secondary' : 'primary';
-    const targetPath = this.getConfiguredModsLibraryPath(targetLibrary);
-
-    if (!targetPath) {
-      this.showToast(
-        this.translate('toasts.configureSecondaryModsLibrary'),
-        'warning',
-      );
-      document
-        .querySelector<HTMLElement>('.sidebar-btn[data-tab="settings"]')
-        ?.click();
-      setTimeout(() => this.switchSettingsTab('library'), 100);
-      return;
-    }
-
-    this.settings.activeModsLibrary = targetLibrary;
-    this.settings.modsPath = targetPath;
-    await this.saveSettings();
-    this.updateModsLibrarySwitcherUI();
-    await this.refreshModsListForPath(targetPath);
-    this.showToast(
-      this.translate(`toasts.${targetLibrary}ModsLibraryActive`),
-      'success',
-    );
-  }
-
-  updatePluginsFolderUI() {
-    const input = document.querySelector<HTMLInputElement>(
-      '#plugins-folder-path',
-    );
-    if (input) {
-      input.value = this.settings.pluginsPath || '';
     }
   }
 
@@ -3314,680 +1568,6 @@ class SettingsManager {
         fullscreenSection.style.display = 'none';
       } else {
         fullscreenSection.style.display = 'block';
-      }
-    }
-  }
-
-  updateSwitchSettingsUI() {
-    const switchIpInput =
-      document.querySelector<HTMLInputElement>('#switch-ip');
-    if (switchIpInput && this.settings.switchIp) {
-      switchIpInput.value = this.settings.switchIp;
-    }
-
-    const switchPortInput =
-      document.querySelector<HTMLInputElement>('#switch-port');
-    if (switchPortInput && this.settings.switchPort) {
-      switchPortInput.value = this.settings.switchPort;
-    }
-
-    const switchFtpUserInput =
-      document.querySelector<HTMLInputElement>('#switch-ftp-user');
-    if (switchFtpUserInput) {
-      switchFtpUserInput.value = this.settings.switchFtpUser || '';
-    }
-
-    const switchFtpPasswordInput = document.querySelector<HTMLInputElement>(
-      '#switch-ftp-password',
-    );
-    if (switchFtpPasswordInput) {
-      switchFtpPasswordInput.value = this.settings.switchFtpPassword || '';
-    }
-
-    const switchFtpPathInput =
-      document.querySelector<HTMLInputElement>('#switch-ftp-path');
-    if (switchFtpPathInput) {
-      switchFtpPathInput.value =
-        this.settings.switchFtpModsPath || this.settings.switchFtpPath || '';
-    }
-
-    const switchFtpPluginsPathInput = document.querySelector<HTMLInputElement>(
-      '#switch-ftp-plugins-path',
-    );
-    if (switchFtpPluginsPathInput) {
-      switchFtpPluginsPathInput.value =
-        this.settings.switchFtpPluginsPath || '';
-    }
-  }
-
-  updateSwitchTransferMethodUI() {
-    const transferMethod = this.settings.switchTransferMethod || 'none';
-    const transferMethodSelect = document.querySelector<HTMLElement>(
-      '#switch-transfer-method-select',
-    );
-    const ftpSettings = document.querySelector<HTMLElement>(
-      '#switch-ftp-settings',
-    );
-    const driveSettings = document.querySelector<HTMLElement>(
-      '#switch-drive-settings',
-    );
-    const destinationSettings = document.querySelector<HTMLElement>(
-      '#switch-destination-settings',
-    );
-
-    if (transferMethodSelect) {
-      const selectedValue =
-        transferMethodSelect.querySelector<HTMLElement>('.selected-value');
-      const options = transferMethodSelect.querySelectorAll<HTMLElement>(
-        '.custom-select-option',
-      );
-
-      let foundOption = false;
-      options.forEach((option) => {
-        if (option.dataset.value === transferMethod) {
-          option.classList.add('active');
-          if (selectedValue) {
-            selectedValue.textContent =
-              option.querySelector<HTMLElement>('span')!.textContent;
-          }
-          foundOption = true;
-        } else {
-          option.classList.remove('active');
-        }
-      });
-
-      if (!foundOption && selectedValue && transferMethod === 'none') {
-        selectedValue.textContent = 'Select method...';
-      }
-    }
-
-    if (ftpSettings) {
-      ftpSettings.style.display = transferMethod === 'ftp' ? 'block' : 'none';
-    }
-    if (driveSettings) {
-      driveSettings.style.display =
-        transferMethod === 'drive' ? 'block' : 'none';
-    }
-    if (destinationSettings) {
-      destinationSettings.style.display =
-        transferMethod === 'none' ? 'none' : 'block';
-    }
-
-    if (transferMethod === 'drive') {
-      this.updateSwitchDriveLetterUI();
-    }
-    this.updateHardwareLibraryModeUI();
-  }
-
-  updateSwitchSyncModeUI() {
-    const syncMode = this.normalizeSwitchSyncMode(this.settings.switchSyncMode);
-    const select = document.querySelector<HTMLElement>(
-      '#switch-sync-mode-select',
-    );
-    if (!select) {
-      return;
-    }
-
-    const selectedValue = select.querySelector<HTMLElement>('.selected-value');
-    const selectedDescription = select.querySelector<HTMLElement>(
-      '.selected-description',
-    );
-    const options = select.querySelectorAll<HTMLElement>(
-      '.custom-select-option',
-    );
-    options.forEach((option) => {
-      const active = option.dataset.value === syncMode;
-      option.classList.toggle('active', active);
-      if (active && selectedValue) {
-        const label = option.querySelector<HTMLElement>(
-          '[data-sync-mode-label]',
-        );
-        const description = option.querySelector<HTMLElement>(
-          '[data-sync-mode-description]',
-        );
-        selectedValue.textContent = label?.textContent || '';
-        if (label?.dataset.i18n) {
-          selectedValue.dataset.i18n = label.dataset.i18n;
-        }
-        if (selectedDescription) {
-          selectedDescription.textContent = description?.textContent || '';
-          if (description?.dataset.i18n) {
-            selectedDescription.dataset.i18n = description.dataset.i18n;
-          }
-        }
-      }
-    });
-  }
-
-  showSwitchDriveGuideChoiceModal() {
-    if (!window.modalManager?.showCustomModal) {
-      this.showToast(
-        this.translate('settings.switchDriveGuideUnavailable'),
-        'error',
-      );
-      return;
-    }
-
-    const body = document.createElement('div');
-    body.className = 'switch-drive-guide-choice';
-    body.innerHTML = `
-      <button type="button" class="switch-drive-guide-option" id="switch-drive-guide-hekate">
-        <i class="bi bi-usb-symbol"></i>
-        <span>
-          <strong>${this.translate('settings.switchDriveGuideHekate')}</strong>
-          <small>${this.translate('settings.switchDriveGuideHekateDesc')}</small>
-        </span>
-      </button>
-      <button type="button" class="switch-drive-guide-option switch-drive-guide-option-disabled" id="switch-drive-guide-homebrew">
-        <i class="bi bi-hourglass-split"></i>
-        <span>
-          <strong>${this.translate('settings.switchDriveGuideHomebrew')}</strong>
-          <small>${this.translate('settings.switchDriveGuideHomebrewDesc')}</small>
-        </span>
-      </button>
-    `;
-
-    const modal = window.modalManager.showCustomModal({
-      id: 'switch-drive-guide-choice-modal',
-      title: this.translate('settings.switchDriveGuideTitle'),
-      body,
-      size: 'normal',
-      buttons: [
-        {
-          text: this.translate('common.cancel') || 'Cancel',
-          type: 'secondary',
-        },
-      ],
-    });
-
-    modal
-      .querySelector<HTMLElement>('#switch-drive-guide-hekate')
-      ?.addEventListener('click', () => {
-        window.modalManager.closeModal(modal, {
-          onModalClosed: () => {
-            modal.remove();
-            this.showSwitchDriveHekateGuideModal();
-          },
-        });
-      });
-
-    modal
-      .querySelector<HTMLElement>('#switch-drive-guide-homebrew')
-      ?.addEventListener('click', () => {
-        this.showToast(
-          this.translate('settings.switchDriveGuideHomebrewPending'),
-          'info',
-        );
-      });
-  }
-
-  showSwitchDriveHekateGuideModal() {
-    if (!window.modalManager?.showCustomModal) {
-      this.showToast(
-        this.translate('settings.switchDriveGuideUnavailable'),
-        'error',
-      );
-      return;
-    }
-
-    const body = document.createElement('div');
-    body.className = 'switch-drive-hekate-guide';
-    body.innerHTML = `
-      <div id="switch-drive-guide-lottie" class="switch-drive-guide-lottie"></div>
-      <p class="switch-drive-guide-status" id="switch-drive-guide-status">
-        ${this.translate('settings.switchDriveGuidePlaying')}
-      </p>
-    `;
-
-    const modal = window.modalManager.showCustomModal({
-      id: 'switch-drive-hekate-guide-modal',
-      title: this.translate('settings.switchDriveGuideHekateTitle'),
-      body,
-      size: 'large',
-      clickOverlayToClose: false,
-      buttons: [
-        {
-          id: 'switch-drive-guide-next',
-          text: this.translate('settings.switchDriveGuideNext'),
-          type: 'primary',
-          closeOnClick: false,
-          onClick: async (_e, modalElement) => {
-            await this.completeSwitchDriveGuide(modalElement);
-          },
-        },
-        {
-          text: this.translate('common.cancel') || 'Cancel',
-          type: 'secondary',
-        },
-      ],
-      onClose: () => {
-        const anim = (modal as any).__switchDriveGuideAnimation;
-        if (anim?.destroy) {
-          anim.destroy();
-        }
-      },
-    });
-
-    const nextBtn = modal.querySelector<HTMLButtonElement>(
-      '#switch-drive-guide-next',
-    );
-    const status = modal.querySelector<HTMLElement>(
-      '#switch-drive-guide-status',
-    );
-    if (nextBtn) {
-      nextBtn.disabled = true;
-      nextBtn.classList.add('disabled');
-    }
-
-    const lottieContainer = modal.querySelector<HTMLElement>(
-      '#switch-drive-guide-lottie',
-    );
-    if (lottieContainer && window.lottie) {
-      const anim = window.lottie.loadAnimation({
-        container: lottieContainer,
-        renderer: 'svg',
-        loop: true,
-        autoplay: true,
-        path: '../images/guided_recomended.json',
-      });
-      (modal as any).__switchDriveGuideAnimation = anim;
-
-      const unlockNext = () => {
-        if (nextBtn) {
-          nextBtn.disabled = false;
-          nextBtn.classList.remove('disabled');
-        }
-        if (status) {
-          status.textContent = this.translate('settings.switchDriveGuideReady');
-        }
-        anim.removeEventListener?.('loopComplete', unlockNext);
-      };
-
-      anim.addEventListener?.('loopComplete', unlockNext);
-    } else {
-      if (nextBtn) {
-        nextBtn.disabled = false;
-        nextBtn.classList.remove('disabled');
-      }
-      if (status) {
-        status.textContent = this.translate('settings.switchDriveGuideReady');
-      }
-    }
-  }
-
-  async completeSwitchDriveGuide(modal: HTMLElement) {
-    const nextBtn = modal.querySelector<HTMLButtonElement>(
-      '#switch-drive-guide-next',
-    );
-    const status = modal.querySelector<HTMLElement>(
-      '#switch-drive-guide-status',
-    );
-
-    if (nextBtn?.disabled) {
-      return;
-    }
-
-    if (nextBtn) {
-      nextBtn.disabled = true;
-      nextBtn.classList.add('disabled');
-      nextBtn.textContent = this.translate(
-        'settings.switchDriveGuideDetecting',
-      );
-    }
-    if (status) {
-      status.textContent = this.translate('settings.switchDriveGuideDetecting');
-    }
-
-    this.settings.switchTransferMethod = 'drive';
-    this.updateSwitchTransferMethodUI();
-    await this.saveSettings();
-    window.modalManager.closeModal(modal, {
-      onModalClosed: () => {
-        modal.remove();
-        this.showSwitchUsbDeviceModal();
-      },
-    });
-  }
-
-  async getAvailableSwitchDrives() {
-    if (!window.electronAPI?.getAvailableDrives) {
-      throw new Error('Drive detection is not available.');
-    }
-
-    const result = await window.electronAPI.getAvailableDrives();
-    if (!result?.success || !Array.isArray(result.drives)) {
-      throw new Error('Drive detection failed.');
-    }
-
-    return result.drives;
-  }
-
-  getSwitchDriveDisplayText(drive) {
-    if (drive.path && drive.path.includes(':\\')) {
-      return `${drive.letter}: (${drive.label || 'Unknown'})`;
-    }
-
-    if (drive.path && drive.path.startsWith('/')) {
-      return `${drive.path} (${drive.label || 'Unknown'})`;
-    }
-
-    return `${drive.letter} (${drive.label || 'Unknown'})`;
-  }
-
-  getSwitchDriveIdentifier(drive) {
-    if (drive.path && drive.path.startsWith('/')) {
-      return drive.path;
-    }
-
-    return drive.letter;
-  }
-
-  async showSwitchUsbDeviceModal() {
-    if (!window.modalManager?.showCustomModal) {
-      this.showToast(
-        this.translate('settings.switchDriveGuideUnavailable'),
-        'error',
-      );
-      return;
-    }
-
-    const body = document.createElement('div');
-    body.className = 'switch-usb-device-picker';
-    body.innerHTML = `
-      <p class="switch-usb-device-picker-hint">
-        ${this.translate('settings.switchUsbDevicePickerHint')}
-      </p>
-      <div class="switch-usb-device-list" id="switch-usb-device-list">
-        <div class="switch-usb-device-state">
-          <i class="bi bi-arrow-clockwise"></i>
-          <span>${this.translate('settings.switchUsbDeviceSearching')}</span>
-        </div>
-      </div>
-    `;
-
-    const modal = window.modalManager.showCustomModal({
-      id: 'switch-usb-device-picker-modal',
-      title: this.translate('settings.switchUsbDevicePickerTitle'),
-      body,
-      size: 'normal',
-      clickOverlayToClose: false,
-      buttons: [
-        {
-          id: 'switch-usb-device-refresh',
-          text: this.translate('settings.switchUsbDeviceRefresh'),
-          type: 'secondary',
-          closeOnClick: false,
-          onClick: async () => {
-            await this.renderSwitchUsbDeviceOptions(modal);
-          },
-        },
-        {
-          text: this.translate('common.cancel') || 'Cancel',
-          type: 'secondary',
-        },
-      ],
-    });
-
-    await this.renderSwitchUsbDeviceOptions(modal);
-  }
-
-  async renderSwitchUsbDeviceOptions(modal: HTMLElement) {
-    const list = modal.querySelector<HTMLElement>('#switch-usb-device-list');
-    if (!list) return;
-
-    list.innerHTML = `
-      <div class="switch-usb-device-state">
-        <i class="bi bi-arrow-clockwise"></i>
-        <span>${this.translate('settings.switchUsbDeviceSearching')}</span>
-      </div>
-    `;
-
-    try {
-      this.drivesLoaded = false;
-      await this.loadAvailableDrives(true);
-      const drives = await this.getAvailableSwitchDrives();
-
-      if (drives.length === 0) {
-        list.innerHTML = `
-          <div class="switch-usb-device-state switch-usb-device-state-warning">
-            <i class="bi bi-exclamation-triangle"></i>
-            <span>${this.translate('settings.switchUsbDeviceNone')}</span>
-          </div>
-        `;
-        return;
-      }
-
-      list.innerHTML = '';
-
-      drives.forEach((drive) => {
-        const option = document.createElement('button');
-        option.type = 'button';
-        option.className = 'switch-usb-device-option';
-        const displayText = this.getSwitchDriveDisplayText(drive);
-        const identifier = this.getSwitchDriveIdentifier(drive);
-        const isSelected = this.settings.switchDriveLetter === identifier;
-        if (isSelected) {
-          option.classList.add('active');
-        }
-
-        option.innerHTML = `
-          <i class="bi bi-usb-drive"></i>
-          <span>
-            <strong>${displayText}</strong>
-            <small>${drive.type || this.translate('settings.switchUsbDeviceTypeUnknown')}</small>
-          </span>
-          <i class="bi bi-check-lg switch-usb-device-check"></i>
-        `;
-
-        option.addEventListener('click', async () => {
-          this.settings.switchDriveLetter = identifier;
-          this.settings.switchTransferMethod = 'drive';
-          this.applyHardwareLibraryModePaths();
-          this.updateSwitchTransferMethodUI();
-          this.updateSwitchDriveLetterUI();
-          await this.saveSettings();
-          this.showToast(
-            this.translate('settings.switchDriveGuideDriveSelected'),
-            'success',
-          );
-          window.modalManager.closeModal(modal, {
-            onModalClosed: () => modal.remove(),
-          });
-        });
-
-        list.appendChild(option);
-      });
-    } catch (error) {
-      console.error('Failed to render USB device picker:', error);
-      list.innerHTML = `
-        <div class="switch-usb-device-state switch-usb-device-state-warning">
-          <i class="bi bi-exclamation-triangle"></i>
-          <span>${this.translate('settings.switchUsbDeviceError')}</span>
-        </div>
-      `;
-    }
-  }
-
-  async loadAvailableDrives(forceReload = false) {
-    if (!window.electronAPI || !window.electronAPI.getAvailableDrives) {
-      console.error('Electron API not available');
-      return;
-    }
-
-    const optionsContainer = document.querySelector<HTMLElement>(
-      '#switch-drive-letter-options',
-    );
-    const selectedValue = document.querySelector<HTMLElement>(
-      '#switch-drive-letter-select .selected-value',
-    );
-
-    if (!optionsContainer) return;
-
-    if (forceReload || !this.drivesLoaded) {
-      optionsContainer.innerHTML =
-        '<div class="custom-select-option" style="pointer-events: none; opacity: 0.6;"><span><i class="bi bi-arrow-clockwise" style="animation: spin 1s linear infinite;"></i> Searching for drives...</span></div>';
-      if (selectedValue && forceReload) {
-        const currentText = selectedValue.textContent;
-        if (!currentText.includes('Searching')) {
-          selectedValue.textContent = 'Searching for drives...';
-        }
-      }
-    }
-
-    try {
-      const result = await window.electronAPI.getAvailableDrives();
-      if (result.success && result.drives) {
-        optionsContainer.innerHTML = '';
-
-        if (result.drives.length === 0) {
-          optionsContainer.innerHTML =
-            '<div class="custom-select-option" style="pointer-events: none; opacity: 0.6;"><span>No drives found</span></div>';
-          if (selectedValue && forceReload) {
-            selectedValue.textContent = 'No drives found';
-          }
-          this.drivesLoaded = true;
-          return;
-        }
-
-        result.drives.forEach((drive) => {
-          const option = document.createElement('div');
-          option.className = 'custom-select-option';
-          option.dataset.value = drive.letter;
-          if (drive.path) {
-            option.dataset.path = drive.path;
-          }
-
-          let displayText;
-          if (drive.path && drive.path.includes(':\\')) {
-            displayText = `${drive.letter}: (${drive.label || 'Unknown'})`;
-          } else if (drive.path && drive.path.startsWith('/')) {
-            displayText = `${drive.path} (${drive.label || 'Unknown'})`;
-          } else {
-            displayText = `${drive.letter} (${drive.label || 'Unknown'})`;
-          }
-
-          option.innerHTML = `<span>${displayText}</span>`;
-
-          option.addEventListener('click', () => {
-            const selectedValue = document.querySelector<HTMLElement>(
-              '#switch-drive-letter-select .selected-value',
-            );
-            if (selectedValue) {
-              selectedValue.textContent = displayText;
-            }
-
-            optionsContainer
-              .querySelectorAll<HTMLElement>('.custom-select-option')
-              .forEach((opt) => {
-                opt.classList.remove('active');
-              });
-            option.classList.add('active');
-
-            document
-              .querySelector<HTMLElement>('#switch-drive-letter-select')!
-              .classList.remove('open');
-
-            if (drive.path && drive.path.startsWith('/')) {
-              this.settings.switchDriveLetter = drive.path;
-            } else {
-              this.settings.switchDriveLetter = drive.letter;
-            }
-            this.applyHardwareLibraryModePaths();
-            this.saveSettings();
-          });
-
-          optionsContainer.appendChild(option);
-        });
-
-        const refreshBtn = document.createElement('div');
-        refreshBtn.className = 'custom-select-option';
-        refreshBtn.style.cssText =
-          'border-top: 1px solid var(--border-color); margin-top: 4px; padding-top: 8px; cursor: pointer;';
-        refreshBtn.innerHTML =
-          '<span><i class="bi bi-arrow-clockwise"></i> Refresh drives</span>';
-        refreshBtn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          this.drivesLoaded = false;
-          await this.loadAvailableDrives(true);
-          this.drivesLoaded = true;
-        });
-        optionsContainer.appendChild(refreshBtn);
-
-        this.updateSwitchDriveLetterUI();
-        this.drivesLoaded = true;
-      } else {
-        optionsContainer.innerHTML =
-          '<div class="custom-select-option" style="pointer-events: none; opacity: 0.6;"><span>Failed to load drives</span></div>';
-        if (selectedValue && forceReload) {
-          selectedValue.textContent = 'Failed to load drives';
-        }
-        this.drivesLoaded = true;
-      }
-    } catch (error) {
-      console.error('Failed to load drives:', error);
-      if (optionsContainer) {
-        optionsContainer.innerHTML =
-          '<div class="custom-select-option" style="pointer-events: none; opacity: 0.6;"><span>Error loading drives</span></div>';
-      }
-      if (selectedValue && forceReload) {
-        selectedValue.textContent = 'Error loading drives';
-      }
-      this.drivesLoaded = true;
-    }
-  }
-
-  updateSwitchDriveLetterUI() {
-    const driveIdentifier = this.settings.switchDriveLetter;
-    if (!driveIdentifier) return;
-
-    const driveLetterSelect = document.querySelector<HTMLElement>(
-      '#switch-drive-letter-select',
-    );
-    if (driveLetterSelect) {
-      const selectedValue =
-        driveLetterSelect.querySelector<HTMLElement>('.selected-value');
-      const optionsContainer = document.querySelector<HTMLElement>(
-        '#switch-drive-letter-options',
-      );
-
-      if (optionsContainer) {
-        const options = optionsContainer.querySelectorAll<HTMLElement>(
-          '.custom-select-option',
-        );
-
-        options.forEach((option) => {
-          const optionValue = option.dataset.value;
-          const optionPath = option.dataset.path;
-          let matches = false;
-
-          if (
-            driveIdentifier.includes(':\\') ||
-            driveIdentifier.startsWith('/')
-          ) {
-            matches = optionPath === driveIdentifier;
-          } else {
-            matches = optionValue === driveIdentifier;
-          }
-
-          if (matches) {
-            option.classList.add('active');
-            if (selectedValue) {
-              selectedValue.textContent =
-                option.querySelector<HTMLElement>('span')!.textContent;
-            }
-          } else {
-            option.classList.remove('active');
-          }
-        });
-      } else if (selectedValue) {
-        if (
-          driveIdentifier.includes(':\\') ||
-          driveIdentifier.startsWith('/')
-        ) {
-          selectedValue.textContent = driveIdentifier;
-        } else {
-          selectedValue.textContent = `${driveIdentifier}:`;
-        }
       }
     }
   }
@@ -4316,294 +1896,6 @@ class SettingsManager {
     }
   }
 
-  updateHardwareLibraryModeUI() {
-    const hardwareLibraryModeSelect = document.querySelector<HTMLElement>(
-      '#hardware-library-mode-select',
-    );
-    if (!hardwareLibraryModeSelect) {
-      return;
-    }
-
-    const selectedValue =
-      hardwareLibraryModeSelect.querySelector<HTMLElement>('.selected-value');
-    const options = hardwareLibraryModeSelect.querySelectorAll<HTMLElement>(
-      '.custom-select-option',
-    );
-    const currentMode = this.getHardwareLibraryMode();
-    const ftpOnly = this.getSwitchTransferMethod() === 'ftp';
-
-    options.forEach((option) => {
-      const unavailable = ftpOnly && option.dataset.value === 'direct';
-      option.hidden = unavailable;
-      option.style.display = unavailable ? 'none' : '';
-      option.setAttribute('aria-disabled', String(unavailable));
-      const isActive = option.dataset.value === currentMode;
-      option.classList.toggle('active', isActive);
-
-      if (isActive && selectedValue) {
-        const label = option.querySelector<HTMLElement>('span');
-        selectedValue.textContent = label?.textContent || currentMode;
-        if (label?.dataset.i18n) {
-          selectedValue.dataset.i18n = label.dataset.i18n;
-        }
-      }
-    });
-
-    const hint = document.querySelector<HTMLElement>(
-      '#hardware-library-mode-hint',
-    );
-    if (hint) {
-      const key = ftpOnly
-        ? 'settings.hardwareLibraryModeFtpHint'
-        : 'settings.hardwareLibraryModeHint';
-      hint.dataset.i18n = key;
-      hint.textContent = this.translate(key);
-    }
-  }
-
-  updateHardwareLibraryModeVisibility() {
-    const section = document.querySelector<HTMLElement>(
-      '#hardware-library-mode-section',
-    );
-    if (!section) {
-      return;
-    }
-
-    section.style.display = this.getAppRunMode() === 'hardware' ? '' : 'none';
-  }
-
-  getSwitchDriveRoot() {
-    const driveIdentifier = this.settings.switchDriveLetter;
-    if (!driveIdentifier || typeof driveIdentifier !== 'string') {
-      return null;
-    }
-
-    if (/^[A-Z]:?[\\/]?$/i.test(driveIdentifier.trim())) {
-      return `${driveIdentifier.trim()[0]}:\\`;
-    }
-
-    return driveIdentifier.replace(/[\\/]+$/, '');
-  }
-
-  async resolveStoredSwitchDrivePath(driveIdentifier) {
-    if (!driveIdentifier || typeof driveIdentifier !== 'string') {
-      return driveIdentifier || null;
-    }
-
-    if (
-      driveIdentifier.startsWith('/') ||
-      driveIdentifier.includes(':\\') ||
-      !window.electronAPI?.checkPathAccessible
-    ) {
-      return driveIdentifier;
-    }
-
-    try {
-      const result =
-        await window.electronAPI.checkPathAccessible(driveIdentifier);
-      if (
-        result?.success &&
-        result.accessible === true &&
-        typeof result.resolvedPath === 'string' &&
-        result.resolvedPath
-      ) {
-        return result.resolvedPath;
-      }
-    } catch (error) {
-      console.warn('[SettingsManager] Failed to resolve switch drive:', error);
-    }
-
-    return driveIdentifier.replace(/[\\/]+$/, '');
-  }
-
-  joinSwitchPath(...segments: string[]) {
-    const root = this.getSwitchDriveRoot();
-    if (!root) {
-      return null;
-    }
-
-    const normalizedSegments = segments.map((segment) =>
-      segment.replace(/^[/\\]+|[/\\]+$/g, ''),
-    );
-
-    const separator = /^[A-Z]:/i.test(root) || root.startsWith('\\\\') ? '\\' : '/';
-    return `${root.replace(/[\\/]+$/, '')}${separator}${normalizedSegments.join(separator)}`;
-  }
-
-  getSwitchModsLibraryPath() {
-    return (
-      this.settings.directModsPath || this.joinSwitchPath('ultimate', 'mods')
-    );
-  }
-
-  getSwitchPluginsLibraryPath() {
-    return (
-      this.settings.directPluginsPath ||
-      this.joinSwitchPath(
-        'ultimate',
-        'contents',
-        '01006A800016E000',
-        'romfs',
-        'skyline',
-        'plugins',
-      )
-    );
-  }
-
-  isSwitchLibraryPath(value) {
-    if (!value || typeof value !== 'string') {
-      return false;
-    }
-
-    const normalized = value.replace(/\\/g, '/').toLowerCase();
-    return (
-      normalized.endsWith('/ultimate/mods') ||
-      normalized.endsWith(
-        '/ultimate/contents/01006a800016e000/romfs/skyline/plugins',
-      )
-    );
-  }
-
-  getSwitchDriveRootFromLibraryPath(value) {
-    if (!value || typeof value !== 'string') {
-      return null;
-    }
-
-    const modsRoot = value.replace(/[\\/]ultimate[\\/]mods[\\/]?$/i, '');
-    if (modsRoot !== value) {
-      return /^[A-Z]:$/i.test(modsRoot) ? `${modsRoot}\\` : modsRoot || '/';
-    }
-
-    const pluginsRoot = value.replace(
-      /[\\/](?:ultimate|atmosphere)[\\/]contents[\\/]01006A800016E000[\\/]romfs[\\/]skyline[\\/]plugins[\\/]?$/i,
-      '',
-    );
-    if (pluginsRoot !== value) {
-      return /^[A-Z]:$/i.test(pluginsRoot) ? `${pluginsRoot}\\` : pluginsRoot || '/';
-    }
-
-    return null;
-  }
-
-  syncSwitchDriveFromLibraryPaths() {
-    if (this.settings.switchDriveLetter) {
-      return;
-    }
-
-    const root =
-      this.getSwitchDriveRootFromLibraryPath(this.settings.modsPath) ||
-      this.getSwitchDriveRootFromLibraryPath(this.settings.pluginsPath);
-
-    if (
-      root &&
-      (root.startsWith('/') || root.includes(':\\')) &&
-      root !== this.settings.switchDriveLetter
-    ) {
-      this.settings.switchDriveLetter = root;
-    }
-  }
-
-  isDirectSwitchLibraryMode() {
-    return (
-      this.getAppRunMode() === 'hardware' &&
-      this.getHardwareLibraryMode() === 'direct'
-    );
-  }
-
-  applyHardwareLibraryModePaths() {
-    if (
-      this.getSwitchTransferMethod() === 'ftp' &&
-      this.settings.hardwareLibraryMode === 'direct' &&
-      this.directLibraryPathsApplied === null
-    ) {
-      // Restore the PC library when loading an older FTP + direct configuration.
-      this.directLibraryPathsApplied = true;
-      const activeLibrary = this.settings.activeModsLibrary;
-      if (
-        this.getConfiguredModsLibraryPath(activeLibrary) === this.settings.modsPath
-      ) {
-        this.setConfiguredModsLibraryPath(
-          activeLibrary,
-          this.settings.localModsPath,
-        );
-      }
-    }
-    this.settings.hardwareLibraryMode = this.getHardwareLibraryMode();
-    const directMode = this.isDirectSwitchLibraryMode();
-    if (directMode) {
-      this.syncSwitchDriveFromLibraryPaths();
-
-      const switchModsPath = this.getSwitchModsLibraryPath();
-      const switchPluginsPath = this.getSwitchPluginsLibraryPath();
-
-      // Capture local paths when entering direct mode, never on subsequent saves.
-      if (this.directLibraryPathsApplied !== true) {
-        if (
-          this.settings.modsPath &&
-          this.settings.modsPath !== switchModsPath &&
-          (this.directLibraryPathsApplied === false ||
-            !this.settings.localModsPath)
-        ) {
-          this.settings.localModsPath = this.settings.modsPath;
-        }
-        if (
-          this.settings.pluginsPath &&
-          this.settings.pluginsPath !== switchPluginsPath &&
-          (this.directLibraryPathsApplied === false ||
-            !this.settings.localPluginsPath)
-        ) {
-          this.settings.localPluginsPath = this.settings.pluginsPath;
-        }
-      }
-      this.settings.modsPath = switchModsPath;
-      this.settings.pluginsPath = switchPluginsPath;
-    } else {
-      if (
-        this.directLibraryPathsApplied === true ||
-        (this.directLibraryPathsApplied === null &&
-          this.settings.localModsPath &&
-          this.settings.modsPath === this.getSwitchModsLibraryPath())
-      ) {
-        this.settings.modsPath =
-          this.settings.localModsPath ||
-          this.getConfiguredModsLibraryPath(this.settings.activeModsLibrary);
-      }
-
-      if (
-        this.directLibraryPathsApplied === true ||
-        (this.directLibraryPathsApplied === null &&
-          this.settings.localPluginsPath &&
-          this.settings.pluginsPath === this.getSwitchPluginsLibraryPath())
-      ) {
-        this.settings.pluginsPath = this.settings.localPluginsPath || null;
-      }
-    }
-    this.directLibraryPathsApplied = directMode;
-
-    this.updateModsFolderUI();
-    this.updatePluginsFolderUI();
-    this.updateHardwareLibraryModeUI();
-  }
-
-  async refreshCurrentLibraryLists() {
-    if (this.settings.modsPath) {
-      await this.refreshModsListForPath(this.settings.modsPath);
-    } else {
-      await window.modManager?.fetchMods?.();
-    }
-
-    if (
-      this.settings.pluginsPath &&
-      window.pluginManager?.loadPluginsFromFolder
-    ) {
-      await window.pluginManager.loadPluginsFromFolder(
-        this.settings.pluginsPath,
-      );
-    } else if (!this.settings.pluginsPath) {
-      await window.pluginManager?.fetchPlugins?.();
-    }
-  }
-
   async setTheme(theme) {
     this.settings.theme = theme;
     this.applyTheme(theme);
@@ -4675,7 +1967,7 @@ class SettingsManager {
       );
       const switchSyncMode =
         await window.electronAPI.store.get('switchSyncMode');
-      const switchDriveLetter = await this.resolveStoredSwitchDrivePath(
+      const switchDriveLetter = await this.switchSettings.resolveStoredSwitchDrivePath(
         await window.electronAPI.store.get('switchDriveLetter'),
       );
       const conflictDetectionEnabled = await window.electronAPI.store.get(
@@ -4873,8 +2165,8 @@ class SettingsManager {
     }
 
     try {
-      this.applyHardwareLibraryModePaths();
-      this.applyActiveModsLibraryPath();
+      this.librarySettings.applyHardwareLibraryModePaths();
+      this.librarySettings.applyActiveModsLibraryPath();
       await window.electronAPI.store.set('modsPath', this.settings.modsPath);
       await window.electronAPI.store.set(
         'pluginsPath',
@@ -5282,159 +2574,6 @@ class SettingsManager {
     }
   }
 
-  async clearTempFiles() {
-    if (!window.electronAPI || !window.electronAPI.clearTempFiles) {
-      if (window.toastManager) {
-        window.toastManager.error('toasts.clearTempFilesNotAvailable');
-      }
-      return;
-    }
-
-    const btn = document.querySelector<HTMLButtonElement>(
-      '#clear-temp-files-btn',
-    );
-    if (btn) {
-      btn.disabled = true;
-      btn.style.opacity = '0.6';
-    }
-
-    try {
-      if (window.toastManager) {
-        window.toastManager.info('toasts.clearingTempFiles');
-      }
-
-      const result = await window.electronAPI.clearTempFiles();
-
-      if (result.success) {
-        if (window.toastManager) {
-          window.toastManager.success('toasts.tempFilesCleared');
-        }
-      } else {
-        if (window.toastManager) {
-          window.toastManager.error('toasts.failedToClearTempFiles', 3000, {
-            error: result.error,
-          });
-        }
-      }
-    } catch (error) {
-      if (window.toastManager) {
-        window.toastManager.error('toasts.failedToClearTempFiles', 3000, {
-          error: error.message,
-        });
-      }
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-      }
-    }
-  }
-
-  async showPendingConfigRestoreToast() {
-    try {
-      const restoredAt = await window.electronAPI?.store?.get?.(
-        'configRestore.completedAt',
-      );
-      if (!restoredAt) {
-        return;
-      }
-
-      await window.electronAPI.store.delete('configRestore.completedAt');
-      setTimeout(() => {
-        this.showToast(
-          this.translate('toasts.configBackupRestored'),
-          'success',
-        );
-      }, 800);
-    } catch (error) {
-      console.error('Failed to show config restore confirmation:', error);
-    }
-  }
-
-  async exportConfigBackup(button?: HTMLButtonElement) {
-    if (!window.electronAPI?.exportConfigBackup) {
-      this.showToast(this.translate('toasts.configBackupUnavailable'), 'error');
-      return;
-    }
-
-    if (button) {
-      button.disabled = true;
-      button.style.opacity = '0.6';
-    }
-
-    try {
-      const result = await window.electronAPI.exportConfigBackup();
-      if (result.success) {
-        this.showToast(
-          this.translate('toasts.configBackupExported'),
-          'success',
-        );
-      } else if (!result.canceled) {
-        this.showToast(
-          this.translate('toasts.configBackupExportFailed'),
-          'error',
-        );
-      }
-    } catch (error) {
-      console.error('Failed to export MOSAIC configuration:', error);
-      this.showToast(
-        this.translate('toasts.configBackupExportFailed'),
-        'error',
-      );
-    } finally {
-      if (button) {
-        button.disabled = false;
-        button.style.opacity = '1';
-      }
-    }
-  }
-
-  async restoreConfigBackup(button?: HTMLButtonElement) {
-    if (!window.electronAPI?.restoreConfigBackup) {
-      this.showToast(this.translate('toasts.configBackupUnavailable'), 'error');
-      return;
-    }
-
-    const confirmed = await this.confirmWithModal(
-      'settings-restore-config-backup-modal',
-      this.translate('settings.restoreConfigBackup'),
-      this.translate('settings.restoreConfigBackupConfirmMessage'),
-      this.translate('modals.restoreSlotBackup.confirm'),
-      'primary',
-    );
-    if (!confirmed) {
-      return;
-    }
-
-    if (button) {
-      button.disabled = true;
-      button.style.opacity = '0.6';
-    }
-
-    try {
-      const result = await window.electronAPI.restoreConfigBackup();
-      if (result.success) {
-        this.showRestartRequiredOverlay();
-      } else if (!result.canceled) {
-        this.showToast(
-          this.translate('toasts.configBackupRestoreFailed'),
-          'error',
-        );
-      }
-    } catch (error) {
-      console.error('Failed to restore MOSAIC configuration:', error);
-      this.showToast(
-        this.translate('toasts.configBackupRestoreFailed'),
-        'error',
-      );
-    } finally {
-      if (button) {
-        button.disabled = false;
-        button.style.opacity = '1';
-      }
-    }
-  }
-
   confirmWithModal(
     id: string,
     title: string,
@@ -5541,27 +2680,6 @@ class SettingsManager {
       }
     } else {
       console.log(`[Toast] ${type}: ${message}`);
-    }
-  }
-
-  async showResetStoreConfirmModal() {
-    const confirmed = await this.confirmWithModal(
-      'settings-reset-store-modal',
-      this.translate('settings.resetStoreTitle'),
-      this.translate('settings.resetStoreConfirmMessage'),
-      this.translate('settings.reset'),
-      'danger',
-    );
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      await window.electronAPI.store.clear();
-      this.showRestartRequiredOverlay('settings.restartRequiredAfterReset');
-    } catch (error) {
-      console.error('Failed to reset electron store:', error);
-      this.showToast(this.translate('toasts.failedToResetStore'), 'error');
     }
   }
 }

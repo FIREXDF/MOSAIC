@@ -465,7 +465,7 @@ export class ConflictModalManager {
       return;
     }
 
-    const added = await window.settingsManager.addIgnoredConflictPath(filePath, {
+    const added = await window.settingsManager.ignoredConflicts.addIgnoredConflictPath(filePath, {
       refreshConflicts: false,
     });
 

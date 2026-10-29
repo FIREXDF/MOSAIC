@@ -155,8 +155,8 @@ export class HardwareConnectionManager {
     const settingsManager = window.settingsManager as any;
     if (settingsManager?.settings) {
       settingsManager.settings.switchDriveLetter = resolvedPath;
-      settingsManager.applyHardwareLibraryModePaths?.();
-      settingsManager.updateSwitchDriveLetterUI?.();
+      settingsManager.librarySettings.applyHardwareLibraryModePaths();
+      settingsManager.switchSettings.updateSwitchDriveLetterUI();
     }
 
     await window.electronAPI.store.set('switchDriveLetter', resolvedPath);
