@@ -6,20 +6,24 @@ import {
   HandlerResponse,
 } from '../../types/common';
 import {
-  CharacterCssLayoutPayload,
-  CharacterCssSourceImportPayload,
-  CreateEchoSlotPayload,
-  createEchoSlot,
-  DuplicateCharacterCssPayload,
   duplicateCharacterCssEntry,
   getCharacterCssLayoutData,
   importCharacterCssSourceFiles,
-  RemoveEchoSlotPayload,
-  removeEchoSlot,
-  RemoveCharacterCssPayload,
   removeCharacterCssEntry,
   saveCharacterCssLayout,
 } from '../../characters/character-css-service';
+import {
+  createEchoSlot,
+  removeEchoSlot,
+} from '../../characters/character-css-echo';
+import type {
+  CharacterCssLayoutPayload,
+  CharacterCssSourceImportPayload,
+  CreateEchoSlotPayload,
+  DuplicateCharacterCssPayload,
+  RemoveCharacterCssPayload,
+  RemoveEchoSlotPayload,
+} from '../../characters/character-css-types';
 import {
   createErrorResponse,
   ErrorCodes,
