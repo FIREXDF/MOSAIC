@@ -185,39 +185,52 @@
 
     .tutorial-progress {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       justify-content: center;
       align-items: center;
+      min-height: 8px;
       padding: 32px 20px 20px;
       background: transparent;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .tutorial-progress-dot {
+      appearance: none;
+      flex: 0 0 auto;
       width: 8px;
       height: 8px;
+      margin: 0;
+      padding: 0;
+      border: 0;
       border-radius: 4px;
-      background: rgba(255, 255, 255, 0.1);
-      transition:
-        all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      background: rgba(255, 255, 255, 0.15);
       cursor: pointer;
-      position: relative;
-      overflow: visible;
+      transition:
+        width 0.3s ease,
+        background-color 0.3s ease;
     }
 
     .tutorial-progress-dot:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: scale(1.3);
+      background: rgba(255, 255, 255, 0.35);
     }
 
-    .tutorial-progress-dot.active {
-      width: 36px;
-      background: var(--accent-color);
+    .tutorial-progress-dot:focus-visible {
+      outline: 2px solid var(--accent-color);
+      outline-offset: 2px;
     }
 
     .tutorial-progress-dot.completed {
-      background: rgba(var(--accent-rgb), 0.6);
-      width: 8px;
+      background: rgba(var(--accent-rgb), 0.5);
+    }
+
+    .tutorial-progress-dot.active {
+      width: 24px;
+      background: var(--accent-color);
+    }
+
+    .tutorial-progress-dot.dot-exit {
+      width: 0;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .tutorial-resume-message {

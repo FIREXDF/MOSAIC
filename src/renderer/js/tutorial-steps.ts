@@ -353,7 +353,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <label class="hardware-option tutorial-choice" data-value="hardware">
             <input type="radio" name="hardware-type" value="hardware" class="tutorial-choice-input">
             <div class="option-card tutorial-option-card">
-                <div class="tutorial-option-accent"></div>
                 <div class="tutorial-option-icon">
                     <i class="bi bi-nintendo-switch tutorial-option-glyph"></i>
                 </div>
@@ -368,7 +367,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <label class="hardware-option tutorial-choice" data-value="emulator">
             <input type="radio" name="hardware-type" value="emulator" class="tutorial-choice-input">
             <div class="option-card tutorial-option-card">
-                <div class="tutorial-option-accent"></div>
                 <div class="tutorial-option-icon">
                     <i class="bi bi-laptop tutorial-option-glyph"></i>
                 </div>
@@ -388,15 +386,11 @@ document.addEventListener('DOMContentLoaded', () => {
     background: rgba(var(--accent-rgb), 0.2);
 }
 
-.hardware-option input:checked + .option-card > div:first-of-type {
-    opacity: 1;
-}
-
 .hardware-option input:checked + .option-card .check-icon {
     display: flex;
 }
 
-.hardware-option input:checked + .option-card > div:nth-of-type(2) {
+.hardware-option input:checked + .option-card > div:first-of-type {
     background: rgba(var(--accent-rgb), 0.25);
     transform: scale(1.1);
 }
@@ -499,7 +493,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <label class="switch-modded-option tutorial-choice" data-value="yes">
             <input type="radio" name="switch-modded" value="yes" class="tutorial-choice-input">
             <div class="option-card-yes tutorial-option-card-yes-compact">
-                <div class="tutorial-option-accent-success"></div>
                 <i class="bi bi-check-circle-fill tutorial-yes-glyph"></i>
                 <h4 class="tutorial-option-title">Yes</h4>
                 <p class="tutorial-option-subtitle">Continue setup</p>
@@ -512,7 +505,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <label class="switch-modded-option tutorial-choice" data-value="no">
             <input type="radio" name="switch-modded" value="no" class="tutorial-choice-input">
             <div class="option-card-no tutorial-option-card-no-compact">
-                <div class="tutorial-option-accent-warning"></div>
                 <i class="bi bi-box-arrow-up-right tutorial-no-glyph"></i>
                 <h4 class="tutorial-option-title">No</h4>
                 <p class="tutorial-option-subtitle">Open the guide first</p>
@@ -535,11 +527,6 @@ document.addEventListener('DOMContentLoaded', () => {
 .switch-modded-option input:checked + .option-card-no {
     border-color: var(--warning-color);
     background: rgba(var(--warning-color-rgb), 0.2);
-}
-
-.switch-modded-option input:checked + .option-card-yes > div:first-of-type,
-.switch-modded-option input:checked + .option-card-no > div:first-of-type {
-    opacity: 1;
 }
 
 .switch-modded-option input:checked + .option-card-yes .check-icon,
@@ -674,7 +661,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <label class="arcropolis-option tutorial-choice" data-value="yes">
             <input type="radio" name="arcropolis-installed" value="yes" class="tutorial-choice-input">
             <div class="option-card-yes tutorial-option-card-yes">
-                <div class="tutorial-option-accent-success"></div>
                 <div class="tutorial-option-icon-success">
                     <i class="bi bi-check-circle-fill tutorial-option-glyph-success"></i>
                 </div>
@@ -689,7 +675,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <label class="arcropolis-option tutorial-choice" data-value="no">
             <input type="radio" name="arcropolis-installed" value="no" class="tutorial-choice-input">
             <div class="option-card-no tutorial-option-card-no">
-                <div class="tutorial-option-accent-warning"></div>
                 <div class="tutorial-option-icon-warning">
                     <i class="bi bi-download tutorial-option-glyph-warning"></i>
                 </div>
@@ -709,15 +694,11 @@ document.addEventListener('DOMContentLoaded', () => {
     background: rgba(var(--success-color-rgb), 0.2);
 }
 
-.arcropolis-option input:checked + .option-card-yes > div:first-of-type {
-    opacity: 1;
-}
-
 .arcropolis-option input:checked + .option-card-yes .check-icon {
     display: flex;
 }
 
-.arcropolis-option input:checked + .option-card-yes > div:nth-of-type(2) {
+.arcropolis-option input:checked + .option-card-yes > div:first-of-type {
     background: rgba(var(--success-color-rgb), 0.25);
     transform: scale(1.1);
 }
@@ -727,15 +708,11 @@ document.addEventListener('DOMContentLoaded', () => {
     background: rgba(var(--warning-color-rgb), 0.2);
 }
 
-.arcropolis-option input:checked + .option-card-no > div:first-of-type {
-    opacity: 1;
-}
-
 .arcropolis-option input:checked + .option-card-no .check-icon {
     display: flex;
 }
 
-.arcropolis-option input:checked + .option-card-no > div:nth-of-type(2) {
+.arcropolis-option input:checked + .option-card-no > div:first-of-type {
     background: rgba(var(--warning-color-rgb), 0.25);
     transform: scale(1.1);
 }
@@ -3355,69 +3332,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return visibleSteps;
   }
 
-  function ensureProgressDotStyles() {
-    if (!document.querySelector<HTMLElement>('#dot-animation-style')) {
-      const style = document.createElement('style');
-      style.id = 'dot-animation-style';
-      style.textContent = `
-        .tutorial-progress {
-          gap: 8px;
-          min-height: 12px;
-        }
-
-        .tutorial-progress-dot {
-          flex: 0 0 auto;
-          width: 8px;
-          height: 8px;
-          margin: 0;
-          opacity: 0.42;
-          transform: translate3d(0, 0, 0) scale(1);
-          transition:
-            width 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-            opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-            background-color 0.28s ease,
-            box-shadow 0.28s ease,
-            transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-          will-change: width, opacity, transform;
-        }
-
-        .tutorial-progress-dot.active {
-          width: 34px;
-          opacity: 1;
-          transform: translate3d(0, 0, 0) scale(1);
-          box-shadow: 0 0 0 3px rgba(122, 155, 255, 0.13);
-        }
-
-        .tutorial-progress-dot.completed {
-          opacity: 0.72;
-        }
-
-        .tutorial-progress-dot.dot-enter {
-          opacity: 0;
-          transform: translate3d(0, -5px, 0) scale(0.72);
-        }
-
-        .tutorial-progress-dot.dot-exit {
-          width: 0 !important;
-          opacity: 0;
-          transform: translate3d(0, -4px, 0) scale(0.68);
-          pointer-events: none;
-        }
-
-        .tutorial-progress-dot:hover {
-          opacity: 1;
-          transform: translate3d(0, -1px, 0) scale(1.08);
-        }
-
-        body.no-animations .tutorial-progress-dot,
-        body.reduced-animations .tutorial-progress-dot {
-          transition-duration: 0.01ms !important;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }
-
   async function renderProgressDots() {
     const renderId = ++progressDotsRenderId;
     const container = document.querySelector<HTMLElement>('#progress-dots');
@@ -3425,8 +3339,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const visibleSteps = await getVisibleTutorialSteps();
     if (renderId !== progressDotsRenderId) return;
-
-    ensureProgressDotStyles();
 
     const currentActiveDisplayIndex = visibleSteps.indexOf(currentStep);
     const nextStepSet = new Set(visibleSteps);
@@ -3454,12 +3366,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     visibleSteps.forEach((stepIndex, displayIndex) => {
       let dot = existingDots.get(stepIndex);
-      const isNew = !dot || dot.classList.contains('dot-exit');
 
       if (!dot || dot.classList.contains('dot-exit')) {
         dot = document.createElement('button');
         dot.setAttribute('type', 'button');
-        dot.className = 'tutorial-progress-dot dot-enter';
+        dot.className = 'tutorial-progress-dot';
         dot.dataset.step = String(stepIndex);
         dot.setAttribute(
           'aria-label',
@@ -3487,12 +3398,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const currentNodeAtPosition = container.children[displayIndex];
       if (currentNodeAtPosition !== dot) {
         container.insertBefore(dot, currentNodeAtPosition || null);
-      }
-
-      if (isNew) {
-        requestAnimationFrame(() => {
-          dot!.classList.remove('dot-enter');
-        });
       }
     });
 

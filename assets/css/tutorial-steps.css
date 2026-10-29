@@ -440,16 +440,6 @@
   overflow: hidden;
 }
 
-.tutorial-option-accent {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--accent-color);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
 
 .tutorial-option-icon {
   width: 64px;
@@ -475,27 +465,7 @@
   margin: 0 auto;
 }
 
-.tutorial-option-accent-success {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--success-color);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
 
-.tutorial-option-accent-warning {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--warning-color);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
 
 .tutorial-check-badge-warning {
   position: absolute;
