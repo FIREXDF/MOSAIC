@@ -384,10 +384,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <style>
 .hardware-option input:checked + .option-card {
-    border-color: #7a9bff;
-    background: linear-gradient(135deg, rgba(122, 155, 255, 0.2), rgba(90, 123, 240, 0.1));
-    box-shadow: 0 8px 32px rgba(122, 155, 255, 0.3);
-    transform: translateY(-4px);
+    border-color: var(--accent-color);
+    background: rgba(var(--accent-rgb), 0.2);
 }
 
 .hardware-option input:checked + .option-card > div:first-of-type {
@@ -399,14 +397,12 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 .hardware-option input:checked + .option-card > div:nth-of-type(2) {
-    background: rgba(122, 155, 255, 0.25);
+    background: rgba(var(--accent-rgb), 0.25);
     transform: scale(1.1);
 }
 
 .hardware-option:hover .option-card {
-    border-color: rgba(122, 155, 255, 0.5);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(122, 155, 255, 0.2);
+    border-color: rgba(var(--accent-rgb), 0.5);
 }
 </style>
 `,
@@ -532,17 +528,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <style>
 .switch-modded-option input:checked + .option-card-yes {
-    border-color: #4caf50;
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(56, 142, 60, 0.1));
-    box-shadow: 0 8px 32px rgba(76, 175, 80, 0.3);
-    transform: translateY(-4px);
+    border-color: var(--success-color);
+    background: rgba(var(--success-color-rgb), 0.2);
 }
 
 .switch-modded-option input:checked + .option-card-no {
-    border-color: #ffc107;
-    background: linear-gradient(135deg, rgba(255, 193, 7, 0.2), rgba(255, 152, 0, 0.1));
-    box-shadow: 0 8px 32px rgba(255, 193, 7, 0.3);
-    transform: translateY(-4px);
+    border-color: var(--warning-color);
+    background: rgba(var(--warning-color-rgb), 0.2);
 }
 
 .switch-modded-option input:checked + .option-card-yes > div:first-of-type,
@@ -557,9 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 .switch-modded-option:hover .option-card-yes,
 .switch-modded-option:hover .option-card-no {
-    border-color: rgba(122, 155, 255, 0.5);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(122, 155, 255, 0.2);
+    border-color: rgba(var(--accent-rgb), 0.5);
 }
 </style>
 `,
@@ -715,10 +705,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <style>
 .arcropolis-option input:checked + .option-card-yes {
-    border-color: #4caf50;
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(56, 142, 60, 0.1));
-    box-shadow: 0 8px 32px rgba(76, 175, 80, 0.3);
-    transform: translateY(-4px);
+    border-color: var(--success-color);
+    background: rgba(var(--success-color-rgb), 0.2);
 }
 
 .arcropolis-option input:checked + .option-card-yes > div:first-of-type {
@@ -730,15 +718,13 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 .arcropolis-option input:checked + .option-card-yes > div:nth-of-type(2) {
-    background: rgba(76, 175, 80, 0.25);
+    background: rgba(var(--success-color-rgb), 0.25);
     transform: scale(1.1);
 }
 
 .arcropolis-option input:checked + .option-card-no {
-    border-color: #ffc107;
-    background: linear-gradient(135deg, rgba(255, 193, 7, 0.2), rgba(255, 152, 0, 0.1));
-    box-shadow: 0 8px 32px rgba(255, 193, 7, 0.3);
-    transform: translateY(-4px);
+    border-color: var(--warning-color);
+    background: rgba(var(--warning-color-rgb), 0.2);
 }
 
 .arcropolis-option input:checked + .option-card-no > div:first-of-type {
@@ -750,15 +736,13 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 .arcropolis-option input:checked + .option-card-no > div:nth-of-type(2) {
-    background: rgba(255, 193, 7, 0.25);
+    background: rgba(var(--warning-color-rgb), 0.25);
     transform: scale(1.1);
 }
 
 .arcropolis-option:hover .option-card-yes,
 .arcropolis-option:hover .option-card-no {
-    border-color: rgba(122, 155, 255, 0.5);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(122, 155, 255, 0.2);
+    border-color: rgba(var(--accent-rgb), 0.5);
 }
 </style>
 `,
@@ -1284,15 +1268,14 @@ document.addEventListener('DOMContentLoaded', () => {
     transition: all 0.2s ease;
 }
 .hardware-library-option input:checked + .hardware-library-card {
-    border-color: #7a9bff;
-    background: linear-gradient(135deg, rgba(122, 155, 255, 0.18), rgba(90, 123, 240, 0.08));
-    box-shadow: 0 8px 28px rgba(122, 155, 255, 0.22);
+    border-color: var(--accent-color);
+    background: rgba(var(--accent-rgb), 0.18);
 }
 .hardware-library-option input:checked + .hardware-library-card .check-icon {
     display: block;
 }
 .hardware-library-option:hover .hardware-library-card {
-    border-color: rgba(122, 155, 255, 0.45);
+    border-color: rgba(var(--accent-rgb), 0.45);
 }
 </style>
 `,

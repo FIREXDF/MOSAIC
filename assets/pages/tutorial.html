@@ -90,7 +90,6 @@
       font-size: 16px;
       color: #6b7280;
       font-weight: 500;
-      letter-spacing: 1px;
       margin: 0;
     }
 
@@ -213,29 +212,12 @@
 
     .tutorial-progress-dot.active {
       width: 36px;
-      background: #7a9bff;
-      box-shadow:
-        0 0 20px rgba(122, 155, 255, 0.6),
-        0 0 10px rgba(122, 155, 255, 0.3);
-      animation: dotPulse 2s ease-in-out infinite;
-    }
-
-    @keyframes dotPulse {
-
-      0%,
-      100% {
-        box-shadow: 0 0 20px rgba(122, 155, 255, 0.6), 0 0 10px rgba(122, 155, 255, 0.3);
-      }
-
-      50% {
-        box-shadow: 0 0 24px rgba(122, 155, 255, 0.8), 0 0 14px rgba(122, 155, 255, 0.5);
-      }
+      background: var(--accent-color);
     }
 
     .tutorial-progress-dot.completed {
-      background: rgba(122, 155, 255, 0.6);
+      background: rgba(var(--accent-rgb), 0.6);
       width: 8px;
-      box-shadow: 0 0 8px rgba(122, 155, 255, 0.4);
     }
 
     .tutorial-resume-message {
@@ -290,29 +272,16 @@
       width: 48px;
       height: 48px;
       border-radius: 14px;
-      background: linear-gradient(135deg, #7a9bff, #5a7bf0);
+      background: rgba(var(--accent-rgb), 0.15);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      box-shadow: 0 8px 16px -4px rgba(90, 123, 240, 0.4);
-      position: relative;
-    }
-
-    .tutorial-step-icon::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border-radius: 14px;
-      background: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
     }
 
     .tutorial-step-icon i {
       font-size: 24px;
-      color: #fff;
+      color: var(--accent-color);
     }
 
     .tutorial-step-title {
@@ -374,17 +343,10 @@
     .tutorial-btn-primary {
       background: #fff;
       color: #111;
-      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
     }
 
     .tutorial-btn-primary:hover {
       background: #f0f0f0;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(255, 255, 255, 0.15);
-    }
-
-    .tutorial-btn-primary:active {
-      transform: translateY(0);
     }
 
     .tutorial-btn-secondary {
@@ -421,9 +383,9 @@
     a[href*='discord.gg']:hover {
       color: #9ab5ff !important;
       border-bottom-color: rgba(122, 155, 255, 0.6) !important;
-      text-shadow: 0 0 8px rgba(122, 155, 255, 0.4) !important;
     }
   </style>
+  <link rel="stylesheet" href="../css/variables.css" />
   <link rel="stylesheet" href="../css/tutorial-steps.css" />
 </head>
 

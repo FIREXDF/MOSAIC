@@ -1,9 +1,5 @@
-:root {
-  --tutorial-accent: #7a9bff;
-}
-
 .tutorial-text-white {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .tutorial-row {
@@ -17,19 +13,19 @@
 }
 
 .tutorial-label {
-  color: #fff;
+  color: var(--text-primary);
   display: block;
 }
 
 .tutorial-box-success {
-  background: rgba(76, 175, 80, 0.1);
-  border: 1px solid rgba(76, 175, 80, 0.3);
+  background: rgba(var(--success-color-rgb), 0.1);
+  border: 1px solid rgba(var(--success-color-rgb), 0.3);
   border-radius: 12px;
   padding: 16px;
 }
 
 .tutorial-icon-success {
-  color: #4caf50;
+  color: var(--success-color);
   font-size: 24px;
 }
 
@@ -41,7 +37,7 @@
 }
 
 .tutorial-status-title {
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 14px;
   font-size: 20px;
 }
@@ -59,12 +55,12 @@
 }
 
 .tutorial-text-white-md {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 16px;
 }
 
 .tutorial-result-text {
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 16px;
 }
 
@@ -74,7 +70,7 @@
 }
 
 .tutorial-option-title {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 18px;
   font-weight: 700;
   margin: 0 0 8px 0;
@@ -102,7 +98,7 @@
 }
 
 .tutorial-text-error {
-  color: #ff4d4d;
+  color: var(--danger-color);
 }
 
 .tutorial-lead-lg {
@@ -118,7 +114,7 @@
 }
 
 .tutorial-progress-label {
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
@@ -132,14 +128,14 @@
 
 .tutorial-feature-icon {
   font-size: 24px;
-  color: var(--tutorial-accent);
+  color: var(--accent-color);
   margin-bottom: 12px;
   display: block;
 }
 
 .tutorial-feature-title {
   display: block;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
@@ -149,19 +145,18 @@
   right: 16px;
   width: 28px;
   height: 28px;
-  background: #4caf50;
+  background: var(--success-color);
   border-radius: 50%;
   display: none;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
 }
 
 .tutorial-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(122, 155, 255, 0.3);
-  border-top-color: var(--tutorial-accent);
+  border: 2px solid rgba(var(--accent-rgb), 0.3);
+  border-top-color: var(--accent-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -173,8 +168,8 @@
 }
 
 .tutorial-box-error-center {
-  background: rgba(255, 77, 77, 0.1);
-  border: 1px solid rgba(255, 77, 77, 0.3);
+  background: rgba(var(--danger-rgb), 0.1);
+  border: 1px solid rgba(var(--danger-rgb), 0.3);
   border-radius: 12px;
   padding: 16px;
   text-align: center;
@@ -202,7 +197,7 @@
 }
 
 .tutorial-icon-warning {
-  color: #ffc107;
+  color: var(--warning-color);
   font-size: 18px;
 }
 
@@ -214,7 +209,7 @@
 }
 
 .tutorial-question-title {
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 12px;
   font-size: 24px;
   font-weight: 700;
@@ -227,15 +222,15 @@
 }
 
 .tutorial-text-warning {
-  color: #ffc107;
+  color: var(--warning-color);
   margin-bottom: 16px;
 }
 
 .tutorial-btn-warning {
   padding: 6px 12px;
-  background: rgba(255, 193, 7, 0.1);
-  color: #ffc107;
-  border: 1px solid rgba(255, 193, 7, 0.3);
+  background: rgba(var(--warning-color-rgb), 0.1);
+  color: var(--warning-color);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.3);
   border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
@@ -245,9 +240,9 @@
 
 .tutorial-btn-warning-plain {
   padding: 6px 12px;
-  background: rgba(255, 193, 7, 0.1);
-  color: #ffc107;
-  border: 1px solid rgba(255, 193, 7, 0.3);
+  background: rgba(var(--warning-color-rgb), 0.1);
+  color: var(--warning-color);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.3);
   border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
@@ -289,13 +284,13 @@
 }
 
 .tutorial-scroll-indicator-icon {
-  color: var(--tutorial-accent);
+  color: var(--accent-color);
   font-size: 20px;
 }
 
 .tutorial-box-warning-panel {
-  background: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.3);
+  background: rgba(var(--warning-color-rgb), 0.1);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.3);
   border-radius: 12px;
   padding: 20px;
   max-width: 500px;
@@ -304,7 +299,7 @@
 }
 
 .tutorial-warning-title {
-  color: #ffc107;
+  color: var(--warning-color);
   margin-bottom: 16px;
   font-weight: 600;
 }
@@ -332,9 +327,9 @@
 .tutorial-btn-yes {
   flex: 1;
   padding: 12px;
-  background: rgba(76, 175, 80, 0.2);
-  color: #4caf50;
-  border: 2px solid rgba(76, 175, 80, 0.3);
+  background: rgba(var(--success-color-rgb), 0.2);
+  color: var(--success-color);
+  border: 2px solid rgba(var(--success-color-rgb), 0.3);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
@@ -343,24 +338,24 @@
 .tutorial-btn-no {
   flex: 1;
   padding: 12px;
-  background: rgba(255, 77, 77, 0.2);
-  color: #ff4d4d;
-  border: 2px solid rgba(255, 77, 77, 0.3);
+  background: rgba(var(--danger-rgb), 0.2);
+  color: var(--danger-color);
+  border: 2px solid rgba(var(--danger-rgb), 0.3);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
 }
 
 .tutorial-box-success-center {
-  background: rgba(76, 175, 80, 0.1);
-  border: 1px solid rgba(76, 175, 80, 0.3);
+  background: rgba(var(--success-color-rgb), 0.1);
+  border: 1px solid rgba(var(--success-color-rgb), 0.3);
   border-radius: 12px;
   padding: 16px;
   text-align: center;
 }
 
 .tutorial-icon-success-lg {
-  color: #4caf50;
+  color: var(--success-color);
   font-size: 32px;
   margin-bottom: 12px;
 }
@@ -371,16 +366,16 @@
 }
 
 .tutorial-icon-error-lg {
-  color: #ff4d4d;
+  color: var(--danger-color);
   font-size: 32px;
   margin-bottom: 12px;
 }
 
 .tutorial-btn-accent {
   padding: 10px 20px;
-  background: rgba(122, 155, 255, 0.2);
-  color: var(--tutorial-accent);
-  border: 2px solid rgba(122, 155, 255, 0.3);
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--accent-color);
+  border: 2px solid rgba(var(--accent-rgb), 0.3);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
@@ -388,14 +383,14 @@
 }
 
 .tutorial-tip-title {
-  color: #fff;
+  color: var(--text-primary);
   display: block;
   margin-bottom: 2px;
   font-size: 15px;
 }
 
 .tutorial-text-success {
-  color: #4caf50;
+  color: var(--success-color);
 }
 
 .tutorial-text-light {
@@ -406,7 +401,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #fff;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
@@ -421,31 +416,22 @@
 .tutorial-hero-icon {
   width: 80px;
   height: 80px;
-  background: linear-gradient(
-    135deg,
-    rgba(122, 155, 255, 0.2),
-    rgba(90, 123, 240, 0.2)
-  );
+  background: rgba(var(--accent-rgb), 0.2);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 24px;
-  box-shadow: 0 8px 32px rgba(122, 155, 255, 0.2);
 }
 
 .tutorial-hero-glyph {
   font-size: 40px;
-  color: var(--tutorial-accent);
+  color: var(--accent-color);
 }
 
 .tutorial-option-card {
-  background: linear-gradient(
-    135deg,
-    rgba(122, 155, 255, 0.1),
-    rgba(90, 123, 240, 0.05)
-  );
-  border: 2px solid rgba(122, 155, 255, 0.3);
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 2px solid rgba(var(--accent-rgb), 0.3);
   border-radius: 16px;
   padding: 32px 24px;
   text-align: center;
@@ -460,7 +446,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--tutorial-accent), #5a7bf0);
+  background: var(--accent-color);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -468,7 +454,7 @@
 .tutorial-option-icon {
   width: 64px;
   height: 64px;
-  background: rgba(122, 155, 255, 0.15);
+  background: rgba(var(--accent-rgb), 0.15);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -479,7 +465,7 @@
 
 .tutorial-option-glyph {
   font-size: 36px;
-  color: var(--tutorial-accent);
+  color: var(--accent-color);
 }
 
 .tutorial-options {
@@ -495,7 +481,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #4caf50, #388e3c);
+  background: var(--success-color);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -506,7 +492,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #ffc107, #ff9800);
+  background: var(--warning-color);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -517,22 +503,21 @@
   right: 16px;
   width: 28px;
   height: 28px;
-  background: #ffc107;
+  background: var(--warning-color);
   border-radius: 50%;
   display: none;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
 }
 
 .tutorial-hero-glyph-success {
   font-size: 40px;
-  color: #4caf50;
+  color: var(--success-color);
 }
 
 .tutorial-box-warning-center {
-  background: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.3);
+  background: rgba(var(--warning-color-rgb), 0.1);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.3);
   border-radius: 12px;
   padding: 16px;
   text-align: center;
@@ -546,13 +531,13 @@
 
 .tutorial-mode-icon {
   font-size: 30px;
-  color: var(--tutorial-accent);
+  color: var(--accent-color);
   margin-bottom: 12px;
 }
 
 .tutorial-mode-title {
   display: block;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
@@ -568,15 +553,15 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  color: #4caf50;
+  color: var(--success-color);
   font-size: 20px;
 }
 
 .tutorial-emulator-btn {
   flex: 1;
   padding: 20px;
-  background: rgba(122, 155, 255, 0.1);
-  border: 2px solid rgba(122, 155, 255, 0.3);
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 2px solid rgba(var(--accent-rgb), 0.3);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
@@ -584,7 +569,7 @@
 
 .tutorial-emulator-icon {
   font-size: 32px;
-  color: var(--tutorial-accent);
+  color: var(--accent-color);
   display: block;
   margin-bottom: 8px;
 }
@@ -595,17 +580,17 @@
 }
 
 .tutorial-box-warning {
-  background: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.3);
+  background: rgba(var(--warning-color-rgb), 0.1);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.3);
   border-radius: 12px;
   padding: 16px;
 }
 
 .tutorial-btn-accent-block {
   padding: 10px 20px;
-  background: rgba(122, 155, 255, 0.2);
-  color: var(--tutorial-accent);
-  border: 1px solid rgba(122, 155, 255, 0.3);
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--accent-color);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
@@ -613,18 +598,18 @@
 }
 
 .tutorial-link {
-  color: var(--tutorial-accent);
+  color: var(--accent-color);
   text-decoration: none;
   font-weight: 600;
-  border-bottom: 1px solid rgba(122, 155, 255, 0.3);
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.3);
   transition: all 0.2s;
 }
 
 .tutorial-step-number {
   width: 24px;
   height: 24px;
-  background: rgba(122, 155, 255, 0.2);
-  color: var(--tutorial-accent);
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--accent-color);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -634,9 +619,9 @@
 }
 
 .tutorial-btn-browse {
-  background: rgba(122, 155, 255, 0.2);
-  color: var(--tutorial-accent);
-  border: 1px solid rgba(122, 155, 255, 0.3);
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--accent-color);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
@@ -695,8 +680,8 @@
 
 .tutorial-exe-warning {
   margin-top: 12px;
-  background: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.3);
+  background: rgba(var(--warning-color-rgb), 0.1);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.3);
   border-radius: 12px;
   padding: 12px 16px;
   display: flex;
@@ -723,7 +708,7 @@
 }
 
 .tutorial-release-legend {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 700;
   margin-bottom: 4px;
@@ -733,18 +718,18 @@
   display: block;
   cursor: pointer;
   padding: 16px;
-  border: 1px solid rgba(76, 175, 80, 0.45);
+  border: 1px solid rgba(var(--success-color-rgb), 0.45);
   border-radius: 12px;
-  background: rgba(76, 175, 80, 0.1);
+  background: rgba(var(--success-color-rgb), 0.1);
 }
 
 .tutorial-release-option {
   display: block;
   cursor: pointer;
   padding: 16px;
-  border: 1px solid rgba(122, 155, 255, 0.35);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
   border-radius: 12px;
-  background: rgba(122, 155, 255, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .tutorial-release-continue {
@@ -753,7 +738,7 @@
 }
 
 .tutorial-welcome-title {
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 12px;
   font-size: 20px;
   font-weight: 600;
@@ -789,12 +774,8 @@
 }
 
 .tutorial-option-card-yes-compact {
-  background: linear-gradient(
-    135deg,
-    rgba(76, 175, 80, 0.1),
-    rgba(56, 142, 60, 0.05)
-  );
-  border: 2px solid rgba(76, 175, 80, 0.3);
+  background: rgba(var(--success-color-rgb), 0.1);
+  border: 2px solid rgba(var(--success-color-rgb), 0.3);
   border-radius: 16px;
   padding: 28px 20px;
   text-align: center;
@@ -805,18 +786,14 @@
 
 .tutorial-yes-glyph {
   font-size: 36px;
-  color: #4caf50;
+  color: var(--success-color);
   display: block;
   margin-bottom: 16px;
 }
 
 .tutorial-option-card-no-compact {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 193, 7, 0.1),
-    rgba(255, 152, 0, 0.05)
-  );
-  border: 2px solid rgba(255, 193, 7, 0.3);
+  background: rgba(var(--warning-color-rgb), 0.1);
+  border: 2px solid rgba(var(--warning-color-rgb), 0.3);
   border-radius: 16px;
   padding: 28px 20px;
   text-align: center;
@@ -827,7 +804,7 @@
 
 .tutorial-no-glyph {
   font-size: 36px;
-  color: #ffc107;
+  color: var(--warning-color);
   display: block;
   margin-bottom: 16px;
 }
@@ -838,15 +815,15 @@
 }
 
 .tutorial-box-warning-left {
-  background: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.3);
+  background: rgba(var(--warning-color-rgb), 0.1);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.3);
   border-radius: 12px;
   padding: 16px;
   text-align: left;
 }
 
 .tutorial-help-title {
-  color: #ffc107;
+  color: var(--warning-color);
   margin: 0 0 12px 0;
   font-weight: 600;
 }
@@ -863,17 +840,17 @@
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  background: rgba(122, 155, 255, 0.2);
-  color: var(--tutorial-accent);
-  border: 1px solid rgba(122, 155, 255, 0.3);
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--accent-color);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
   border-radius: 8px;
   text-decoration: none;
   font-weight: 600;
 }
 
 .tutorial-box-success-compact {
-  background: rgba(76, 175, 80, 0.1);
-  border: 1px solid rgba(76, 175, 80, 0.3);
+  background: rgba(var(--success-color-rgb), 0.1);
+  border: 1px solid rgba(var(--success-color-rgb), 0.3);
   border-radius: 12px;
   padding: 14px;
   text-align: center;
@@ -882,26 +859,17 @@
 .tutorial-hero-icon-success {
   width: 80px;
   height: 80px;
-  background: linear-gradient(
-    135deg,
-    rgba(76, 175, 80, 0.2),
-    rgba(56, 142, 60, 0.2)
-  );
+  background: rgba(var(--success-color-rgb), 0.2);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 24px;
-  box-shadow: 0 8px 32px rgba(76, 175, 80, 0.2);
 }
 
 .tutorial-option-card-yes {
-  background: linear-gradient(
-    135deg,
-    rgba(76, 175, 80, 0.1),
-    rgba(56, 142, 60, 0.05)
-  );
-  border: 2px solid rgba(76, 175, 80, 0.3);
+  background: rgba(var(--success-color-rgb), 0.1);
+  border: 2px solid rgba(var(--success-color-rgb), 0.3);
   border-radius: 16px;
   padding: 32px 24px;
   text-align: center;
@@ -913,7 +881,7 @@
 .tutorial-option-icon-success {
   width: 64px;
   height: 64px;
-  background: rgba(76, 175, 80, 0.15);
+  background: rgba(var(--success-color-rgb), 0.15);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -924,16 +892,12 @@
 
 .tutorial-option-glyph-success {
   font-size: 36px;
-  color: #4caf50;
+  color: var(--success-color);
 }
 
 .tutorial-option-card-no {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 193, 7, 0.1),
-    rgba(255, 152, 0, 0.05)
-  );
-  border: 2px solid rgba(255, 193, 7, 0.3);
+  background: rgba(var(--warning-color-rgb), 0.1);
+  border: 2px solid rgba(var(--warning-color-rgb), 0.3);
   border-radius: 16px;
   padding: 32px 24px;
   text-align: center;
@@ -945,7 +909,7 @@
 .tutorial-option-icon-warning {
   width: 64px;
   height: 64px;
-  background: rgba(255, 193, 7, 0.15);
+  background: rgba(var(--warning-color-rgb), 0.15);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -956,13 +920,13 @@
 
 .tutorial-option-glyph-warning {
   font-size: 36px;
-  color: #ffc107;
+  color: var(--warning-color);
 }
 
 .tutorial-btn-retry {
-  background: rgba(122, 155, 255, 0.2);
-  color: var(--tutorial-accent);
-  border: 1px solid rgba(122, 155, 255, 0.3);
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--accent-color);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
   padding: 10px 20px;
   border-radius: 8px;
   cursor: pointer;
@@ -971,21 +935,21 @@
 
 .tutorial-detecting {
   text-align: center;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .tutorial-drives-title {
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 12px;
   font-weight: 600;
 }
 
 .tutorial-drive-btn {
   padding: 12px;
-  background: rgba(122, 155, 255, 0.1);
-  border: 2px solid rgba(122, 155, 255, 0.3);
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 2px solid rgba(var(--accent-rgb), 0.3);
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
   text-align: left;
   transition: all 0.2s;
@@ -997,7 +961,7 @@
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
   width: 100%;
 }
@@ -1005,9 +969,9 @@
 .tutorial-btn-manual-error {
   margin-top: 12px;
   padding: 10px 20px;
-  background: rgba(122, 155, 255, 0.2);
-  color: var(--tutorial-accent);
-  border: 1px solid rgba(122, 155, 255, 0.3);
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--accent-color);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
@@ -1031,7 +995,7 @@
 
 .tutorial-progress-fill {
   height: 100%;
-  background: var(--tutorial-accent);
+  background: var(--accent-color);
   transition: width 0.3s;
 }
 
@@ -1048,7 +1012,7 @@
 }
 
 .tutorial-library-title {
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 12px;
   font-size: 22px;
   font-weight: 700;
@@ -1075,8 +1039,8 @@
 }
 
 .tutorial-library-selected {
-  background: rgba(76, 175, 80, 0.1);
-  border: 1px solid rgba(76, 175, 80, 0.3);
+  background: rgba(var(--success-color-rgb), 0.1);
+  border: 1px solid rgba(var(--success-color-rgb), 0.3);
   border-radius: 10px;
   padding: 12px;
   color: rgba(255, 255, 255, 0.78);
@@ -1098,7 +1062,7 @@
 }
 
 .tutorial-library-selected-icon {
-  color: #4caf50;
+  color: var(--success-color);
   font-size: 18px;
   flex: 0 0 auto;
 }
@@ -1121,17 +1085,17 @@
   align-items: center;
   gap: 8px;
   padding: 8px 11px;
-  background: rgba(122, 155, 255, 0.18);
+  background: rgba(var(--accent-rgb), 0.18);
   color: #dce4ff;
-  border: 1px solid rgba(122, 155, 255, 0.32);
+  border: 1px solid rgba(var(--accent-rgb), 0.32);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
 }
 
 .tutorial-library-picker {
-  background: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.3);
+  background: rgba(var(--warning-color-rgb), 0.1);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.3);
   border-radius: 10px;
   padding: 14px;
   color: rgba(255, 255, 255, 0.78);
@@ -1183,9 +1147,9 @@
   justify-content: center;
   gap: 8px;
   padding: 9px 13px;
-  background: rgba(122, 155, 255, 0.18);
+  background: rgba(var(--accent-rgb), 0.18);
   color: #dce4ff;
-  border: 1px solid rgba(122, 155, 255, 0.32);
+  border: 1px solid rgba(var(--accent-rgb), 0.32);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
@@ -1199,7 +1163,7 @@
   gap: 8px;
   padding: 9px 13px;
   background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  color: var(--text-primary);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   cursor: pointer;
@@ -1207,11 +1171,11 @@
 }
 
 .tutorial-library-empty {
-  background: rgba(255, 193, 7, 0.08);
-  border: 1px solid rgba(255, 193, 7, 0.24);
+  background: rgba(var(--warning-color-rgb), 0.08);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.24);
   border-radius: 8px;
   padding: 10px;
-  color: #ffc107;
+  color: var(--warning-color);
 }
 
 .tutorial-library-drive-btn {
@@ -1220,16 +1184,16 @@
   gap: 10px;
   width: 100%;
   padding: 11px 12px;
-  background: rgba(122, 155, 255, 0.1);
-  border: 1px solid rgba(122, 155, 255, 0.3);
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
   text-align: left;
 }
 
 .tutorial-library-drive-icon {
-  color: var(--tutorial-accent);
+  color: var(--accent-color);
   font-size: 18px;
 }
 
@@ -1249,16 +1213,16 @@
 }
 
 .tutorial-library-error {
-  background: rgba(255, 77, 77, 0.08);
-  border: 1px solid rgba(255, 77, 77, 0.24);
+  background: rgba(var(--danger-rgb), 0.08);
+  border: 1px solid rgba(var(--danger-rgb), 0.24);
   border-radius: 8px;
   padding: 10px;
-  color: #ff7777;
+  color: var(--danger-color);
 }
 
 .tutorial-library-next {
-  background: rgba(122, 155, 255, 0.1);
-  border: 1px solid rgba(122, 155, 255, 0.25);
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
   border-radius: 10px;
   padding: 12px;
   color: rgba(255, 255, 255, 0.78);
@@ -1273,8 +1237,8 @@
 }
 
 .tutorial-box-accent {
-  background: rgba(122, 155, 255, 0.1);
-  border: 1px solid rgba(122, 155, 255, 0.3);
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
   border-radius: 12px;
   padding: 16px;
 }
@@ -1282,16 +1246,16 @@
 .tutorial-btn-compatible {
   flex: 1;
   padding: 12px;
-  background: rgba(122, 155, 255, 0.2);
-  color: #fff;
-  border: 1px solid rgba(122, 155, 255, 0.4);
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--text-primary);
+  border: 1px solid rgba(var(--accent-rgb), 0.4);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
 }
 
 .tutorial-text-warning-tight {
-  color: #ffc107;
+  color: var(--warning-color);
   margin-bottom: 12px;
 }
 
@@ -1305,8 +1269,8 @@
 .tutorial-plugins-note {
   margin-top: 24px;
   padding: 12px 16px;
-  background: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.2);
+  background: rgba(var(--warning-color-rgb), 0.1);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.2);
   border-radius: 8px;
   display: flex;
   gap: 12px;
@@ -1315,7 +1279,7 @@
 }
 
 .tutorial-plugins-note-icon {
-  color: #ffc107;
+  color: var(--warning-color);
   margin-top: 2px;
 }
 
@@ -1327,7 +1291,7 @@
 .tutorial-path-dialog {
   max-width: 420px;
   background: #1e1e24;
-  border: 1px solid rgba(255, 193, 7, 0.3);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.3);
   border-radius: 12px;
   padding: 20px;
   text-align: left;
@@ -1354,7 +1318,7 @@
 
 .tutorial-path-dialog-keep {
   background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  color: var(--text-primary);
   border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 7px 14px;
   border-radius: 6px;
@@ -1364,9 +1328,9 @@
 }
 
 .tutorial-path-dialog-change {
-  background: rgba(255, 193, 7, 0.15);
-  color: #ffc107;
-  border: 1px solid rgba(255, 193, 7, 0.3);
+  background: rgba(var(--warning-color-rgb), 0.15);
+  color: var(--warning-color);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.3);
   padding: 7px 14px;
   border-radius: 6px;
   cursor: pointer;
@@ -1388,7 +1352,7 @@
 .tutorial-tip-icon-success {
   width: 40px;
   height: 40px;
-  background: rgba(76, 175, 80, 0.1);
+  background: rgba(var(--success-color-rgb), 0.1);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -1397,13 +1361,13 @@
 
 .tutorial-tip-glyph-success {
   font-size: 20px;
-  color: #4caf50;
+  color: var(--success-color);
 }
 
 .tutorial-tip-icon-accent {
   width: 40px;
   height: 40px;
-  background: rgba(122, 155, 255, 0.1);
+  background: rgba(var(--accent-rgb), 0.1);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -1413,7 +1377,7 @@
 .tutorial-tip-icon-warning {
   width: 40px;
   height: 40px;
-  background: rgba(255, 193, 7, 0.1);
+  background: rgba(var(--warning-color-rgb), 0.1);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -1422,7 +1386,7 @@
 
 .tutorial-tip-glyph-warning {
   font-size: 20px;
-  color: #ffc107;
+  color: var(--warning-color);
 }
 
 .tutorial-lead-xl {
@@ -1474,7 +1438,7 @@
 }
 
 .tutorial-gb-action {
-  color: #fff;
+  color: var(--text-primary);
   font-weight: 800;
   font-size: 11px;
   line-height: 1.2;
@@ -1494,11 +1458,7 @@
   transform: translateX(-50%);
   height: 30px;
   width: 2px;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.2),
-    var(--tutorial-accent)
-  );
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .tutorial-gb-arrow-head {
@@ -1506,14 +1466,14 @@
   left: 50%;
   bottom: 0;
   transform: translateX(-50%);
-  color: var(--tutorial-accent);
+  color: var(--accent-color);
   font-size: 18px;
 }
 
 .tutorial-gb-result {
   margin-top: 10px;
-  background: rgba(122, 155, 255, 0.1);
-  border: 1px solid rgba(122, 155, 255, 0.2);
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
   padding: 16px;
   border-radius: 12px;
 }
@@ -1523,7 +1483,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: var(--tutorial-accent);
+  color: var(--accent-color);
   font-weight: 600;
   margin-bottom: 6px;
 }
@@ -1537,17 +1497,16 @@
 .tutorial-done-icon {
   width: 80px;
   height: 80px;
-  background: rgba(76, 175, 80, 0.1);
+  background: rgba(var(--success-color-rgb), 0.1);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 24px;
-  box-shadow: 0 0 30px rgba(76, 175, 80, 0.2);
 }
 
 .tutorial-done-title {
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 16px;
   font-size: 24px;
 }
@@ -1571,7 +1530,7 @@
 .tutorial-welcome-back-icon {
   width: 64px;
   height: 64px;
-  background: rgba(76, 175, 80, 0.1);
+  background: rgba(var(--success-color-rgb), 0.1);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1581,11 +1540,11 @@
 
 .tutorial-welcome-back-glyph {
   font-size: 32px;
-  color: #4caf50;
+  color: var(--success-color);
 }
 
 .tutorial-welcome-back-title {
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 12px;
   font-size: 22px;
 }
@@ -1600,14 +1559,14 @@
 }
 
 .tutorial-box-error {
-  background: rgba(255, 77, 77, 0.1);
-  border: 1px solid rgba(255, 77, 77, 0.3);
+  background: rgba(var(--danger-rgb), 0.1);
+  border: 1px solid rgba(var(--danger-rgb), 0.3);
   border-radius: 12px;
   padding: 16px;
 }
 
 .tutorial-error-title {
-  color: #ff7878;
+  color: var(--danger-color);
   margin-bottom: 8px;
 }
 
@@ -1623,7 +1582,7 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -1631,8 +1590,8 @@
   padding: 8px 12px;
   border: 0;
   border-radius: 7px;
-  background: var(--tutorial-accent);
-  color: #fff;
+  background: var(--accent-color);
+  color: var(--text-primary);
   cursor: pointer;
   font-weight: 600;
 }
