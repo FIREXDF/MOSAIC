@@ -3034,9 +3034,7 @@ body.no-animations .settings-tab-btn.active::before {
   align-content: start;
   align-items: start;
   gap: 10px;
-  flex: 1 1 auto;
-  min-height: 220px;
-  overflow: auto;
+  flex: 0 0 auto;
   padding: 2px 4px 8px 2px;
 }
 
@@ -3199,9 +3197,47 @@ body.no-animations .character-umc-toolbar .is-loading i {
   animation: none;
 }
 
-@media (max-height: 640px) {
+@media (min-width: 1000px) {
+  .character-umc-view {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 14px 18px;
+    overflow: hidden;
+  }
+
+  .character-umc-toolbar {
+    grid-column: 1 / -1;
+  }
+
+  .character-umc-list-toolbar {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
   .character-umc-grid {
-    flex: 0 0 auto;
+    grid-column: 1;
+    grid-row: 3;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .character-umc-comparison {
+    grid-column: 2;
+    grid-row: 2 / 4;
+    align-self: start;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+
+  .character-umc-comparison-heading {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .character-umc-selection,
+  .character-umc-pair-list {
+    max-height: none;
     overflow: visible;
   }
 }
