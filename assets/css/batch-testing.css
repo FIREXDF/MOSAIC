@@ -132,26 +132,6 @@
   font-weight: 600;
 }
 
-.batch-step-index {
-  margin-bottom: 6px;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.batch-step-title {
-  margin-bottom: 6px;
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.batch-step-text {
-  color: var(--text-secondary);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
 .batch-field-value {
   display: block;
   max-width: 100%;
@@ -205,4 +185,16 @@
   flex: 0 0 auto;
   font-size: 12px;
   opacity: 0.8;
+}
+
+.batch-launch-btn {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.batch-bullets strong {
+  color: var(--text-primary);
 }

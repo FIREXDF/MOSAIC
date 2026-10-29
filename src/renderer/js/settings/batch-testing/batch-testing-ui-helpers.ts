@@ -206,22 +206,6 @@ class BatchTestingUiHelpers {
     `;
   }
 
-  renderStepCard(index: string, title: string, description: string) {
-    return `
-      <div class="batch-card">
-        <div class="batch-step-index">
-          ${escapeHtml(index)}
-        </div>
-        <div class="batch-step-title">
-          ${escapeHtml(title)}
-        </div>
-        <div class="batch-step-text">
-          ${escapeHtml(description)}
-        </div>
-      </div>
-    `;
-  }
-
   renderDetailRow(label: string, value: string, multiline = false) {
     return `
       <div class="batch-card">

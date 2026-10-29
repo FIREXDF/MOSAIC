@@ -93,7 +93,6 @@ type BatchTestingUiHelpersLike = {
     tone: SessionUiSummary['tone'],
   ) => void;
   renderInfoCard: (title: string, value: string) => string;
-  renderStepCard: (index: string, title: string, description: string) => string;
   renderItemTrigger: (
     category: BatchCategory,
     name: string,
@@ -994,16 +993,6 @@ class BatchTestingManager {
       },
     ];
 
-    if (this.hasConfiguredEmulator()) {
-      actions.push({
-        label: this.t('settings.batchTestingLaunchGame', 'Launch the game'),
-        type: 'secondary',
-        onClick: async () => {
-          await this.launchConfiguredGame();
-        },
-      });
-    }
-
     actions.push(
       {
         label: this.t(
@@ -1050,12 +1039,16 @@ class BatchTestingManager {
                 ),
               )}
             </div>
+            ${
+              this.hasConfiguredEmulator()
+                ? `<button type="button" class="modal-btn modal-btn-secondary batch-launch-btn" id="batch-testing-launch-btn">
+                <i class="bi bi-play-fill"></i>
+                <span>${escapeHtml(this.t('settings.batchTestingLaunchGame', 'Launch the game'))}</span>
+              </button>`
+                : ''
+            }
           </div>
           <div class="batch-grid">
-            ${this.ui.renderInfoCard(
-              this.t('settings.batchTestingQuestion', 'Does it work?'),
-              stepLabel,
-            )}
             ${this.ui.renderInfoCard(
               this.t(
                 'settings.batchTestingCurrentPool',
@@ -1069,41 +1062,6 @@ class BatchTestingManager {
                 'Disabled for this test',
               ),
               `${prompt.chunk.length}`,
-            )}
-          </div>
-          <div class="batch-grid">
-            ${this.ui.renderStepCard(
-              '1',
-              this.t(
-                'settings.batchTestingChecklistLaunchTitle',
-                'Launch the game',
-              ),
-              this.t(
-                'settings.batchTestingChecklistLaunchDesc',
-                'Open the game with this temporary setup.',
-              ),
-            )}
-            ${this.ui.renderStepCard(
-              '2',
-              this.t(
-                'settings.batchTestingChecklistCheckTitle',
-                'Check the issue',
-              ),
-              this.t(
-                'settings.batchTestingChecklistCheckDesc',
-                'See if the bug, crash, or problem still happens.',
-              ),
-            )}
-            ${this.ui.renderStepCard(
-              '3',
-              this.t(
-                'settings.batchTestingChecklistAnswerTitle',
-                'Choose the result',
-              ),
-              this.t(
-                'settings.batchTestingChecklistAnswerDesc',
-                'Use the buttons below to say if the game works now or not.',
-              ),
             )}
           </div>
           <div class="batch-card">
@@ -1125,6 +1083,10 @@ class BatchTestingManager {
       `,
       actions,
     );
+
+    this.modal
+      ?.querySelector('#batch-testing-launch-btn')
+      ?.addEventListener('click', () => this.launchConfiguredGame());
   }
 
   renderNoCauseResult() {
@@ -1147,30 +1109,16 @@ class BatchTestingManager {
               )}
             </div>
           </div>
-          <div class="batch-grid">
-            ${this.ui.renderStepCard(
-              '1',
-              this.t(
-                'settings.batchTestingNoCauseTipOneTitle',
-                'Try the other category first',
-              ),
-              this.t(
-                'settings.batchTestingNoCauseTipOneDesc',
-                'If you started with mods, try plugins first next time, or the opposite.',
-              ),
-            )}
-            ${this.ui.renderStepCard(
-              '2',
-              this.t(
-                'settings.batchTestingNoCauseTipTwoTitle',
-                'Retest after new changes',
-              ),
-              this.t(
-                'settings.batchTestingNoCauseTipTwoDesc',
-                'If you install or remove items later, you can run the diagnostic again.',
-              ),
-            )}
-          </div>
+          <ul class="batch-bullets">
+            <li>
+              <strong>${escapeHtml(this.t('settings.batchTestingNoCauseTipOneTitle', 'Try the other category first'))}</strong>
+              ${escapeHtml(this.t('settings.batchTestingNoCauseTipOneDesc', 'If you started with mods, try plugins first next time, or the opposite.'))}
+            </li>
+            <li>
+              <strong>${escapeHtml(this.t('settings.batchTestingNoCauseTipTwoTitle', 'Retest after new changes'))}</strong>
+              ${escapeHtml(this.t('settings.batchTestingNoCauseTipTwoDesc', 'If you install or remove items later, you can run the diagnostic again.'))}
+            </li>
+          </ul>
         </div>
       `,
       [
