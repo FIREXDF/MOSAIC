@@ -12,11 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
     statusDiv.insertAdjacentHTML(
       'beforeend',
       `
-                    <div style="margin-top: 12px; background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 12px 16px; display: flex; gap: 12px; align-items: flex-start;">
-                        <i class="bi bi-exclamation-triangle-fill" style="color: #ffc107; font-size: 18px;"></i>
-                        <span style="color: rgba(255,255,255,0.8); font-size: 13px; text-align: left;">
-                            This folder contains the emulator's <strong style="color: #fff;">.exe</strong>, so it's probably not the right one.
-                            Select the folder that contains <strong style="color: #fff;">${dataFolder}</strong>, usually located in <strong style="color: #fff;">AppData</strong> (e.g. <span style="font-family: monospace;">%APPDATA%</span>).
+                    <div class="tutorial-exe-warning">
+                        <i class="bi bi-exclamation-triangle-fill tutorial-icon-warning"></i>
+                        <span class="tutorial-exe-warning-text">
+                            This folder contains the emulator's <strong class="tutorial-text-white">.exe</strong>, so it's probably not the right one.
+                            Select the folder that contains <strong class="tutorial-text-white">${dataFolder}</strong>, usually located in <strong class="tutorial-text-white">AppData</strong> (e.g. <span class="tutorial-mono">%APPDATA%</span>).
                         </span>
                     </div>
                 `,
@@ -81,27 +81,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedVersion = await apiWrapper.storeGet('ssbuVersion');
 
     container.innerHTML = `
-      <fieldset style="border: 0; margin: 0; padding: 0; display: grid; gap: 12px;">
-        <legend style="color: #fff; font-size: 16px; font-weight: 700; margin-bottom: 4px;">Which version of Super Smash Bros. Ultimate do you have?</legend>
-        <label style="display: block; cursor: pointer; padding: 16px; border: 1px solid rgba(76, 175, 80, 0.45); border-radius: 12px; background: rgba(76, 175, 80, 0.1);">
-          <span style="display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 700;">
+      <fieldset class="tutorial-release-list">
+        <legend class="tutorial-release-legend">Which version of Super Smash Bros. Ultimate do you have?</legend>
+        <label class="tutorial-release-recommended">
+          <span class="tutorial-choice-heading">
             <input type="radio" name="ssbu-version" value="13.0.4" ${savedVersion === '13.0.4' ? 'checked' : ''}>
             SSBU 13.0.4
           </span>
-          <span style="display: block; margin: 8px 0 0 24px; color: rgba(255,255,255,0.72); font-size: 13px; line-height: 1.5;">
+          <span class="tutorial-choice-description">
             Installs ARCropolis 4.0.8. Marketplace will use SSBU 13.0.4 versions where available.
           </span>
         </label>
-        <label style="display: block; cursor: pointer; padding: 16px; border: 1px solid rgba(122, 155, 255, 0.35); border-radius: 12px; background: rgba(122, 155, 255, 0.08);">
-          <span style="display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 700;">
+        <label class="tutorial-release-option">
+          <span class="tutorial-choice-heading">
             <input type="radio" name="ssbu-version" value="13.0.5" ${savedVersion === '13.0.5' ? 'checked' : ''}>
             SSBU 13.0.5
           </span>
-          <span style="display: block; margin: 8px 0 0 24px; color: rgba(255,255,255,0.72); font-size: 13px; line-height: 1.5;">
+          <span class="tutorial-choice-description">
             Installs ARCropolis 4.1.1. Marketplace will use SSBU 13.0.5 versions where available.
           </span>
         </label>
-        <button id="install-selected-arcropolis" type="button" class="tutorial-btn tutorial-btn-primary" style="justify-self: end; margin-top: 4px;" disabled>
+        <button id="install-selected-arcropolis" type="button" class="tutorial-btn tutorial-btn-primary tutorial-release-continue" disabled>
           Continue and install
         </button>
       </fieldset>
@@ -133,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // Check for restored dev mode state
   try {
     const restoredState = localStorage.getItem('tutorialDevState');
     if (restoredState) {
@@ -152,79 +151,78 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Welcome to MOSAIC',
       description: 'Your all-in-one mod manager for Super Smash Bros Ultimate',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 12px; font-size: 20px; font-weight: 600;">Let's get you started</h3>
-    <p style="margin-bottom: 20px; color: rgba(255,255,255,0.7); font-size: 15px; line-height: 1.6;">This quick tutorial will help you set up MOSAIC 4 in just a few steps.</p>
+<div class="tutorial-center">
+    <h3 class="tutorial-welcome-title">Let's get you started</h3>
+    <p class="tutorial-welcome-text">This quick tutorial will help you set up MOSAIC 4 in just a few steps.</p>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; text-align: left;">
-        <div style="padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); transition: transform 0.2s ease;">
-            <i class="bi bi-collection-play" style="font-size: 24px; color: #7a9bff; margin-bottom: 12px; display: block;"></i>
-            <strong style="display: block; color: #fff; margin-bottom: 4px;">Manage Mods</strong>
-            <span style="color: rgba(255,255,255,0.5); font-size: 13px;">Organize effortlessly</span>
+    <div class="tutorial-feature-grid">
+        <div class="tutorial-feature-hover">
+            <i class="bi bi-collection-play tutorial-feature-icon"></i>
+            <strong class="tutorial-feature-title">Manage Mods</strong>
+            <span class="tutorial-feature-caption">Organize effortlessly</span>
         </div>
         
-        <div style="padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05);">
-            <i class="bi bi-cloud-download" style="font-size: 24px; color: #7a9bff; margin-bottom: 12px; display: block;"></i>
-            <strong style="display: block; color: #fff; margin-bottom: 4px;">1-Click Install</strong>
-            <span style="color: rgba(255,255,255,0.5); font-size: 13px;">From GameBanana</span>
+        <div class="tutorial-feature">
+            <i class="bi bi-cloud-download tutorial-feature-icon"></i>
+            <strong class="tutorial-feature-title">1-Click Install</strong>
+            <span class="tutorial-feature-caption">From GameBanana</span>
         </div>
         
-        <div style="padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05);">
-            <i class="bi bi-people" style="font-size: 24px; color: #7a9bff; margin-bottom: 12px; display: block;"></i>
-            <strong style="display: block; color: #fff; margin-bottom: 4px;">Characters</strong>
-            <span style="color: rgba(255,255,255,0.5); font-size: 13px;">Sorted by fighter</span>
+        <div class="tutorial-feature">
+            <i class="bi bi-people tutorial-feature-icon"></i>
+            <strong class="tutorial-feature-title">Characters</strong>
+            <span class="tutorial-feature-caption">Sorted by fighter</span>
         </div>
         
-        <div style="padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05);">
-            <i class="bi bi-plugin" style="font-size: 24px; color: #7a9bff; margin-bottom: 12px; display: block;"></i>
-            <strong style="display: block; color: #fff; margin-bottom: 4px;">Plugins</strong>
-            <span style="color: rgba(255,255,255,0.5); font-size: 13px;">Handle .nro files</span>
+        <div class="tutorial-feature">
+            <i class="bi bi-plugin tutorial-feature-icon"></i>
+            <strong class="tutorial-feature-title">Plugins</strong>
+            <span class="tutorial-feature-caption">Handle .nro files</span>
         </div>
     </div>
 </div>
 `,
     },
-    // ARCropolis Installation Steps - Inserted after welcome
     {
       icon: 'bi-device-hdd',
       title: 'Hardware Type',
       description: 'Tell us about your setup',
       content: `
-<div style="text-align: center;">
-    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, rgba(122, 155, 255, 0.2), rgba(90, 123, 240, 0.2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; box-shadow: 0 8px 32px rgba(122, 155, 255, 0.2);">
-        <i class="bi bi-device-hdd" style="font-size: 40px; color: #7a9bff;"></i>
+<div class="tutorial-center">
+    <div class="tutorial-hero-icon">
+        <i class="bi bi-device-hdd tutorial-hero-glyph"></i>
     </div>
     
-    <h3 style="color: #fff; margin-bottom: 12px; font-size: 24px; font-weight: 700;">What are you using?</h3>
-    <p style="margin-bottom: 20px; color: rgba(255,255,255,0.6); font-size: 14px;">Are you playing on a real Nintendo Switch or an emulator?</p>
+    <h3 class="tutorial-question-title">What are you using?</h3>
+    <p class="tutorial-question-text">Are you playing on a real Nintendo Switch or an emulator?</p>
     
-    <div style="display: flex; gap: 20px; max-width: 600px; margin: 0 auto;">
-        <label class="hardware-option" data-value="hardware" style="flex: 1; position: relative; cursor: pointer;">
-            <input type="radio" name="hardware-type" value="hardware" style="position: absolute; opacity: 0; pointer-events: none;">
-            <div class="option-card" style="background: linear-gradient(135deg, rgba(122, 155, 255, 0.1), rgba(90, 123, 240, 0.05)); border: 2px solid rgba(122, 155, 255, 0.3); border-radius: 16px; padding: 32px 24px; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;">
-                <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #7a9bff, #5a7bf0); opacity: 0; transition: opacity 0.3s;"></div>
-                <div style="width: 64px; height: 64px; background: rgba(122, 155, 255, 0.15); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; transition: all 0.3s;">
-                    <i class="bi bi-nintendo-switch" style="font-size: 36px; color: #7a9bff;"></i>
+    <div class="tutorial-options-wide">
+        <label class="hardware-option tutorial-choice" data-value="hardware">
+            <input type="radio" name="hardware-type" value="hardware" class="tutorial-choice-input">
+            <div class="option-card tutorial-option-card">
+                <div class="tutorial-option-accent"></div>
+                <div class="tutorial-option-icon">
+                    <i class="bi bi-nintendo-switch tutorial-option-glyph"></i>
                 </div>
-                <h4 style="color: #fff; font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">Real Hardware</h4>
-                <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0;">Nintendo Switch</p>
-                <div class="check-icon" style="position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; background: #4caf50; border-radius: 50%; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);">
-                    <i class="bi bi-check-lg" style="color: #fff; font-size: 16px;"></i>
+                <h4 class="tutorial-option-title">Real Hardware</h4>
+                <p class="tutorial-option-subtitle">Nintendo Switch</p>
+                <div class="check-icon tutorial-check-badge">
+                    <i class="bi bi-check-lg tutorial-text-white-md"></i>
                 </div>
             </div>
         </label>
         
-        <label class="hardware-option" data-value="emulator" style="flex: 1; position: relative; cursor: pointer;">
-            <input type="radio" name="hardware-type" value="emulator" style="position: absolute; opacity: 0; pointer-events: none;">
-            <div class="option-card" style="background: linear-gradient(135deg, rgba(122, 155, 255, 0.1), rgba(90, 123, 240, 0.05)); border: 2px solid rgba(122, 155, 255, 0.3); border-radius: 16px; padding: 32px 24px; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;">
-                <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #7a9bff, #5a7bf0); opacity: 0; transition: opacity 0.3s;"></div>
-                <div style="width: 64px; height: 64px; background: rgba(122, 155, 255, 0.15); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; transition: all 0.3s;">
-                    <i class="bi bi-laptop" style="font-size: 36px; color: #7a9bff;"></i>
+        <label class="hardware-option tutorial-choice" data-value="emulator">
+            <input type="radio" name="hardware-type" value="emulator" class="tutorial-choice-input">
+            <div class="option-card tutorial-option-card">
+                <div class="tutorial-option-accent"></div>
+                <div class="tutorial-option-icon">
+                    <i class="bi bi-laptop tutorial-option-glyph"></i>
                 </div>
-                <h4 style="color: #fff; font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">Emulator</h4>
-                <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0;">Yuzu or Ryujinx</p>
-                <div class="check-icon" style="position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; background: #4caf50; border-radius: 50%; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);">
-                    <i class="bi bi-check-lg" style="color: #fff; font-size: 16px;"></i>
+                <h4 class="tutorial-option-title">Emulator</h4>
+                <p class="tutorial-option-subtitle">Yuzu or Ryujinx</p>
+                <div class="check-icon tutorial-check-badge">
+                    <i class="bi bi-check-lg tutorial-text-white-md"></i>
                 </div>
             </div>
         </label>
@@ -265,7 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
           'input[name="hardware-type"]',
         );
 
-        // Load saved answer
         if (window.tutorialAPI) {
           try {
             const hardwareType = await apiWrapper.storeGet(
@@ -285,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        // Disable Next until selected
         const disableNext = () => {
           if (nextBtn) {
             nextBtn.style.opacity = '0.5';
@@ -334,7 +330,6 @@ document.addEventListener('DOMContentLoaded', () => {
           radio.addEventListener('change', checkAndSave);
         });
 
-        // Initial check
         checkAndSave();
       },
     },
@@ -343,43 +338,43 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Switch Modded Check',
       description: 'Confirm your Switch is ready for homebrew',
       content: `
-<div style="text-align: center;">
-    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, rgba(122, 155, 255, 0.2), rgba(90, 123, 240, 0.2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; box-shadow: 0 8px 32px rgba(122, 155, 255, 0.2);">
-        <i class="bi bi-shield-check" style="font-size: 40px; color: #7a9bff;"></i>
+<div class="tutorial-center">
+    <div class="tutorial-hero-icon">
+        <i class="bi bi-shield-check tutorial-hero-glyph"></i>
     </div>
 
-    <h3 style="color: #fff; margin-bottom: 12px; font-size: 24px; font-weight: 700;">Is your Switch modded?</h3>
-    <p style="margin-bottom: 20px; color: rgba(255,255,255,0.6); font-size: 14px;">MOSAIC needs a modded Switch before installing Skyline, ARCropolis, and Smash mods.</p>
+    <h3 class="tutorial-question-title">Is your Switch modded?</h3>
+    <p class="tutorial-question-text">MOSAIC needs a modded Switch before installing Skyline, ARCropolis, and Smash mods.</p>
 
-    <div style="display: flex; gap: 20px; max-width: 500px; margin: 0 auto;">
-        <label class="switch-modded-option" data-value="yes" style="flex: 1; position: relative; cursor: pointer;">
-            <input type="radio" name="switch-modded" value="yes" style="position: absolute; opacity: 0; pointer-events: none;">
-            <div class="option-card-yes" style="background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(56, 142, 60, 0.05)); border: 2px solid rgba(76, 175, 80, 0.3); border-radius: 16px; padding: 28px 20px; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;">
-                <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #4caf50, #388e3c); opacity: 0; transition: opacity 0.3s;"></div>
-                <i class="bi bi-check-circle-fill" style="font-size: 36px; color: #4caf50; display: block; margin-bottom: 16px;"></i>
-                <h4 style="color: #fff; font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">Yes</h4>
-                <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0;">Continue setup</p>
-                <div class="check-icon" style="position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; background: #4caf50; border-radius: 50%; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);">
-                    <i class="bi bi-check-lg" style="color: #fff; font-size: 16px;"></i>
+    <div class="tutorial-options">
+        <label class="switch-modded-option tutorial-choice" data-value="yes">
+            <input type="radio" name="switch-modded" value="yes" class="tutorial-choice-input">
+            <div class="option-card-yes tutorial-option-card-yes-compact">
+                <div class="tutorial-option-accent-success"></div>
+                <i class="bi bi-check-circle-fill tutorial-yes-glyph"></i>
+                <h4 class="tutorial-option-title">Yes</h4>
+                <p class="tutorial-option-subtitle">Continue setup</p>
+                <div class="check-icon tutorial-check-badge">
+                    <i class="bi bi-check-lg tutorial-text-white-md"></i>
                 </div>
             </div>
         </label>
 
-        <label class="switch-modded-option" data-value="no" style="flex: 1; position: relative; cursor: pointer;">
-            <input type="radio" name="switch-modded" value="no" style="position: absolute; opacity: 0; pointer-events: none;">
-            <div class="option-card-no" style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.05)); border: 2px solid rgba(255, 193, 7, 0.3); border-radius: 16px; padding: 28px 20px; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;">
-                <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #ffc107, #ff9800); opacity: 0; transition: opacity 0.3s;"></div>
-                <i class="bi bi-box-arrow-up-right" style="font-size: 36px; color: #ffc107; display: block; margin-bottom: 16px;"></i>
-                <h4 style="color: #fff; font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">No</h4>
-                <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0;">Open the guide first</p>
-                <div class="check-icon" style="position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; background: #ffc107; border-radius: 50%; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);">
-                    <i class="bi bi-check-lg" style="color: #fff; font-size: 16px;"></i>
+        <label class="switch-modded-option tutorial-choice" data-value="no">
+            <input type="radio" name="switch-modded" value="no" class="tutorial-choice-input">
+            <div class="option-card-no tutorial-option-card-no-compact">
+                <div class="tutorial-option-accent-warning"></div>
+                <i class="bi bi-box-arrow-up-right tutorial-no-glyph"></i>
+                <h4 class="tutorial-option-title">No</h4>
+                <p class="tutorial-option-subtitle">Open the guide first</p>
+                <div class="check-icon tutorial-check-badge-warning">
+                    <i class="bi bi-check-lg tutorial-text-white-md"></i>
                 </div>
             </div>
         </label>
     </div>
 
-    <div id="switch-modded-help" style="margin: 22px auto 0; max-width: 520px;"></div>
+    <div id="switch-modded-help" class="tutorial-modded-help"></div>
 </div>
 
 <style>
@@ -445,14 +440,14 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!helpDiv) return;
 
           helpDiv.innerHTML = `
-            <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 16px; text-align: left;">
-                <p style="color: #ffc107; margin: 0 0 12px 0; font-weight: 600;">
+            <div class="tutorial-box-warning-left">
+                <p class="tutorial-help-title">
                     Mod your Switch first, then come back here.
                 </p>
-                <p style="color: rgba(255,255,255,0.7); font-size: 13px; line-height: 1.5; margin: 0 0 14px 0;">
+                <p class="tutorial-help-text">
                     Follow the Switch homebrew guide, restart this tutorial when your Switch is ready, then answer "Yes" to continue.
                 </p>
-                <a href="https://switch.hacks.guide/" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; background: rgba(122, 155, 255, 0.2); color: #7a9bff; border: 1px solid rgba(122, 155, 255, 0.3); border-radius: 8px; text-decoration: none; font-weight: 600;">
+                <a href="https://switch.hacks.guide/" target="_blank" class="tutorial-btn-link">
                     Open switch.hacks.guide <i class="bi bi-box-arrow-up-right"></i>
                 </a>
             </div>
@@ -501,8 +496,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if (switchModded) {
             if (helpDiv) {
               helpDiv.innerHTML = `
-                <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 14px; text-align: center;">
-                    <span style="color: #fff;">Good. You can continue with the Switch setup.</span>
+                <div class="tutorial-box-success-compact">
+                    <span class="tutorial-text-white">Good. You can continue with the Switch setup.</span>
                 </div>
               `;
             }
@@ -524,41 +519,41 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'ARCropolis Status',
       description: 'Do you already have ARCropolis installed?',
       content: `
-<div style="text-align: center;">
-    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(56, 142, 60, 0.2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; box-shadow: 0 8px 32px rgba(76, 175, 80, 0.2);">
-        <i class="bi bi-question-circle" style="font-size: 40px; color: #4caf50;"></i>
+<div class="tutorial-center">
+    <div class="tutorial-hero-icon-success">
+        <i class="bi bi-question-circle tutorial-hero-glyph-success"></i>
     </div>
     
-    <h3 style="color: #fff; margin-bottom: 12px; font-size: 24px; font-weight: 700;">ARCropolis Installation</h3>
-    <p style="margin-bottom: 20px; color: rgba(255,255,255,0.6); font-size: 14px;">ARCropolis is required to use mods. Have you already installed it?</p>
+    <h3 class="tutorial-question-title">ARCropolis Installation</h3>
+    <p class="tutorial-question-text">ARCropolis is required to use mods. Have you already installed it?</p>
     
-    <div style="display: flex; gap: 20px; max-width: 500px; margin: 0 auto;">
-        <label class="arcropolis-option" data-value="yes" style="flex: 1; position: relative; cursor: pointer;">
-            <input type="radio" name="arcropolis-installed" value="yes" style="position: absolute; opacity: 0; pointer-events: none;">
-            <div class="option-card-yes" style="background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(56, 142, 60, 0.05)); border: 2px solid rgba(76, 175, 80, 0.3); border-radius: 16px; padding: 32px 24px; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;">
-                <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #4caf50, #388e3c); opacity: 0; transition: opacity 0.3s;"></div>
-                <div style="width: 64px; height: 64px; background: rgba(76, 175, 80, 0.15); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; transition: all 0.3s;">
-                    <i class="bi bi-check-circle-fill" style="font-size: 36px; color: #4caf50;"></i>
+    <div class="tutorial-options">
+        <label class="arcropolis-option tutorial-choice" data-value="yes">
+            <input type="radio" name="arcropolis-installed" value="yes" class="tutorial-choice-input">
+            <div class="option-card-yes tutorial-option-card-yes">
+                <div class="tutorial-option-accent-success"></div>
+                <div class="tutorial-option-icon-success">
+                    <i class="bi bi-check-circle-fill tutorial-option-glyph-success"></i>
                 </div>
-                <h4 style="color: #fff; font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">Yes</h4>
-                <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0;">Already installed</p>
-                <div class="check-icon" style="position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; background: #4caf50; border-radius: 50%; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);">
-                    <i class="bi bi-check-lg" style="color: #fff; font-size: 16px;"></i>
+                <h4 class="tutorial-option-title">Yes</h4>
+                <p class="tutorial-option-subtitle">Already installed</p>
+                <div class="check-icon tutorial-check-badge">
+                    <i class="bi bi-check-lg tutorial-text-white-md"></i>
                 </div>
             </div>
         </label>
         
-        <label class="arcropolis-option" data-value="no" style="flex: 1; position: relative; cursor: pointer;">
-            <input type="radio" name="arcropolis-installed" value="no" style="position: absolute; opacity: 0; pointer-events: none;">
-            <div class="option-card-no" style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.05)); border: 2px solid rgba(255, 193, 7, 0.3); border-radius: 16px; padding: 32px 24px; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;">
-                <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #ffc107, #ff9800); opacity: 0; transition: opacity 0.3s;"></div>
-                <div style="width: 64px; height: 64px; background: rgba(255, 193, 7, 0.15); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; transition: all 0.3s;">
-                    <i class="bi bi-download" style="font-size: 36px; color: #ffc107;"></i>
+        <label class="arcropolis-option tutorial-choice" data-value="no">
+            <input type="radio" name="arcropolis-installed" value="no" class="tutorial-choice-input">
+            <div class="option-card-no tutorial-option-card-no">
+                <div class="tutorial-option-accent-warning"></div>
+                <div class="tutorial-option-icon-warning">
+                    <i class="bi bi-download tutorial-option-glyph-warning"></i>
                 </div>
-                <h4 style="color: #fff; font-size: 18px; font-weight: 700; margin: 0 0 8px 0;">No</h4>
-                <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0;">Need to install</p>
-                <div class="check-icon" style="position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; background: #ffc107; border-radius: 50%; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);">
-                    <i class="bi bi-check-lg" style="color: #fff; font-size: 16px;"></i>
+                <h4 class="tutorial-option-title">No</h4>
+                <p class="tutorial-option-subtitle">Need to install</p>
+                <div class="check-icon tutorial-check-badge-warning">
+                    <i class="bi bi-check-lg tutorial-text-white-md"></i>
                 </div>
             </div>
         </label>
@@ -620,7 +615,6 @@ document.addEventListener('DOMContentLoaded', () => {
           'input[name="arcropolis-installed"]',
         );
 
-        // Load saved answer
         if (window.tutorialAPI) {
           try {
             const arcropolisInstalled = await apiWrapper.storeGet(
@@ -644,7 +638,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        // Disable Next until selected
         const disableNext = () => {
           if (nextBtn) {
             nextBtn.style.opacity = '0.5';
@@ -687,7 +680,6 @@ document.addEventListener('DOMContentLoaded', () => {
           radio.addEventListener('change', checkAndSave);
         });
 
-        // Initial check
         checkAndSave();
       },
     },
@@ -696,15 +688,15 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Switch SD Card Setup',
       description: 'Detect and configure your SD card',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">Insert Your SD Card</h3>
-    <p style="margin-bottom: 32px; color: rgba(255,255,255,0.7);">Please insert your Nintendo Switch SD card into your PC.</p>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">Insert Your SD Card</h3>
+    <p class="tutorial-lead-lg">Please insert your Nintendo Switch SD card into your PC.</p>
     
-    <div id="sd-card-status" style="display: flex; flex-direction: column; gap: 16px; text-align: left; max-width: 500px; margin: 0 auto;">
-        <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <span style="color: #fff;">Detecting drives...</span>
-                <div id="detection-spinner" style="width: 20px; height: 20px; border: 2px solid rgba(122, 155, 255, 0.3); border-top-color: #7a9bff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <div id="sd-card-status" class="tutorial-status-list">
+        <div class="tutorial-box">
+            <div class="tutorial-row-between">
+                <span class="tutorial-text-white">Detecting drives...</span>
+                <div id="detection-spinner" class="tutorial-spinner"></div>
             </div>
         </div>
     </div>
@@ -732,9 +724,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
               if (drives.length === 0) {
                 statusDiv!.innerHTML = `
-                            <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 16px; text-align: center;">
-                                <p style="color: #ffc107; margin-bottom: 16px;">No drives detected. Please insert your SD card and click "Detect Again".</p>
-                                <button id="retry-detect-btn" style="background: rgba(122, 155, 255, 0.2); color: #7a9bff; border: 1px solid rgba(122, 155, 255, 0.3); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            <div class="tutorial-box-warning-center">
+                                <p class="tutorial-text-warning">No drives detected. Please insert your SD card and click "Detect Again".</p>
+                                <button id="retry-detect-btn" class="tutorial-btn-retry">
                                     Detect Again
                                 </button>
                             </div>
@@ -743,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   .querySelector<HTMLElement>('#retry-detect-btn')
                   ?.addEventListener('click', () => {
                     statusDiv!.innerHTML =
-                      '<div style="text-align: center; color: #fff;">Detecting drives...</div>';
+                      '<div class="tutorial-detecting">Detecting drives...</div>';
                     setTimeout(() => steps[currentStep].onRender!(), 1000);
                   });
               } else if (drives.length === 1) {
@@ -752,16 +744,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 await window.tutorialAPI.store.set('tutorial.sdDrive', sdPath);
 
                 statusDiv!.innerHTML = `
-                            <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                                    <div style="display: flex; align-items: center; gap: 12px;">
-                                        <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                            <div class="tutorial-box-success">
+                                <div class="tutorial-row-between-spaced">
+                                    <div class="tutorial-row">
+                                        <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                         <div>
-                                            <strong style="color: #fff; display: block;">Drive Detected</strong>
-                                            <span style="color: rgba(255,255,255,0.6); font-size: 13px; font-family: monospace;">${sdPath}</span>
+                                            <strong class="tutorial-label">Drive Detected</strong>
+                                            <span class="tutorial-path">${sdPath}</span>
                                         </div>
                                     </div>
-                                    <button id="wrong-drive-btn" style="padding: 6px 12px; background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">
+                                    <button id="wrong-drive-btn" class="tutorial-btn-warning">
                                         Wrong drive?
                                     </button>
                                 </div>
@@ -778,15 +770,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         result.path,
                       );
                       statusDiv!.innerHTML = `
-                                    <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                                            <div style="display: flex; align-items: center; gap: 12px;">
-                                                <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                                    <div class="tutorial-box-success">
+                                        <div class="tutorial-row-between">
+                                            <div class="tutorial-row">
+                                                <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                                 <div>
-                                                    <strong style="color: #fff; display: block;">Selected: ${result.path}</strong>
+                                                    <strong class="tutorial-label">Selected: ${result.path}</strong>
                                                 </div>
                                             </div>
-                                            <button id="wrong-drive-btn-2" style="padding: 6px 12px; background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                            <button id="wrong-drive-btn-2" class="tutorial-btn-warning-plain">
                                                 Wrong drive?
                                             </button>
                                         </div>
@@ -803,11 +795,11 @@ document.addEventListener('DOMContentLoaded', () => {
                               result2.path,
                             );
                             statusDiv!.innerHTML = `
-                                            <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                                <div style="display: flex; align-items: center; gap: 12px;">
-                                                    <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                                            <div class="tutorial-box-success">
+                                                <div class="tutorial-row">
+                                                    <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                                     <div>
-                                                        <strong style="color: #fff; display: block;">Selected: ${result2.path}</strong>
+                                                        <strong class="tutorial-label">Selected: ${result2.path}</strong>
                                                     </div>
                                                 </div>
                                             </div>
@@ -822,22 +814,21 @@ document.addEventListener('DOMContentLoaded', () => {
                   nextBtn.style.pointerEvents = 'auto';
                 }
               } else {
-                // Multiple drives - show selector
                 statusDiv!.innerHTML = `
-                            <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-                                <p style="color: #fff; margin-bottom: 12px; font-weight: 600;">Multiple drives detected. Please select your SD card:</p>
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div class="tutorial-box">
+                                <p class="tutorial-drives-title">Multiple drives detected. Please select your SD card:</p>
+                                <div class="tutorial-stack-sm">
                                     ${drives
                                       .map(
                                         (drive, idx) => `
-                                        <button class="drive-select-btn" data-path="${drive.path}" style="padding: 12px; background: rgba(122, 155, 255, 0.1); border: 2px solid rgba(122, 155, 255, 0.3); border-radius: 8px; color: #fff; cursor: pointer; text-align: left; transition: all 0.2s;">
+                                        <button class="drive-select-btn tutorial-drive-btn" data-path="${drive.path}">
                                             <strong>${drive.letter}:</strong> ${drive.label} (${drive.type})
                                         </button>
                                     `,
                                       )
                                       .join('')}
                                 </div>
-                                <button id="manual-select-btn" style="margin-top: 12px; padding: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; cursor: pointer; width: 100%;">
+                                <button id="manual-select-btn" class="tutorial-btn-manual">
                                     Browse Manually...
                                 </button>
                             </div>
@@ -853,11 +844,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         path,
                       );
                       statusDiv!.innerHTML = `
-                                    <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                        <div style="display: flex; align-items: center; gap: 12px;">
-                                            <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                                    <div class="tutorial-box-success">
+                                        <div class="tutorial-row">
+                                            <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                             <div>
-                                                <strong style="color: #fff; display: block;">Selected: ${path}</strong>
+                                                <strong class="tutorial-label">Selected: ${path}</strong>
                                             </div>
                                         </div>
                                     </div>
@@ -879,11 +870,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         result.path,
                       );
                       statusDiv!.innerHTML = `
-                                    <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                        <div style="display: flex; align-items: center; gap: 12px;">
-                                            <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                                    <div class="tutorial-box-success">
+                                        <div class="tutorial-row">
+                                            <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                             <div>
-                                                <strong style="color: #fff; display: block;">Selected: ${result.path}</strong>
+                                                <strong class="tutorial-label">Selected: ${result.path}</strong>
                                             </div>
                                         </div>
                                     </div>
@@ -899,9 +890,9 @@ document.addEventListener('DOMContentLoaded', () => {
           } catch (error) {
             console.error('Error detecting drives:', error);
             statusDiv!.innerHTML = `
-                    <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3); border-radius: 12px; padding: 16px; text-align: center;">
-                        <p style="color: #ff4d4d;">Error detecting drives. Please use manual selection.</p>
-                        <button id="manual-select-error-btn" style="margin-top: 12px; padding: 10px 20px; background: rgba(122, 155, 255, 0.2); color: #7a9bff; border: 1px solid rgba(122, 155, 255, 0.3); border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <div class="tutorial-box-error-center">
+                        <p class="tutorial-text-error">Error detecting drives. Please use manual selection.</p>
+                        <button id="manual-select-error-btn" class="tutorial-btn-manual-error">
                             Select Manually
                         </button>
                     </div>
@@ -916,11 +907,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     result.path,
                   );
                   statusDiv!.innerHTML = `
-                            <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                            <div class="tutorial-box-success">
+                                <div class="tutorial-row">
+                                    <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                     <div>
-                                        <strong style="color: #fff; display: block;">Selected: ${result.path}</strong>
+                                        <strong class="tutorial-label">Selected: ${result.path}</strong>
                                     </div>
                                 </div>
                             </div>
@@ -941,16 +932,16 @@ document.addEventListener('DOMContentLoaded', () => {
       description:
         'Downloading and installing Skyline (exefs) and ARCropolis (romfs) on your SD card',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">Installing ARCropolis</h3>
-    <div id="install-status" style="display: flex; flex-direction: column; gap: 16px; text-align: left; max-width: 500px; margin: 0 auto;">
-        <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                <span style="color: #fff;">Preparing installation...</span>
-                <div id="install-spinner" style="width: 20px; height: 20px; border: 2px solid rgba(122, 155, 255, 0.3); border-top-color: #7a9bff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">Installing ARCropolis</h3>
+    <div id="install-status" class="tutorial-status-list">
+        <div class="tutorial-box">
+            <div class="tutorial-row-between-tight">
+                <span class="tutorial-text-white">Preparing installation...</span>
+                <div id="install-spinner" class="tutorial-spinner"></div>
             </div>
-            <div id="install-progress" style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-top: 8px;">
-                <div id="progress-bar" style="height: 100%; background: #7a9bff; width: 0%; transition: width 0.3s;"></div>
+            <div id="install-progress" class="tutorial-install-progress">
+                <div id="progress-bar" class="tutorial-progress-fill" style="width: 0%;"></div>
             </div>
         </div>
     </div>
@@ -975,16 +966,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (!sdDrive) {
             statusDiv!.innerHTML =
-              '<div style="color: #ff4d4d;">Error: SD card path not found. Please go back and select your SD card.</div>';
+              '<div class="tutorial-text-error">Error: SD card path not found. Please go back and select your SD card.</div>';
             return;
           }
 
-          // Get latest releases (Skyline for exefs, ARCropolis for romfs)
           statusDiv!.innerHTML = `
-                <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-                    <div style="color: #fff; margin-bottom: 8px;">Fetching latest releases...</div>
-                    <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
-                        <div id="progress-bar" style="height: 100%; background: #7a9bff; width: 10%; transition: width 0.3s;"></div>
+                <div class="tutorial-box">
+                    <div class="tutorial-progress-label">Fetching latest releases...</div>
+                    <div class="tutorial-progress-track">
+                        <div id="progress-bar" class="tutorial-progress-fill" style="width: 10%;"></div>
                     </div>
                 </div>
             `;
@@ -1000,15 +990,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
           progressBar!.style.width = '20%';
           statusDiv!.innerHTML = `
-                <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-                    <div style="color: #fff; margin-bottom: 8px;">Downloading Skyline ${skylineRelease.version} (exefs)...</div>
-                    <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
-                        <div id="progress-bar" style="height: 100%; background: #7a9bff; width: 20%; transition: width 0.3s;"></div>
+                <div class="tutorial-box">
+                    <div class="tutorial-progress-label">Downloading Skyline ${skylineRelease.version} (exefs)...</div>
+                    <div class="tutorial-progress-track">
+                        <div id="progress-bar" class="tutorial-progress-fill" style="width: 20%;"></div>
                     </div>
                 </div>
             `;
 
-          // Download Skyline - get temp directory
           const tempDirResult = await window.tutorialAPI.getTempDir();
           if (!tempDirResult.success)
             throw new Error('Failed to get temp directory');
@@ -1029,15 +1018,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
           progressBar!.style.width = '40%';
           statusDiv!.innerHTML = `
-                <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-                    <div style="color: #fff; margin-bottom: 8px;">Downloading ARCropolis ${arcropolisRelease.version} (romfs)...</div>
-                    <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
-                        <div id="progress-bar" style="height: 100%; background: #7a9bff; width: 40%; transition: width 0.3s;"></div>
+                <div class="tutorial-box">
+                    <div class="tutorial-progress-label">Downloading ARCropolis ${arcropolisRelease.version} (romfs)...</div>
+                    <div class="tutorial-progress-track">
+                        <div id="progress-bar" class="tutorial-progress-fill" style="width: 40%;"></div>
                     </div>
                 </div>
             `;
 
-          // Download ARCropolis
           const arcropolisTempPathResult = await window.tutorialAPI.joinPath(
             tempDirResult.path,
             `arcropolis-${Date.now()}.zip`,
@@ -1055,15 +1043,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
           progressBar!.style.width = '60%';
           statusDiv!.innerHTML = `
-                <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-                    <div style="color: #fff; margin-bottom: 8px;">Installing Skyline (exefs)...</div>
-                    <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
-                        <div id="progress-bar" style="height: 100%; background: #7a9bff; width: 60%; transition: width 0.3s;"></div>
+                <div class="tutorial-box">
+                    <div class="tutorial-progress-label">Installing Skyline (exefs)...</div>
+                    <div class="tutorial-progress-track">
+                        <div id="progress-bar" class="tutorial-progress-fill" style="width: 60%;"></div>
                     </div>
                 </div>
             `;
 
-          // Extract and install Skyline (exefs) - construct paths
           const targetDirResult = await window.tutorialAPI.joinPath(
             sdDrive,
             'atmosphere',
@@ -1083,15 +1070,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
           progressBar!.style.width = '80%';
           statusDiv!.innerHTML = `
-                <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-                    <div style="color: #fff; margin-bottom: 8px;">Installing ARCropolis (romfs)...</div>
-                    <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
-                        <div id="progress-bar" style="height: 100%; background: #7a9bff; width: 80%; transition: width 0.3s;"></div>
+                <div class="tutorial-box">
+                    <div class="tutorial-progress-label">Installing ARCropolis (romfs)...</div>
+                    <div class="tutorial-progress-track">
+                        <div id="progress-bar" class="tutorial-progress-fill" style="width: 80%;"></div>
                     </div>
                 </div>
             `;
 
-          // Extract and install ARCropolis (romfs)
           const arcropolisExtractResult =
             await window.tutorialAPI.extractArcropolis(
               arcropolisDownloadResult.path,
@@ -1100,7 +1086,6 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!arcropolisExtractResult.success)
             throw new Error('ARCropolis extraction failed');
 
-          // Create mods directory
           const modsDirResult = await window.tutorialAPI.joinPath(
             sdDrive,
             'ultimate',
@@ -1113,12 +1098,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
           progressBar!.style.width = '100%';
           statusDiv!.innerHTML = `
-                <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                <div class="tutorial-box-success">
+                    <div class="tutorial-row">
+                        <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                         <div>
-                            <strong style="color: #fff; display: block;">Installation complete!</strong>
-                            <span style="color: rgba(255,255,255,0.6); font-size: 13px;">Skyline ${skylineRelease.version} (exefs) + ARCropolis ${arcropolisRelease.version} (romfs)</span>
+                            <strong class="tutorial-label">Installation complete!</strong>
+                            <span class="tutorial-text-muted-sm">Skyline ${skylineRelease.version} (exefs) + ARCropolis ${arcropolisRelease.version} (romfs)</span>
                         </div>
                     </div>
                 </div>
@@ -1139,14 +1124,14 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Verify ARCropolis (Switch)',
       description: 'Launch the game and verify installation',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">Verify Installation</h3>
-    <p style="margin-bottom: 24px; color: rgba(255,255,255,0.7);">Please launch Super Smash Bros. Ultimate on your Switch and check if ARCropolis is working.</p>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">Verify Installation</h3>
+    <p class="tutorial-lead-md">Please launch Super Smash Bros. Ultimate on your Switch and check if ARCropolis is working.</p>
     
-    <div style="position: relative; width: 100%; max-width: 600px; margin: 0 auto 24px;">
-        <div id="arcropolis-lottie-switch" style="width: 100%; height: 200px; display: flex; align-items: center; justify-content: center;"></div>
-        <div class="scroll-indicator" style="position: absolute; bottom: 10%; right: -20px; animation: bounce-side 2s infinite; pointer-events: none; background: rgba(20, 20, 20, 0.6); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10;">
-            <i class="bi bi-chevron-down" style="color: #7a9bff; font-size: 20px;"></i>
+    <div class="tutorial-lottie-frame">
+        <div id="arcropolis-lottie-switch" class="tutorial-lottie"></div>
+        <div class="scroll-indicator tutorial-scroll-indicator">
+            <i class="bi bi-chevron-down tutorial-scroll-indicator-icon"></i>
         </div>
         <style>
             @keyframes bounce-side {
@@ -1157,26 +1142,26 @@ document.addEventListener('DOMContentLoaded', () => {
         </style>
     </div>
     
-    <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 20px; max-width: 500px; margin: 0 auto; text-align: left;">
-        <p style="color: #ffc107; margin-bottom: 16px; font-weight: 600;">
+    <div class="tutorial-box-warning-panel">
+        <p class="tutorial-warning-title">
             <i class="bi bi-info-circle-fill"></i> What to look for:
         </p>
-        <ul style="color: rgba(255,255,255,0.8); margin-left: 20px; line-height: 1.8;">
+        <ul class="tutorial-steps-list">
             <li>Launch Super Smash Bros. Ultimate</li>
-            <li>Look for <strong style="color: #fff;">ARCropolis version text</strong> in the <strong style="color: #fff;">top-right corner</strong> of the screen</li>
+            <li>Look for <strong class="tutorial-text-white">ARCropolis version text</strong> in the <strong class="tutorial-text-white">top-right corner</strong> of the screen</li>
             <li>If you see it, ARCropolis is working!</li>
         </ul>
     </div>
     
     
     
-    <div id="verification-status" style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px; max-width: 500px; margin-left: auto; margin-right: auto;">
-        <p style="color: rgba(255,255,255,0.7);">Did you see the ARCropolis text?</p>
-        <div style="display: flex; gap: 12px;">
-            <button id="verify-yes-btn" style="flex: 1; padding: 12px; background: rgba(76, 175, 80, 0.2); color: #4caf50; border: 2px solid rgba(76, 175, 80, 0.3); border-radius: 8px; cursor: pointer; font-weight: 600;">
+    <div id="verification-status" class="tutorial-verification">
+        <p class="tutorial-lead">Did you see the ARCropolis text?</p>
+        <div class="tutorial-actions">
+            <button id="verify-yes-btn" class="tutorial-btn-yes">
                 Yes, it's working!
             </button>
-            <button id="verify-no-btn" style="flex: 1; padding: 12px; background: rgba(255, 77, 77, 0.2); color: #ff4d4d; border: 2px solid rgba(255, 77, 77, 0.3); border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <button id="verify-no-btn" class="tutorial-btn-no">
                 No, not working
             </button>
         </div>
@@ -1193,7 +1178,6 @@ document.addEventListener('DOMContentLoaded', () => {
           '#arcropolis-lottie-switch',
         );
 
-        // Load Lottie animation for Switch
         if (lottieContainer && window.lottie) {
           try {
             const anim = window.lottie.loadAnimation({
@@ -1222,10 +1206,10 @@ document.addEventListener('DOMContentLoaded', () => {
             '#verification-status',
           );
           statusDiv!.innerHTML = `
-                <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px; text-align: center;">
-                    <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 32px; margin-bottom: 12px;"></i>
-                    <p style="color: #fff; margin-bottom: 16px;">Great! ARCropolis is working correctly.</p>
-                    <p style="color: rgba(255,255,255,0.7); font-size: 13px;">Next, choose whether MOSAIC should sync mods from this PC or read them directly from your mounted Switch SD card.</p>
+                <div class="tutorial-box-success-center">
+                    <i class="bi bi-check-circle-fill tutorial-icon-success-lg"></i>
+                    <p class="tutorial-result-text">Great! ARCropolis is working correctly.</p>
+                    <p class="tutorial-note">Next, choose whether MOSAIC should sync mods from this PC or read them directly from your mounted Switch SD card.</p>
                 </div>
             `;
           if (nextBtn) {
@@ -1239,12 +1223,12 @@ document.addEventListener('DOMContentLoaded', () => {
             '#verification-status',
           );
           statusDiv!.innerHTML = `
-                <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3); border-radius: 12px; padding: 16px; text-align: center;">
-                    <i class="bi bi-exclamation-triangle-fill" style="color: #ff4d4d; font-size: 32px; margin-bottom: 12px;"></i>
-                    <p style="color: #fff; margin-bottom: 16px;">ARCropolis is not working.</p>
-                    <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin-bottom: 12px;">Please join the <a href="https://discord.gg/2zT5Rg46bG" target="_blank">MOSAIC Discord</a> to get help with installation.</p>
-                    <p style="color: rgba(255,255,255,0.5); font-size: 12px; margin-bottom: 16px;">You can continue the tutorial, but mods may not work until ARCropolis is properly installed.</p>
-                    <button id="change-answer-btn" style="padding: 10px 20px; background: rgba(122, 155, 255, 0.2); color: #7a9bff; border: 2px solid rgba(122, 155, 255, 0.3); border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                <div class="tutorial-box-error-center">
+                    <i class="bi bi-exclamation-triangle-fill tutorial-icon-error-lg"></i>
+                    <p class="tutorial-result-text">ARCropolis is not working.</p>
+                    <p class="tutorial-hint-tight">Please join the <a href="https://discord.gg/2zT5Rg46bG" target="_blank">MOSAIC Discord</a> to get help with installation.</p>
+                    <p class="tutorial-footnote">You can continue the tutorial, but mods may not work until ARCropolis is properly installed.</p>
+                    <button id="change-answer-btn" class="tutorial-btn-accent">
                         Change my answer
                     </button>
                 </div>
@@ -1253,7 +1237,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const changeAnswerBtn =
             document.querySelector<HTMLElement>('#change-answer-btn');
           changeAnswerBtn?.addEventListener('click', async () => {
-            // Go back to the installation step
             currentStep = steps.findIndex(
               (s) => s.title === 'Installing Skyline & ARCropolis (Switch)',
             );
@@ -1272,32 +1255,32 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Real Hardware Library',
       description: 'Choose how MOSAIC should manage Switch mods',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 12px; font-size: 22px; font-weight: 700;">How do you want to manage your mods?</h3>
-    <p id="hardware-library-description" style="margin: 0 auto 24px; max-width: 560px; color: rgba(255,255,255,0.68); font-size: 14px; line-height: 1.6;">Choose whether MOSAIC keeps a local mod library on this PC and syncs it to your Switch, or reads the mounted Switch SD card directly.</p>
+<div class="tutorial-center">
+    <h3 class="tutorial-library-title">How do you want to manage your mods?</h3>
+    <p id="hardware-library-description" class="tutorial-library-description">Choose whether MOSAIC keeps a local mod library on this PC and syncs it to your Switch, or reads the mounted Switch SD card directly.</p>
 
-    <div style="display: flex; gap: 16px; max-width: 680px; margin: 0 auto;">
-        <label class="hardware-library-option" data-value="local" style="flex: 1; position: relative; cursor: pointer;">
-            <input type="radio" name="hardware-library-mode" value="local" style="position: absolute; opacity: 0; pointer-events: none;">
+    <div class="tutorial-library-options">
+        <label class="hardware-library-option tutorial-choice" data-value="local">
+            <input type="radio" name="hardware-library-mode" value="local" class="tutorial-choice-input">
             <div class="hardware-library-card">
-                <i class="bi bi-pc-display" style="font-size: 30px; color: #7a9bff; margin-bottom: 12px;"></i>
-                <strong style="display: block; color: #fff; margin-bottom: 8px;">Keep mods on this PC and sync</strong>
-                <span style="display: block; color: rgba(255,255,255,0.62); font-size: 13px; line-height: 1.5;">Recommended if you want MOSAIC to keep your library locally, then send mods to your Switch when needed.</span>
-                <i class="bi bi-check-circle-fill check-icon" style="display: none; position: absolute; top: 12px; right: 12px; color: #4caf50; font-size: 20px;"></i>
+                <i class="bi bi-pc-display tutorial-mode-icon"></i>
+                <strong class="tutorial-mode-title">Keep mods on this PC and sync</strong>
+                <span class="tutorial-mode-text">Recommended if you want MOSAIC to keep your library locally, then send mods to your Switch when needed.</span>
+                <i class="bi bi-check-circle-fill check-icon tutorial-mode-check"></i>
             </div>
         </label>
-        <label class="hardware-library-option" data-value="direct" style="flex: 1; position: relative; cursor: pointer;">
-            <input type="radio" name="hardware-library-mode" value="direct" style="position: absolute; opacity: 0; pointer-events: none;">
+        <label class="hardware-library-option tutorial-choice" data-value="direct">
+            <input type="radio" name="hardware-library-mode" value="direct" class="tutorial-choice-input">
             <div class="hardware-library-card">
-                <i class="bi bi-sd-card" style="font-size: 30px; color: #7a9bff; margin-bottom: 12px;"></i>
-                <strong style="display: block; color: #fff; margin-bottom: 8px;">Read mods directly from the Switch</strong>
-                <span style="display: block; color: rgba(255,255,255,0.62); font-size: 13px; line-height: 1.5;">MOSAIC uses the mounted Switch SD card as the library. No separate PC sync step is needed.</span>
-                <i class="bi bi-check-circle-fill check-icon" style="display: none; position: absolute; top: 12px; right: 12px; color: #4caf50; font-size: 20px;"></i>
+                <i class="bi bi-sd-card tutorial-mode-icon"></i>
+                <strong class="tutorial-mode-title">Read mods directly from the Switch</strong>
+                <span class="tutorial-mode-text">MOSAIC uses the mounted Switch SD card as the library. No separate PC sync step is needed.</span>
+                <i class="bi bi-check-circle-fill check-icon tutorial-mode-check"></i>
             </div>
         </label>
     </div>
 
-    <div id="hardware-library-status" style="margin: 20px auto 0; max-width: 560px;"></div>
+    <div id="hardware-library-status" class="tutorial-library-status"></div>
 </div>
 <style>
 .hardware-library-card {
@@ -1408,16 +1391,16 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!status) return;
 
           status.innerHTML = `
-            <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 10px; padding: 12px; color: rgba(255,255,255,0.78); font-size: 13px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                  <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 18px; flex: 0 0 auto;"></i>
-                  <div style="min-width: 0;">
-                    <strong style="display: block; color: #fff;">Switch SD card selected</strong>
-                    <span style="display: block; color: rgba(255,255,255,0.6); font-family: monospace; font-size: 12px; overflow-wrap: anywhere;">${sdDrive}</span>
+            <div class="tutorial-library-selected">
+              <div class="tutorial-library-selected-row">
+                <div class="tutorial-library-selected-info">
+                  <i class="bi bi-check-circle-fill tutorial-library-selected-icon"></i>
+                  <div class="tutorial-shrink">
+                    <strong class="tutorial-label">Switch SD card selected</strong>
+                    <span class="tutorial-library-selected-path">${sdDrive}</span>
                   </div>
                 </div>
-                <button id="hardware-library-change-sd-btn" style="flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px; background: rgba(122, 155, 255, 0.18); color: #dce4ff; border: 1px solid rgba(122, 155, 255, 0.32); border-radius: 8px; cursor: pointer; font-weight: 600;">
+                <button id="hardware-library-change-sd-btn" class="tutorial-library-change-btn">
                   <i class="bi bi-arrow-repeat"></i>
                   Change
                 </button>
@@ -1439,22 +1422,22 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!status) return;
 
           status.innerHTML = `
-            <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 10px; padding: 14px; color: rgba(255,255,255,0.78); font-size: 13px; text-align: left;">
-              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                <i class="bi bi-sd-card" style="color: #ffc107; font-size: 18px;"></i>
-                <strong style="color: #fff;">Select your Switch SD card to use direct mode.</strong>
+            <div class="tutorial-library-picker">
+              <div class="tutorial-library-picker-header">
+                <i class="bi bi-sd-card tutorial-icon-warning"></i>
+                <strong class="tutorial-text-white">Select your Switch SD card to use direct mode.</strong>
               </div>
-              <p style="margin: 0 0 12px 0; color: rgba(255,255,255,0.64); line-height: 1.5;">
+              <p class="tutorial-library-picker-text">
                 MOSAIC needs the mounted SD card location before it can read mods directly from the Switch.
               </p>
               ${
                 currentSdDrive
-                  ? `<p style="margin: 0 0 12px 0; color: rgba(255,255,255,0.58); font-family: monospace; font-size: 12px;">Current: ${currentSdDrive}</p>`
+                  ? `<p class="tutorial-library-picker-current">Current: ${currentSdDrive}</p>`
                   : ''
               }
-              <div id="hardware-library-drive-picker" style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.72);">
-                  <i class="bi bi-arrow-clockwise" style="animation: spin 1s linear infinite;"></i>
+              <div id="hardware-library-drive-picker" class="tutorial-stack-sm">
+                <div class="tutorial-library-picker-loading">
+                  <i class="bi bi-arrow-clockwise tutorial-spin"></i>
                   Detecting local USB / SD drives...
                 </div>
               </div>
@@ -1477,12 +1460,12 @@ document.addEventListener('DOMContentLoaded', () => {
             picker.insertAdjacentHTML(
               'beforeend',
               `
-                <div style="display: flex; gap: 8px; margin-top: 4px;">
-                  <button id="hardware-library-refresh-drives-btn" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 13px; background: rgba(122, 155, 255, 0.18); color: #dce4ff; border: 1px solid rgba(122, 155, 255, 0.32); border-radius: 8px; cursor: pointer; font-weight: 600;">
+                <div class="tutorial-library-picker-actions">
+                  <button id="hardware-library-refresh-drives-btn" class="tutorial-library-refresh-btn">
                     <i class="bi bi-arrow-clockwise"></i>
                     Refresh drives
                   </button>
-                  <button id="hardware-library-browse-sd-btn" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 13px; background: rgba(255, 255, 255, 0.06); color: #fff; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; cursor: pointer; font-weight: 600;">
+                  <button id="hardware-library-browse-sd-btn" class="tutorial-library-browse-btn">
                     <i class="bi bi-folder2-open"></i>
                     Browse manually
                   </button>
@@ -1513,7 +1496,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (drives.length === 0) {
               picker.innerHTML = `
-                <div style="background: rgba(255, 193, 7, 0.08); border: 1px solid rgba(255, 193, 7, 0.24); border-radius: 8px; padding: 10px; color: #ffc107;">
+                <div class="tutorial-library-empty">
                   No local USB / SD drive detected. Mount the Switch SD card, then refresh.
                 </div>
               `;
@@ -1526,11 +1509,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const displayText = getDriveDisplayText(drive);
                 const drivePath = drive.path || drive.letter;
                 return `
-                  <button class="hardware-library-drive-select-btn" data-path="${drivePath}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; background: rgba(122, 155, 255, 0.1); border: 1px solid rgba(122, 155, 255, 0.3); border-radius: 8px; color: #fff; cursor: pointer; text-align: left;">
-                    <i class="bi bi-usb-drive" style="color: #7a9bff; font-size: 18px;"></i>
-                    <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
-                      <strong style="overflow-wrap: anywhere;">${displayText}</strong>
-                      <small style="color: rgba(255,255,255,0.56);">${drive.type || 'local drive'}</small>
+                  <button class="hardware-library-drive-select-btn tutorial-library-drive-btn" data-path="${drivePath}">
+                    <i class="bi bi-usb-drive tutorial-library-drive-icon"></i>
+                    <span class="tutorial-library-drive-text">
+                      <strong class="tutorial-wrap-anywhere">${displayText}</strong>
+                      <small class="tutorial-library-drive-type">${drive.type || 'local drive'}</small>
                     </span>
                   </button>
                 `;
@@ -1554,7 +1537,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } catch (error) {
             console.error('Failed to detect SD drives for direct mode:', error);
             picker.innerHTML = `
-              <div style="background: rgba(255, 77, 77, 0.08); border: 1px solid rgba(255, 77, 77, 0.24); border-radius: 8px; padding: 10px; color: #ff7777;">
+              <div class="tutorial-library-error">
                 Drive detection failed. You can still browse to the mounted SD card manually.
               </div>
             `;
@@ -1677,7 +1660,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (status) {
               status.innerHTML = `
-                <div style="background: rgba(122, 155, 255, 0.1); border: 1px solid rgba(122, 155, 255, 0.25); border-radius: 10px; padding: 12px; color: rgba(255,255,255,0.78); font-size: 13px;">
+                <div class="tutorial-library-next">
                   Next, choose the local folder where MOSAIC should keep your mod library.
                 </div>
               `;
@@ -1716,20 +1699,20 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Emulator Selection',
       description: 'Choose your emulator',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">Which Emulator?</h3>
-    <p style="margin-bottom: 32px; color: rgba(255,255,255,0.7);">Select the emulator you're using.</p>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">Which Emulator?</h3>
+    <p class="tutorial-lead-lg">Select the emulator you're using.</p>
     
-    <div style="display: flex; gap: 16px; max-width: 500px; margin: 0 auto;">
-        <button id="yuzu-btn" style="flex: 1; padding: 20px; background: rgba(122, 155, 255, 0.1); border: 2px solid rgba(122, 155, 255, 0.3); border-radius: 12px; cursor: pointer; transition: all 0.2s;">
-            <i class="bi bi-controller" style="font-size: 32px; color: #7a9bff; display: block; margin-bottom: 8px;"></i>
-            <strong style="color: #fff; display: block;">Yuzu</strong>
-            <span style="color: rgba(255,255,255,0.6); font-size: 12px;">(or forks)</span>
+    <div class="tutorial-options-compact">
+        <button id="yuzu-btn" class="tutorial-emulator-btn">
+            <i class="bi bi-controller tutorial-emulator-icon"></i>
+            <strong class="tutorial-label">Yuzu</strong>
+            <span class="tutorial-emulator-note">(or forks)</span>
         </button>
-        <button id="ryujinx-btn" style="flex: 1; padding: 20px; background: rgba(122, 155, 255, 0.1); border: 2px solid rgba(122, 155, 255, 0.3); border-radius: 12px; cursor: pointer; transition: all 0.2s;">
-            <i class="bi bi-controller" style="font-size: 32px; color: #7a9bff; display: block; margin-bottom: 8px;"></i>
-            <strong style="color: #fff; display: block;">Ryujinx</strong>
-            <span style="color: rgba(255,255,255,0.6); font-size: 12px;">(or forks)</span>
+        <button id="ryujinx-btn" class="tutorial-emulator-btn">
+            <i class="bi bi-controller tutorial-emulator-icon"></i>
+            <strong class="tutorial-label">Ryujinx</strong>
+            <span class="tutorial-emulator-note">(or forks)</span>
         </button>
     </div>
 </div>
@@ -1750,7 +1733,6 @@ document.addEventListener('DOMContentLoaded', () => {
           yuzuBtn!.style.borderColor = 'rgba(76, 175, 80, 0.5)';
           ryujinxBtn!.style.background = 'rgba(122, 155, 255, 0.1)';
           ryujinxBtn!.style.borderColor = 'rgba(122, 155, 255, 0.3)';
-          // Update dots to show new steps
           await renderProgressDots();
           if (nextBtn) {
             nextBtn.style.opacity = '1';
@@ -1767,7 +1749,6 @@ document.addEventListener('DOMContentLoaded', () => {
           ryujinxBtn!.style.borderColor = 'rgba(76, 175, 80, 0.5)';
           yuzuBtn!.style.background = 'rgba(122, 155, 255, 0.1)';
           yuzuBtn!.style.borderColor = 'rgba(122, 155, 255, 0.3)';
-          // Update dots to show new steps
           await renderProgressDots();
           if (nextBtn) {
             nextBtn.style.opacity = '1';
@@ -1775,7 +1756,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
 
-        // Load saved selection
         const emulatorType = await window.tutorialAPI?.store.get(
           'tutorial.emulatorType',
         );
@@ -1791,15 +1771,15 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Yuzu Setup',
       description: 'Configure Yuzu paths and install ARCropolis',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">Yuzu Directory</h3>
-    <p style="margin-bottom: 32px; color: rgba(255,255,255,0.7);">We'll detect your Yuzu folder automatically, or you can select it manually.</p>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">Yuzu Directory</h3>
+    <p class="tutorial-lead-lg">We'll detect your Yuzu folder automatically, or you can select it manually.</p>
     
-    <div id="yuzu-status" style="display: flex; flex-direction: column; gap: 16px; text-align: left; max-width: 500px; margin: 0 auto;">
-        <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <span style="color: #fff;">Detecting Yuzu path...</span>
-                <div style="width: 20px; height: 20px; border: 2px solid rgba(122, 155, 255, 0.3); border-top-color: #7a9bff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <div id="yuzu-status" class="tutorial-status-list">
+        <div class="tutorial-box">
+            <div class="tutorial-row-between">
+                <span class="tutorial-text-white">Detecting Yuzu path...</span>
+                <div class="tutorial-spinner"></div>
             </div>
         </div>
     </div>
@@ -1818,13 +1798,13 @@ document.addEventListener('DOMContentLoaded', () => {
           const result = await apiWrapper.detectYuzuPath();
           if (result.success && result.paths?.length > 1) {
             statusDiv!.innerHTML = `
-                    <div style="background: rgba(122, 155, 255, 0.1); border: 1px solid rgba(122, 155, 255, 0.3); border-radius: 12px; padding: 16px;">
-                        <p style="color: #fff; margin-bottom: 16px;">Yuzu and Eden were detected. Which emulator do you want to configure?</p>
-                        <div style="display: flex; gap: 12px;">
+                    <div class="tutorial-box-accent">
+                        <p class="tutorial-result-text">Yuzu and Eden were detected. Which emulator do you want to configure?</p>
+                        <div class="tutorial-actions">
                             ${result.paths
                               .map(
                                 (candidate, index) => `
-                                <button class="select-yuzu-compatible-btn" data-index="${index}" style="flex: 1; padding: 12px; background: rgba(122, 155, 255, 0.2); color: #fff; border: 1px solid rgba(122, 155, 255, 0.4); border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                <button class="select-yuzu-compatible-btn tutorial-btn-compatible" data-index="${index}">
                                     ${candidate.name}
                                 </button>`,
                               )
@@ -1845,12 +1825,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     candidate.path,
                   );
                   statusDiv!.innerHTML = `
-                            <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                            <div class="tutorial-box-success">
+                                <div class="tutorial-row">
+                                    <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                     <div>
-                                        <strong style="color: #fff; display: block;">${candidate.name} selected</strong>
-                                        <span style="color: rgba(255,255,255,0.6); font-size: 13px; font-family: monospace;">${candidate.path}</span>
+                                        <strong class="tutorial-label">${candidate.name} selected</strong>
+                                        <span class="tutorial-path">${candidate.path}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1870,16 +1850,16 @@ document.addEventListener('DOMContentLoaded', () => {
               result.path,
             );
             statusDiv!.innerHTML = `
-                    <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                    <div class="tutorial-box-success">
+                        <div class="tutorial-row-between-spaced">
+                            <div class="tutorial-row">
+                                <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                 <div>
-                                    <strong style="color: #fff; display: block;">Yuzu Found</strong>
-                                    <span style="color: rgba(255,255,255,0.6); font-size: 13px; font-family: monospace;">${result.path}</span>
+                                    <strong class="tutorial-label">Yuzu Found</strong>
+                                    <span class="tutorial-path">${result.path}</span>
                                 </div>
                             </div>
-                            <button id="wrong-yuzu-path-btn" style="padding: 6px 12px; background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">
+                            <button id="wrong-yuzu-path-btn" class="tutorial-btn-warning">
                                 Wrong path?
                             </button>
                         </div>
@@ -1893,15 +1873,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (path) {
                   await window.tutorialAPI.store.set('tutorial.yuzuPath', path);
                   statusDiv!.innerHTML = `
-                            <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                <div style="display: flex; align-items: center; justify-content: space-between;">
-                                    <div style="display: flex; align-items: center; gap: 12px;">
-                                        <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                            <div class="tutorial-box-success">
+                                <div class="tutorial-row-between">
+                                    <div class="tutorial-row">
+                                        <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                         <div>
-                                            <strong style="color: #fff; display: block;">Selected: ${path}</strong>
+                                            <strong class="tutorial-label">Selected: ${path}</strong>
                                         </div>
                                     </div>
-                                    <button id="wrong-yuzu-path-btn-2" style="padding: 6px 12px; background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                    <button id="wrong-yuzu-path-btn-2" class="tutorial-btn-warning-plain">
                                         Wrong path?
                                     </button>
                                 </div>
@@ -1918,11 +1898,11 @@ document.addEventListener('DOMContentLoaded', () => {
                           path2,
                         );
                         statusDiv!.innerHTML = `
-                                    <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                        <div style="display: flex; align-items: center; gap: 12px;">
-                                            <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                                    <div class="tutorial-box-success">
+                                        <div class="tutorial-row">
+                                            <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                             <div>
-                                                <strong style="color: #fff; display: block;">Selected: ${path2}</strong>
+                                                <strong class="tutorial-label">Selected: ${path2}</strong>
                                             </div>
                                         </div>
                                     </div>
@@ -1939,10 +1919,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           } else {
             statusDiv!.innerHTML = `
-                    <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 16px;">
-                        <p style="color: #ffc107; margin-bottom: 16px;">Yuzu path not detected automatically.</p>
-                        <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin-bottom: 16px;">Please open Yuzu, go to <strong style="color: #fff;">File > Open yuzu folder</strong>, then copy the path and select it below.</p>
-                        <button id="select-yuzu-btn" style="padding: 10px 20px; background: rgba(122, 155, 255, 0.2); color: #7a9bff; border: 1px solid rgba(122, 155, 255, 0.3); border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%;">
+                    <div class="tutorial-box-warning">
+                        <p class="tutorial-text-warning">Yuzu path not detected automatically.</p>
+                        <p class="tutorial-hint">Please open Yuzu, go to <strong class="tutorial-text-white">File > Open yuzu folder</strong>, then copy the path and select it below.</p>
+                        <button id="select-yuzu-btn" class="tutorial-btn-accent-block">
                             Select Yuzu Folder
                         </button>
                     </div>
@@ -1954,11 +1934,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (path) {
                   await window.tutorialAPI.store.set('tutorial.yuzuPath', path);
                   statusDiv!.innerHTML = `
-                            <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                            <div class="tutorial-box-success">
+                                <div class="tutorial-row">
+                                    <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                     <div>
-                                        <strong style="color: #fff; display: block;">Selected: ${path}</strong>
+                                        <strong class="tutorial-label">Selected: ${path}</strong>
                                     </div>
                                 </div>
                             </div>
@@ -1974,7 +1954,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
           console.error('Error detecting Yuzu:', error);
           statusDiv!.innerHTML =
-            '<div style="color: #ff4d4d;">Error detecting Yuzu. Please select manually.</div>';
+            '<div class="tutorial-text-error">Error detecting Yuzu. Please select manually.</div>';
         }
       },
     },
@@ -1984,11 +1964,11 @@ document.addEventListener('DOMContentLoaded', () => {
       description:
         'Downloading and installing Skyline (exefs) and ARCropolis (romfs) for Yuzu',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">Installing ARCropolis</h3>
-    <div id="yuzu-install-status" style="display: flex; flex-direction: column; gap: 16px; text-align: left; max-width: 500px; margin: 0 auto;">
-        <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-            <div style="color: #fff;">Preparing installation...</div>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">Installing ARCropolis</h3>
+    <div id="yuzu-install-status" class="tutorial-status-list">
+        <div class="tutorial-box">
+            <div class="tutorial-text-white">Preparing installation...</div>
         </div>
     </div>
 </div>
@@ -2011,13 +1991,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (!yuzuPath) {
             statusDiv!.innerHTML =
-              '<div style="color: #ff4d4d;">Error: Yuzu path not found. Please go back and select your Yuzu folder.</div>';
+              '<div class="tutorial-text-error">Error: Yuzu path not found. Please go back and select your Yuzu folder.</div>';
             return;
           }
 
-          // Get latest releases (Skyline for exefs, ARCropolis for romfs)
           statusDiv!.innerHTML =
-            '<div style="color: #fff;">Fetching latest releases...</div>';
+            '<div class="tutorial-text-white">Fetching latest releases...</div>';
           const skylineRelease = await apiWrapper.getSkylineRelease();
           if (!skylineRelease.success)
             throw createTutorialIpcError(
@@ -2026,9 +2005,8 @@ document.addEventListener('DOMContentLoaded', () => {
             );
           const arcropolisRelease = await chooseArcropolisRelease(statusDiv!);
 
-          // Download Skyline
           statusDiv!.innerHTML =
-            '<div style="color: #fff;">Downloading Skyline (exefs)...</div>';
+            '<div class="tutorial-text-white">Downloading Skyline (exefs)...</div>';
           const tempDirResult = await window.tutorialAPI.getTempDir();
           if (!tempDirResult.success)
             throw new Error('Failed to get temp directory');
@@ -2047,9 +2025,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!skylineDownloadResult.success)
             throw new Error('Skyline download failed');
 
-          // Download ARCropolis
           statusDiv!.innerHTML =
-            '<div style="color: #fff;">Downloading ARCropolis (romfs)...</div>';
+            '<div class="tutorial-text-white">Downloading ARCropolis (romfs)...</div>';
           const arcropolisTempPathResult = await window.tutorialAPI.joinPath(
             tempDirResult.path,
             `arcropolis-${Date.now()}.zip`,
@@ -2065,7 +2042,6 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!arcropolisDownloadResult.success)
             throw new Error('ARCropolis download failed');
 
-          // Create directories
           const ultimateModsPathResult = await window.tutorialAPI.joinPath(
             yuzuPath,
             'sdmc',
@@ -2076,9 +2052,8 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error('Failed to construct mods path');
           await window.tutorialAPI.createDirectory(ultimateModsPathResult.path);
 
-          // Extract Skyline (exefs) to sdmc/atmosphere/contents directory
           statusDiv!.innerHTML =
-            '<div style="color: #fff;">Installing Skyline (exefs)...</div>';
+            '<div class="tutorial-text-white">Installing Skyline (exefs)...</div>';
           const atmospherePathResult = await window.tutorialAPI.joinPath(
             yuzuPath,
             'sdmc',
@@ -2097,9 +2072,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!skylineExtractResult.success)
             throw new Error('Skyline extraction failed');
 
-          // Extract ARCropolis (romfs)
           statusDiv!.innerHTML =
-            '<div style="color: #fff;">Installing ARCropolis (romfs)...</div>';
+            '<div class="tutorial-text-white">Installing ARCropolis (romfs)...</div>';
           const arcropolisExtractResult =
             await window.tutorialAPI.extractArcropolis(
               arcropolisDownloadResult.path,
@@ -2109,12 +2083,12 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error('ARCropolis extraction failed');
 
           statusDiv!.innerHTML = `
-                <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                <div class="tutorial-box-success">
+                    <div class="tutorial-row">
+                        <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                         <div>
-                            <strong style="color: #fff; display: block;">Installation complete!</strong>
-                            <span style="color: rgba(255,255,255,0.6); font-size: 13px;">Skyline ${skylineRelease.version} (exefs) + ARCropolis ${arcropolisRelease.version} (romfs)</span>
+                            <strong class="tutorial-label">Installation complete!</strong>
+                            <span class="tutorial-text-muted-sm">Skyline ${skylineRelease.version} (exefs) + ARCropolis ${arcropolisRelease.version} (romfs)</span>
                         </div>
                     </div>
                 </div>
@@ -2135,14 +2109,14 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Verify ARCropolis (Yuzu)',
       description: 'Launch the game and verify installation',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">Verify Installation</h3>
-    <p style="margin-bottom: 24px; color: rgba(255,255,255,0.7);">Please launch Smash Ultimate in Yuzu and check if ARCropolis is working.</p>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">Verify Installation</h3>
+    <p class="tutorial-lead-md">Please launch Smash Ultimate in Yuzu and check if ARCropolis is working.</p>
     
-    <div style="position: relative; width: 100%; max-width: 600px; margin: 0 auto 24px;">
-        <div id="arcropolis-lottie-yuzu" style="width: 100%; height: 200px; display: flex; align-items: center; justify-content: center;"></div>
-        <div class="scroll-indicator" style="position: absolute; bottom: 10%; right: -20px; animation: bounce-side 2s infinite; pointer-events: none; background: rgba(20, 20, 20, 0.6); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10;">
-            <i class="bi bi-chevron-down" style="color: #7a9bff; font-size: 20px;"></i>
+    <div class="tutorial-lottie-frame">
+        <div id="arcropolis-lottie-yuzu" class="tutorial-lottie"></div>
+        <div class="scroll-indicator tutorial-scroll-indicator">
+            <i class="bi bi-chevron-down tutorial-scroll-indicator-icon"></i>
         </div>
         <style>
             @keyframes bounce-side {
@@ -2153,26 +2127,26 @@ document.addEventListener('DOMContentLoaded', () => {
         </style>
     </div>
     
-    <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 20px; max-width: 500px; margin: 0 auto; text-align: left;">
-        <p style="color: #ffc107; margin-bottom: 16px; font-weight: 600;">
+    <div class="tutorial-box-warning-panel">
+        <p class="tutorial-warning-title">
             <i class="bi bi-info-circle-fill"></i> What to look for:
         </p>
-        <ul style="color: rgba(255,255,255,0.8); margin-left: 20px; line-height: 1.8;">
+        <ul class="tutorial-steps-list">
             <li>Launch Super Smash Bros. Ultimate in Yuzu</li>
-            <li>Look for <strong style="color: #fff;">ARCropolis version text</strong> in the <strong style="color: #fff;">top-right corner</strong></li>
+            <li>Look for <strong class="tutorial-text-white">ARCropolis version text</strong> in the <strong class="tutorial-text-white">top-right corner</strong></li>
             <li>If you see it, ARCropolis is working!</li>
         </ul>
     </div>
     
     
     
-    <div id="yuzu-verification-status" style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px; max-width: 500px; margin-left: auto; margin-right: auto;">
-        <p style="color: rgba(255,255,255,0.7);">Did you see the ARCropolis text?</p>
-        <div style="display: flex; gap: 12px;">
-            <button id="yuzu-verify-yes-btn" style="flex: 1; padding: 12px; background: rgba(76, 175, 80, 0.2); color: #4caf50; border: 2px solid rgba(76, 175, 80, 0.3); border-radius: 8px; cursor: pointer; font-weight: 600;">
+    <div id="yuzu-verification-status" class="tutorial-verification">
+        <p class="tutorial-lead">Did you see the ARCropolis text?</p>
+        <div class="tutorial-actions">
+            <button id="yuzu-verify-yes-btn" class="tutorial-btn-yes">
                 Yes, it's working!
             </button>
-            <button id="yuzu-verify-no-btn" style="flex: 1; padding: 12px; background: rgba(255, 77, 77, 0.2); color: #ff4d4d; border: 2px solid rgba(255, 77, 77, 0.3); border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <button id="yuzu-verify-no-btn" class="tutorial-btn-no">
                 No, not working
             </button>
         </div>
@@ -2191,7 +2165,6 @@ document.addEventListener('DOMContentLoaded', () => {
           '#arcropolis-lottie-yuzu',
         );
 
-        // Load Lottie animation for PC (Yuzu)
         if (lottieContainer && window.lottie) {
           try {
             const anim = window.lottie.loadAnimation({
@@ -2217,7 +2190,6 @@ document.addEventListener('DOMContentLoaded', () => {
             true,
           );
 
-          // Check for arcropolis folder
           const yuzuPath = (await apiWrapper.storeGet(
             'tutorial.yuzuPath',
           )) as string;
@@ -2240,14 +2212,13 @@ document.addEventListener('DOMContentLoaded', () => {
               '#yuzu-verification-status',
             );
             statusDiv!.innerHTML = `
-                    <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 16px; text-align: center;">
-                        <p style="color: #ffc107; margin-bottom: 12px;">ARCropolis folder not found. Please close the game and restart it to create the folder.</p>
+                    <div class="tutorial-box-warning-center">
+                        <p class="tutorial-text-warning-tight">ARCropolis folder not found. Please close the game and restart it to create the folder.</p>
                     </div>
                 `;
             return;
           }
 
-          // Auto-configure paths
           const modsPathResult = await window.tutorialAPI.joinPath(
             yuzuPath,
             'sdmc',
@@ -2278,10 +2249,10 @@ document.addEventListener('DOMContentLoaded', () => {
             '#yuzu-verification-status',
           );
           statusDiv!.innerHTML = `
-                <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px; text-align: center;">
-                    <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 32px; margin-bottom: 12px;"></i>
-                    <p style="color: #fff; margin-bottom: 16px;">Perfect! ARCropolis is working and paths are configured.</p>
-                    <p style="color: rgba(255,255,255,0.7); font-size: 13px;">Please <strong style="color: #fff;">close the game</strong> before continuing.</p>
+                <div class="tutorial-box-success-center">
+                    <i class="bi bi-check-circle-fill tutorial-icon-success-lg"></i>
+                    <p class="tutorial-result-text">Perfect! ARCropolis is working and paths are configured.</p>
+                    <p class="tutorial-note">Please <strong class="tutorial-text-white">close the game</strong> before continuing.</p>
                 </div>
             `;
           if (nextBtn) {
@@ -2295,11 +2266,11 @@ document.addEventListener('DOMContentLoaded', () => {
             '#yuzu-verification-status',
           );
           statusDiv!.innerHTML = `
-                <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3); border-radius: 12px; padding: 16px; text-align: center;">
-                    <i class="bi bi-exclamation-triangle-fill" style="color: #ff4d4d; font-size: 32px; margin-bottom: 12px;"></i>
-                    <p style="color: #fff; margin-bottom: 16px;">ARCropolis is not working.</p>
-                    <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin-bottom: 16px;">Please join the <a href="https://discord.gg/2zT5Rg46bG" target="_blank" style="color: #7a9bff; text-decoration: none; font-weight: 600; border-bottom: 1px solid rgba(122, 155, 255, 0.3); transition: all 0.2s;">MOSAIC Discord</a> for assistance.</p>
-                    <button id="change-answer-yuzu-btn" style="padding: 10px 20px; background: rgba(122, 155, 255, 0.2); color: #7a9bff; border: 2px solid rgba(122, 155, 255, 0.3); border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                <div class="tutorial-box-error-center">
+                    <i class="bi bi-exclamation-triangle-fill tutorial-icon-error-lg"></i>
+                    <p class="tutorial-result-text">ARCropolis is not working.</p>
+                    <p class="tutorial-hint">Please join the <a href="https://discord.gg/2zT5Rg46bG" target="_blank" class="tutorial-link">MOSAIC Discord</a> for assistance.</p>
+                    <button id="change-answer-yuzu-btn" class="tutorial-btn-accent">
                         Change my answer
                     </button>
                 </div>
@@ -2309,7 +2280,6 @@ document.addEventListener('DOMContentLoaded', () => {
             '#change-answer-yuzu-btn',
           );
           changeAnswerBtn?.addEventListener('click', async () => {
-            // Go back to the installation step
             currentStep = steps.findIndex(
               (s) => s.title === 'Installing Skyline & ARCropolis (Yuzu)',
             );
@@ -2328,15 +2298,15 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Ryujinx Setup',
       description: 'Configure Ryujinx paths and install ARCropolis',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">Ryujinx Directory</h3>
-    <p style="margin-bottom: 32px; color: rgba(255,255,255,0.7);">We'll detect your Ryujinx folder automatically, or you can select it manually.</p>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">Ryujinx Directory</h3>
+    <p class="tutorial-lead-lg">We'll detect your Ryujinx folder automatically, or you can select it manually.</p>
     
-    <div id="ryujinx-status" style="display: flex; flex-direction: column; gap: 16px; text-align: left; max-width: 500px; margin: 0 auto;">
-        <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <span style="color: #fff;">Detecting Ryujinx path...</span>
-                <div style="width: 20px; height: 20px; border: 2px solid rgba(122, 155, 255, 0.3); border-top-color: #7a9bff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <div id="ryujinx-status" class="tutorial-status-list">
+        <div class="tutorial-box">
+            <div class="tutorial-row-between">
+                <span class="tutorial-text-white">Detecting Ryujinx path...</span>
+                <div class="tutorial-spinner"></div>
             </div>
         </div>
     </div>
@@ -2360,16 +2330,16 @@ document.addEventListener('DOMContentLoaded', () => {
               result.path,
             );
             statusDiv!.innerHTML = `
-                    <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                    <div class="tutorial-box-success">
+                        <div class="tutorial-row-between-spaced">
+                            <div class="tutorial-row">
+                                <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                 <div>
-                                    <strong style="color: #fff; display: block;">Ryujinx Found</strong>
-                                    <span style="color: rgba(255,255,255,0.6); font-size: 13px; font-family: monospace;">${result.path}</span>
+                                    <strong class="tutorial-label">Ryujinx Found</strong>
+                                    <span class="tutorial-path">${result.path}</span>
                                 </div>
                             </div>
-                            <button id="wrong-ryujinx-path-btn" style="padding: 6px 12px; background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">
+                            <button id="wrong-ryujinx-path-btn" class="tutorial-btn-warning">
                                 Wrong path?
                             </button>
                         </div>
@@ -2386,15 +2356,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     path,
                   );
                   statusDiv!.innerHTML = `
-                            <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                <div style="display: flex; align-items: center; justify-content: space-between;">
-                                    <div style="display: flex; align-items: center; gap: 12px;">
-                                        <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                            <div class="tutorial-box-success">
+                                <div class="tutorial-row-between">
+                                    <div class="tutorial-row">
+                                        <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                         <div>
-                                            <strong style="color: #fff; display: block;">Selected: ${path}</strong>
+                                            <strong class="tutorial-label">Selected: ${path}</strong>
                                         </div>
                                     </div>
-                                    <button id="wrong-ryujinx-path-btn-2" style="padding: 6px 12px; background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                    <button id="wrong-ryujinx-path-btn-2" class="tutorial-btn-warning-plain">
                                         Wrong path?
                                     </button>
                                 </div>
@@ -2411,11 +2381,11 @@ document.addEventListener('DOMContentLoaded', () => {
                           path2,
                         );
                         statusDiv!.innerHTML = `
-                                    <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                        <div style="display: flex; align-items: center; gap: 12px;">
-                                            <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                                    <div class="tutorial-box-success">
+                                        <div class="tutorial-row">
+                                            <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                             <div>
-                                                <strong style="color: #fff; display: block;">Selected: ${path2}</strong>
+                                                <strong class="tutorial-label">Selected: ${path2}</strong>
                                             </div>
                                         </div>
                                     </div>
@@ -2432,10 +2402,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           } else {
             statusDiv!.innerHTML = `
-                    <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 16px;">
-                        <p style="color: #ffc107; margin-bottom: 16px;">Ryujinx path not detected automatically.</p>
-                        <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin-bottom: 16px;">Please open Ryujinx, go to <strong style="color: #fff;">File > Open Ryujinx folder</strong>, then copy the path and select it below.</p>
-                        <button id="select-ryujinx-btn" style="padding: 10px 20px; background: rgba(122, 155, 255, 0.2); color: #7a9bff; border: 1px solid rgba(122, 155, 255, 0.3); border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%;">
+                    <div class="tutorial-box-warning">
+                        <p class="tutorial-text-warning">Ryujinx path not detected automatically.</p>
+                        <p class="tutorial-hint">Please open Ryujinx, go to <strong class="tutorial-text-white">File > Open Ryujinx folder</strong>, then copy the path and select it below.</p>
+                        <button id="select-ryujinx-btn" class="tutorial-btn-accent-block">
                             Select Ryujinx Folder
                         </button>
                     </div>
@@ -2450,11 +2420,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     path,
                   );
                   statusDiv!.innerHTML = `
-                            <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                            <div class="tutorial-box-success">
+                                <div class="tutorial-row">
+                                    <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                                     <div>
-                                        <strong style="color: #fff; display: block;">Selected: ${path}</strong>
+                                        <strong class="tutorial-label">Selected: ${path}</strong>
                                     </div>
                                 </div>
                             </div>
@@ -2470,7 +2440,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
           console.error('Error detecting Ryujinx:', error);
           statusDiv!.innerHTML =
-            '<div style="color: #ff4d4d;">Error detecting Ryujinx. Please select manually.</div>';
+            '<div class="tutorial-text-error">Error detecting Ryujinx. Please select manually.</div>';
         }
       },
     },
@@ -2480,11 +2450,11 @@ document.addEventListener('DOMContentLoaded', () => {
       description:
         'Downloading and installing Skyline (exefs) and ARCropolis (romfs) for Ryujinx',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">Installing ARCropolis</h3>
-    <div id="ryujinx-install-status" style="display: flex; flex-direction: column; gap: 16px; text-align: left; max-width: 500px; margin: 0 auto;">
-        <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-            <div style="color: #fff;">Preparing installation...</div>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">Installing ARCropolis</h3>
+    <div id="ryujinx-install-status" class="tutorial-status-list">
+        <div class="tutorial-box">
+            <div class="tutorial-text-white">Preparing installation...</div>
         </div>
     </div>
 </div>
@@ -2507,13 +2477,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (!ryujinxPath) {
             statusDiv!.innerHTML =
-              '<div style="color: #ff4d4d;">Error: Ryujinx path not found. Please go back and select your Ryujinx folder.</div>';
+              '<div class="tutorial-text-error">Error: Ryujinx path not found. Please go back and select your Ryujinx folder.</div>';
             return;
           }
 
-          // Get latest releases (Skyline for exefs, ARCropolis for romfs)
           statusDiv!.innerHTML =
-            '<div style="color: #fff;">Fetching latest releases...</div>';
+            '<div class="tutorial-text-white">Fetching latest releases...</div>';
 
           const skylineRelease = await apiWrapper.getSkylineRelease();
 
@@ -2525,9 +2494,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const arcropolisRelease = await chooseArcropolisRelease(statusDiv!);
 
-          // Download Skyline
           statusDiv!.innerHTML =
-            '<div style="color: #fff;">Downloading Skyline (exefs)...</div>';
+            '<div class="tutorial-text-white">Downloading Skyline (exefs)...</div>';
 
           const tempDirResult = await window.tutorialAPI.getTempDir();
           if (!tempDirResult.success)
@@ -2551,9 +2519,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!skylineDownloadResult.success)
             throw new Error('Skyline download failed');
 
-          // Download ARCropolis
           statusDiv!.innerHTML =
-            '<div style="color: #fff;">Downloading ARCropolis (romfs)...</div>';
+            '<div class="tutorial-text-white">Downloading ARCropolis (romfs)...</div>';
           const arcropolisTempPathResult = await window.tutorialAPI.joinPath(
             tempDirResult.path,
             `arcropolis-${Date.now()}.zip`,
@@ -2571,9 +2538,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!arcropolisDownloadResult.success)
             throw new Error('ARCropolis download failed');
 
-          // Create directories and extract
           statusDiv!.innerHTML =
-            '<div style="color: #fff;">Installing Skyline (exefs)...</div>';
+            '<div class="tutorial-text-white">Installing Skyline (exefs)...</div>';
           const contentsPathResult = await window.tutorialAPI.joinPath(
             ryujinxPath,
             'sdcard',
@@ -2586,7 +2552,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const contentsPath = contentsPathResult.path;
           await window.tutorialAPI.createDirectory(contentsPath);
 
-          // Extract Skyline (exefs)
           const skylineExtractResult = await window.tutorialAPI.extractSkyline(
             skylineDownloadResult.path,
             contentsPath,
@@ -2594,9 +2559,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!skylineExtractResult.success)
             throw new Error('Skyline extraction failed');
 
-          // Extract ARCropolis (romfs)
           statusDiv!.innerHTML =
-            '<div style="color: #fff;">Installing ARCropolis (romfs)...</div>';
+            '<div class="tutorial-text-white">Installing ARCropolis (romfs)...</div>';
           const arcropolisExtractResult =
             await window.tutorialAPI.extractArcropolis(
               arcropolisDownloadResult.path,
@@ -2605,7 +2569,6 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!arcropolisExtractResult.success)
             throw new Error('ARCropolis extraction failed');
 
-          // Create plugin directories
           const pluginsPathResult = await window.tutorialAPI.joinPath(
             contentsPath,
             'romfs',
@@ -2617,12 +2580,12 @@ document.addEventListener('DOMContentLoaded', () => {
           await window.tutorialAPI.createDirectory(pluginsPathResult.path);
 
           statusDiv!.innerHTML = `
-                <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 24px;"></i>
+                <div class="tutorial-box-success">
+                    <div class="tutorial-row">
+                        <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                         <div>
-                            <strong style="color: #fff; display: block;">Installation complete!</strong>
-                            <span style="color: rgba(255,255,255,0.6); font-size: 13px;">Skyline ${skylineRelease.version} (exefs) + ARCropolis ${arcropolisRelease.version} (romfs)</span>
+                            <strong class="tutorial-label">Installation complete!</strong>
+                            <span class="tutorial-text-muted-sm">Skyline ${skylineRelease.version} (exefs) + ARCropolis ${arcropolisRelease.version} (romfs)</span>
                         </div>
                     </div>
                 </div>
@@ -2643,14 +2606,14 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Verify ARCropolis (Ryujinx)',
       description: 'Launch the game and verify installation',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">Verify Installation</h3>
-    <p style="margin-bottom: 24px; color: rgba(255,255,255,0.7);">Please launch Smash Ultimate in Ryujinx and check if ARCropolis is working.</p>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">Verify Installation</h3>
+    <p class="tutorial-lead-md">Please launch Smash Ultimate in Ryujinx and check if ARCropolis is working.</p>
     
-    <div style="position: relative; width: 100%; max-width: 600px; margin: 0 auto 24px;">
-        <div id="arcropolis-lottie-ryujinx" style="width: 100%; height: 200px; display: flex; align-items: center; justify-content: center;"></div>
-        <div class="scroll-indicator" style="position: absolute; bottom: 10%; right: -20px; animation: bounce-side 2s infinite; pointer-events: none; background: rgba(20, 20, 20, 0.6); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10;">
-            <i class="bi bi-chevron-down" style="color: #7a9bff; font-size: 20px;"></i>
+    <div class="tutorial-lottie-frame">
+        <div id="arcropolis-lottie-ryujinx" class="tutorial-lottie"></div>
+        <div class="scroll-indicator tutorial-scroll-indicator">
+            <i class="bi bi-chevron-down tutorial-scroll-indicator-icon"></i>
         </div>
         <style>
             @keyframes bounce-side {
@@ -2661,26 +2624,26 @@ document.addEventListener('DOMContentLoaded', () => {
         </style>
     </div>
     
-    <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 20px; max-width: 500px; margin: 0 auto; text-align: left;">
-        <p style="color: #ffc107; margin-bottom: 16px; font-weight: 600;">
+    <div class="tutorial-box-warning-panel">
+        <p class="tutorial-warning-title">
             <i class="bi bi-info-circle-fill"></i> What to look for:
         </p>
-        <ul style="color: rgba(255,255,255,0.8); margin-left: 20px; line-height: 1.8;">
+        <ul class="tutorial-steps-list">
             <li>Launch Super Smash Bros. Ultimate in Ryujinx</li>
-            <li>Look for <strong style="color: #fff;">ARCropolis version text</strong> in the <strong style="color: #fff;">top-right corner</strong></li>
+            <li>Look for <strong class="tutorial-text-white">ARCropolis version text</strong> in the <strong class="tutorial-text-white">top-right corner</strong></li>
             <li>If you see it, ARCropolis is working!</li>
         </ul>
     </div>
     
     
     
-    <div id="ryujinx-verification-status" style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px; max-width: 500px; margin-left: auto; margin-right: auto;">
-        <p style="color: rgba(255,255,255,0.7);">Did you see the ARCropolis text?</p>
-        <div style="display: flex; gap: 12px;">
-            <button id="ryujinx-verify-yes-btn" style="flex: 1; padding: 12px; background: rgba(76, 175, 80, 0.2); color: #4caf50; border: 2px solid rgba(76, 175, 80, 0.3); border-radius: 8px; cursor: pointer; font-weight: 600;">
+    <div id="ryujinx-verification-status" class="tutorial-verification">
+        <p class="tutorial-lead">Did you see the ARCropolis text?</p>
+        <div class="tutorial-actions">
+            <button id="ryujinx-verify-yes-btn" class="tutorial-btn-yes">
                 Yes, it's working!
             </button>
-            <button id="ryujinx-verify-no-btn" style="flex: 1; padding: 12px; background: rgba(255, 77, 77, 0.2); color: #ff4d4d; border: 2px solid rgba(255, 77, 77, 0.3); border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <button id="ryujinx-verify-no-btn" class="tutorial-btn-no">
                 No, not working
             </button>
         </div>
@@ -2699,7 +2662,6 @@ document.addEventListener('DOMContentLoaded', () => {
           '#arcropolis-lottie-ryujinx',
         );
 
-        // Load Lottie animation for PC (Ryujinx)
         if (lottieContainer && window.lottie) {
           try {
             const anim = window.lottie.loadAnimation({
@@ -2725,7 +2687,6 @@ document.addEventListener('DOMContentLoaded', () => {
             true,
           );
 
-          // Auto-configure paths
           const ryujinxPath = (await apiWrapper.storeGet(
             'tutorial.ryujinxPath',
           )) as string;
@@ -2762,10 +2723,10 @@ document.addEventListener('DOMContentLoaded', () => {
             '#ryujinx-verification-status',
           );
           statusDiv!.innerHTML = `
-                <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px; padding: 16px; text-align: center;">
-                    <i class="bi bi-check-circle-fill" style="color: #4caf50; font-size: 32px; margin-bottom: 12px;"></i>
-                    <p style="color: #fff; margin-bottom: 16px;">Perfect! ARCropolis is working and paths are configured.</p>
-                    <p style="color: rgba(255,255,255,0.7); font-size: 13px;">Please <strong style="color: #fff;">close the game</strong> before continuing.</p>
+                <div class="tutorial-box-success-center">
+                    <i class="bi bi-check-circle-fill tutorial-icon-success-lg"></i>
+                    <p class="tutorial-result-text">Perfect! ARCropolis is working and paths are configured.</p>
+                    <p class="tutorial-note">Please <strong class="tutorial-text-white">close the game</strong> before continuing.</p>
                 </div>
             `;
           if (nextBtn) {
@@ -2779,11 +2740,11 @@ document.addEventListener('DOMContentLoaded', () => {
             '#ryujinx-verification-status',
           );
           statusDiv!.innerHTML = `
-                <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3); border-radius: 12px; padding: 16px; text-align: center;">
-                    <i class="bi bi-exclamation-triangle-fill" style="color: #ff4d4d; font-size: 32px; margin-bottom: 12px;"></i>
-                    <p style="color: #fff; margin-bottom: 16px;">ARCropolis is not working.</p>
-                    <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin-bottom: 16px;">Please join the <a href="https://discord.gg/2zT5Rg46bG" target="_blank" style="color: #7a9bff; text-decoration: none; font-weight: 600; border-bottom: 1px solid rgba(122, 155, 255, 0.3); transition: all 0.2s;">MOSAIC Discord</a> for assistance.</p>
-                    <button id="change-answer-ryujinx-btn" style="padding: 10px 20px; background: rgba(122, 155, 255, 0.2); color: #7a9bff; border: 2px solid rgba(122, 155, 255, 0.3); border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                <div class="tutorial-box-error-center">
+                    <i class="bi bi-exclamation-triangle-fill tutorial-icon-error-lg"></i>
+                    <p class="tutorial-result-text">ARCropolis is not working.</p>
+                    <p class="tutorial-hint">Please join the <a href="https://discord.gg/2zT5Rg46bG" target="_blank" class="tutorial-link">MOSAIC Discord</a> for assistance.</p>
+                    <button id="change-answer-ryujinx-btn" class="tutorial-btn-accent">
                         Change my answer
                     </button>
                 </div>
@@ -2793,7 +2754,6 @@ document.addEventListener('DOMContentLoaded', () => {
             '#change-answer-ryujinx-btn',
           );
           changeAnswerBtn?.addEventListener('click', async () => {
-            // Go back to the installation step
             currentStep = steps.findIndex(
               (s) => s.title === 'Installing Skyline & ARCropolis (Ryujinx)',
             );
@@ -2812,45 +2772,45 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Configure Your Paths',
       description: 'Point MOSAIC to your mods folder',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">Where are your mods?</h3>
-    <p style="margin-bottom: 32px; color: rgba(255,255,255,0.7);" id="mods-path-description">Select the folder where you keep your Ultimate mods.</p>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">Where are your mods?</h3>
+    <p class="tutorial-lead-lg" id="mods-path-description">Select the folder where you keep your Ultimate mods.</p>
     
-    <div style="display: flex; flex-direction: column; gap: 16px; text-align: left;">
-        <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 24px; height: 24px; background: rgba(122, 155, 255, 0.2); color: #7a9bff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">1</div>
-                    <strong style="color: #fff;">Mods Path</strong>
+    <div class="tutorial-stack-lg">
+        <div class="tutorial-box">
+            <div class="tutorial-row-between-spaced">
+                <div class="tutorial-row">
+                    <div class="tutorial-step-number">1</div>
+                    <strong class="tutorial-text-white">Mods Path</strong>
                 </div>
-                <button id="select-mods-path-btn" class="tutorial-btn-small" style="background: rgba(122, 155, 255, 0.2); color: #7a9bff; border: 1px solid rgba(122, 155, 255, 0.3); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">
+                <button id="select-mods-path-btn" class="tutorial-btn-small tutorial-btn-browse">
                     Browse...
                 </button>
             </div>
-            <div id="mods-path-display" style="background: rgba(0, 0, 0, 0.3); padding: 10px 14px; border-radius: 8px; color: #a0a0a0; font-family: monospace; font-size: 13px; display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap;">
-                <i class="bi bi-folder" style="opacity: 0.5;"></i> <span class="path-text" style="text-overflow: ellipsis; overflow: hidden;">Not configured</span>
+            <div id="mods-path-display" class="tutorial-path-display">
+                <i class="bi bi-folder tutorial-dim"></i> <span class="path-text tutorial-ellipsis">Not configured</span>
             </div>
         </div>
 
-        <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 24px; height: 24px; background: rgba(122, 155, 255, 0.2); color: #7a9bff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">2</div>
-                    <strong style="color: #fff;">Plugins Path</strong>
+        <div class="tutorial-box">
+            <div class="tutorial-row-between-spaced">
+                <div class="tutorial-row">
+                    <div class="tutorial-step-number">2</div>
+                    <strong class="tutorial-text-white">Plugins Path</strong>
                 </div>
-                <button id="select-plugins-path-btn" class="tutorial-btn-small" style="background: rgba(122, 155, 255, 0.2); color: #7a9bff; border: 1px solid rgba(122, 155, 255, 0.3); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">
+                <button id="select-plugins-path-btn" class="tutorial-btn-small tutorial-btn-browse">
                     Browse...
                 </button>
             </div>
-            <div id="plugins-path-display" style="background: rgba(0, 0, 0, 0.3); padding: 10px 14px; border-radius: 8px; color: #a0a0a0; font-family: monospace; font-size: 13px; display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap;">
-                <i class="bi bi-folder" style="opacity: 0.5;"></i> <span class="path-text" style="text-overflow: ellipsis; overflow: hidden;">Not configured</span>
+            <div id="plugins-path-display" class="tutorial-path-display">
+                <i class="bi bi-folder tutorial-dim"></i> <span class="path-text tutorial-ellipsis">Not configured</span>
             </div>
         </div>
     </div>
     
-    <div style="margin-top: 24px; padding: 12px 16px; background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 8px; display: flex; gap: 12px; align-items: start; text-align: left;">
-        <i class="bi bi-info-circle-fill" style="color: #ffc107; margin-top: 2px;"></i>
-        <span style="font-size: 13px; color: rgba(255, 255, 255, 0.7);">Select the plugins folder inside the same ARCropolis installation. You can change both paths later in Settings.</span>
+    <div class="tutorial-plugins-note">
+        <i class="bi bi-info-circle-fill tutorial-plugins-note-icon"></i>
+        <span class="tutorial-plugins-note-text">Select the plugins folder inside the same ARCropolis installation. You can change both paths later in Settings.</span>
     </div>
 </div>
 `,
@@ -2881,17 +2841,17 @@ document.addEventListener('DOMContentLoaded', () => {
             overlay.style.cssText =
               'position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 10000;';
             overlay.innerHTML = `
-<div style="max-width: 420px; background: #1e1e24; border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 12px; padding: 20px; text-align: left;">
-    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-        <i class="bi bi-exclamation-triangle-fill" style="color: #ffc107; font-size: 18px;"></i>
-        <strong style="color: #fff; font-size: 16px;">Change this path?</strong>
+<div class="tutorial-path-dialog">
+    <div class="tutorial-path-dialog-header">
+        <i class="bi bi-exclamation-triangle-fill tutorial-icon-warning"></i>
+        <strong class="tutorial-text-white-md">Change this path?</strong>
     </div>
-    <p style="font-size: 13px; color: rgba(255, 255, 255, 0.7); margin: 0 0 18px;">
+    <p class="tutorial-path-dialog-text">
         MOSAIC installed ARCropolis and already set these paths for you. If you change them, your mods and plugins may not load in game. Only change them if you know what you are doing.
     </p>
-    <div style="display: flex; justify-content: flex-end; gap: 8px;">
-        <button data-action="cancel" style="background: rgba(255, 255, 255, 0.06); color: #fff; border: 1px solid rgba(255, 255, 255, 0.12); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Keep current path</button>
-        <button data-action="confirm" style="background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Change anyway</button>
+    <div class="tutorial-path-dialog-actions">
+        <button data-action="cancel" class="tutorial-path-dialog-keep">Keep current path</button>
+        <button data-action="confirm" class="tutorial-path-dialog-change">Change anyway</button>
     </div>
 </div>`;
             const close = (result: boolean) => {
@@ -2931,7 +2891,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         };
 
-        // Update description based on hardware type
         if (description && window.tutorialAPI) {
           try {
             const hardwareType = await apiWrapper.storeGet(
@@ -2949,7 +2908,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        // Initially disable Next button until validated
         if (nextBtn) {
           nextBtn.style.opacity = '0.5';
           nextBtn.style.pointerEvents = 'none';
@@ -2958,7 +2916,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!window.tutorialAPI || !window.tutorialAPI.store.get) return;
 
-        // Load existing settings
         try {
           const [currentModsPath, currentPluginsPath] = await Promise.all([
             apiWrapper.storeGet('modsPath') as Promise<string | null>,
@@ -2991,17 +2948,14 @@ document.addEventListener('DOMContentLoaded', () => {
           console.error('Error loading settings:', e);
         }
 
-        // Handle click
         if (btn) {
           btn.addEventListener('click', async () => {
             try {
               if (pathsSetByMosaic && !(await confirmPathChange())) return;
               const path = await window.tutorialAPI.selectFolder();
               if (path) {
-                // Save setting
                 await window.tutorialAPI.store.set('modsPath', path);
 
-                // Update UI
                 hasModsPath = true;
                 showConfiguredPath(path, display, '#mods-path-display i');
 
@@ -3016,7 +2970,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           });
 
-          // Add hover effect via JS since inline styles are static
           btn.addEventListener('mouseenter', () => {
             if (!btn.innerHTML.includes('Selected')) {
               btn.style.background = 'rgba(122, 155, 255, 0.3)';
@@ -3072,38 +3025,38 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Manage Your Mods',
       description: 'Enable, disable, and organize your mods',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">Everything at your fingertips</h3>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">Everything at your fingertips</h3>
     
-    <div style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
+    <div class="tutorial-stack">
         
-        <div style="display: flex; align-items: center; gap: 16px; padding: 16px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.2s;">
-            <div style="width: 40px; height: 40px; background: rgba(76, 175, 80, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                <i class="bi bi-toggle-on" style="font-size: 20px; color: #4caf50;"></i>
+        <div class="tutorial-tip-hover">
+            <div class="tutorial-tip-icon-success">
+                <i class="bi bi-toggle-on tutorial-tip-glyph-success"></i>
             </div>
             <div>
-                <strong style="color: #fff; display: block; margin-bottom: 2px; font-size: 15px;">Toggle Mods</strong>
-                <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 13px;">Click the checkbox to enable/disable</p>
+                <strong class="tutorial-tip-title">Toggle Mods</strong>
+                <p class="tutorial-option-subtitle">Click the checkbox to enable/disable</p>
             </div>
         </div>
         
-        <div style="display: flex; align-items: center; gap: 16px; padding: 16px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
-            <div style="width: 40px; height: 40px; background: rgba(122, 155, 255, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                <i class="bi bi-search" style="font-size: 18px; color: #7a9bff;"></i>
+        <div class="tutorial-tip">
+            <div class="tutorial-tip-icon-accent">
+                <i class="bi bi-search tutorial-library-drive-icon"></i>
             </div>
             <div>
-                <strong style="color: #fff; display: block; margin-bottom: 2px; font-size: 15px;">Search & Filter</strong>
-                <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 13px;">Find mods by name or category</p>
+                <strong class="tutorial-tip-title">Search & Filter</strong>
+                <p class="tutorial-option-subtitle">Find mods by name or category</p>
             </div>
         </div>
         
-        <div style="display: flex; align-items: center; gap: 16px; padding: 16px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
-            <div style="width: 40px; height: 40px; background: rgba(255, 193, 7, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                <i class="bi bi-three-dots" style="font-size: 20px; color: #ffc107;"></i>
+        <div class="tutorial-tip">
+            <div class="tutorial-tip-icon-warning">
+                <i class="bi bi-three-dots tutorial-tip-glyph-warning"></i>
             </div>
             <div>
-                <strong style="color: #fff; display: block; margin-bottom: 2px; font-size: 15px;">Context Menu</strong>
-                <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 13px;">Right-click to rename, delete, etc.</p>
+                <strong class="tutorial-tip-title">Context Menu</strong>
+                <p class="tutorial-option-subtitle">Right-click to rename, delete, etc.</p>
             </div>
         </div>
 
@@ -3116,35 +3069,35 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'GameBanana Integration',
       description: 'Install mods directly from your browser',
       content: `
-<div style="text-align: center;">
-    <h3 style="color: #fff; margin-bottom: 14px; font-size: 20px;">One-click install</h3>
-    <p style="margin-bottom: 28px; color: rgba(255,255,255,0.7);">Simply click <strong style="color: #fff;">"Install with MOSAIC"</strong> on GameBanana.</p>
+<div class="tutorial-center">
+    <h3 class="tutorial-status-title">One-click install</h3>
+    <p class="tutorial-lead-xl">Simply click <strong class="tutorial-text-white">"Install with MOSAIC"</strong> on GameBanana.</p>
     
-    <div style="background: rgba(20, 20, 20, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 24px; position: relative; overflow: hidden;">
+    <div class="tutorial-gb-demo">
         
         <!-- Fake GameBanana Button -->
-        <div style="background: #181a1e; border-radius: 4px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 1px solid #2f3136;">
-            <img src="../images/logo.png" style="width: 32px; height: 32px; filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.2));">
-            <div style="display: flex; flex-direction: column; text-align: left; gap: 0px;">
-                <span style="color: #ffd700; font-weight: 800; font-size: 14px; line-height: 1; text-shadow: 0 0 15px rgba(255, 215, 0, 0.4); font-family: 'Segoe UI', sans-serif;">MOSAIC</span>
-                <span style="color: #fff; font-weight: 800; font-size: 11px; line-height: 1.2; text-shadow: 0 0 10px rgba(255,255,255,0.5); font-family: 'Segoe UI', sans-serif;">1-CLICK INSTALL</span>
+        <div class="tutorial-gb-button">
+            <img src="../images/logo.png" class="tutorial-gb-logo">
+            <div class="tutorial-gb-label">
+                <span class="tutorial-gb-brand">MOSAIC</span>
+                <span class="tutorial-gb-action">1-CLICK INSTALL</span>
             </div>
         </div>
 
-        <div style="position: relative; height: 40px;">
-            <div style="position: absolute; left: 50%; top: 0; transform: translateX(-50%); height: 30px; width: 2px; background: linear-gradient(to bottom, rgba(255,255,255,0.2), #7a9bff);"></div>
-            <div style="position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); color: #7a9bff; font-size: 18px;">↓</div>
+        <div class="tutorial-gb-arrow">
+            <div class="tutorial-gb-arrow-line"></div>
+            <div class="tutorial-gb-arrow-head">↓</div>
         </div>
 
-        <div style="margin-top: 10px; background: rgba(122, 155, 255, 0.1); border: 1px solid rgba(122, 155, 255, 0.2); padding: 16px; border-radius: 12px;">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; color: #7a9bff; font-weight: 600; margin-bottom: 6px;">
+        <div class="tutorial-gb-result">
+            <div class="tutorial-gb-result-title">
                 <i class="bi bi-check-circle-fill"></i> Automatic
             </div>
-            <span style="color: rgba(255,255,255,0.6); font-size: 13px;">Downloads • Extracts • Installs</span>
+            <span class="tutorial-text-muted-sm">Downloads • Extracts • Installs</span>
         </div>
     </div>
     
-    <p style="margin-top: 24px; font-size: 13px; color: rgba(255,255,255,0.5);">
+    <p class="tutorial-gb-footnote">
         Info.toml and previews are handled for you automatically.
     </p>
 </div>
@@ -3155,24 +3108,24 @@ document.addEventListener('DOMContentLoaded', () => {
       title: "You're All Set",
       description: 'Start modding and have fun',
       content: `
-<div style="text-align: center;">
-    <div style="width: 80px; height: 80px; background: rgba(76, 175, 80, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; box-shadow: 0 0 30px rgba(76, 175, 80, 0.2);">
-        <i class="bi bi-check-lg" style="font-size: 40px; color: #4caf50;"></i>
+<div class="tutorial-center">
+    <div class="tutorial-done-icon">
+        <i class="bi bi-check-lg tutorial-hero-glyph-success"></i>
     </div>
     
-    <h3 style="color: #fff; margin-bottom: 16px; font-size: 24px;">Ready to go!</h3>
-    <p style="margin-bottom: 32px; color: rgba(255,255,255,0.7); max-width: 400px; margin-left: auto; margin-right: auto;">
+    <h3 class="tutorial-done-title">Ready to go!</h3>
+    <p class="tutorial-done-text">
         MOSAIC is configured and ready. Start downloading mods or explore the settings to customize your experience.
     </p>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 460px; margin: 0 auto;">
-        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 12px; text-align: left;">
-            <strong style="color: #fff; display: block; margin-bottom: 4px;">Characters</strong>
-            <span style="color: rgba(255,255,255,0.5); font-size: 13px;">Browse by fighter</span>
+    <div class="tutorial-done-grid">
+        <div class="tutorial-tip-card">
+            <strong class="tutorial-feature-title">Characters</strong>
+            <span class="tutorial-feature-caption">Browse by fighter</span>
         </div>
-        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 12px; text-align: left;">
-            <strong style="color: #fff; display: block; margin-bottom: 4px;">Downloads</strong>
-            <span style="color: rgba(255,255,255,0.5); font-size: 13px;">Track progress</span>
+        <div class="tutorial-tip-card">
+            <strong class="tutorial-feature-title">Downloads</strong>
+            <span class="tutorial-feature-caption">Track progress</span>
         </div>
     </div>
 </div>
@@ -3321,32 +3274,32 @@ document.addEventListener('DOMContentLoaded', () => {
             title: 'Settings Migrated',
             description: 'Your FightPlanner 3 settings have been imported',
             content: `
-<div style="text-align: center;">
-    <div style="width: 64px; height: 64px; background: rgba(76, 175, 80, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-        <i class="bi bi-database-check" style="font-size: 32px; color: #4caf50;"></i>
+<div class="tutorial-center">
+    <div class="tutorial-welcome-back-icon">
+        <i class="bi bi-database-check tutorial-welcome-back-glyph"></i>
     </div>
 
-    <h3 style="color: #fff; margin-bottom: 12px; font-size: 22px;">Welcome Back!</h3>
-    <p style="margin-bottom: 24px; color: rgba(255,255,255,0.7);">We found your <strong style="color: #fff;">FightPlanner 3</strong> settings and imported them automatically.</p>
+    <h3 class="tutorial-welcome-back-title">Welcome Back!</h3>
+    <p class="tutorial-lead-md">We found your <strong class="tutorial-text-white">FightPlanner 3</strong> settings and imported them automatically.</p>
     
-    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px; max-width: 400px; margin: 0 auto;">
-        <div style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <i class="bi bi-check-circle-fill" style="color: #4caf50;"></i>
-                <span style="color: #e0e0e0;">Mods folder path</span>
+    <div class="tutorial-welcome-back-card">
+        <div class="tutorial-stack">
+            <div class="tutorial-row">
+                <i class="bi bi-check-circle-fill tutorial-text-success"></i>
+                <span class="tutorial-text-light">Mods folder path</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <i class="bi bi-check-circle-fill" style="color: #4caf50;"></i>
-                <span style="color: #e0e0e0;">Plugins folder path</span>
+            <div class="tutorial-row">
+                <i class="bi bi-check-circle-fill tutorial-text-success"></i>
+                <span class="tutorial-text-light">Plugins folder path</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <i class="bi bi-check-circle-fill" style="color: #4caf50;"></i>
-                <span style="color: #e0e0e0;">Emulator preferences</span>
+            <div class="tutorial-row">
+                <i class="bi bi-check-circle-fill tutorial-text-success"></i>
+                <span class="tutorial-text-light">Emulator preferences</span>
             </div>
         </div>
     </div>
     
-    <p style="margin-top: 24px; color: rgba(255,255,255,0.5); font-size: 13px;">
+    <p class="tutorial-gb-footnote">
         You can double-check these in Settings anytime.
     </p>
 </div>
@@ -3588,10 +3541,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    // Always show welcome
     visibleSteps.push(0);
 
-    // Always show hardware type question
     addStepByTitle('Hardware Type');
 
     if (window.tutorialAPI) {
@@ -3609,7 +3560,6 @@ document.addEventListener('DOMContentLoaded', () => {
           addStepByTitle('Switch Modded Check');
         }
 
-        // Show ARCropolis Status once the selected setup can continue.
         if (
           hardwareType === 'emulator' ||
           (hardwareType === 'hardware' && switchModded === true)
@@ -3617,17 +3567,14 @@ document.addEventListener('DOMContentLoaded', () => {
           addStepByTitle('ARCropolis Status');
         }
 
-        // Only show installation steps if ARCropolis is not installed
         if (hardwareType && arcropolisInstalled === false) {
           if (hardwareType === 'hardware' && switchModded === true) {
-            // Switch installation flow
             addStepByTitle('Switch SD Card Setup');
             addStepByTitle('Installing Skyline & ARCropolis (Switch)');
             addStepByTitle('Verify ARCropolis (Switch)');
             addStepByTitle('Real Hardware Library');
             canShowConfigurePaths = true;
           } else if (hardwareType === 'emulator') {
-            // Emulator flow - only show emulator selection first
             addStepByTitle('Emulator Selection');
 
             const emulatorTypeResponse = await apiWrapper.storeGet(
@@ -3676,12 +3623,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (e) {
         console.error('Error calculating visible steps:', e);
-        // Fallback: show minimal steps
         visibleSteps = [0];
         addStepByTitle('Hardware Type');
       }
     } else {
-      // Fallback: show minimal steps
       visibleSteps = [0];
       addStepByTitle('Hardware Type');
     }
@@ -3859,7 +3804,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Utility function to open tutorial links through Electron.
   function setupExternalLinks(
     container: HTMLElement,
     selector = 'a[target="_blank"]',
@@ -3868,7 +3812,6 @@ document.addEventListener('DOMContentLoaded', () => {
       container.querySelectorAll<HTMLAnchorElement>(selector);
 
     externalLinks.forEach((link) => {
-      // Remove existing listeners to avoid duplicates
       const newLink = link.cloneNode(true) as HTMLElement;
       link.parentNode!.replaceChild(newLink, link);
 
@@ -3920,14 +3863,14 @@ document.addEventListener('DOMContentLoaded', () => {
       .join('\n\n');
 
     container.innerHTML = `
-      <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3); border-radius: 12px; padding: 16px;">
-        <div style="color: #ff7878; margin-bottom: 8px;"><strong>Installation failed.</strong> ${escapeTutorialHtml(installationError.message)}</div>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0;">
-          <button type="button" data-tutorial-error-details style="padding: 8px 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 7px; background: rgba(255,255,255,0.08); color: #fff; cursor: pointer;">View error details</button>
-          <button type="button" data-tutorial-install-retry style="padding: 8px 12px; border: 0; border-radius: 7px; background: #7a9bff; color: #fff; cursor: pointer; font-weight: 600;"><i class="bi bi-arrow-clockwise"></i> Retry installation</button>
+      <div class="tutorial-box-error">
+        <div class="tutorial-error-title"><strong>Installation failed.</strong> ${escapeTutorialHtml(installationError.message)}</div>
+        <div class="tutorial-error-actions">
+          <button type="button" data-tutorial-error-details class="tutorial-error-details-btn">View error details</button>
+          <button type="button" data-tutorial-install-retry class="tutorial-error-retry-btn"><i class="bi bi-arrow-clockwise"></i> Retry installation</button>
         </div>
-        <pre data-tutorial-error-output hidden style="white-space: pre-wrap; overflow-wrap: anywhere; max-height: 180px; overflow: auto; margin: 0 0 14px; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.28); color: rgba(255,255,255,0.8); font: 12px/1.45 monospace;">${escapeTutorialHtml(details)}</pre>
-        <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin: 0;">If it continues, share the details with the <a href="https://discord.gg/2zT5Rg46bG" target="_blank">MOSAIC Discord</a>.</p>
+        <pre data-tutorial-error-output hidden class="tutorial-error-details">${escapeTutorialHtml(details)}</pre>
+        <p class="tutorial-error-hint">If it continues, share the details with the <a href="https://discord.gg/2zT5Rg46bG" target="_blank">MOSAIC Discord</a>.</p>
       </div>
     `;
 
@@ -4065,13 +4008,9 @@ ${step.content}
 
   async function goToStep(index) {
     if (index >= 0 && index < steps.length) {
-      // Verify the step is accessible by checking if it would be in visibleSteps
-      // This ensures we can navigate to dynamically added steps
       currentStep = index;
       await renderProgressDots();
 
-      // Double-check that the step is still valid after renderProgressDots
-      // (in case renderProgressDots changed visibleSteps)
       if (currentStep >= 0 && currentStep < steps.length) {
         renderStep(currentStep);
       } else {
@@ -4293,7 +4232,6 @@ ${step.content}
       window.location.reload();
     });
 
-    // Initialize inputs from existing devOverrides (useful after reload)
     if (devOverrides['tutorial.hardwareType'])
       hw.value = devOverrides['tutorial.hardwareType'];
     if (devOverrides['tutorial.emulatorType'])
