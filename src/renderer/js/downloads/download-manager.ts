@@ -1210,7 +1210,7 @@ ${subItemsHtml}
         await this.completePendingSwitchSync(syncMode, recentDownloads);
         window.appSoundManager?.stop('loading');
         window.appSoundManager?.play('complete');
-        window.statusBarManager?.completeSwitchTransfer?.(
+        window.statusBarManager?.downloads.completeSwitchTransfer?.(
           result.transferredCount || 0,
           transferMethod,
         );
@@ -1228,7 +1228,7 @@ ${subItemsHtml}
       } else {
         window.appSoundManager?.stop('loading');
         window.appSoundManager?.play('error');
-        window.statusBarManager?.updateExtendedBar?.({ type: 'none' });
+        window.statusBarManager?.downloads.updateExtendedBar?.({ type: 'none' });
         window.statusBarManager?.refreshStandardStatus?.();
         if (window.toastManager) {
           window.toastManager.error('toasts.failedToSendMods', 3000, {
@@ -1250,7 +1250,7 @@ ${subItemsHtml}
       }
       this.switchTransfer = null;
       window.appSoundManager?.stop('loading');
-      window.statusBarManager?.updateExtendedBar?.({ type: 'none' });
+      window.statusBarManager?.downloads.updateExtendedBar?.({ type: 'none' });
       window.statusBarManager?.refreshStandardStatus?.();
       if (window.toastManager) {
         window.toastManager.error('toasts.failedToSendMods', 3000, {
@@ -1403,7 +1403,7 @@ ${subItemsHtml}
       this.switchTransfer = null;
       window.appSoundManager?.stop('loading');
       window.appSoundManager?.play('complete');
-      window.statusBarManager?.completeSwitchTransfer?.(
+      window.statusBarManager?.downloads.completeSwitchTransfer?.(
         transferredCount,
         'mtp',
       );
@@ -1415,7 +1415,7 @@ ${subItemsHtml}
       this.switchTransfer = null;
       window.appSoundManager?.stop('loading');
       window.appSoundManager?.play('error');
-      window.statusBarManager?.updateExtendedBar?.({ type: 'none' });
+      window.statusBarManager?.downloads.updateExtendedBar?.({ type: 'none' });
       window.statusBarManager?.refreshStandardStatus?.();
       window.toastManager?.error('toasts.failedToSendMods', 3000, {
         error: error instanceof Error ? error.message : String(error),

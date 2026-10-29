@@ -581,7 +581,7 @@ export class FppManager {
             iconClass: string,
             displayProgress = progress,
         ) => {
-            statusBar.updateExtendedBar({
+            statusBar.downloads.updateExtendedBar({
                 type: 'download',
                 downloads: [{
                     id: 'fpp-install',
@@ -640,7 +640,7 @@ export class FppManager {
                     'bi-check-circle-fill',
                 );
                 setTimeout(() => {
-                    window.statusBarManager?.updateExtendedBar?.({ type: 'none' });
+                    window.statusBarManager?.downloads.updateExtendedBar?.({ type: 'none' });
                 }, 3000);
                 break;
         }

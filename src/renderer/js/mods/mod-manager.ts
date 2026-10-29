@@ -1969,7 +1969,7 @@ class ModManager {
         } else {
           window.statusBarManager.updateConflictStatus(0, 0);
         }
-        if (!window.statusBarManager.checkActiveDownloads()) {
+        if (!window.statusBarManager.downloads.checkActiveDownloads()) {
           if (window.statusBarManager.currentTab) {
             window.statusBarManager.updateStatus(
               window.statusBarManager.currentTab,
@@ -1990,7 +1990,7 @@ class ModManager {
         if (statusRight) {
           statusRight.replaceChildren();
         }
-        if (!window.statusBarManager.checkActiveDownloads()) {
+        if (!window.statusBarManager.downloads.checkActiveDownloads()) {
           if (window.statusBarManager.currentTab) {
             window.statusBarManager.updateStatus(
               window.statusBarManager.currentTab,

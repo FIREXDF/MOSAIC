@@ -598,7 +598,7 @@ M.prototype._animateModalToStatusBar = function () {
         if (window.statusBarManager) {
           window.statusBarManager.pendingDynamicIsland = false;
           window.statusBarManager.userDismissedExtendedBar = false;
-          window.statusBarManager.checkActiveDownloads();
+          window.statusBarManager.downloads.checkActiveDownloads();
         }
       }, 200);
     },
