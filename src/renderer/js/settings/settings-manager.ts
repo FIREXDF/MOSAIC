@@ -1930,7 +1930,8 @@ class SettingsManager {
       const localModsPath = await window.electronAPI.store.get('localModsPath');
       const localPluginsPath =
         await window.electronAPI.store.get('localPluginsPath');
-      const directModsPath = await window.electronAPI.store.get('directModsPath');
+      const directModsPath =
+        await window.electronAPI.store.get('directModsPath');
       const directPluginsPath =
         await window.electronAPI.store.get('directPluginsPath');
       const primaryModsPath =
@@ -1967,9 +1968,10 @@ class SettingsManager {
       );
       const switchSyncMode =
         await window.electronAPI.store.get('switchSyncMode');
-      const switchDriveLetter = await this.switchSettings.resolveStoredSwitchDrivePath(
-        await window.electronAPI.store.get('switchDriveLetter'),
-      );
+      const switchDriveLetter =
+        await this.switchSettings.resolveStoredSwitchDrivePath(
+          await window.electronAPI.store.get('switchDriveLetter'),
+        );
       const conflictDetectionEnabled = await window.electronAPI.store.get(
         'conflictDetectionEnabled',
       );
@@ -2028,9 +2030,8 @@ class SettingsManager {
       const showNsfwDiscoverPreviews = await window.electronAPI.store.get(
         'showNsfwDiscoverPreviews',
       );
-      const discordRpcEnabled = await window.electronAPI.store.get(
-        'discordRpcEnabled',
-      );
+      const discordRpcEnabled =
+        await window.electronAPI.store.get('discordRpcEnabled');
       const normalizedSwitchTransferMethod =
         this.normalizeSwitchTransferMethod(switchTransferMethod);
       return {
@@ -2167,170 +2168,65 @@ class SettingsManager {
     try {
       this.librarySettings.applyHardwareLibraryModePaths();
       this.librarySettings.applyActiveModsLibraryPath();
-      await window.electronAPI.store.set('modsPath', this.settings.modsPath);
-      await window.electronAPI.store.set(
-        'pluginsPath',
-        this.settings.pluginsPath,
-      );
-      await window.electronAPI.store.set(
-        'localModsPath',
-        this.settings.localModsPath,
-      );
-      await window.electronAPI.store.set(
-        'localPluginsPath',
-        this.settings.localPluginsPath,
-      );
-      await window.electronAPI.store.set(
-        'directModsPath',
-        this.settings.directModsPath,
-      );
-      await window.electronAPI.store.set(
-        'directPluginsPath',
-        this.settings.directPluginsPath,
-      );
-      await window.electronAPI.store.set(
-        'primaryModsPath',
-        this.settings.primaryModsPath,
-      );
-      await window.electronAPI.store.set(
-        'secondaryModsPath',
-        this.settings.secondaryModsPath,
-      );
-      await window.electronAPI.store.set(
-        'activeModsLibrary',
-        this.normalizeActiveModsLibrary(this.settings.activeModsLibrary),
-      );
-      await window.electronAPI.store.set(
-        'modsLibrarySwitcherEnabled',
-        this.settings.modsLibrarySwitcherEnabled === true,
-      );
-      await window.electronAPI.store.set(
-        'appRunMode',
-        this.settings.appRunMode,
-      );
-      await window.electronAPI.store.set(
-        'hardwareLibraryMode',
-        this.settings.hardwareLibraryMode,
-      );
-      await window.electronAPI.store.set(
-        'emulatorType',
-        this.settings.emulatorType,
-      );
-      await window.electronAPI.store.set(
-        'emulatorPath',
-        this.settings.emulatorPath,
-      );
-      await window.electronAPI.store.set('gamePath', this.settings.gamePath);
-      await window.electronAPI.store.set(
-        'emulatorFullscreen',
-        this.settings.emulatorFullscreen,
-      );
-      await window.electronAPI.store.set('switchIp', this.settings.switchIp);
-      await window.electronAPI.store.set(
-        'switchPort',
-        this.settings.switchPort,
-      );
-      await window.electronAPI.store.set(
-        'switchFtpUser',
-        this.settings.switchFtpUser,
-      );
-      await window.electronAPI.store.set(
-        'switchFtpPassword',
-        this.settings.switchFtpPassword,
-      );
-      await window.electronAPI.store.set(
-        'switchFtpPath',
-        this.settings.switchFtpModsPath || this.settings.switchFtpPath,
-      );
-      await window.electronAPI.store.set(
-        'switchFtpModsPath',
-        this.settings.switchFtpModsPath,
-      );
-      await window.electronAPI.store.set(
-        'switchFtpPluginsPath',
-        this.settings.switchFtpPluginsPath,
-      );
-      await window.electronAPI.store.set(
-        'switchTransferMethod',
-        this.settings.switchTransferMethod,
-      );
-      await window.electronAPI.store.set(
-        'switchSyncMode',
-        this.normalizeSwitchSyncMode(this.settings.switchSyncMode),
-      );
-      await window.electronAPI.store.set(
-        'switchDriveLetter',
-        this.settings.switchDriveLetter,
-      );
-      await window.electronAPI.store.set(
-        'conflictDetectionEnabled',
-        this.settings.conflictDetectionEnabled,
-      );
-      await window.electronAPI.store.set(
-        'nroLimitCheckEnabled',
-        this.settings.nroLimitCheckEnabled,
-      );
-      await window.electronAPI.store.set(
-        'libraryPathValidationEnabled',
-        this.settings.libraryPathValidationEnabled !== false,
-      );
-      await window.electronAPI.store.set(
-        'autoCheckPluginUpdates',
-        this.settings.autoCheckPluginUpdates,
-      );
-      await window.electronAPI.store.set(
-        'pluginUpdateIntroShown',
-        this.settings.pluginUpdateIntroShown,
-      );
-      await window.electronAPI.store.set('theme', this.settings.theme);
-      await window.electronAPI.store.set(
-        'sidebarPrideTabsEnabled',
-        this.settings.sidebarPrideTabsEnabled !== false,
-      );
-      await window.electronAPI.store.set(
-        'autoDisableNewMods',
-        this.settings.autoDisableNewMods,
-      );
-      await window.electronAPI.store.set(
-        'disableAllModsOnDownload',
-        this.settings.disableAllModsOnDownload,
-      );
-      await window.electronAPI.store.set(
-        'autoUseGameBananaModName',
-        this.settings.autoUseGameBananaModName === true,
-      );
-      await window.electronAPI.store.set(
-        'reviewSlotChangesBeforeApply',
-        this.settings.reviewSlotChangesBeforeApply !== false,
-      );
-      await window.electronAPI.store.set(
-        'cssUmcImagesEnabled',
-        this.settings.cssUmcImagesEnabled !== false,
-      );
-      await window.electronAPI.store.set(
-        'startupSplashEnabled',
-        this.settings.startupSplashEnabled,
-      );
-      await window.electronAPI.store.set(
-        'startupSplashSoundEnabled',
-        this.settings.startupSplashSoundEnabled,
-      );
-      await window.electronAPI.store.set(
-        'startupSplashSoundPath',
-        this.settings.startupSplashSoundPath,
-      );
-      await window.electronAPI.store.set(
-        'appSoundPaths',
-        this.settings.appSoundPaths || {},
-      );
-      await window.electronAPI.store.set(
-        'appSoundEnabled',
-        this.settings.appSoundEnabled || {},
-      );
-      await window.electronAPI.store.set(
-        'discordRpcEnabled',
-        this.settings.discordRpcEnabled !== false,
-      );
+      const values = {
+        modsPath: this.settings.modsPath,
+        pluginsPath: this.settings.pluginsPath,
+        localModsPath: this.settings.localModsPath,
+        localPluginsPath: this.settings.localPluginsPath,
+        directModsPath: this.settings.directModsPath,
+        directPluginsPath: this.settings.directPluginsPath,
+        primaryModsPath: this.settings.primaryModsPath,
+        secondaryModsPath: this.settings.secondaryModsPath,
+        activeModsLibrary: this.normalizeActiveModsLibrary(
+          this.settings.activeModsLibrary,
+        ),
+        modsLibrarySwitcherEnabled:
+          this.settings.modsLibrarySwitcherEnabled === true,
+        appRunMode: this.settings.appRunMode,
+        hardwareLibraryMode: this.settings.hardwareLibraryMode,
+        emulatorType: this.settings.emulatorType,
+        emulatorPath: this.settings.emulatorPath,
+        gamePath: this.settings.gamePath,
+        emulatorFullscreen: this.settings.emulatorFullscreen,
+        switchIp: this.settings.switchIp,
+        switchPort: this.settings.switchPort,
+        switchFtpUser: this.settings.switchFtpUser,
+        switchFtpPassword: this.settings.switchFtpPassword,
+        switchFtpPath:
+          this.settings.switchFtpModsPath || this.settings.switchFtpPath,
+        switchFtpModsPath: this.settings.switchFtpModsPath,
+        switchFtpPluginsPath: this.settings.switchFtpPluginsPath,
+        switchTransferMethod: this.settings.switchTransferMethod,
+        switchSyncMode: this.normalizeSwitchSyncMode(
+          this.settings.switchSyncMode,
+        ),
+        switchDriveLetter: this.settings.switchDriveLetter,
+        conflictDetectionEnabled: this.settings.conflictDetectionEnabled,
+        nroLimitCheckEnabled: this.settings.nroLimitCheckEnabled,
+        libraryPathValidationEnabled:
+          this.settings.libraryPathValidationEnabled !== false,
+        autoCheckPluginUpdates: this.settings.autoCheckPluginUpdates,
+        pluginUpdateIntroShown: this.settings.pluginUpdateIntroShown,
+        theme: this.settings.theme,
+        sidebarPrideTabsEnabled:
+          this.settings.sidebarPrideTabsEnabled !== false,
+        autoDisableNewMods: this.settings.autoDisableNewMods,
+        disableAllModsOnDownload: this.settings.disableAllModsOnDownload,
+        autoUseGameBananaModName:
+          this.settings.autoUseGameBananaModName === true,
+        reviewSlotChangesBeforeApply:
+          this.settings.reviewSlotChangesBeforeApply !== false,
+        cssUmcImagesEnabled: this.settings.cssUmcImagesEnabled !== false,
+        startupSplashEnabled: this.settings.startupSplashEnabled,
+        startupSplashSoundEnabled: this.settings.startupSplashSoundEnabled,
+        startupSplashSoundPath: this.settings.startupSplashSoundPath,
+        appSoundPaths: this.settings.appSoundPaths || {},
+        appSoundEnabled: this.settings.appSoundEnabled || {},
+        discordRpcEnabled: this.settings.discordRpcEnabled !== false,
+      };
+      for (const [key, value] of Object.entries(values)) {
+        await window.electronAPI.store.set(key, value);
+      }
       window.hardwareConnectionManager?.refresh?.();
     } catch (error) {
       console.error('Failed to save settings:', error);
@@ -2543,9 +2439,8 @@ class SettingsManager {
 
   async loadDiscordRpcSetting() {
     try {
-      const discordRpcEnabled = await window.electronAPI.store.get(
-        'discordRpcEnabled',
-      );
+      const discordRpcEnabled =
+        await window.electronAPI.store.get('discordRpcEnabled');
       const discordRpcToggle = document.querySelector<HTMLInputElement>(
         '#discord-rpc-enabled',
       );

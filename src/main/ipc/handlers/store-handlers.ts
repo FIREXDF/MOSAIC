@@ -1,4 +1,5 @@
 import { IpcMain } from 'electron';
+import { isDeepStrictEqual } from 'util';
 import store from '../../store';
 import {
   createErrorResponse,
@@ -38,8 +39,12 @@ const StoreHandlers = {
     value: unknown,
   ) => {
     try {
+      const previousValue = store.get(key);
+      if (store.has(key) && isDeepStrictEqual(previousValue, value)) {
+        return { success: true };
+      }
+
       if (LOGGED_SETTING_KEYS.has(key)) {
-        const previousValue = store.get(key);
         console.log('[Store] Setting changed:', {
           key,
           previousValue,
