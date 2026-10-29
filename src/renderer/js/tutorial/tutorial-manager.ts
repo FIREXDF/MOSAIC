@@ -662,7 +662,7 @@ class TutorialManager {
   }
 
   hasActiveDownloadStatus() {
-    const statusManager = window.statusBarManager as any;
+    const statusManager = window.statusBarManager;
     if (statusManager?.hasActiveDownloads) return true;
 
     const bottomBar = document.querySelector<HTMLElement>('#main-status-bar');

@@ -1,6 +1,6 @@
 export {};
 (function () {
-  const M = (window as any).ModalManagerClass;
+  const M = window.ModalManagerClass;
   if (!M) { console.error('[change-slot-modal] ModalManagerClass not found'); return; }
 
   function slotStringToNumber(slot: string): number {
@@ -710,7 +710,7 @@ M.prototype._renderSlotUsageOverview = function (slotUsage, currentModPath) {
   }
 
   overviewContainer.classList.remove('slot-usage-loading');
-  overviewContainer.innerHTML = '';
+  overviewContainer.replaceChildren();
 
   const grid = document.createElement('div');
   grid.className = 'slot-usage-grid';
@@ -854,7 +854,7 @@ M.prototype._renderSlotList = function () {
     return window.i18n && window.i18n.t ? window.i18n.t(key, params) : key;
   };
 
-  container.innerHTML = '';
+  container.replaceChildren();
   updateChangeSlotApplyState();
 
   const actualFighters = getActualFighterNames(

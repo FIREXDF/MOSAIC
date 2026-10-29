@@ -453,7 +453,7 @@ class ModalManager {
 }
 
 if (typeof window !== 'undefined') {
-  (window as any).ModalManagerClass = ModalManager;
+  window.ModalManagerClass = ModalManager;
   const modalManager = (window.modalManager = new ModalManager());
 
   document.addEventListener('DOMContentLoaded', () => {

@@ -69,8 +69,8 @@ export class FppManager {
             return;
         }
 
-        if ((window as any).pluginManager && !(window as any).pluginManager.plugins?.length) {
-            await (window as any).pluginManager.fetchPlugins();
+        if (window.pluginManager && !window.pluginManager.plugins?.length) {
+            await window.pluginManager.fetchPlugins();
         }
 
         const mods = window.modManager.mods;
@@ -140,8 +140,8 @@ export class FppManager {
         const pluginsListContainer = document.getElementById('fpp-plugins-table');
 
         if (modsListContainer && pluginsListContainer) {
-            modsListContainer.innerHTML = '';
-            pluginsListContainer.innerHTML = '';
+            modsListContainer.replaceChildren();
+            pluginsListContainer.replaceChildren();
 
             for (const mod of mods) {
                 const item = document.createElement('div');
@@ -169,8 +169,8 @@ export class FppManager {
                 modsListContainer.appendChild(item);
             }
 
-            if ((window as any).pluginManager && (window as any).pluginManager.plugins) {
-                const plugins = (window as any).pluginManager.plugins;
+            if (window.pluginManager && window.pluginManager.plugins) {
+                const plugins = window.pluginManager.plugins;
                 for (const plugin of plugins) {
                     const item = document.createElement('div');
                     item.className = 'smart-rename-select-item';
@@ -549,8 +549,8 @@ export class FppManager {
                 if (window.modManager && window.modManager.modsPath) {
                     window.modManager.loadModsFromFolder(window.modManager.modsPath);
                 }
-                if ((window as any).pluginManager && (window as any).pluginManager.pluginsPath) {
-                    (window as any).pluginManager.loadPlugins((window as any).pluginManager.pluginsPath);
+                if (window.pluginManager && window.pluginManager.pluginsPath) {
+                    window.pluginManager.loadPlugins(window.pluginManager.pluginsPath);
                 }
             } else {
                 if (window.toastManager) {
@@ -647,4 +647,4 @@ export class FppManager {
     }
 }
 
-(window as any).fppManager = new FppManager();
+window.fppManager = new FppManager();

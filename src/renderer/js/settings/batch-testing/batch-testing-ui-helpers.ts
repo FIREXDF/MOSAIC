@@ -435,7 +435,7 @@ class BatchTestingUiHelpers {
 }
 
 if (typeof window !== 'undefined') {
-  (window as any).BatchTestingUiHelpers = BatchTestingUiHelpers;
+  window.BatchTestingUiHelpers = BatchTestingUiHelpers;
 }
 
 export {};

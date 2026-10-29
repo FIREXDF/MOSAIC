@@ -132,10 +132,10 @@ function preloadLoadingVideo(): Promise<void> {
 }
 
 if (typeof window !== 'undefined') {
-  (window as any).mountLoadingVideo = mountLoadingVideo;
-  (window as any).unmountLoadingVideo = unmountLoadingVideo;
-  (window as any).preloadLoadingVideo = preloadLoadingVideo;
-  (window as any).LOADING_VIDEO_SRC = LOADING_VIDEO_SRC;
+  window.mountLoadingVideo = mountLoadingVideo;
+  window.unmountLoadingVideo = unmountLoadingVideo;
+  window.preloadLoadingVideo = preloadLoadingVideo;
+  window.LOADING_VIDEO_SRC = LOADING_VIDEO_SRC;
 }
 
 export {

@@ -193,10 +193,10 @@ class DownloadManager {
 
   renderAllDownloads() {
     if (this.activeDownloadsList) {
-      this.activeDownloadsList.innerHTML = '';
+      this.activeDownloadsList.replaceChildren();
     }
     if (this.completedDownloadsList) {
-      this.completedDownloadsList.innerHTML = '';
+      this.completedDownloadsList.replaceChildren();
     }
 
     this.activeDownloads.forEach((download) => {
@@ -644,7 +644,7 @@ class DownloadManager {
         '.download-status-text',
       );
       if (statusText) {
-        statusText.innerHTML = 'Downloading...';
+        statusText.textContent = 'Downloading...';
         statusText.style.color = '';
       }
       this.updateActiveDownloadActions(element, download);
@@ -962,7 +962,7 @@ ${subItemsHtml}
   clearCompleted() {
     this.completedDownloads = [];
     if (this.completedDownloadsList) {
-      this.completedDownloadsList.innerHTML = '';
+      this.completedDownloadsList.replaceChildren();
     }
     this.updateUI();
   }

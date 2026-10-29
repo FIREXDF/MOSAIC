@@ -382,7 +382,7 @@ class ModManager {
   }
 
   isBatchTestingLocked() {
-    const batchManager = (window as any).batchTestingManager;
+    const batchManager = window.batchTestingManager;
     const isModalOpen = !!(
       batchManager?.modal && document.body.contains(batchManager.modal)
     );
@@ -624,7 +624,7 @@ class ModManager {
     this.modsPath = targetPath;
     this.renderedModIds.clear();
     this.setHardwareLibraryBlockedState(true);
-    this.modListContainer.innerHTML = '';
+    this.modListContainer.replaceChildren();
     this.modListContainer.appendChild(
       this.createModsPathUnavailableMessage(targetPath),
     );
@@ -671,7 +671,7 @@ class ModManager {
     this.modsPath = targetPath;
     this.renderedModIds.clear();
     this.setHardwareLibraryBlockedState(true);
-    this.modListContainer.innerHTML = '';
+    this.modListContainer.replaceChildren();
     this.modListContainer.appendChild(
       this.createHardwareLibraryMessage(targetPath, false),
     );
@@ -934,7 +934,7 @@ class ModManager {
 
   getGsapRuntime() {
     if (window.gsap) {
-      return window.gsap as any;
+      return window.gsap;
     }
 
     if (typeof require === 'function') {
@@ -1444,7 +1444,7 @@ class ModManager {
     if (!stack) {
       stack = document.createElement('div');
       stack.className = 'preview-stack';
-      previewArea.innerHTML = '';
+      previewArea.replaceChildren();
       previewArea.appendChild(stack);
     }
 
@@ -1478,7 +1478,7 @@ class ModManager {
     if (animationsDisabled) {
       removedCards.forEach((card) => card.remove());
       if (stack.childElementCount === 0) {
-        previewArea.innerHTML = '';
+        previewArea.replaceChildren();
       }
       return;
     }
@@ -1516,7 +1516,7 @@ class ModManager {
         removedCards.forEach((card) => card.remove());
         nextCards.forEach((card) => card.style.removeProperty('will-change'));
         if (stack && stack.childElementCount === 0) {
-          previewArea.innerHTML = '';
+          previewArea.replaceChildren();
         }
       },
     });
@@ -1988,7 +1988,7 @@ class ModManager {
         const statusRight =
           document.querySelector<HTMLElement>('.bottom-text-right');
         if (statusRight) {
-          statusRight.innerHTML = '';
+          statusRight.replaceChildren();
         }
         if (!window.statusBarManager.checkActiveDownloads()) {
           if (window.statusBarManager.currentTab) {

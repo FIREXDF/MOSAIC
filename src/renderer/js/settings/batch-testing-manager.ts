@@ -197,7 +197,7 @@ class BatchTestingManager {
   }
 
   createSessionStore(): BatchTestingSessionStoreLike {
-    const SessionStoreCtor = (window as any).BatchTestingSessionStore as
+    const SessionStoreCtor = window.BatchTestingSessionStore as
       | BatchTestingSessionStoreCtor
       | undefined;
 
@@ -212,7 +212,7 @@ class BatchTestingManager {
   }
 
   createUiHelpers(): BatchTestingUiHelpersLike {
-    const UiHelpersCtor = (window as any).BatchTestingUiHelpers as
+    const UiHelpersCtor = window.BatchTestingUiHelpers as
       | BatchTestingUiHelpersCtor
       | undefined;
 
@@ -231,7 +231,7 @@ class BatchTestingManager {
   }
 
   createStateHelpers(): BatchTestingStateHelpersLike {
-    const StateHelpersCtor = (window as any).BatchTestingStateHelpers as
+    const StateHelpersCtor = window.BatchTestingStateHelpers as
       | BatchTestingStateHelpersCtor
       | undefined;
 
@@ -1622,7 +1622,7 @@ class BatchTestingManager {
     }
 
     if (footerEl) {
-      footerEl.innerHTML = '';
+      footerEl.replaceChildren();
 
       actions.forEach((action) => {
         const button = document.createElement('button');
@@ -1774,7 +1774,7 @@ class BatchTestingManager {
 }
 
 if (typeof window !== 'undefined') {
-  (window as any).batchTestingManager = new BatchTestingManager();
+  window.batchTestingManager = new BatchTestingManager();
 }
 
 export { BatchTestingManager, type BatchCategory };

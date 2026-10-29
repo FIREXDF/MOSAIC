@@ -1,6 +1,6 @@
 export {};
 (function () {
-  const M = (window as any).ModalManagerClass;
+  const M = window.ModalManagerClass;
   if (!M) { console.error('[install-confirm-modal] ModalManagerClass not found'); return; }
   const transientAnimationTimers = new WeakMap<
     HTMLElement,
@@ -410,7 +410,7 @@ M.prototype._animateBubbleToStatusBar = function () {
     return;
   }
 
-  const gsapRef = (window as any).gsap;
+  const gsapRef = window.gsap;
   if (!gsapRef) {
     this._removeBubble();
     return;
@@ -541,7 +541,7 @@ M.prototype._animateModalToStatusBar = function () {
 
   const overlay = document.querySelector<HTMLElement>('#modal-overlay');
 
-  const gsapRef = (window as any).gsap;
+  const gsapRef = window.gsap;
   if (!gsapRef) {
     this.closeModal('install-confirm-modal', {
       onModalClosed: () => this._resetInstallPreview(),

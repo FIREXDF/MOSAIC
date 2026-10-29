@@ -1,6 +1,6 @@
 export {};
 (function () {
-  const M = (window as any).ModalManagerClass;
+  const M = window.ModalManagerClass;
   if (!M) {
     console.error('[plugin-modals] ModalManagerClass not found');
     return;
@@ -286,7 +286,10 @@ export {};
     // Marks versions as seen so each one is reported once.
     const markSeen = async (seenUpdates) => {
       const watch =
-        ((await window.electronAPI.store.get('modUpdateWatch')) as any) || {};
+        ((await window.electronAPI.store.get('modUpdateWatch')) as Record<
+          string,
+          { seen: number }
+        > | null) || {};
       for (const update of seenUpdates) {
         if (watch[update.url]) watch[update.url].seen = update.latest;
       }

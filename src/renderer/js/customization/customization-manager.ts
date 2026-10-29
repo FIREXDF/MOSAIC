@@ -623,7 +623,7 @@ class CustomizationManager {
       return;
     }
 
-    container.innerHTML = '';
+    container.replaceChildren();
     this.customCssFiles.forEach((file, index) => {
       const item = this.createFileItem(file.path, 'css', index);
       container.appendChild(item);
@@ -644,7 +644,7 @@ class CustomizationManager {
       return;
     }
 
-    container.innerHTML = '';
+    container.replaceChildren();
     this.customJsFiles.forEach((file, index) => {
       const item = this.createFileItem(file.path, 'js', index);
       container.appendChild(item);

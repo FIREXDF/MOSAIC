@@ -212,11 +212,7 @@ class BatchTestingStateHelpers {
         })),
       ];
 
-      if (typeof (window.modManager as any).applyBatchTestingState === 'function') {
-        (window.modManager as any).applyBatchTestingState(mods, basePath);
-      } else {
-        window.modManager.loadMods(mods);
-      }
+      window.modManager.applyBatchTestingState(mods, basePath);
       return;
     }
 
@@ -240,11 +236,7 @@ class BatchTestingStateHelpers {
         })),
       ];
 
-      if (typeof (window.pluginManager as any).applyBatchTestingState === 'function') {
-        (window.pluginManager as any).applyBatchTestingState(plugins, basePath);
-      } else {
-        window.pluginManager.loadPlugins(plugins);
-      }
+      window.pluginManager.applyBatchTestingState(plugins, basePath);
     }
   }
 
@@ -285,7 +277,7 @@ class BatchTestingStateHelpers {
 }
 
 if (typeof window !== 'undefined') {
-  (window as any).BatchTestingStateHelpers = BatchTestingStateHelpers;
+  window.BatchTestingStateHelpers = BatchTestingStateHelpers;
 }
 
 export {};

@@ -1,3 +1,5 @@
+type SettingsSoundName = import('../ui/app-sound-manager').AppSoundName;
+
 class SettingsManager {
   settings: any;
   initialized: boolean;
@@ -206,7 +208,11 @@ class SettingsManager {
       try {
         const appInfo = await window.electronAPI?.getAppVersion?.();
         const result = await window.electronAPI?.submitFeedback?.({
-          type: (typeInput?.value || 'feedback') as any,
+          type: (typeInput?.value || 'feedback') as
+            | 'bug'
+            | 'feature'
+            | 'feedback'
+            | 'other',
           message,
           contact: contactInput?.value.trim() || null,
           appVersion: appInfo?.version || null,
@@ -514,7 +520,7 @@ class SettingsManager {
             ...(this.settings.appSoundPaths || {}),
             [soundName]: filePath,
           };
-          window.appSoundManager?.setCustomSound?.(soundName as any, filePath);
+          window.appSoundManager?.setCustomSound?.(soundName as SettingsSoundName, filePath);
           this.saveSettings();
           this.updateAppSoundsUI();
         });
@@ -537,7 +543,7 @@ class SettingsManager {
           const nextSoundPaths = { ...(this.settings.appSoundPaths || {}) };
           delete nextSoundPaths[soundName];
           this.settings.appSoundPaths = nextSoundPaths;
-          window.appSoundManager?.setCustomSound?.(soundName as any, null);
+          window.appSoundManager?.setCustomSound?.(soundName as SettingsSoundName, null);
           this.saveSettings();
           this.updateAppSoundsUI();
         });
@@ -562,7 +568,7 @@ class SettingsManager {
             [soundName]: input.checked,
           };
           window.appSoundManager?.setSoundEnabled?.(
-            soundName as any,
+            soundName as SettingsSoundName,
             input.checked,
           );
           this.saveSettings();
@@ -1722,11 +1728,11 @@ class SettingsManager {
     const appSoundEnabled = this.settings.appSoundEnabled || {};
     this.getAppSoundNames().forEach((soundName) => {
       window.appSoundManager.setCustomSound(
-        soundName as any,
+        soundName as SettingsSoundName,
         appSoundPaths[soundName] || null,
       );
       window.appSoundManager.setSoundEnabled(
-        soundName as any,
+        soundName as SettingsSoundName,
         appSoundEnabled[soundName] !== false,
       );
     });

@@ -152,7 +152,7 @@ export class HardwareConnectionManager {
       return;
     }
 
-    const settingsManager = window.settingsManager as any;
+    const settingsManager = window.settingsManager;
     if (settingsManager?.settings) {
       settingsManager.settings.switchDriveLetter = resolvedPath;
       settingsManager.librarySettings.applyHardwareLibraryModePaths();

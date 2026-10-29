@@ -159,8 +159,8 @@ class ModDragDropHandler {
 
       for (const filePath of filePaths) {
         if (filePath.toLowerCase().endsWith('.fpp')) {
-          if ((window as any).fppManager) {
-            (window as any).fppManager.openInstallModal(filePath);
+          if (window.fppManager) {
+            window.fppManager.openInstallModal(filePath);
           }
           continue;
         }

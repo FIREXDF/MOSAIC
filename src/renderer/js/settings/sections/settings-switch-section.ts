@@ -730,7 +730,7 @@ class SettingsSwitchSection {
         return;
       }
 
-      list.innerHTML = '';
+      list.replaceChildren();
 
       drives.forEach((drive) => {
         const option = document.createElement('button');
@@ -811,7 +811,7 @@ class SettingsSwitchSection {
     try {
       const result = await window.electronAPI.getAvailableDrives();
       if (result.success && result.drives) {
-        optionsContainer.innerHTML = '';
+        optionsContainer.replaceChildren();
 
         if (result.drives.length === 0) {
           optionsContainer.innerHTML =

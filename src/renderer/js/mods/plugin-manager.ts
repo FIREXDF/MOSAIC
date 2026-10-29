@@ -169,7 +169,7 @@ class PluginManager {
   }
 
   isBatchTestingLocked() {
-    const batchManager = (window as any).batchTestingManager;
+    const batchManager = window.batchTestingManager;
     const isModalOpen = !!(
       batchManager?.modal && document.body.contains(batchManager.modal)
     );
@@ -270,7 +270,7 @@ class PluginManager {
       return;
     }
 
-    this.pluginListContainer.innerHTML = '';
+    this.pluginListContainer.replaceChildren();
 
     this.plugins.forEach((plugin, index) => {
       const pluginElement = this.createPluginElement(plugin);

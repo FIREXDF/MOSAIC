@@ -37,13 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return { success: true, drives: [] };
       return window.tutorialAPI.detectSdDrives();
     },
-    async installARCropolis(p: string): Promise<any> {
-      if (tutorialDevMode && devOverrides['dev.installFail'])
-        return { success: false, error: 'DEV: Simulated installation failure' };
-      return (window.tutorialAPI as any).installARCropolis
-        ? (window.tutorialAPI as any).installARCropolis(p)
-        : { success: false };
-    },
     async getSkylineRelease(): Promise<any> {
       if (tutorialDevMode && devOverrides['dev.installFail']) {
         return {

@@ -1,13 +1,13 @@
 function setupErrorTracking() {
-    (window as any).onerror = (
+    window.onerror = (
         message: string,
         source: string,
         lineno: number,
         colno: number,
         error: Error | undefined,
     ) => {
-        if ((window as any).electronAPI && (window as any).electronAPI.trackError) {
-            (window as any).electronAPI.trackError(
+        if (window.electronAPI && window.electronAPI.trackError) {
+            window.electronAPI.trackError(
                 error?.message || String(message),
                 error?.stack || `${source}:${lineno}:${colno}`,
                 { source: 'renderer', type: 'window.onerror' },
@@ -15,10 +15,10 @@ function setupErrorTracking() {
         }
     };
 
-    (window as any).onunhandledrejection = (event: PromiseRejectionEvent) => {
-        if ((window as any).electronAPI && (window as any).electronAPI.trackError) {
+    window.onunhandledrejection = (event: PromiseRejectionEvent) => {
+        if (window.electronAPI && window.electronAPI.trackError) {
             const error = event.reason;
-            (window as any).electronAPI.trackError(
+            window.electronAPI.trackError(
                 error?.message || String(error),
                 error?.stack || '',
                 { source: 'renderer', type: 'unhandledrejection' },

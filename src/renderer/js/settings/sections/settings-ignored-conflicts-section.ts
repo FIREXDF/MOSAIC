@@ -181,7 +181,7 @@ class SettingsIgnoredConflictsSection {
       return;
     }
 
-    listContainer.innerHTML = '';
+    listContainer.replaceChildren();
 
     if (!this.manager.settings.ignoredConflictPaths.length) {
       const empty = document.createElement('div');

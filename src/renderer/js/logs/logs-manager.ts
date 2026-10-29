@@ -310,7 +310,7 @@ class LogsManager {
       return;
     }
 
-    this.logsContainer.innerHTML = '';
+    this.logsContainer.replaceChildren();
     filteredLogs.forEach((log) => this.appendLogEntry(log, false));
 
     this.logsContainer.scrollTop = this.logsContainer.scrollHeight;

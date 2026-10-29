@@ -131,8 +131,8 @@ function initializeTabFeatures(tabName) {
       createFppBtn.parentNode!.replaceChild(newCreateFppBtn, createFppBtn);
 
       newCreateFppBtn.addEventListener('click', () => {
-        if ((window as any).fppManager) {
-          (window as any).fppManager.openCreateModal();
+        if (window.fppManager) {
+          window.fppManager.openCreateModal();
         }
       });
     }

@@ -1,6 +1,6 @@
 export {};
 (function () {
-  const M = (window as any).ModalManagerClass;
+  const M = window.ModalManagerClass;
   if (!M) { console.error('[uninstall-modal] ModalManagerClass not found'); return; }
 
   function t(key, params = {}) {
@@ -26,7 +26,7 @@ export {};
         : t('modals.uninstall.title');
     }
 
-    listEl.innerHTML = '';
+    listEl.replaceChildren();
     listEl.classList.remove('visible');
 
     if (isMultiple) {
@@ -68,7 +68,7 @@ export {};
       return;
     }
 
-    warningEl.innerHTML = '';
+    warningEl.replaceChildren();
     warningEl.appendChild(
       document.createTextNode(`${t('modals.uninstall.warning')} `),
     );

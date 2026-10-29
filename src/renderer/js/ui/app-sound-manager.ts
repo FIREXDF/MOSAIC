@@ -267,4 +267,4 @@ if (typeof window !== 'undefined') {
   window.appSoundManager = new AppSoundManager();
 }
 
-export { type AppSoundManager };
+export { type AppSoundManager, type AppSoundName };

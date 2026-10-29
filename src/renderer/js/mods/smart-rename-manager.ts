@@ -140,7 +140,7 @@ class SmartRenameManager {
     const listContainer = document.getElementById('smart-rename-select-list');
     if (!listContainer) return;
 
-    listContainer.innerHTML = '';
+    listContainer.replaceChildren();
 
     mods.forEach((mod) => {
       const item = document.createElement('label');
@@ -368,7 +368,7 @@ class SmartRenameManager {
     ) as HTMLInputElement | null;
 
     if (!tbody) return;
-    tbody.innerHTML = '';
+    tbody.replaceChildren();
 
     if (selectAllCb) {
       selectAllCb.checked = true;

@@ -533,7 +533,7 @@ export class ConflictModalManager {
 
     summaryEl.textContent = t('modals.conflict.summary');
 
-    container.innerHTML = '';
+    container.replaceChildren();
     this.selectedConflictFiles.clear();
     this.updateSelectedConflictFilesFooter();
 
@@ -977,7 +977,7 @@ export class ConflictModalManager {
       return;
     }
 
-    container.innerHTML = '';
+    container.replaceChildren();
 
     uniqueMods.forEach((mod) => {
       const selectItem = document.createElement('div');
@@ -1044,7 +1044,7 @@ export class ConflictModalManager {
       return;
     }
 
-    container.innerHTML = '';
+    container.replaceChildren();
 
     uniqueMods.forEach((mod) => {
       const selectItem = document.createElement('div');
@@ -1145,7 +1145,7 @@ export class ConflictModalManager {
       return;
     }
 
-    container.innerHTML = '';
+    container.replaceChildren();
 
     const t = (key, params = {}) => {
       return window.i18n && window.i18n.t ? window.i18n.t(key, params) : key;

@@ -257,8 +257,8 @@ export class StatusBarManager {
   }
 
   private resolveFlipRuntime() {
-    let gsapRef = window.gsap as any;
-    let flipRef = window.Flip as any;
+    let gsapRef = window.gsap;
+    let flipRef = window.Flip;
 
     if ((!gsapRef || !flipRef) && typeof require === 'function') {
       try {
@@ -538,7 +538,7 @@ export class StatusBarManager {
     }
 
     if (!canAnimate) {
-      listEl.innerHTML = '';
+      listEl.replaceChildren();
       downloads.forEach((dl) => {
         listEl.appendChild(this.createMultiDownloadItemElement(dl));
       });
@@ -655,7 +655,7 @@ export class StatusBarManager {
   }
 
   private animateExtendedBarEntrance(bottomBar: HTMLElement, content: HTMLElement) {
-    const gsapRef = window.gsap as any;
+    const gsapRef = window.gsap;
     const statusBarContent =
       bottomBar.querySelector<HTMLElement>('.status-bar-content');
 
@@ -840,7 +840,7 @@ export class StatusBarManager {
     content: HTMLElement,
     onComplete: () => void,
   ) {
-    const gsapRef = window.gsap as any;
+    const gsapRef = window.gsap;
     const statusBarContent =
       bottomBar.querySelector<HTMLElement>('.status-bar-content');
 
@@ -1116,7 +1116,7 @@ export class StatusBarManager {
       return true;
     }
 
-    const activeDownloadsMap = (window.downloadManager as any).activeDownloads;
+    const activeDownloadsMap = (window.downloadManager).activeDownloads;
     if (!activeDownloadsMap) {
       return false;
     }
@@ -1357,7 +1357,7 @@ export class StatusBarManager {
   }
 
   private getDownloadsIdleSnapshot(): StatusSnapshot {
-    if (!window.downloadManager || !(window.downloadManager as any).activeDownloads) {
+    if (!window.downloadManager || !(window.downloadManager).activeDownloads) {
       return { content: this.t('statusBar.downloadsReady') };
     }
 
@@ -2031,7 +2031,7 @@ export class StatusBarManager {
           if (content) {
             delete (content as HTMLElement).dataset.extendedSignature;
             (content as HTMLElement).style.display = 'none';
-            (content as HTMLElement).innerHTML = '';
+            (content as HTMLElement).replaceChildren();
           }
 
           setTimeout(() => this.showPendingConflict(), 0);
@@ -2050,7 +2050,7 @@ export class StatusBarManager {
         if (content) {
           delete (content as HTMLElement).dataset.extendedSignature;
           (content as HTMLElement).style.display = 'none';
-          (content as HTMLElement).innerHTML = '';
+          (content as HTMLElement).replaceChildren();
         }
         this.showPendingConflict();
       }
@@ -2069,7 +2069,7 @@ export class StatusBarManager {
           bottomBar.dataset.islandMode = 'idle';
           delete (content as HTMLElement).dataset.extendedSignature;
           (content as HTMLElement).style.display = 'none';
-          (content as HTMLElement).innerHTML = '';
+          (content as HTMLElement).replaceChildren();
 
           setTimeout(() => {
             const nextUpdate = this.islandSwapUpdate;
@@ -2614,7 +2614,7 @@ export class StatusBarManager {
         return true;
       }
 
-      const activeDownloadsMap = (window.downloadManager as any)
+      const activeDownloadsMap = (window.downloadManager)
         .activeDownloads;
 
       if (!activeDownloadsMap) {
@@ -2697,7 +2697,7 @@ export class StatusBarManager {
 
         if (wasActive) {
           const completed =
-            (window.downloadManager as any).completedDownloads || [];
+            (window.downloadManager).completedDownloads || [];
           if (completed.length > 0) {
             const last = completed[0];
             if (Date.now() - (last.endTime || 0) < 5000 && this.lastHandledSuccessId !== last.id) {
@@ -3261,7 +3261,7 @@ export class StatusBarManager {
       document.querySelector<HTMLElement>('.bottom-text-right');
     if (!statusRight) return;
 
-    statusRight.innerHTML = '';
+    statusRight.replaceChildren();
     const checkingText = document.createElement('span');
     checkingText.textContent = this.t('statusBar.checkingConflicts');
     checkingText.style.display = 'flex';
@@ -3299,7 +3299,7 @@ export class StatusBarManager {
             modsWithConflictsCount: modsWithConflicts.size,
           });
 
-          statusRight.innerHTML = '';
+          statusRight.replaceChildren();
           const warning = document.createElement('span');
           warning.style.color = 'var(--warning-color)';
           warning.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> ${conflictCount} conflicts`;
@@ -3325,7 +3325,7 @@ export class StatusBarManager {
       document.querySelector<HTMLElement>('.bottom-text-right');
     if (!statusRight) return;
 
-    statusRight.innerHTML = '';
+    statusRight.replaceChildren();
 
     if (conflictCount > 0) {
       this.updateExtendedBar({
@@ -3384,7 +3384,7 @@ export class StatusBarManager {
     const statusRight =
       document.querySelector<HTMLElement>('.bottom-text-right');
     if (statusRight) {
-      statusRight.innerHTML = '';
+      statusRight.replaceChildren();
     }
     if (this.currentTab && !this.preservedStatus) {
       this.updateStatus(this.currentTab);

@@ -40,6 +40,7 @@ import { ModKeybindsHandler } from '../js/mods/mod-keybinds';
 import { ModListRenderer } from '../js/mods/mod-list-renderer';
 import { LanguageSelector } from '../js/i18n/language-selector';
 import { ModProfileManager } from '../js/mods/mod-profile-manager';
+import { FppManager } from '../js/mods/fpp-manager';
 
 import {
   ResolveSSBUFolderName,
@@ -84,6 +85,12 @@ declare global {
     modProfileManager: ModProfileManager;
     gameBananaMarketplace: GameBananaMarketplace;
     marketplaceDiscover: MarketplaceDiscover;
+    fppManager?: FppManager;
+
+    ModalManagerClass: { prototype: any };
+    BatchTestingSessionStore?: unknown;
+    BatchTestingUiHelpers?: unknown;
+    BatchTestingStateHelpers?: unknown;
 
     ModOperations: typeof ModOperations;
     ModContextMenuHandler: typeof ModContextMenuHandler;

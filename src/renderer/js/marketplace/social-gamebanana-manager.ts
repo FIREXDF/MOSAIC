@@ -2842,7 +2842,7 @@ class SocialGameBananaManager extends SocialManagerBase {
   }
 
   fadeGameBananaDetailInfo(direction: 'in' | 'out') {
-    const gsapRef = window.gsap as any;
+    const gsapRef = window.gsap;
     const detailInfo = document.querySelector<HTMLElement>(
       '.social-gamebanana-detail-info',
     );
@@ -2865,7 +2865,7 @@ class SocialGameBananaManager extends SocialManagerBase {
   }
 
   fadeGameBananaRestoredBackground() {
-    const gsapRef = window.gsap as any;
+    const gsapRef = window.gsap;
     const discoverContent = document.querySelector<HTMLElement>(
       '#social-discover-content',
     );
@@ -2884,7 +2884,7 @@ class SocialGameBananaManager extends SocialManagerBase {
   }
 
   fadeGameBananaDetailOverlayOut(discoverContent: HTMLElement) {
-    const gsapRef = window.gsap as any;
+    const gsapRef = window.gsap;
     if (!gsapRef) return;
 
     const rect = discoverContent.getBoundingClientRect();
@@ -2912,7 +2912,7 @@ class SocialGameBananaManager extends SocialManagerBase {
     sourceCard?: HTMLElement,
     sourceRect?: DOMRect | null,
   ) {
-    const gsapRef = window.gsap as any;
+    const gsapRef = window.gsap;
     const targetImage = document.querySelector<HTMLElement>(
       '.social-gamebanana-detail-image',
     );
@@ -3117,7 +3117,7 @@ class SocialGameBananaManager extends SocialManagerBase {
     detailSrc: string,
     targetImage: HTMLElement,
   ) {
-    const gsapRef = window.gsap as any;
+    const gsapRef = window.gsap;
     const targetRect = targetImage.getBoundingClientRect();
 
     if (!gsapRef || !targetRect) return;
@@ -3952,7 +3952,7 @@ class SocialGameBananaManager extends SocialManagerBase {
   }
 
   setGameBananaFeaturedCardPositions() {
-    const gsapRef = window.gsap as any;
+    const gsapRef = window.gsap;
     const cards = document.querySelectorAll<HTMLElement>(
       '#social-gamebanana-carousel .social-gamebanana-card-featured',
     );
@@ -3970,7 +3970,7 @@ class SocialGameBananaManager extends SocialManagerBase {
   }
 
   animateGameBananaFeaturedCards(direction: number) {
-    const gsapRef = window.gsap as any;
+    const gsapRef = window.gsap;
     const cards = Array.from(
       document.querySelectorAll<HTMLElement>(
         '#social-gamebanana-carousel .social-gamebanana-card-featured',

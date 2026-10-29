@@ -212,8 +212,8 @@ class SettingsLibrarySection {
       document.querySelector<HTMLElement>('#batch-testing-btn');
     if (batchTestingBtn && !batchTestingBtn.dataset.listenerAttached) {
       batchTestingBtn.addEventListener('click', async () => {
-        if ((window as any).batchTestingManager) {
-          await (window as any).batchTestingManager.openStartModal();
+        if (window.batchTestingManager) {
+          await window.batchTestingManager.openStartModal();
         }
       });
       batchTestingBtn.dataset.listenerAttached = 'true';
@@ -227,8 +227,8 @@ class SettingsLibrarySection {
       !batchTestingResumeBtn.dataset.listenerAttached
     ) {
       batchTestingResumeBtn.addEventListener('click', async () => {
-        if ((window as any).batchTestingManager) {
-          await (window as any).batchTestingManager.resumeSession();
+        if (window.batchTestingManager) {
+          await window.batchTestingManager.resumeSession();
         }
       });
       batchTestingResumeBtn.dataset.listenerAttached = 'true';
@@ -242,15 +242,15 @@ class SettingsLibrarySection {
       !batchTestingCancelBtn.dataset.listenerAttached
     ) {
       batchTestingCancelBtn.addEventListener('click', async () => {
-        if ((window as any).batchTestingManager) {
-          await (window as any).batchTestingManager.cancelSession();
+        if (window.batchTestingManager) {
+          await window.batchTestingManager.cancelSession();
         }
       });
       batchTestingCancelBtn.dataset.listenerAttached = 'true';
     }
 
-    if ((window as any).batchTestingManager?.refreshControlState) {
-      (window as any).batchTestingManager.refreshControlState();
+    if (window.batchTestingManager?.refreshControlState) {
+      window.batchTestingManager.refreshControlState();
     }
   }
 

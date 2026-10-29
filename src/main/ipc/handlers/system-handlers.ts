@@ -363,7 +363,7 @@ const SystemHandlers = {
         try {
           process.kill(emulatorProcess.pid, 0);
           return createErrorResponse(
-            'EMULATOR_ALREADY_RUNNING' as any,
+            ErrorCodes.EMULATOR_ALREADY_RUNNING,
             'emulator_already_running',
           );
         } catch {

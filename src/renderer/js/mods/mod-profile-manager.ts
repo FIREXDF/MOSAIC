@@ -312,7 +312,7 @@ class ModProfileManager {
   }
 
   renderProfileModalBody(body: HTMLElement, rerender: () => void) {
-    body.innerHTML = '';
+    body.replaceChildren();
 
     const copy = document.createElement('p');
     copy.className = 'mod-profile-modal-copy';
@@ -729,7 +729,7 @@ class ModProfileManager {
 }
 
 if (typeof window !== 'undefined') {
-  (window as any).modProfileManager = new ModProfileManager();
+  window.modProfileManager = new ModProfileManager();
 }
 
 export { type ModProfileManager };

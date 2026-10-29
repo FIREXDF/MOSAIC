@@ -1,6 +1,6 @@
 export {};
 (function () {
-  const M = (window as any).ModalManagerClass;
+  const M = window.ModalManagerClass;
   if (!M) { console.error('[edit-info-modal] ModalManagerClass not found'); return; }
 
   M.prototype.openEditInfoModal = function (modPath, currentInfo, callback) {

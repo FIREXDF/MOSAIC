@@ -37,7 +37,7 @@ class BatchTestingSessionStore {
 }
 
 if (typeof window !== 'undefined') {
-  (window as any).BatchTestingSessionStore = BatchTestingSessionStore;
+  window.BatchTestingSessionStore = BatchTestingSessionStore;
 }
 
 export {};

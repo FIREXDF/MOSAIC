@@ -195,7 +195,7 @@ class ModListRenderer {
       }
     });
 
-    container.innerHTML = '';
+    container.replaceChildren();
 
     if (mods.length === 0) {
       const gameBananaLink = this.gameBananaLink();

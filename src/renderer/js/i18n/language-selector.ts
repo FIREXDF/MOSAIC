@@ -53,7 +53,7 @@ class LanguageSelector {
       await window.i18n.changeLocale(newLocale);
     });
 
-    container.innerHTML = '';
+    container.replaceChildren();
     container.appendChild(select);
   }
 
@@ -103,7 +103,7 @@ class LanguageSelector {
             </div>
         `;
 
-    container.innerHTML = '';
+    container.replaceChildren();
     container.appendChild(dropdown);
 
     const toggle = dropdown.querySelector<HTMLElement>('#lang-dropdown-toggle');

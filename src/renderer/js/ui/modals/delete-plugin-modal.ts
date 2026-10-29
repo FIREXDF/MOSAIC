@@ -1,6 +1,6 @@
 export {};
 (function () {
-  const M = (window as any).ModalManagerClass;
+  const M = window.ModalManagerClass;
   if (!M) { console.error('[delete-plugin-modal] ModalManagerClass not found'); return; }
 
   M.prototype.openDeletePluginModal = function (plugin, callback) {

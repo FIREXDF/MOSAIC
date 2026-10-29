@@ -165,10 +165,11 @@ ${escapeHtml(modData.url)}
     await window.electronAPI.store.set('modUpdateWatch', watch);
   }
 
-  async getUpdateWatch(): Promise<
-    Record<string, { name: string; version?: string; seen: number }>
-  > {
-    return ((await window.electronAPI.store.get('modUpdateWatch')) as any) || {};
+  async getUpdateWatch() {
+    const watch = (await window.electronAPI.store.get('modUpdateWatch')) as
+      | Record<string, { name: string; version?: string; seen: number }>
+      | undefined;
+    return watch || {};
   }
 
   async checkForUpdates() {

@@ -264,7 +264,7 @@ class StartupSplashManager {
 
     this.stopLoadingVideo();
     this.applyLayout('fullscreen');
-    this.stageContainer.innerHTML = '';
+    this.stageContainer.replaceChildren();
 
     const video = this.splashVideo || document.createElement('video');
     video.className = 'startup-splash-video';
@@ -549,7 +549,7 @@ class StartupSplashManager {
 }
 
 if (typeof window !== 'undefined') {
-  (window as any).startupSplashManager = new StartupSplashManager();
+  window.startupSplashManager = new StartupSplashManager();
 }
 
 export { StartupSplashManager };

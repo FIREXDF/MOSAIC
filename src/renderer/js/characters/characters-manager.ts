@@ -690,7 +690,7 @@ class CharactersManager {
       return;
     }
 
-    container.innerHTML = '';
+    container.replaceChildren();
     characters.forEach((char) => {
       const card = this.createCharacterCard(char);
       container.appendChild(card);
@@ -1163,7 +1163,7 @@ class CharactersManager {
       return;
     }
 
-    container.innerHTML = '';
+    container.replaceChildren();
 
     this.allCharacters = Array.from(this.characters.values()).sort((a, b) => {
       const numA = parseFloat(a.info.number.replace('ε', '.5'));
@@ -2926,7 +2926,7 @@ ${category}
       console.error('[CharactersManager] Failed to load CSS layout:', error);
       if (grid) {
         const message = error.message || 'Failed to load CSS layout';
-        grid.innerHTML = '';
+        grid.replaceChildren();
         this.renderCharacterCssSourceImport();
         window.toastManager?.error('toasts.failedToLoadCharacters', 4000, {
           error: message,
@@ -3484,7 +3484,7 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
       return;
     }
 
-    grid.innerHTML = '';
+    grid.replaceChildren();
     this.cssVisibleCharacters.forEach((character) => {
       grid.appendChild(this.createCssCharacterCell(character));
     });
