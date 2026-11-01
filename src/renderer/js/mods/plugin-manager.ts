@@ -5,6 +5,7 @@ export interface Plugin {
   status: 'active' | 'disabled';
   filePath: string;
   enabled?: boolean;
+  version?: string | null;
 }
 
 type RecordedVersionMismatch = {
@@ -333,7 +334,7 @@ class PluginManager {
 <div class="plugin-status ${statusClass}"></div>
 <div class="plugin-item-content">
 <span class="plugin-name">${escapeHtml(plugin.name)}</span>
-<span class="plugin-size">${plugin.size}</span>
+<span class="plugin-size">${plugin.version ? `v${escapeHtml(plugin.version.replace(/^v/i, ''))} · ` : ''}${plugin.size}</span>
 </div>
 <div class="plugin-actions">
 ${plugin.status === 'active'
@@ -555,6 +556,11 @@ ${plugin.status === 'active'
         return;
       }
 
+      const versions = ((await window.electronAPI.store
+        .get('pluginVersions')
+        .catch(() => null)) || {}) as Record<string, string>;
+      const versionOf = (name: string) =>
+        versions[name.replace(/\.nro$/i, '')] || null;
       const allPlugins: Plugin[] = [];
       let idCounter = 1;
 
@@ -565,6 +571,7 @@ ${plugin.status === 'active'
           size: plugin.size,
           status: 'active',
           filePath: plugin.path,
+          version: versionOf(plugin.name),
         });
       }
 
@@ -575,6 +582,7 @@ ${plugin.status === 'active'
           size: plugin.size,
           status: 'disabled',
           filePath: plugin.path,
+          version: versionOf(plugin.name),
         });
       }
 
@@ -837,7 +845,10 @@ ${plugin.status === 'active'
           hasMismatches: false,
         });
       }
-      if (result.updated.length) window.toastManager?.success(t('versionAuditSaved'));
+      if (result.updated.length) {
+        window.toastManager?.success(t('versionAuditSaved'));
+        void this.refreshPlugins();
+      }
       if (result.skipped.length) window.toastManager?.error(t('versionAuditStale'));
     } catch (error) {
       console.error('[PluginManager] Could not save UMC versions:', error);
