@@ -10,6 +10,7 @@ import { resolveVirtualPath } from '../utils/virtual-paths';
 import { CONFLICT_WHITELIST_PATTERNS } from '../config';
 import sharedStore from '../store';
 import { prcXmlContentsConflict } from './prcxml-conflicts';
+import PluginUtils from '../plugin-utils';
 
 interface ModInstallOptions {
   onExtractProgress?: (progress: {
@@ -54,6 +55,8 @@ export interface Mod {
   hash?: string;
   addedAt?: number;
   modifiedAt?: number;
+  sizeBytes?: number;
+  size?: string;
   folderName?: string;
 }
 
@@ -398,6 +401,7 @@ export default class ModUtils {
           const modPath = path.join(folderPath, entry.name);
           let addedAt = 0;
           let modifiedAt = 0;
+          const sizeBytes = this.getDirectorySize(modPath);
 
           try {
             const stats = fs.statSync(modPath);
@@ -426,6 +430,8 @@ export default class ModUtils {
             hash,
             addedAt,
             modifiedAt,
+            sizeBytes,
+            size: PluginUtils.formatFileSize(sizeBytes),
             folderName: entry.name,
           });
         }

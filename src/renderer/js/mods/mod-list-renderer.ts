@@ -125,6 +125,13 @@ class ModListRenderer {
 
     textContainer.appendChild(modName);
 
+    if (this.modManager.sortOrder === 'size-desc') {
+      const modSize = document.createElement('span');
+      modSize.className = 'mod-size';
+      modSize.textContent = mod.size;
+      textContainer.appendChild(modSize);
+    }
+
     if (isStagesLayoutMod) {
       const badge = document.createElement('span');
       badge.className = 'mod-special-badge';

@@ -16,6 +16,7 @@ export interface Mod {
   hash?: string;
   addedAt?: number;
   modifiedAt?: number;
+  sizeBytes?: number;
 }
 
 export interface SimpleMod {
@@ -37,6 +38,8 @@ interface FolderModState {
     hash?: string;
     addedAt?: number;
     modifiedAt?: number;
+    sizeBytes?: number;
+    size?: string;
   }>;
   disabledMods: Array<{
     name: string;
@@ -44,10 +47,16 @@ interface FolderModState {
     hash?: string;
     addedAt?: number;
     modifiedAt?: number;
+    sizeBytes?: number;
+    size?: string;
   }>;
 }
 
-type ModSortOrder = 'name-asc' | 'added-desc' | 'modified-desc';
+type ModSortOrder =
+  | 'name-asc'
+  | 'added-desc'
+  | 'modified-desc'
+  | 'size-desc';
 
 class ModManager {
   mods: Mod[];
@@ -208,6 +217,7 @@ class ModManager {
       'name-asc',
       'added-desc',
       'modified-desc',
+      'size-desc',
     ];
     this.sortOrder = allowedOrders.includes(order as ModSortOrder)
       ? (order as ModSortOrder)
@@ -217,17 +227,20 @@ class ModManager {
 
   getSortedMods(mods: Mod[] = this.mods) {
     const statusRank = { active: 0, conflict: 1, disabled: 2 };
-    const getTime = (mod: Mod, field: 'addedAt' | 'modifiedAt') => {
+    const sortField = {
+      'added-desc': 'addedAt',
+      'modified-desc': 'modifiedAt',
+      'size-desc': 'sizeBytes',
+    } as const;
+    const field = sortField[this.sortOrder];
+    const getValue = (mod: Mod) => {
       const value = Number(mod[field] || 0);
       return Number.isFinite(value) ? value : 0;
     };
 
     return [...mods].sort((a, b) => {
-      if (this.sortOrder === 'added-desc') {
-        const delta = getTime(b, 'addedAt') - getTime(a, 'addedAt');
-        if (delta !== 0) return delta;
-      } else if (this.sortOrder === 'modified-desc') {
-        const delta = getTime(b, 'modifiedAt') - getTime(a, 'modifiedAt');
+      if (field) {
+        const delta = getValue(b) - getValue(a);
         if (delta !== 0) return delta;
       } else {
         const statusDelta = statusRank[a.status] - statusRank[b.status];
@@ -290,13 +303,14 @@ class ModManager {
         version: 'Unknown',
         author: 'Unknown',
         description: 'Active mod',
-        size: 'Unknown',
+        size: mod.size || 'Unknown',
         status: 'active',
         path: mod.path,
         category: null,
         hash: mod.hash,
         addedAt: mod.addedAt,
         modifiedAt: mod.modifiedAt,
+        sizeBytes: mod.sizeBytes,
       });
     }
 
@@ -307,13 +321,14 @@ class ModManager {
         version: 'Unknown',
         author: 'Unknown',
         description: 'Disabled mod',
-        size: 'Unknown',
+        size: mod.size || 'Unknown',
         status: 'disabled',
         path: mod.path,
         category: null,
         hash: mod.hash,
         addedAt: mod.addedAt,
         modifiedAt: mod.modifiedAt,
+        sizeBytes: mod.sizeBytes,
       });
     }
 

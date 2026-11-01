@@ -395,7 +395,8 @@
     "sort": {
       "name": "Name",
       "lastAdded": "Last Added",
-      "lastModified": "Last Modified"
+      "lastModified": "Last Modified",
+      "fileSize": "File Size"
     },
     "editInfo": "Edit Info",
     "actionAdd": "Add",

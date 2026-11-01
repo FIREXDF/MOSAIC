@@ -399,7 +399,8 @@
     "sort": {
       "name": "Nom",
       "lastAdded": "Ajout récent",
-      "lastModified": "Modification récente"
+      "lastModified": "Modification récente",
+      "fileSize": "Taille du fichier"
     },
     "modInfo": {
       "name": "Nom",

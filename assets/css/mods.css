@@ -225,7 +225,8 @@
   text-overflow: ellipsis;
 }
 
-.plugin-size {
+.plugin-size,
+.mod-size {
   color: var(--text-muted);
   font-size: 12px;
 }
