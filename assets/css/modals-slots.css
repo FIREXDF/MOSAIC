@@ -293,6 +293,12 @@
   border-top: 1px solid var(--border-hover);
 }
 
+.slot-usage-extend-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
 .slot-usage-legend-item {
   display: flex;
   align-items: center;

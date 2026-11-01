@@ -362,6 +362,7 @@ M.prototype.closeChangeSlotModal = function () {
   this.rawFighterNames = [];
   this.selectedFighterName = null;
   this.slotUsageByFighter = null;
+  this.showExtendedSlots = false;
   this.currentMod = null;
   this.pathData = {};
 };
@@ -715,7 +716,15 @@ M.prototype._renderSlotUsageOverview = function (slotUsage, currentModPath) {
   const grid = document.createElement('div');
   grid.className = 'slot-usage-grid';
 
-  const slotsToShow = 16;
+  const highestUsedSlot = Math.max(
+    -1,
+    ...Array.from(slotUsage.keys(), slotStringToNumber).filter(
+      (slot) => !Number.isNaN(slot),
+    ),
+  );
+  const hasExtendedSlots = highestUsedSlot >= 16;
+  const slotsToShow =
+    hasExtendedSlots && this.showExtendedSlots ? highestUsedSlot + 1 : 16;
 
   for (let i = 0; i < slotsToShow; i++) {
     const slotString = slotNumberToString(i);
@@ -838,6 +847,22 @@ M.prototype._renderSlotUsageOverview = function (slotUsage, currentModPath) {
       <span>Conflict (Current Mod)</span>
     </div>
   `;
+
+  if (hasExtendedSlots) {
+    const extendButton = document.createElement('button');
+    extendButton.type = 'button';
+    extendButton.className = 'modal-btn modal-btn-secondary slot-usage-extend-btn';
+    extendButton.textContent = this.showExtendedSlots ? 'Hide c16+' : 'Show c16+';
+    extendButton.setAttribute('aria-pressed', String(this.showExtendedSlots));
+    extendButton.addEventListener('click', () => {
+      this.showExtendedSlots = !this.showExtendedSlots;
+      document.querySelectorAll('.slot-usage-tooltip').forEach((tooltip) => {
+        tooltip.remove();
+      });
+      this._renderSlotUsageForSelectedFighter();
+    });
+    legend.appendChild(extendButton);
+  }
 
   overviewContainer.appendChild(legend);
 };

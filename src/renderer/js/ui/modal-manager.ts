@@ -50,6 +50,7 @@ class ModalManager {
   selectedFighterName: string | null;
   pathData: PathData;
   slotUsageByFighter: SlotUsageByFighter | null;
+  showExtendedSlots = false;
   installQueue: {
     url: string;
     downloadId: string;
