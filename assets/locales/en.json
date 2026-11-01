@@ -1260,6 +1260,8 @@
     "noDownloads": "No downloads yet",
     "noDownloadsHint": "Mods installed via GameBanana links will appear here",
     "sendToSwitch": "Send To Switch",
+    "notificationTitle": "Mod installed",
+    "notificationBody": "{{name}} is ready to use",
     "clearCompleted": "Clear Completed",
     "sending": "Sending...",
     "pause": "Pause",

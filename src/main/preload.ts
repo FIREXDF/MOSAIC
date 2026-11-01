@@ -204,6 +204,8 @@ const electronAPI = {
   minimize: invokeWindowHandler('minimize-window'),
   maximize: invokeWindowHandler('maximize-window'),
   close: invokeWindowHandler('close-window'),
+  setTaskbarProgress: invokeWindowHandler('set-taskbar-progress'),
+  notifyWhenUnfocused: invokeWindowHandler('notify-when-unfocused'),
   updateDiscordRPC: invokeDiscordHandler('discord-rpc-update'),
   setDiscordRpcEnabled: (enabled: boolean) =>
     ipcRenderer.invoke('set-discord-rpc-enabled', enabled),

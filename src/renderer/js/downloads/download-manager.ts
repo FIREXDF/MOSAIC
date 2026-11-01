@@ -316,6 +316,7 @@ class DownloadManager {
     download.progress = progress;
     download.receivedBytes = receivedBytes;
     download.totalBytes = totalBytes;
+    this.syncTaskbarProgress();
 
     const element = document.querySelector<HTMLElement>(
       `[data-download-id="${downloadId}"]`,
@@ -438,6 +439,7 @@ class DownloadManager {
     download.receivedBytes = 0;
     download.totalBytes = 0;
     download.speedBytesPerSecond = 0;
+    this.syncTaskbarProgress();
 
     const element = document.querySelector<HTMLElement>(
       `[data-download-id="${downloadId}"]`,
@@ -528,6 +530,7 @@ class DownloadManager {
     this.updateBadge();
     window.appSoundManager?.stop('downloading');
     window.appSoundManager?.play('complete');
+    this.notifyInstalled(resultingMods.map((mod) => mod.modName));
 
     if (window.statusBarManager) {
       window.statusBarManager.checkAndUpdateForDownloads();
@@ -547,6 +550,7 @@ class DownloadManager {
 
     download.status = 'failed';
     download.error = error;
+    this.syncTaskbarProgress();
     window.appSoundManager?.stop('downloading');
     window.appSoundManager?.play('error');
 
@@ -634,6 +638,7 @@ class DownloadManager {
     download.lastSpeedSampleBytes = download.receivedBytes;
     download.lastSpeedSampleTime = Date.now();
     window.appSoundManager?.play('downloading');
+    this.syncTaskbarProgress();
 
     const element = document.querySelector<HTMLElement>(
       `[data-download-id="${downloadId}"]`,
@@ -925,6 +930,8 @@ ${subItemsHtml}
   }
 
   updateBadge() {
+    this.syncTaskbarProgress();
+
     const downloadsBtn = document.querySelector<HTMLElement>(
       '[data-tab="downloads"]',
     );
@@ -947,6 +954,48 @@ ${subItemsHtml}
         badge.style.display = 'none';
       }
     }
+  }
+
+  syncTaskbarProgress() {
+    const downloads = Array.from(this.activeDownloads.values()).filter(
+      (download) => download.status !== 'failed',
+    );
+
+    if (downloads.length === 0) {
+      void window.electronAPI?.setTaskbarProgress?.(-1, 'none');
+      return;
+    }
+
+    const ratio =
+      downloads.reduce((sum, download) => sum + download.progress, 0) /
+      (downloads.length * 100);
+
+    let mode: 'normal' | 'indeterminate' | 'paused' = 'normal';
+    if (downloads.every((download) => download.status === 'paused')) {
+      mode = 'paused';
+    } else if (ratio <= 0) {
+      mode = 'indeterminate';
+    }
+
+    void window.electronAPI?.setTaskbarProgress?.(
+      Math.min(Math.max(ratio, 0), 1),
+      mode,
+    );
+  }
+
+  notifyInstalled(modNames: string[]) {
+    if (modNames.length === 0) return;
+
+    const t = (key: string, fallback: string, params = {}) => {
+      const translated = window.i18n?.t?.(key, params);
+      return translated && translated !== key ? translated : fallback;
+    };
+
+    const names = modNames.join(', ');
+    void window.electronAPI?.notifyWhenUnfocused?.(
+      t('downloads.notificationTitle', 'Mod installed'),
+      t('downloads.notificationBody', `${names} is ready to use`, { name: names }),
+    );
   }
 
   switchToDownloadsTab() {

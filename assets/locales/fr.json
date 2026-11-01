@@ -1260,6 +1260,8 @@
     "noDownloads": "Aucun téléchargement pour le moment",
     "noDownloadsHint": "Les mods installés via les liens GameBanana apparaîtront ici",
     "sendToSwitch": "Envoyer vers Switch",
+    "notificationTitle": "Mod installé",
+    "notificationBody": "{{name}} est prêt à être utilisé",
     "clearCompleted": "Effacer les Terminés",
     "sending": "Envoi en cours...",
     "pause": "Pause",

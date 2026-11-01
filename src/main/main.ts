@@ -339,6 +339,7 @@ if (!gotTheLock) {
   });
 
   app.whenReady().then(async () => {
+    app.setAppUserModelId('com.shatteredchaos.mosaic');
     setupWebUsbPermissions();
     registerAllHandlers(ipcMain, () => discordRPC);
 
