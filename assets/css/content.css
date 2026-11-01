@@ -196,6 +196,14 @@
   transform: rotate(180deg);
 }
 
+.custom-select .custom-select-trigger i.selected-icon {
+  margin-right: -4px;
+  color: var(--accent-color);
+  font-size: 14px;
+  transform: none;
+  transition: none;
+}
+
 .custom-select:hover {
   border-color: var(--border-hover);
   background-color: var(--bg-item-hover-alt);

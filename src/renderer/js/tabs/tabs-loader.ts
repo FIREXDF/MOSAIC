@@ -428,6 +428,8 @@ function initializeTabFeatures(tabName) {
               selectedValue.textContent =
                 option.querySelector<HTMLElement>('span')!.textContent;
             }
+            finalCategoryFilter.querySelector('.selected-icon')!.className =
+              `${option.querySelector('i')!.className} selected-icon`;
 
             finalCategoryFilter
               .querySelectorAll('.custom-select-option')
@@ -476,6 +478,8 @@ function initializeTabFeatures(tabName) {
           if (selectedValue && currentText) {
             selectedValue.textContent = currentText;
           }
+          finalModSortOrder.querySelector('.selected-icon')!.className =
+            `${currentOption.querySelector('i')!.className} selected-icon`;
         }
 
         if (trigger) {
@@ -506,6 +510,8 @@ function initializeTabFeatures(tabName) {
             if (selectedValue) {
               selectedValue.textContent = text;
             }
+            finalModSortOrder.querySelector('.selected-icon')!.className =
+              `${option.querySelector('i')!.className} selected-icon`;
 
             options.forEach((opt) => opt.classList.remove('active'));
             option.classList.add('active');

@@ -191,6 +191,11 @@ class ModManager {
       if (selectedValue && allCategoriesLabel) {
         selectedValue.textContent = allCategoriesLabel;
       }
+      const selectedIcon = categoryFilter.querySelector('.selected-icon');
+      const allCategoriesIcon = allCategoriesOption?.querySelector('i');
+      if (selectedIcon && allCategoriesIcon) {
+        selectedIcon.className = `${allCategoriesIcon.className} selected-icon`;
+      }
 
       categoryFilter.classList.remove('open');
     }
