@@ -579,8 +579,12 @@ class CharactersManager {
       return;
     }
 
-    const filtered = this.allCharacters.filter((char) =>
-      char.info.name.toLowerCase().includes(this.searchQuery),
+    const filtered = this.allCharacters.filter(
+      (char) =>
+        char.info.name.toLowerCase().includes(this.searchQuery) ||
+        char.mods.some((mod) =>
+          mod.name.toLowerCase().includes(this.searchQuery),
+        ),
     );
 
     this.renderFilteredCharacters(filtered);
