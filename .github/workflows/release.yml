@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-27]
+        os: [windows-latest, ubuntu-latest, macos-latest]
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CI: true
@@ -52,7 +52,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Verify Xcode toolchain
-        if: matrix.os == 'macos-27'
+        if: matrix.os == 'macos-latest'
         run: |
           xcodebuild -version
           xcrun actool --version
@@ -76,7 +76,7 @@ jobs:
           fi
 
       - name: Sign MSBTEditorCLI hosts (macOS)
-        if: matrix.os == 'macos-27'
+        if: matrix.os == 'macos-latest'
         run: |
           codesign --force --sign - tools/MSBTEditorCLI/osx-arm64/MSBTEditorCli tools/MSBTEditorCLI/osx-x64/MSBTEditorCli
           codesign --verify tools/MSBTEditorCLI/osx-arm64/MSBTEditorCli tools/MSBTEditorCLI/osx-x64/MSBTEditorCli
