@@ -564,6 +564,7 @@
     "reset": "Reset",
     "testHardwareOverlay": "Test Hardware Overlay",
     "testNroLimitModal": "Test NRO Limit Modal",
+    "testSlotCountModal": "Test Hidden Slots Modal",
     "customization": "Customization",
     "logs": "Logs",
     "application": "Application",
@@ -984,6 +985,18 @@
       "title": "Plugins folder not set",
       "message": "Set the plugins folder path in Settings before adding a plugin."
     },
+    "editSlotCounts": {
+      "title": "Slot count",
+      "message": "Number of slots the game shows for each fighter in this mod. Saved in ui_chara_db.prcxml.",
+      "highestSlot": "Highest slot in this mod: {{slot}} (needs at least {{count}})"
+    },
+    "slotCount": {
+      "title": "Hidden skin slots",
+      "message": "Some active mods set a slot count lower than the slots installed, so those skins do not show in game. MOSAIC can raise the slot count in these mods.",
+      "item": "{{fighter}}: slot count {{current}}, needs {{expected}}",
+      "missing": "not set",
+      "fix": "Fix slot counts"
+    },
     "nroLimit": {
       "title": "NRO limit exceeded",
       "message": "{{count}} active .nro files detected. The limit is {{limit}} in emulator and real hardware modes. Disable or remove {{overflow}} .nro file(s).",
@@ -1206,6 +1219,7 @@
   "contextMenu": {
     "rename": "Rename",
     "changeSlot": "Change Slot",
+    "editSlotCounts": "Slot count (PRCXML)",
     "toggle": "Toggle",
     "enable": "Enable",
     "disable": "Disable",
@@ -1630,6 +1644,11 @@
     "switchReconnected": "Switch reconnected.",
     "directSwitchLibraryNoSync": "The library is already read directly from the Switch. No sync is needed.",
     "reconnectSwitchBeforeSyncToPc": "Reconnect your Switch or remount the SD card before syncing mods back to this PC.",
+    "slotCountSaved": "Slot count saved",
+    "noFighterSlots": "This mod has no fighter slots",
+    "invalidSlotCount": "Slot count must be a whole number between 1 and 255",
+    "slotCountFixed": "Slot count fixed in {{count}} mod(s)",
+    "slotCountFixFailed": "Could not fix the slot count: {{mods}}",
     "nroLimitExceeded": "{{count}} active .nro files detected. Switch limit: {{limit}}. Disable or remove {{overflow}} .nro file(s).",
     "slotBackupRestored": "Mod restored from backup",
     "soundAssigned": "Sounds assigned to {{name}} ({{slot}})",

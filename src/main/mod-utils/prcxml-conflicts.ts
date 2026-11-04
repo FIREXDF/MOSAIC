@@ -95,6 +95,7 @@ function collectClaims(
   claims: Map<string, string>,
 ) {
   if (element.children.length === 0) {
+    if (element.attributes.hash === 'color_num') return;
     const segment = elementSegment(element, fallbackIndex);
     for (const parentPath of parentPaths) {
       claims.set(`${parentPath}/${segment}`, element.text);
@@ -127,7 +128,7 @@ function createClaimMap(content: string): Map<string, string> | null {
 
     const claims = new Map<string, string>();
     roots.forEach((root, index) => collectClaims(root, [''], index, claims));
-    return claims.size > 0 ? claims : null;
+    return claims;
   } catch {
     return null;
   }

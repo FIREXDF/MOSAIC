@@ -564,6 +564,7 @@
     "simulateUpdate": "Simuler Mise à Jour",
     "testHardwareOverlay": "Tester l'overlay Hardware",
     "testNroLimitModal": "Tester la modale limite .nro",
+    "testSlotCountModal": "Tester la modale slots cachés",
     "resetStoreTitle": "Réinitialiser les Données",
     "resetStoreHint": "Cela réinitialisera tous les paramètres et données stockés dans Electron Store. L'application redémarrera après la réinitialisation.",
     "resetStore": "Réinitialiser Electron Store",
@@ -983,6 +984,18 @@
       "title": "Dossier des plugins non défini",
       "message": "Définis le chemin du dossier des plugins dans les Paramètres avant d'ajouter un plugin."
     },
+    "editSlotCounts": {
+      "title": "Nombre de slots",
+      "message": "Nombre de slots affichés en jeu pour chaque perso de ce mod. Enregistré dans ui_chara_db.prcxml.",
+      "highestSlot": "Plus haut slot du mod : {{slot}} (il en faut au moins {{count}})"
+    },
+    "slotCount": {
+      "title": "Slots de skins cachés",
+      "message": "Des mods actifs indiquent moins de slots que ceux installés, donc ces skins ne s'affichent pas en jeu. MOSAIC peut augmenter le nombre de slots dans ces mods.",
+      "item": "{{fighter}} : {{current}} slots, il en faut {{expected}}",
+      "missing": "non défini",
+      "fix": "Corriger les slots"
+    },
     "nroLimit": {
       "title": "Limite .nro dépassée",
       "message": "{{count}} fichiers .nro actifs détectés. La limite est de {{limit}}, en émulateur comme sur vraie Switch. Désactivez ou retirez {{overflow}} fichier(s) .nro.",
@@ -1206,6 +1219,7 @@
   "contextMenu": {
     "rename": "Renommer",
     "changeSlot": "Changer le Slot",
+    "editSlotCounts": "Nombre de slots (PRCXML)",
     "toggle": "Basculer",
     "enable": "Activer",
     "disable": "Désactiver",
@@ -1630,6 +1644,11 @@
     "switchReconnected": "Switch reconnectée.",
     "directSwitchLibraryNoSync": "La librairie est déjà lue directement depuis la Switch. Aucune synchronisation n'est nécessaire.",
     "reconnectSwitchBeforeSyncToPc": "Rebranche ta Switch ou remonte la carte SD avant de synchroniser les mods sur ce PC.",
+    "slotCountSaved": "Nombre de slots enregistré",
+    "noFighterSlots": "Ce mod n'a pas de slots de perso",
+    "invalidSlotCount": "Le nombre de slots doit être un entier entre 1 et 255",
+    "slotCountFixed": "Nombre de slots corrigé dans {{count}} mod(s)",
+    "slotCountFixFailed": "Impossible de corriger le nombre de slots : {{mods}}",
     "nroLimitExceeded": "{{count}} fichiers .nro actifs détectés. Limite Switch: {{limit}}. Désactivez ou retirez {{overflow}} fichier(s) .nro.",
     "slotBackupRestored": "Mod restauré depuis la sauvegarde",
     "soundAssigned": "Sons assignés à {{name}} ({{slot}})",

@@ -146,6 +146,40 @@ class SettingsDeveloperSection {
         testNroLimitModalBtn.dataset.listenerAttached = 'true';
       }
 
+      const testSlotCountModalBtn = document.querySelector<HTMLElement>(
+        '#test-slot-count-modal-btn',
+      );
+      if (
+        testSlotCountModalBtn &&
+        !testSlotCountModalBtn.dataset.listenerAttached
+      ) {
+        testSlotCountModalBtn.addEventListener('click', () => {
+          window.modManager?.showSlotCountWarningModal?.(
+            [
+              {
+                index: 49,
+                fighter: 'toonlink',
+                colorNum: 13,
+                mods: [
+                  {
+                    modName: 'Example Outset Toon Link',
+                    modPath: '/example/mods/Example Outset Toon Link',
+                    colorNum: 10,
+                  },
+                  {
+                    modName: 'Example Triforce Heroes Pack',
+                    modPath: '/example/mods/Example Triforce Heroes Pack',
+                    colorNum: null,
+                  },
+                ],
+              },
+            ],
+            () => {},
+          );
+        });
+        testSlotCountModalBtn.dataset.listenerAttached = 'true';
+      }
+
       const openConfigBtn =
         document.querySelector<HTMLElement>('#open-config-btn');
       if (openConfigBtn) {

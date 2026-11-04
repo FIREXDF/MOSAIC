@@ -57,6 +57,9 @@ class ModContextMenuHandler {
             case 'restore-slot-backup':
               await this.modManager.operations.restoreSlotBackup(mod);
               break;
+            case 'edit-slot-counts':
+              await this.modManager.operations.editSlotCounts(mod);
+              break;
             case 'assign-sound':
               await this.modManager.operations.startAssignSoundFlow(mod);
               break;

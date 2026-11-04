@@ -380,6 +380,7 @@ class ModManager {
     }
 
     this.scheduleNroLimitCheck();
+    this.scheduleSlotCountCheck();
     window.dispatchEvent(
       new CustomEvent('mods-library-updated', {
         detail: {
@@ -399,6 +400,12 @@ class ModManager {
     setTimeout(() => {
       this.checkNroLimit();
     }, 1200);
+  }
+
+  scheduleSlotCountCheck() {
+    setTimeout(() => {
+      this.checkSlotCounts();
+    }, 1400);
   }
 
   isBatchTestingLocked() {
@@ -2129,6 +2136,115 @@ class ModManager {
         },
       ],
     });
+  }
+
+  async checkSlotCounts() {
+    if (!this.modsPath || !window.electronAPI?.checkSlotCounts) return;
+
+    try {
+      const result = await window.electronAPI.checkSlotCounts(this.modsPath);
+      if (result?.success && result.issues.length > 0) {
+        this.showSlotCountWarningModal(result.issues);
+      }
+    } catch (error) {
+      console.error('Failed to check slot counts:', error);
+    }
+  }
+
+  showSlotCountWarningModal(
+    issues,
+    onFix: () => void | Promise<void> = () => this.fixSlotCounts(),
+  ) {
+    if (!window.modalManager?.showCustomModal) return;
+
+    const t = (key: string, params?: Record<string, string>) =>
+      window.i18n?.t?.(key, params) || key;
+
+    const body = document.createElement('div');
+    body.className = 'slot-count-warning-modal';
+
+    const summary = document.createElement('p');
+    summary.style.cssText =
+      'margin: 0 0 14px; color: var(--text-secondary); line-height: 1.6;';
+    summary.textContent = t('modals.slotCount.message');
+    body.appendChild(summary);
+
+    const list = document.createElement('div');
+    list.style.cssText =
+      'display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow: auto;';
+
+    issues.forEach((issue) => {
+      const fighterId = window.resolveFolderName
+        ? window.resolveFolderName(issue.fighter)
+        : issue.fighter;
+
+      issue.mods.forEach((mod) => {
+        const item = document.createElement('div');
+        item.style.cssText =
+          'padding: 10px 12px; border: 1px solid var(--border-hover); border-radius: 8px; background: var(--bg-primary);';
+
+        const name = document.createElement('strong');
+        name.style.cssText =
+          'display: block; color: var(--text-primary); font-size: 13px; margin-bottom: 4px;';
+        name.textContent = mod.modName;
+
+        const detail = document.createElement('span');
+        detail.style.cssText =
+          'display: block; color: var(--text-muted); font-size: 12px;';
+        detail.textContent = t('modals.slotCount.item', {
+          fighter: window.SSBU_CHARACTERS?.[fighterId]?.name || issue.fighter,
+          current: String(mod.colorNum ?? t('modals.slotCount.missing')),
+          expected: String(issue.colorNum),
+        });
+
+        item.append(name, detail);
+        list.appendChild(item);
+      });
+    });
+
+    body.appendChild(list);
+
+    window.modalManager.showCustomModal({
+      id: 'slot-count-warning-modal',
+      title: t('modals.slotCount.title'),
+      body,
+      size: 'normal',
+      buttons: [
+        {
+          text: t('common.cancel'),
+          type: 'cancel',
+        },
+        {
+          text: t('modals.slotCount.fix'),
+          type: 'primary',
+          onClick: onFix,
+        },
+      ],
+    });
+  }
+
+  async fixSlotCounts() {
+    if (!this.modsPath) return;
+
+    try {
+      const result = await window.electronAPI.fixSlotCounts(this.modsPath);
+      if (!result?.success) throw new Error(result?.error);
+
+      if (result.failedMods.length > 0) {
+        window.toastManager?.error('toasts.slotCountFixFailed', 6000, {
+          mods: result.failedMods.join(', '),
+        });
+      } else {
+        window.toastManager?.success('toasts.slotCountFixed', undefined, {
+          count: String(result.fixedMods),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fix slot counts:', error);
+      window.toastManager?.error('toasts.slotCountFixFailed', 6000, {
+        mods: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   createExactConflictPathPattern(filePath: string) {

@@ -7,9 +7,17 @@ import { app } from 'electron';
 import { ModInstallResult } from '../plugin-update-installer';
 import { FileExtractor } from '../utils/file-extractor';
 import { resolveVirtualPath } from '../utils/virtual-paths';
-import { CONFLICT_WHITELIST_PATTERNS } from '../config';
+import { CONFLICT_WHITELIST_PATTERNS, PATHS } from '../config';
 import sharedStore from '../store';
 import { prcXmlContentsConflict } from './prcxml-conflicts';
+import { SlotChanger } from './slot-changer';
+import {
+  FIGHTER_SLOT_PATTERN,
+  UI_CHARA_DB_PRCXML,
+  VANILLA_COLOR_NUM,
+  readColorNums,
+  setColorNum,
+} from './slot-counts';
 import PluginUtils from '../plugin-utils';
 
 interface ModInstallOptions {
@@ -69,6 +77,25 @@ export interface NroLimitCheckResult {
     modPath: string;
     relativePath: string;
   }>;
+}
+
+export interface SlotCountIssue {
+  index: number;
+  fighter: string;
+  colorNum: number;
+  mods: Array<{
+    modName: string;
+    modPath: string;
+    colorNum: number | null;
+  }>;
+}
+
+export interface ModSlotCount {
+  index: number;
+  fighter: string;
+  colorNum: number;
+  highestSlot: number;
+  inPrcxml: boolean;
 }
 
 type BatchModState = 'active' | 'disabled';
@@ -925,6 +952,209 @@ export default class ModUtils {
       exceedsLimit: files.length > limit,
       files,
     };
+  }
+
+  private static async readModSlotCounts(
+    modPath: string,
+    fighterIndexes: Map<string, number>,
+  ): Promise<Map<number, number>> {
+    const slotCounts = new Map<number, number>();
+
+    for (const relativePath of await this.scanRelativeFilePaths(modPath)) {
+      const match = this.normalizeRelativeModPath(relativePath)
+        .toLowerCase()
+        .match(FIGHTER_SLOT_PATTERN);
+      if (!match) continue;
+
+      const colorNum = parseInt(match[2]) + 1;
+      for (const name of SlotChanger.getPrcxmlGroup(match[1])) {
+        const index = fighterIndexes.get(name);
+        if (index !== undefined && colorNum > (slotCounts.get(index) ?? 0)) {
+          slotCounts.set(index, colorNum);
+        }
+      }
+    }
+
+    return slotCounts;
+  }
+
+  private static async readModColorNums(
+    modPath: string,
+    fighterIndexes: Map<string, number>,
+  ): Promise<Map<number, number>> {
+    try {
+      const content = await fsPromises.readFile(
+        path.join(modPath, UI_CHARA_DB_PRCXML),
+        'utf8',
+      );
+      return readColorNums(content, fighterIndexes);
+    } catch {
+      return new Map();
+    }
+  }
+
+  private static async writeModColorNums(
+    modPath: string,
+    entries: Array<[number, number]>,
+    fighterIndexes: Map<string, number>,
+  ): Promise<boolean> {
+    const prcxmlPath = path.join(modPath, UI_CHARA_DB_PRCXML);
+    let content: string | null = await fsPromises.readFile(
+      fs.existsSync(prcxmlPath)
+        ? prcxmlPath
+        : path.join(PATHS.dataDir(), 'ui_chara_db.prcxml'),
+      'utf8',
+    );
+
+    for (const [index, colorNum] of entries) {
+      content =
+        content && setColorNum(content, index, colorNum, fighterIndexes);
+    }
+    if (!content) return false;
+
+    await fsPromises.mkdir(path.dirname(prcxmlPath), { recursive: true });
+    await fsPromises.writeFile(prcxmlPath, content, 'utf8');
+    return true;
+  }
+
+  static async checkSlotCounts(activeMods: Mod[]): Promise<SlotCountIssue[]> {
+    const fighterIndexes = await SlotChanger.readFighterIndexes();
+    const fighterNames = new Map(
+      [...fighterIndexes].map(([name, index]) => [index, name]),
+    );
+    const highestSlots = new Map<
+      number,
+      { colorNum: number; modIndex: number }
+    >();
+    const modColorNums = new Map<number, Map<number, number>>();
+
+    await Promise.all(
+      activeMods.map(async (mod, modIndex) => {
+        if (!mod.path || !fs.existsSync(mod.path)) return;
+
+        for (const [index, colorNum] of await this.readModSlotCounts(
+          mod.path,
+          fighterIndexes,
+        )) {
+          if (
+            colorNum > (highestSlots.get(index)?.colorNum ?? VANILLA_COLOR_NUM)
+          ) {
+            highestSlots.set(index, { colorNum, modIndex });
+          }
+        }
+
+        for (const [index, colorNum] of await this.readModColorNums(
+          mod.path,
+          fighterIndexes,
+        )) {
+          if (!modColorNums.has(index)) modColorNums.set(index, new Map());
+          modColorNums.get(index)!.set(modIndex, colorNum);
+        }
+      }),
+    );
+
+    const issues: SlotCountIssue[] = [];
+
+    for (const index of new Set([
+      ...highestSlots.keys(),
+      ...modColorNums.keys(),
+    ])) {
+      const colorNums = modColorNums.get(index) || new Map<number, number>();
+      const highestSlot = highestSlots.get(index);
+      const colorNum = Math.max(
+        VANILLA_COLOR_NUM,
+        highestSlot?.colorNum ?? 0,
+        ...colorNums.values(),
+      );
+      const mods = [...colorNums]
+        .filter(([, modColorNum]) => modColorNum < colorNum)
+        .map(([modIndex, modColorNum]) => ({
+          modIndex,
+          colorNum: modColorNum as number | null,
+        }));
+
+      if (colorNums.size === 0 && highestSlot) {
+        mods.push({ modIndex: highestSlot.modIndex, colorNum: null });
+      }
+      if (mods.length === 0) continue;
+
+      issues.push({
+        index,
+        fighter: fighterNames.get(index) || String(index),
+        colorNum,
+        mods: mods.map((mod) => ({
+          modName: activeMods[mod.modIndex].name,
+          modPath: activeMods[mod.modIndex].path,
+          colorNum: mod.colorNum,
+        })),
+      });
+    }
+
+    return issues.sort((a, b) => a.fighter.localeCompare(b.fighter));
+  }
+
+  static async fixSlotCounts(
+    activeMods: Mod[],
+  ): Promise<{ fixedMods: number; failedMods: string[] }> {
+    const fighterIndexes = await SlotChanger.readFighterIndexes();
+    const updates = new Map<string, Array<[number, number]>>();
+
+    for (const issue of await this.checkSlotCounts(activeMods)) {
+      for (const mod of issue.mods) {
+        if (!updates.has(mod.modPath)) updates.set(mod.modPath, []);
+        updates.get(mod.modPath)!.push([issue.index, issue.colorNum]);
+      }
+    }
+
+    const failedMods: string[] = [];
+
+    for (const [modPath, entries] of updates) {
+      if (!(await this.writeModColorNums(modPath, entries, fighterIndexes))) {
+        failedMods.push(path.basename(modPath));
+      }
+    }
+
+    return { fixedMods: updates.size - failedMods.length, failedMods };
+  }
+
+  static async getModSlotCounts(modPath: string): Promise<ModSlotCount[]> {
+    const fighterIndexes = await SlotChanger.readFighterIndexes();
+    const fighterNames = new Map(
+      [...fighterIndexes].map(([name, index]) => [index, name]),
+    );
+    const slotCounts = await this.readModSlotCounts(modPath, fighterIndexes);
+    const colorNums = await this.readModColorNums(modPath, fighterIndexes);
+
+    return [...new Set([...slotCounts.keys(), ...colorNums.keys()])]
+      .map((index) => ({
+        index,
+        fighter: fighterNames.get(index) || String(index),
+        colorNum:
+          colorNums.get(index) ??
+          Math.max(VANILLA_COLOR_NUM, slotCounts.get(index) ?? 0),
+        highestSlot: (slotCounts.get(index) ?? 0) - 1,
+        inPrcxml: colorNums.has(index),
+      }))
+      .sort((a, b) => a.fighter.localeCompare(b.fighter));
+  }
+
+  static async setModSlotCounts(
+    modPath: string,
+    entries: Array<{ index: number; colorNum: number }>,
+  ): Promise<boolean> {
+    const invalid = entries.some(
+      (entry) =>
+        !Number.isInteger(entry.colorNum) ||
+        entry.colorNum < 1 ||
+        entry.colorNum > 255,
+    );
+    if (invalid) throw new Error('Slot count must be between 1 and 255');
+
+    return this.writeModColorNums(
+      modPath,
+      entries.map((entry) => [entry.index, entry.colorNum]),
+      await SlotChanger.readFighterIndexes(),
+    );
   }
 
   static copyRecursiveSync(src, dest) {

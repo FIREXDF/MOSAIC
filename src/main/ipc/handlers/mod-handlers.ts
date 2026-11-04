@@ -2,7 +2,11 @@ import { shell, dialog, ipcMain, IpcMainInvokeEvent, app, IpcMain, BrowserWindow
 import * as path from 'path';
 import * as fs from 'fs';
 
-import ModUtils, { Mod } from '../../mod-utils';
+import ModUtils, {
+  Mod,
+  ModSlotCount,
+  SlotCountIssue,
+} from '../../mod-utils';
 import { captureModsDebugSnapshot } from '../../debug-library-snapshot';
 import store from '../../store';
 import downloadsStore from '../../store-downloads';
@@ -835,6 +839,69 @@ const ModHandlers = {
       };
     } catch (error) {
       handleError(error, 'check-nro-limit');
+      return createErrorResponse(ErrorCodes.MOD_READ_ERROR, error.message);
+    }
+  },
+
+  ['check-slot-counts']: async (
+    common: BaseHandlerArg,
+    modsPath: string,
+  ): HandlerResponse<{ issues: SlotCountIssue[] }> => {
+    try {
+      const result = ModUtils.readAllMods(modsPath);
+      return {
+        success: true,
+        issues: await ModUtils.checkSlotCounts(result.activeMods),
+      };
+    } catch (error) {
+      handleError(error, 'check-slot-counts');
+      return createErrorResponse(ErrorCodes.MOD_READ_ERROR, error.message);
+    }
+  },
+
+  ['fix-slot-counts']: async (
+    common: BaseHandlerArg,
+    modsPath: string,
+  ): HandlerResponse<{ fixedMods: number; failedMods: string[] }> => {
+    try {
+      const result = ModUtils.readAllMods(modsPath);
+      return {
+        success: true,
+        ...(await ModUtils.fixSlotCounts(result.activeMods)),
+      };
+    } catch (error) {
+      handleError(error, 'fix-slot-counts');
+      return createErrorResponse(ErrorCodes.MOD_READ_ERROR, error.message);
+    }
+  },
+
+  ['get-mod-slot-counts']: async (
+    common: BaseHandlerArg,
+    modPath: string,
+  ): HandlerResponse<{ slotCounts: ModSlotCount[] }> => {
+    try {
+      return {
+        success: true,
+        slotCounts: await ModUtils.getModSlotCounts(modPath),
+      };
+    } catch (error) {
+      handleError(error, 'get-mod-slot-counts');
+      return createErrorResponse(ErrorCodes.MOD_READ_ERROR, error.message);
+    }
+  },
+
+  ['set-mod-slot-counts']: async (
+    common: BaseHandlerArg,
+    modPath: string,
+    entries: Array<{ index: number; colorNum: number }>,
+  ): HandlerResponse<{ written: boolean }> => {
+    try {
+      return {
+        success: true,
+        written: await ModUtils.setModSlotCounts(modPath, entries),
+      };
+    } catch (error) {
+      handleError(error, 'set-mod-slot-counts');
       return createErrorResponse(ErrorCodes.MOD_READ_ERROR, error.message);
     }
   },

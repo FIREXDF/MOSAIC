@@ -387,6 +387,129 @@ class ModOperations {
     });
   }
 
+  async editSlotCounts(mod: Mod) {
+    if (!mod.path || !window.modalManager) return;
+
+    const t = (key: string, params?: Record<string, string>) =>
+      window.i18n?.t?.(key, params) || key;
+
+    const result = await window.electronAPI.getModSlotCounts(mod.path);
+    if (!result.success) {
+      window.toastManager?.error('toasts.slotCountFixFailed', 4000, {
+        mods: result.error,
+      });
+      return;
+    }
+    if (result.slotCounts.length === 0) {
+      window.toastManager?.info('toasts.noFighterSlots');
+      return;
+    }
+
+    const body = document.createElement('div');
+
+    const summary = document.createElement('p');
+    summary.style.cssText =
+      'margin: 0 0 14px; color: var(--text-secondary); line-height: 1.6;';
+    summary.textContent = t('modals.editSlotCounts.message');
+    body.appendChild(summary);
+
+    const list = document.createElement('div');
+    list.style.cssText =
+      'display: flex; flex-direction: column; gap: 12px; max-height: 320px; overflow: auto;';
+
+    const inputs = result.slotCounts.map((entry) => {
+      const fighterId = window.resolveFolderName
+        ? window.resolveFolderName(entry.fighter)
+        : entry.fighter;
+
+      const field = document.createElement('label');
+      field.className = 'character-css-field';
+
+      const name = document.createElement('span');
+      name.textContent =
+        window.SSBU_CHARACTERS?.[fighterId]?.name || entry.fighter;
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = '1';
+      input.max = '255';
+      input.step = '1';
+      input.value = String(entry.colorNum);
+
+      field.append(name, input);
+
+      if (entry.highestSlot >= 0) {
+        const hint = document.createElement('small');
+        hint.style.cssText = 'color: var(--text-muted); font-size: 12px;';
+        hint.textContent = t('modals.editSlotCounts.highestSlot', {
+          slot: `c${String(entry.highestSlot).padStart(2, '0')}`,
+          count: String(entry.highestSlot + 1),
+        });
+        field.appendChild(hint);
+      }
+
+      list.appendChild(field);
+      return { entry, input };
+    });
+
+    body.appendChild(list);
+
+    window.modalManager.showCustomModal({
+      id: 'edit-slot-counts-modal',
+      title: t('modals.editSlotCounts.title'),
+      body,
+      size: 'normal',
+      buttons: [
+        { text: t('common.cancel'), type: 'secondary' },
+        {
+          text: t('common.save'),
+          type: 'primary',
+          onClick: () => {
+            const values = inputs.map(({ entry, input }) => ({
+              entry,
+              colorNum: Number(input.value),
+            }));
+            if (
+              values.some(
+                ({ colorNum }) =>
+                  !Number.isInteger(colorNum) ||
+                  colorNum < 1 ||
+                  colorNum > 255,
+              )
+            ) {
+              window.toastManager?.error('toasts.invalidSlotCount');
+              return false;
+            }
+
+            const entries = values
+              .filter(
+                ({ entry, colorNum }) =>
+                  colorNum !== entry.colorNum ||
+                  (!entry.inPrcxml && colorNum > 8),
+              )
+              .map(({ entry, colorNum }) => ({ index: entry.index, colorNum }));
+            if (entries.length === 0) return;
+
+            void (async () => {
+              const saved = await window.electronAPI.setModSlotCounts(
+                mod.path,
+                entries,
+              );
+              if (saved.success && saved.written) {
+                window.toastManager?.success('toasts.slotCountSaved');
+                await this.modManager.fetchMods([mod.path]);
+              } else {
+                window.toastManager?.error('toasts.slotCountFixFailed', 4000, {
+                  mods: saved.success ? mod.name : saved.error,
+                });
+              }
+            })();
+          },
+        },
+      ],
+    });
+  }
+
   async startAssignSoundFlow(mod: Mod) {
     const modsPath = this.modManager.modsPath;
     if (!mod.path || !modsPath || !window.modalManager) return;

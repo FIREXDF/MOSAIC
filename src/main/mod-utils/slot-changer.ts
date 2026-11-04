@@ -436,12 +436,12 @@ export class SlotChanger {
     return this.PRCXML_ALIASES[fighterName] || fighterName;
   }
 
-  private static getPrcxmlGroup(fighterName: string): string[] {
+  static getPrcxmlGroup(fighterName: string): string[] {
     const name = this.getPrcxmlName(fighterName);
     return this.PRCXML_GROUPS.find((group) => group.includes(name)) || [name];
   }
 
-  private static async readFighterIndexes(): Promise<Map<string, number>> {
+  static async readFighterIndexes(): Promise<Map<string, number>> {
     const namesData = await ModFileOperations.readModFile(
       path.join(PATHS.dataDir(), 'names.data'),
     );
