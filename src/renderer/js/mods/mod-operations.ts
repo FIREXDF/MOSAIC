@@ -387,6 +387,137 @@ class ModOperations {
     });
   }
 
+  async startAssignSoundFlow(mod: Mod) {
+    const modsPath = this.modManager.modsPath;
+    if (!mod.path || !modsPath || !window.modalManager) return;
+
+    const t = (key: string, fallback: string) => {
+      const value = window.i18n?.t?.(key);
+      return value && value !== key ? value : fallback;
+    };
+
+    const result = await window.electronAPI.getSoundAssignTargets(
+      mod.path,
+      modsPath,
+    );
+
+    if (!result.success) {
+      window.toastManager?.error('toasts.failedToAssignSound', 4000, {
+        error: result.error,
+      });
+      return;
+    }
+
+    if (result.targets.length === 0) {
+      window.toastManager?.error('toasts.noModelForSound', 4000, {
+        fighter: result.fighter,
+      });
+      return;
+    }
+
+    const body = document.createElement('div');
+    const message = document.createElement('p');
+    message.textContent = t(
+      'modals.assignSound.message',
+      'The sounds will be copied into the chosen model mod and renamed for its slot. This sound mod will then be disabled.',
+    );
+    body.appendChild(message);
+
+    const choices = document.createElement('fieldset');
+    choices.className = 'plugin-version-choices';
+    const legend = document.createElement('legend');
+    legend.className = 'plugin-version-legend';
+    legend.textContent = t('modals.assignSound.choose', 'Choose a model');
+    choices.appendChild(legend);
+
+    result.targets.forEach((target, targetIndex) => {
+      target.slots.forEach((slot, slotIndex) => {
+        const option = document.createElement('label');
+        option.className = 'plugin-version-option';
+        const title = document.createElement('span');
+        title.className = 'plugin-version-option-title';
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'assign-sound-target';
+        input.value = `${targetIndex}:${slot}`;
+        input.checked = targetIndex === 0 && slotIndex === 0;
+        title.append(input, ` ${target.name}`);
+        const badge = document.createElement('span');
+        badge.className = 'plugin-version-badge';
+        badge.textContent = slot;
+        title.appendChild(badge);
+        option.appendChild(title);
+        choices.appendChild(option);
+      });
+    });
+    body.appendChild(choices);
+
+    const hint = document.createElement('p');
+    hint.className = 'modal-hint';
+    hint.textContent = t(
+      'modals.assignSound.backupHint',
+      'Existing sounds in that model mod are replaced. You can undo it with "Restore backup" on the model mod.',
+    );
+    body.appendChild(hint);
+
+    window.modalManager.showCustomModal({
+      id: 'assign-sound-modal',
+      title: t('modals.assignSound.title', 'Assign to a model'),
+      body,
+      size: 'normal',
+      buttons: [
+        { text: t('common.cancel', 'Cancel'), type: 'secondary' },
+        {
+          text: t('modals.assignSound.confirm', 'Assign'),
+          type: 'primary',
+          onClick: async (_event, modal) => {
+            const selected = modal.querySelector<HTMLInputElement>(
+              'input[name="assign-sound-target"]:checked',
+            );
+            if (!selected) return false;
+
+            const [targetIndex, slot] = selected.value.split(':');
+            const target = result.targets[Number(targetIndex)];
+            const assignResult = await window.electronAPI.assignSoundToModel(
+              mod.path,
+              target.path,
+              slot,
+            );
+
+            if (!assignResult.success) {
+              window.toastManager?.error('toasts.failedToAssignSound', 4000, {
+                error: assignResult.error,
+              });
+              return false;
+            }
+
+            if (mod.status !== 'disabled') {
+              const toggleResult = await window.electronAPI.toggleMod(
+                mod.path,
+                modsPath,
+              );
+              if (!toggleResult.success) {
+                window.toastManager?.warning(
+                  'toasts.soundAssignedNotDisabled',
+                  4000,
+                  { error: toggleResult.error },
+                );
+                await this.modManager.fetchMods();
+                return;
+              }
+            }
+
+            window.toastManager?.success('toasts.soundAssigned', 3000, {
+              name: target.name,
+              slot,
+            });
+            await this.modManager.fetchMods();
+          },
+        },
+      ],
+    });
+  }
+
   async startChangeSlotsFlow(mod: Mod) {
     if (!mod.path) {
       if (window.toastManager) {

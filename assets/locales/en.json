@@ -1194,6 +1194,13 @@
       "title": "Restore backup",
       "message": "Restore this mod as it was before the last slot change? Changes made since then will be lost.",
       "confirm": "Restore"
+    },
+    "assignSound": {
+      "title": "Assign to a model",
+      "message": "The sounds will be copied into the chosen model mod and renamed for its slot. This sound mod will then be disabled.",
+      "choose": "Choose a model",
+      "backupHint": "Existing sounds in that model mod are replaced. You can undo it with \"Restore backup\" on the model mod.",
+      "confirm": "Assign"
     }
   },
   "contextMenu": {
@@ -1208,7 +1215,8 @@
     "browseFiles": "Browse Files",
     "uninstall": "Uninstall",
     "uninstallSelected": "Uninstall Selected ({{count}})",
-    "restoreSlotBackup": "Restore backup from before the slot change"
+    "restoreSlotBackup": "Restore backup from before the slot change",
+    "assignSound": "Assign to a model"
   },
   "modFileBrowser": {
     "title": "Mod files",
@@ -1624,6 +1632,10 @@
     "reconnectSwitchBeforeSyncToPc": "Reconnect your Switch or remount the SD card before syncing mods back to this PC.",
     "nroLimitExceeded": "{{count}} active .nro files detected. Switch limit: {{limit}}. Disable or remove {{overflow}} .nro file(s).",
     "slotBackupRestored": "Mod restored from backup",
+    "soundAssigned": "Sounds assigned to {{name}} ({{slot}})",
+    "soundAssignedNotDisabled": "Sounds assigned, but the sound mod could not be disabled: {{error}}",
+    "failedToAssignSound": "Failed to assign sounds: {{error}}",
+    "noModelForSound": "No model mod found for {{fighter}}",
     "failedToRestoreSlotBackup": "Failed to restore backup: {{error}}"
   },
   "statusBar": {

@@ -1194,6 +1194,13 @@
       "title": "Restaurer la sauvegarde",
       "message": "Restaurer ce mod tel qu'il était avant le dernier changement de slot ? Les modifications faites depuis seront perdues.",
       "confirm": "Restaurer"
+    },
+    "assignSound": {
+      "title": "Assigner à un modèle",
+      "message": "Les sons seront copiés dans le mod modèle choisi et renommés pour son slot. Ce mod son sera ensuite désactivé.",
+      "choose": "Choisir un modèle",
+      "backupHint": "Les sons déjà présents dans ce mod modèle seront remplacés. Tu peux annuler avec « Restaurer la sauvegarde » sur le mod modèle.",
+      "confirm": "Assigner"
     }
   },
   "contextMenu": {
@@ -1208,7 +1215,8 @@
     "browseFiles": "Parcourir les fichiers",
     "uninstall": "Désinstaller",
     "uninstallSelected": "Desinstaller la selection ({{count}})",
-    "restoreSlotBackup": "Restaurer la sauvegarde d'avant le changement de slot"
+    "restoreSlotBackup": "Restaurer la sauvegarde d'avant le changement de slot",
+    "assignSound": "Assigner à un modèle"
   },
   "modFileBrowser": {
     "title": "Fichiers du mod",
@@ -1624,6 +1632,10 @@
     "reconnectSwitchBeforeSyncToPc": "Rebranche ta Switch ou remonte la carte SD avant de synchroniser les mods sur ce PC.",
     "nroLimitExceeded": "{{count}} fichiers .nro actifs détectés. Limite Switch: {{limit}}. Désactivez ou retirez {{overflow}} fichier(s) .nro.",
     "slotBackupRestored": "Mod restauré depuis la sauvegarde",
+    "soundAssigned": "Sons assignés à {{name}} ({{slot}})",
+    "soundAssignedNotDisabled": "Sons assignés, mais le mod son n'a pas pu être désactivé : {{error}}",
+    "failedToAssignSound": "Échec de l'assignation des sons : {{error}}",
+    "noModelForSound": "Aucun mod modèle trouvé pour {{fighter}}",
     "failedToRestoreSlotBackup": "Échec de la restauration : {{error}}"
   },
   "statusBar": {

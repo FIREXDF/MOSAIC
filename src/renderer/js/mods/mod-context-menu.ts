@@ -57,6 +57,9 @@ class ModContextMenuHandler {
             case 'restore-slot-backup':
               await this.modManager.operations.restoreSlotBackup(mod);
               break;
+            case 'assign-sound':
+              await this.modManager.operations.startAssignSoundFlow(mod);
+              break;
             case 'toggle':
               if (useSelection) {
                 await this.modManager.operations.toggleModsStatus(
@@ -560,6 +563,17 @@ class ModContextMenuHandler {
           ? await window.electronAPI?.hasSlotBackup?.(mod.path).catch(() => null)
           : null;
       restoreItem.style.display = backup?.success && backup.exists ? '' : 'none';
+    }
+    const assignSoundItem = contextMenu.querySelector<HTMLElement>(
+      '[data-action="assign-sound"]',
+    );
+    if (assignSoundItem) {
+      const sound =
+        !useSelection && mod.path
+          ? await window.electronAPI?.isSoundMod?.(mod.path).catch(() => null)
+          : null;
+      assignSoundItem.style.display =
+        sound?.success && sound.soundMod ? '' : 'none';
     }
     contextMenu.dataset.useSelection = useSelection ? 'true' : 'false';
 

@@ -22,6 +22,7 @@ import {
   ScanModResult,
 } from '../../mod-utils/mod-scanner';
 import { ConfigMode, SlotChanger } from '../../mod-utils/slot-changer';
+import { SoundAssigner } from '../../mod-utils/sound-assigner';
 import PluginUpdateChecker, {
   ModUpdateResult,
   ModUpdateWatch,
@@ -684,6 +685,79 @@ const ModHandlers = {
       return { success: true };
     } catch (error) {
       handleError(error, 'restore-slot-backup');
+      return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
+    }
+  },
+
+  ['is-sound-mod']: async (
+    common: BaseHandlerArg,
+    modPath: string,
+  ): HandlerResponse<{ soundMod: boolean }> => {
+    try {
+      return {
+        success: true,
+        soundMod: await SoundAssigner.isSoundMod(modPath),
+      };
+    } catch (error) {
+      handleError(error, 'is-sound-mod');
+      return createErrorResponse(ErrorCodes.MOD_READ_ERROR, error.message);
+    }
+  },
+
+  ['get-sound-assign-targets']: async (
+    common: BaseHandlerArg,
+    soundModPath: string,
+    modsPath: string,
+  ): HandlerResponse<{
+    fighter: string;
+    targets: Array<{
+      name: string;
+      path: string;
+      status: Mod['status'];
+      slots: string[];
+    }>;
+  }> => {
+    try {
+      const { fighters } = await SoundAssigner.readSoundMod(soundModPath);
+      const { activeMods, disabledMods } = ModUtils.readAllMods(modsPath);
+      const targets: Array<Pick<Mod, 'name' | 'path' | 'status'> & { slots: string[] }> = [];
+
+      for (const mod of [...activeMods, ...disabledMods]) {
+        if (path.resolve(mod.path) === path.resolve(soundModPath)) continue;
+
+        const slots = await SoundAssigner.listModelSlots(mod.path, fighters);
+        if (slots.length > 0) {
+          targets.push({
+            name: mod.name,
+            path: mod.path,
+            status: mod.status,
+            slots,
+          });
+        }
+      }
+
+      return { success: true, fighter: fighters.join(' + '), targets };
+    } catch (error) {
+      handleError(error, 'get-sound-assign-targets');
+      return createErrorResponse(ErrorCodes.MOD_READ_ERROR, error.message);
+    }
+  },
+
+  ['assign-sound-to-model']: async (
+    common: BaseHandlerArg,
+    soundModPath: string,
+    targetModPath: string,
+    slot: string,
+  ): HandlerResponse<{ copiedFiles: number }> => {
+    try {
+      const { copiedFiles } = await SoundAssigner.assignToModel(
+        soundModPath,
+        targetModPath,
+        slot,
+      );
+      return { success: true, copiedFiles };
+    } catch (error) {
+      handleError(error, 'assign-sound-to-model');
       return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
     }
   },

@@ -99,6 +99,14 @@ export class ConfigGenerator {
     this.isInitialized = true;
   }
 
+  private static vanillaFiles?: Set<string>;
+
+  static async isVanillaFile(filePath: string): Promise<boolean> {
+    await this.init();
+    this.vanillaFiles ??= new Set(this.vanillaData?.file_array || []);
+    return this.vanillaFiles.has(filePath);
+  }
+
   static hasVanillaFighter(fighterName: string): boolean {
     return Boolean(
       this.vanillaData?.dirs?.directories?.fighter?.directories?.[fighterName],
