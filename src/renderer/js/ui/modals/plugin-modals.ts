@@ -548,14 +548,29 @@ export {};
             <i class="bi ${isGameBanana ? 'bi-box-arrow-up-right' : 'bi-github'}"></i>
             <span>${isGameBanana ? 'View on GameBanana' : 'View on GitHub'}</span>
           </a>
-          <button class="${buttonClass}" 
-                  data-plugin-name="${escapeHtml(plugin.name)}"
-                  data-plugin-repo="${escapeHtml(plugin.repo)}"
-                  data-special-installer="${escapeHtml(plugin.specialInstaller || '')}"
-                  data-is-installed="${isInstalled}">
-            <i class="bi ${buttonIcon}"></i>
-            <span ${buttonTextKey ? `data-i18n="${buttonTextKey}"` : ''}>${buttonDefaultText}</span>
-          </button>
+          <div class="marketplace-install-group">
+            <button class="${buttonClass}"
+                    data-plugin-name="${escapeHtml(plugin.name)}"
+                    data-plugin-repo="${escapeHtml(plugin.repo)}"
+                    data-special-installer="${escapeHtml(plugin.specialInstaller || '')}"
+                    data-is-installed="${isInstalled}">
+              <i class="bi ${buttonIcon}"></i>
+              <span ${buttonTextKey ? `data-i18n="${buttonTextKey}"` : ''}>${buttonDefaultText}</span>
+            </button>
+            ${isCskCollection ? '' : `
+            <button type="button" class="marketplace-card-version-btn"
+                    data-plugin-repo="${escapeHtml(plugin.repo)}"
+                    aria-haspopup="menu" aria-expanded="false"
+                    data-i18n="plugins.moreInstallOptions" data-i18n-aria-label aria-label="More install options">
+              <i class="bi bi-chevron-down"></i>
+            </button>
+            <div class="marketplace-version-menu" role="menu" hidden>
+              <button type="button" role="menuitem" class="marketplace-version-menu-item">
+                <i class="bi bi-clock-history"></i>
+                <span data-i18n="plugins.chooseVersion">Choose version</span>
+              </button>
+            </div>`}
+          </div>
         </div>
       </div>
     `;
@@ -744,6 +759,204 @@ export {};
           window.i18n?.updateDOM();
         }
       });
+    });
+
+    const closeVersionMenus = () => {
+      container.querySelectorAll<HTMLElement>('.marketplace-version-menu').forEach((menu) => {
+        menu.hidden = true;
+        menu.previousElementSibling?.setAttribute('aria-expanded', 'false');
+      });
+    };
+    if (!container.dataset.versionMenuBound) {
+      container.dataset.versionMenuBound = 'true';
+      const outsideClick = (event: MouseEvent) => {
+        if (!document.body.contains(container)) {
+          document.removeEventListener('click', outsideClick);
+          return;
+        }
+        if (!(event.target as HTMLElement).closest('.marketplace-install-group')) closeVersionMenus();
+      };
+      document.addEventListener('click', outsideClick);
+    }
+
+    container.querySelectorAll<HTMLButtonElement>('.marketplace-card-version-btn').forEach((toggle) => {
+      const menu = toggle.nextElementSibling as HTMLElement;
+      toggle.addEventListener('click', () => {
+        const opening = menu.hidden;
+        closeVersionMenus();
+        menu.hidden = !opening;
+        toggle.setAttribute('aria-expanded', String(opening));
+      });
+      menu.querySelector<HTMLButtonElement>('.marketplace-version-menu-item')!
+        .addEventListener('click', () => {
+          closeVersionMenus();
+          const plugin = plugins.find((item) => item.repo === toggle.dataset.pluginRepo);
+          const marketplaceModal = toggle.closest<HTMLElement>('#plugin-marketplace-modal');
+          if (plugin && marketplaceModal) this.openPluginVersionModal(plugin, marketplaceModal);
+        });
+    });
+  };
+
+  M.prototype.openPluginVersionModal = async function (
+    plugin: any,
+    marketplaceModal: HTMLElement,
+  ) {
+    document.querySelectorAll('#plugin-version-modal').forEach((existing) => existing.remove());
+    const confirmLabel = '<i class="bi bi-download"></i><span data-i18n="plugins.installSelectedVersion">Install selected version</span>';
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'plugin-version-modal';
+    modal.style.maxWidth = '560px';
+    modal.innerHTML = `
+      <div class="modal-header">
+        <h2><span data-i18n="plugins.chooseVersion">Choose version</span> · ${escapeHtml(plugin.name)}</h2>
+      </div>
+      <div class="modal-body" id="plugin-version-body">
+        <div class="marketplace-loading"><i class="bi bi-arrow-repeat spin"></i><span data-i18n="plugins.loadingVersions">Loading versions...</span></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="modal-btn modal-btn-secondary" id="cancel-plugin-version" data-i18n="common.cancel">Cancel</button>
+        <button type="button" class="modal-btn modal-btn-primary" id="confirm-plugin-version" disabled>${confirmLabel}</button>
+      </div>`;
+    document.body.appendChild(modal);
+    marketplaceModal.style.display = 'none';
+    this.showOverlay();
+    modal.style.display = 'block';
+    window.i18n?.updateDOM();
+
+    const body = modal.querySelector<HTMLElement>('#plugin-version-body')!;
+    const confirmBtn = modal.querySelector<HTMLButtonElement>('#confirm-plugin-version')!;
+    let closing = false;
+    const escapeHandler = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        close();
+      }
+    };
+    const close = () => {
+      if (closing) return;
+      closing = true;
+      document.removeEventListener('keydown', escapeHandler, true);
+      this.closeModal(modal, {
+        skipHideOverlay: true,
+        onModalClosed: () => {
+          modal.remove();
+          if (document.body.contains(marketplaceModal)) marketplaceModal.style.display = 'block';
+          this.showOverlay();
+        },
+      });
+    };
+    document.addEventListener('keydown', escapeHandler, true);
+    modal.querySelector<HTMLButtonElement>('#cancel-plugin-version')!.addEventListener('click', close);
+
+    let choices: Array<{ label: string; url: string; version: string; date: string; tag?: string }>;
+    try {
+      choices = await window.pluginMarketplace.getVersionChoices(plugin);
+    } catch (error) {
+      if (closing) return;
+      body.innerHTML = `
+        <div class="marketplace-empty">
+          <i class="bi bi-exclamation-triangle"></i>
+          <p data-i18n="plugins.versionsUnavailable">Versions could not be loaded.</p>
+          <small>${escapeHtml(error.message || String(error))}</small>
+        </div>`;
+      window.i18n?.updateDOM();
+      return;
+    }
+    if (closing) return;
+
+    if (choices.length === 0) {
+      body.innerHTML = `
+        <div class="marketplace-empty">
+          <i class="bi bi-inbox"></i>
+          <p data-i18n="plugins.noVersions">No installable version found.</p>
+        </div>`;
+      window.i18n?.updateDOM();
+      return;
+    }
+
+    const normalizeVersion = (version: string) => String(version || '').trim().replace(/^v/i, '').toLowerCase();
+    let installedVersion = '';
+    try {
+      const [mappingResult, storedVersions] = await Promise.all([
+        window.electronAPI.getPluginRepoMapping(),
+        window.electronAPI.store.get('pluginVersions'),
+      ]);
+      const mappings = ('mappings' in mappingResult ? mappingResult.mappings : {}) as Record<string, string>;
+      const fileKey = Object.entries(mappings)
+        .find(([, repo]) => repo.toLowerCase() === plugin.repo.toLowerCase())?.[0];
+      installedVersion = fileKey ? normalizeVersion((storedVersions || {})[fileKey]) : '';
+    } catch (error) {
+      console.warn('[openPluginVersionModal] Failed to read installed version:', error);
+    }
+    if (closing) return;
+
+    const isGitHub = plugin.source !== 'gamebanana';
+    body.innerHTML = `
+      <div class="plugin-version-choices-scroll">
+      <fieldset class="plugin-version-choices">
+        ${choices.map((choice, index) => `
+          <label class="plugin-version-option">
+            <span class="plugin-version-option-title">
+              <input type="radio" name="marketplace-plugin-version" value="${index}" ${index === 0 ? 'checked' : ''}>
+              ${escapeHtml(choice.label)}
+              ${choice.tag && choice.tag !== choice.label ? `<code class="plugin-version-tag">${escapeHtml(choice.tag)}</code>` : ''}
+              ${isGitHub && index === 0 ? '<span class="plugin-version-badge" data-i18n="plugins.latestVersion">Latest</span>' : ''}
+              ${installedVersion && normalizeVersion(choice.version) === installedVersion ? '<span class="plugin-version-badge plugin-version-badge-installed"><i class="bi bi-check-circle-fill"></i> <span data-i18n="plugins.installedVersion">Installed version</span></span>' : ''}
+            </span>
+            ${choice.date ? `<span class="plugin-version-option-text">${escapeHtml(new Date(choice.date).toLocaleDateString())}</span>` : ''}
+          </label>`).join('')}
+      </fieldset>
+      </div>`;
+    window.i18n?.updateDOM();
+    confirmBtn.disabled = false;
+
+    const list = body.querySelector<HTMLElement>('.plugin-version-choices-scroll')!;
+    modal.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      list.scrollTop += event.deltaY;
+    }, { passive: false });
+
+    confirmBtn.addEventListener('click', async () => {
+      const selected = body.querySelector<HTMLInputElement>('input[name="marketplace-plugin-version"]:checked');
+      const choice = choices[Number(selected?.value)];
+      if (!choice) return;
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i><span data-i18n="plugins.installing">Installing...</span>';
+      window.i18n?.updateDOM();
+
+      let installed = false;
+      try {
+        if (plugin.specialInstaller === 'one-slot-effects') {
+          await window.pluginMarketplace.installOneSlotEffects({ downloadUrl: choice.url, version: choice.version });
+          window.toastManager?.success(`${plugin.name} ${choice.version} installed`);
+          installed = true;
+        } else {
+          installed = (await window.pluginMarketplace.downloadAndInstallPlugin(
+            plugin.name, plugin.repo, { url: choice.url, version: choice.version },
+          )) === true;
+        }
+      } catch (error) {
+        window.toastManager?.error(error.message || String(error));
+      }
+
+      if (!installed) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = confirmLabel;
+        window.i18n?.updateDOM();
+        return;
+      }
+
+      const installBtn = Array.from(
+        marketplaceModal.querySelectorAll<HTMLButtonElement>('.marketplace-card-install-btn'),
+      ).find((button) => button.dataset.pluginRepo === plugin.repo);
+      if (installBtn) {
+        installBtn.dataset.isInstalled = 'true';
+        installBtn.closest('.marketplace-plugin-card')?.classList.add('installed');
+        installBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span data-i18n="plugins.reinstall">Reinstall</span>';
+        window.i18n?.updateDOM();
+      }
+      close();
     });
   };
 

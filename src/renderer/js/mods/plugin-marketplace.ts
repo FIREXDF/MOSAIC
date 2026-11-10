@@ -355,6 +355,53 @@ class PluginMarketplace {
     }
   }
 
+  async getVersionChoices(plugin: MarketplacePlugin) {
+    if (plugin.source === 'gamebanana' && plugin.gameBanana) {
+      const files = await this.getGameBananaFiles(
+        plugin.gameBanana.modelName,
+        plugin.gameBanana.submissionId,
+      );
+      return files.map((file) => ({
+        label: this.getGameBananaFileLabel(file),
+        url: file._sDownloadUrl as string,
+        version: (file._sVersion || file._sFile || '') as string,
+        date: file._tsDateAdded ? new Date(file._tsDateAdded * 1000).toISOString() : '',
+      }));
+    }
+
+    const response = await fetch(
+      `https://api.github.com/repos/${plugin.repo}/releases?per_page=100`,
+      {
+        headers: {
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'MOSAIC-Plugin-Marketplace',
+        },
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`GitHub API returned status ${response.status}`);
+    }
+    const releases: Array<{
+      tag_name: string;
+      name?: string;
+      published_at?: string;
+      assets?: Array<{ name: string; browser_download_url: string }>;
+    }> = await response.json();
+
+    return releases.flatMap((release) => {
+      const asset = release.assets?.find((a) => /\.(nro|zip)$/i.test(a.name));
+      return asset
+        ? [{
+            label: release.name || release.tag_name,
+            tag: release.tag_name,
+            url: asset.browser_download_url,
+            version: release.tag_name.replace(/^v/, ''),
+            date: release.published_at || '',
+          }]
+        : [];
+    });
+  }
+
   async getGameBananaFiles(modelName: string, submissionId: string) {
     if (!window.electronAPI?.fetchGameBananaFiles) {
       return [];
