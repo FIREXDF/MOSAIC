@@ -875,6 +875,20 @@ const ModHandlers = {
     }
   },
 
+  ['get-mod-sizes']: async (
+    common: BaseHandlerArg,
+    modPaths: string[],
+  ): HandlerResponse<{
+    sizes: Record<string, { sizeBytes: number; size: string }>;
+  }> => {
+    try {
+      return { success: true, sizes: await ModUtils.getModSizes(modPaths) };
+    } catch (error) {
+      handleError(error, 'get-mod-sizes');
+      return createErrorResponse(ErrorCodes.MOD_READ_ERROR, error.message);
+    }
+  },
+
   ['get-mod-slot-counts']: async (
     common: BaseHandlerArg,
     modPath: string,

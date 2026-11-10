@@ -62,6 +62,7 @@ class ModManager {
   mods: Mod[];
   hasLoadedMods: boolean;
   shownSlotCountIssues: string | null = null;
+  loadingModSizes = false;
   selectedMod: Mod | null;
   selectedMods: Mod[];
   modListContainer: HTMLElement | null;
@@ -224,6 +225,30 @@ class ModManager {
       ? (order as ModSortOrder)
       : 'name-asc';
     this.renderModList(true);
+  }
+
+  async loadModSizes() {
+    const missing = this.mods.filter((mod) => mod.sizeBytes === undefined);
+    if (this.loadingModSizes || missing.length === 0) return;
+
+    this.loadingModSizes = true;
+    let sizes: Record<string, { sizeBytes: number; size: string }> = {};
+    try {
+      const result = await window.electronAPI.getModSizes(
+        missing.map((mod) => mod.path),
+      );
+      if (result?.success) sizes = result.sizes;
+    } catch (error) {
+      console.error('Failed to load mod sizes:', error);
+    } finally {
+      this.loadingModSizes = false;
+    }
+    for (const mod of missing) {
+      mod.sizeBytes = sizes[mod.path]?.sizeBytes ?? 0;
+      mod.size = sizes[mod.path]?.size || 'Unknown';
+    }
+
+    if (this.sortOrder === 'size-desc') this.renderModList(true);
   }
 
   getSortedMods(mods: Mod[] = this.mods) {
@@ -764,6 +789,8 @@ class ModManager {
       this.updateVisibility();
       return;
     }
+
+    if (this.sortOrder === 'size-desc') this.loadModSizes();
 
     this.listRenderer.renderModList(
       this.getSortedMods(),

@@ -154,7 +154,20 @@ export default class ModUtils {
       .join('/');
   }
 
-  private static async scanRelativeFilePaths(
+  private static pendingScans = new Map<string, Promise<string[]>>();
+
+  private static scanRelativeFilePaths(modPath: string): Promise<string[]> {
+    const pending = this.pendingScans.get(modPath);
+    if (pending) return pending;
+
+    const scan = this.walkRelativeFilePaths(modPath).finally(() => {
+      this.pendingScans.delete(modPath);
+    });
+    this.pendingScans.set(modPath, scan);
+    return scan;
+  }
+
+  private static async walkRelativeFilePaths(
     modPath: string,
   ): Promise<string[]> {
     const relativeFilePaths: string[] = [];
@@ -238,13 +251,8 @@ export default class ModUtils {
     };
   }
 
-  private static getDirectorySize(dirPath: string): number {
+  private static async getDirectorySize(dirPath: string): Promise<number> {
     let total = 0;
-
-    if (!fs.existsSync(dirPath)) {
-      return total;
-    }
-
     const stack = [dirPath];
     while (stack.length) {
       const currentPath = stack.pop();
@@ -252,7 +260,7 @@ export default class ModUtils {
 
       let entries: fs.Dirent[];
       try {
-        entries = fs.readdirSync(currentPath, { withFileTypes: true });
+        entries = await fsPromises.readdir(currentPath, { withFileTypes: true });
       } catch {
         continue;
       }
@@ -266,7 +274,7 @@ export default class ModUtils {
 
         if (entry.isFile()) {
           try {
-            total += fs.statSync(fullPath).size;
+            total += (await fsPromises.stat(fullPath)).size;
           } catch {
             // File may still be in the middle of extraction.
           }
@@ -275,6 +283,20 @@ export default class ModUtils {
     }
 
     return total;
+  }
+
+  static async getModSizes(
+    modPaths: string[],
+  ): Promise<Record<string, { sizeBytes: number; size: string }>> {
+    const sizes = await Promise.all(
+      modPaths.map((modPath) => this.getDirectorySize(modPath)),
+    );
+    return Object.fromEntries(
+      modPaths.map((modPath, i) => [
+        modPath,
+        { sizeBytes: sizes[i], size: PluginUtils.formatFileSize(sizes[i]) },
+      ]),
+    );
   }
 
   private static _gatherDirsWithModFiles(rootDir: string): string[] {
@@ -428,7 +450,6 @@ export default class ModUtils {
           const modPath = path.join(folderPath, entry.name);
           let addedAt = 0;
           let modifiedAt = 0;
-          const sizeBytes = this.getDirectorySize(modPath);
 
           try {
             const stats = fs.statSync(modPath);
@@ -457,8 +478,6 @@ export default class ModUtils {
             hash,
             addedAt,
             modifiedAt,
-            sizeBytes,
-            size: PluginUtils.formatFileSize(sizeBytes),
             folderName: entry.name,
           });
         }
@@ -1289,11 +1308,16 @@ export default class ModUtils {
     };
 
     reportProgress(0, undefined, 'initial');
-    const progressTimer = setInterval(() => {
-      if (options.isCancelled?.()) return;
+    let polling = false;
+    let extractionDone = false;
+    const progressTimer = setInterval(async () => {
+      if (polling || options.isCancelled?.()) return;
       if (estimatedSize <= 0) return;
 
-      const extractedSize = this.getDirectorySize(tempExtractDir!);
+      polling = true;
+      const extractedSize = await this.getDirectorySize(tempExtractDir!);
+      polling = false;
+      if (extractionDone) return;
       const percent = Math.min(95, (extractedSize / estimatedSize) * 100);
       reportProgress(percent, undefined, 'poll', extractedSize);
     }, 250);
@@ -1308,6 +1332,7 @@ export default class ModUtils {
           },
         });
       } finally {
+        extractionDone = true;
         clearInterval(progressTimer);
       }
     } catch (error) {
@@ -1330,7 +1355,7 @@ export default class ModUtils {
       100,
       undefined,
       'complete',
-      this.getDirectorySize(tempExtractDir),
+      await this.getDirectorySize(tempExtractDir),
     );
     if (options.isCancelled?.()) {
       throw new Error('Installation cancelled');

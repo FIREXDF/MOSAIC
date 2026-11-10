@@ -158,6 +158,7 @@ const electronAPI = {
   checkSlotCounts: invokeModHandler('check-slot-counts'),
   fixSlotCounts: invokeModHandler('fix-slot-counts'),
   getModSlotCounts: invokeModHandler('get-mod-slot-counts'),
+  getModSizes: invokeModHandler('get-mod-sizes'),
   setModSlotCounts: invokeModHandler('set-mod-slot-counts'),
   openTutorialWindow: invokeTutorialHandler('open-tutorial-window'),
   getGithubRelease: invokeTutorialHandler('get-github-release'),
