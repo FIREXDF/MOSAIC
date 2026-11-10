@@ -52,6 +52,7 @@ class SettingsManager {
       switchDriveLetter: null,
       conflictDetectionEnabled: true,
       nroLimitCheckEnabled: true,
+      slotCountCheckEnabled: true,
       libraryPathValidationEnabled: true,
       conflictWhitelistPatterns: [],
       ignoredConflictPaths: [],
@@ -785,6 +786,23 @@ class SettingsManager {
       nroLimitCheckEnabled.dataset.listenerAttached = 'true';
     }
 
+    const slotCountCheckEnabled = document.querySelector<HTMLInputElement>(
+      '#slot-count-check-enabled',
+    );
+    if (
+      slotCountCheckEnabled &&
+      !slotCountCheckEnabled.dataset.listenerAttached
+    ) {
+      slotCountCheckEnabled.addEventListener('change', () => {
+        this.settings.slotCountCheckEnabled = slotCountCheckEnabled.checked;
+        this.saveSettings();
+        if (slotCountCheckEnabled.checked) {
+          window.modManager?.checkSlotCounts?.(true);
+        }
+      });
+      slotCountCheckEnabled.dataset.listenerAttached = 'true';
+    }
+
     const libraryPathValidationEnabled =
       document.querySelector<HTMLInputElement>(
         '#library-path-validation-enabled',
@@ -1222,6 +1240,7 @@ class SettingsManager {
     this.switchSettings.updateSwitchSyncModeUI();
     this.updateConflictDetectionUI();
     this.updateNroLimitCheckUI();
+    this.updateSlotCountCheckUI();
     this.updateLibraryPathValidationUI();
     this.updateAutoCheckPluginUpdatesUI();
     this.updateAutoDisableModsUI();
@@ -1581,6 +1600,16 @@ class SettingsManager {
     if (nroLimitCheckCheckbox) {
       nroLimitCheckCheckbox.checked =
         this.settings.nroLimitCheckEnabled !== false;
+    }
+  }
+
+  updateSlotCountCheckUI() {
+    const slotCountCheckCheckbox = document.querySelector<HTMLInputElement>(
+      '#slot-count-check-enabled',
+    );
+    if (slotCountCheckCheckbox) {
+      slotCountCheckCheckbox.checked =
+        this.settings.slotCountCheckEnabled !== false;
     }
   }
 
@@ -1970,6 +1999,9 @@ class SettingsManager {
       const nroLimitCheckEnabled = await window.electronAPI.store.get(
         'nroLimitCheckEnabled',
       );
+      const slotCountCheckEnabled = await window.electronAPI.store.get(
+        'slotCountCheckEnabled',
+      );
       const libraryPathValidationEnabled = await window.electronAPI.store.get(
         'libraryPathValidationEnabled',
       );
@@ -2060,6 +2092,7 @@ class SettingsManager {
         switchDriveLetter: switchDriveLetter || null,
         conflictDetectionEnabled: conflictDetectionEnabled !== false,
         nroLimitCheckEnabled: nroLimitCheckEnabled !== false,
+        slotCountCheckEnabled: slotCountCheckEnabled !== false,
         libraryPathValidationEnabled: libraryPathValidationEnabled !== false,
         ignoredConflictPaths: Array.isArray(ignoredConflictPaths)
           ? ignoredConflictPaths
@@ -2127,6 +2160,7 @@ class SettingsManager {
         switchDriveLetter: null,
         conflictDetectionEnabled: true,
         nroLimitCheckEnabled: true,
+        slotCountCheckEnabled: true,
         libraryPathValidationEnabled: true,
         ignoredConflictPaths: [],
         autoCheckPluginUpdates: false,
@@ -2195,6 +2229,7 @@ class SettingsManager {
         switchDriveLetter: this.settings.switchDriveLetter,
         conflictDetectionEnabled: this.settings.conflictDetectionEnabled,
         nroLimitCheckEnabled: this.settings.nroLimitCheckEnabled,
+        slotCountCheckEnabled: this.settings.slotCountCheckEnabled,
         libraryPathValidationEnabled:
           this.settings.libraryPathValidationEnabled !== false,
         autoCheckPluginUpdates: this.settings.autoCheckPluginUpdates,

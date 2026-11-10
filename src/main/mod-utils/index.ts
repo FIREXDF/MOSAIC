@@ -1036,8 +1036,10 @@ export default class ModUtils {
           mod.path,
           fighterIndexes,
         )) {
+          const highest = highestSlots.get(index);
           if (
-            colorNum > (highestSlots.get(index)?.colorNum ?? VANILLA_COLOR_NUM)
+            colorNum > (highest?.colorNum ?? VANILLA_COLOR_NUM) ||
+            (colorNum === highest?.colorNum && modIndex < highest.modIndex)
           ) {
             highestSlots.set(index, { colorNum, modIndex });
           }
@@ -1068,6 +1070,7 @@ export default class ModUtils {
       );
       const mods = [...colorNums]
         .filter(([, modColorNum]) => modColorNum < colorNum)
+        .sort(([a], [b]) => a - b)
         .map(([modIndex, modColorNum]) => ({
           modIndex,
           colorNum: modColorNum as number | null,

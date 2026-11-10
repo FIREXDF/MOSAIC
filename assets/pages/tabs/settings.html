@@ -1800,7 +1800,7 @@
           Automatically check for file conflicts between mods
         </p>
 
-        <div class="settings-input-group">
+        <div class="settings-input-group" style="margin-top: 12px">
           <label class="settings-switch">
             <input type="checkbox" id="nro-limit-check-enabled" checked />
             <span class="settings-switch-slider"></span>
@@ -1814,6 +1814,22 @@
         <p class="settings-hint" data-i18n="settings.nroLimitCheckHint">
           Checks active mods for the 64 .nro file limit in emulator and real
           hardware modes.
+        </p>
+
+        <div class="settings-input-group" style="margin-top: 12px">
+          <label class="settings-switch">
+            <input type="checkbox" id="slot-count-check-enabled" checked />
+            <span class="settings-switch-slider"></span>
+          </label>
+          <span
+            style="margin-left: 12px; color: var(--text-secondary)"
+            data-i18n="settings.enableSlotCountCheck"
+            >Warn when active mods have hidden skin slots</span
+          >
+        </div>
+        <p class="settings-hint" data-i18n="settings.slotCountCheckHint">
+          Checks whether active mods declare fewer slots than the ones
+          installed, which hides those skins in game.
         </p>
 
         <div class="ignored-conflicts">

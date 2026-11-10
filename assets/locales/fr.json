@@ -802,6 +802,8 @@
     "conflictDetectionHint": "Vérifier automatiquement les conflits de fichiers entre mods",
     "enableNroLimitCheck": "Avertir si les mods actifs dépassent 64 fichiers .nro",
     "nroLimitCheckHint": "Vérifie les mods actifs pour la limite de 64 fichiers .nro, en émulateur comme sur vraie Switch.",
+    "enableSlotCountCheck": "Avertir si des mods actifs ont des slots de skins cachés",
+    "slotCountCheckHint": "Vérifie si des mods actifs indiquent moins de slots que ceux installés, ce qui cache ces skins en jeu.",
     "enableLibraryPathValidation": "Avertir quand les chemins mods/plugins sauvegardés sont manquants ou invalides",
     "libraryPathValidationHint": "Quand c'est activé, MOSAIC te demande de corriger les chemins cassés après un changement de système.",
     "ignoredConflictsTitle": "Conflits ignorés",

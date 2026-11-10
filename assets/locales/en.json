@@ -880,6 +880,8 @@
     "conflictDetectionHint": "Automatically check for file conflicts between mods",
     "enableNroLimitCheck": "Warn when active mods exceed 64 .nro files",
     "nroLimitCheckHint": "Checks active mods for the 64 .nro file limit in emulator and real hardware modes.",
+    "enableSlotCountCheck": "Warn when active mods have hidden skin slots",
+    "slotCountCheckHint": "Checks whether active mods declare fewer slots than the ones installed, which hides those skins in game.",
     "enableLibraryPathValidation": "Warn when saved mods/plugins paths are missing or invalid",
     "libraryPathValidationHint": "When enabled, MOSAIC asks you to fix broken library paths after moving between systems.",
     "ignoredConflictsTitle": "Ignored Conflicts",

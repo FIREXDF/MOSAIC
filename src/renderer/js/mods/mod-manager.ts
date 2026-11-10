@@ -61,6 +61,7 @@ type ModSortOrder =
 class ModManager {
   mods: Mod[];
   hasLoadedMods: boolean;
+  shownSlotCountIssues: string | null = null;
   selectedMod: Mod | null;
   selectedMods: Mod[];
   modListContainer: HTMLElement | null;
@@ -2138,13 +2139,21 @@ class ModManager {
     });
   }
 
-  async checkSlotCounts() {
+  async checkSlotCounts(force = false) {
     if (!this.modsPath || !window.electronAPI?.checkSlotCounts) return;
+    if (window.settingsManager?.settings.slotCountCheckEnabled === false) {
+      return;
+    }
 
     try {
       const result = await window.electronAPI.checkSlotCounts(this.modsPath);
       if (result?.success && result.issues.length > 0) {
+        const issuesKey = JSON.stringify(result.issues);
+        if (!force && issuesKey === this.shownSlotCountIssues) return;
+        this.shownSlotCountIssues = issuesKey;
         this.showSlotCountWarningModal(result.issues);
+      } else if (result?.success) {
+        this.shownSlotCountIssues = null;
       }
     } catch (error) {
       console.error('Failed to check slot counts:', error);
