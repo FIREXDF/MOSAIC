@@ -9,7 +9,7 @@ interface TutorialStep {
 interface TutorialApiWrapper {
   storeGet(key: string): Promise<any>;
   detectSdDrives(): Promise<any>;
-  getSkylineRelease(): Promise<any>;
+  getOzoneRelease(): Promise<any>;
   detectYuzuPath(): Promise<any>;
   detectRyujinxPath(): Promise<any>;
 }

@@ -132,6 +132,10 @@ export async function getLatestSkylineRelease() {
   return getGitHubRelease('skyline-dev/skyline');
 }
 
+export async function getLatestOzoneRelease() {
+  return getGitHubRelease('WuBoytH/ozone');
+}
+
 function copyRecursive(src: string, dest: string) {
   if (!fs.existsSync(dest)) {
     fs.mkdirSync(dest, { recursive: true });

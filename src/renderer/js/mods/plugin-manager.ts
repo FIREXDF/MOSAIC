@@ -1097,6 +1097,59 @@ ${plugin.status === 'active'
     }, 5000); // Increased delay to ensure everything is loaded
   }
 
+  async getLoader(): Promise<'ozone' | 'skyline'> {
+    const loader = await window.electronAPI.store.get('pluginLoader').catch(() => null);
+    return loader === 'ozone' ? 'ozone' : 'skyline';
+  }
+
+  async switchLoader(
+    target: 'ozone' | 'skyline',
+    selected?: { downloadUrl: string; version: string },
+  ): Promise<boolean> {
+    const targetName = target === 'ozone' ? 'Ozone' : 'Skyline';
+    const pluginsPath = window.settingsManager?.getPluginsPath() || this.pluginsPath;
+    const contentsDir = pluginsPath?.replace(
+      /[\\/]romfs[\\/]skyline[\\/]plugins[\\/]?$/i,
+      '',
+    );
+    if (!contentsDir || contentsDir === pluginsPath ||
+        !/01006a800016e000$/i.test(contentsDir)) {
+      window.toastManager?.error(
+        'Plugins folder must be atmosphere/contents/01006A800016E000/romfs/skyline/plugins to switch the loader',
+      );
+      return false;
+    }
+
+    try {
+      window.toastManager?.info(`Installing ${targetName}...`);
+      const api = window.electronAPI;
+      let release = selected;
+      if (!release) {
+        const latest = await api.getGithubRelease(
+          target === 'ozone' ? 'WuBoytH/ozone' : 'skyline-dev/skyline',
+        );
+        if (!latest.success) throw new Error(latest.error || 'Release not found');
+        release = { downloadUrl: latest.downloadUrl, version: latest.version };
+      }
+      const temp = await api.getTempDir();
+      if (!temp.success) throw new Error('Temp directory unavailable');
+      const zipPath = await api.joinPath(temp.path, `${target}-${Date.now()}.zip`);
+      if (!zipPath.success) throw new Error('Failed to build download path');
+      const download = await api.downloadArcropolis(release.downloadUrl, zipPath.path);
+      if (!download.success) throw new Error(download.error || 'Download failed');
+      const extract = await api.extractSkyline(download.path, contentsDir);
+      if (!extract.success) throw new Error('error' in extract ? extract.error : 'Install failed');
+      await api.store.set('pluginLoader', target);
+      await api.store.set('pluginLoaderVersion', release.version);
+      window.toastManager?.success(`${targetName} ${release.version} installed`);
+      return true;
+    } catch (error) {
+      console.error('[PluginManager] Loader switch failed:', error);
+      window.toastManager?.error(`Failed to install ${targetName}: ${error.message}`);
+      return false;
+    }
+  }
+
   openMarketplace() {
     if (window.modalManager) {
       window.modalManager.openPluginMarketplaceModal();

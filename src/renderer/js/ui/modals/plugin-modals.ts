@@ -390,6 +390,14 @@ export {};
       }
     }
 
+    if (window.pluginManager) {
+      installedRepos.push(
+        (await window.pluginManager.getLoader()) === 'ozone'
+          ? 'WuBoytH/ozone'
+          : 'skyline-dev/skyline',
+      );
+    }
+
     if (window.pluginMarketplace) {
       const plugins = window.pluginMarketplace.getPlugins();
       this.renderMarketplaceResults(plugins, resultsContainer!, installedRepos);
@@ -501,14 +509,43 @@ export {};
       return;
     }
 
+    const isRepoInstalled = (repo: string) =>
+      installedRepos.some((installedRepo) => installedRepo.toLowerCase() === repo.toLowerCase());
+
+    const switchLoaderFromCard = async (repo: string, btn: HTMLButtonElement) => {
+      const restore = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML =
+        '<i class="bi bi-arrow-repeat spin"></i> <span data-i18n="plugins.installing">Installing...</span>';
+      window.i18n?.updateDOM();
+      if (await window.pluginManager.switchLoader(repo === 'WuBoytH/ozone' ? 'ozone' : 'skyline')) {
+        const loaderRepos = plugins
+          .filter((item) => item.specialInstaller === 'plugin-loader')
+          .map((item) => item.repo.toLowerCase());
+        this.renderMarketplaceResults(plugins, container, [
+          ...installedRepos.filter((installed) => !loaderRepos.includes(installed.toLowerCase())),
+          repo,
+        ]);
+        return;
+      }
+      btn.disabled = false;
+      btn.innerHTML = restore;
+      window.i18n?.updateDOM();
+    };
+
     const pluginsGrid = plugins
+      .filter((plugin) => plugin.specialInstaller !== 'plugin-loader' || isRepoInstalled(plugin.repo))
       .map((plugin) => {
+        const replacement = plugin.replaceWith
+          ? plugins.find((item) => item.repo === plugin.replaceWith)
+          : null;
         const isInstalled = installedRepos.some(
           (installedRepo) =>
             installedRepo.toLowerCase() === plugin.repo.toLowerCase(),
         );
         const isGameBanana = plugin.source === 'gamebanana';
         const isCskCollection = plugin.specialInstaller === 'csk-collection';
+        const isLoader = plugin.specialInstaller === 'plugin-loader';
         const buttonClass = isInstalled
           ? 'marketplace-card-install-btn installed'
           : 'marketplace-card-install-btn';
@@ -557,7 +594,28 @@ export {};
               <i class="bi ${buttonIcon}"></i>
               <span ${buttonTextKey ? `data-i18n="${buttonTextKey}"` : ''}>${buttonDefaultText}</span>
             </button>
-            ${isCskCollection ? '' : `
+            ${isLoader && replacement ? `
+            <button type="button" class="marketplace-card-version-btn"
+                    data-plugin-repo="${escapeHtml(plugin.repo)}"
+                    aria-haspopup="menu" aria-expanded="false"
+                    data-i18n="plugins.moreInstallOptions" data-i18n-aria-label aria-label="More install options">
+              <i class="bi bi-chevron-down"></i>
+            </button>
+            <div class="marketplace-version-menu marketplace-loader-menu" role="menu" hidden>
+              <button type="button" role="menuitem" class="marketplace-version-menu-item"
+                      data-replace-repo="${escapeHtml(replacement.repo)}">
+                <i class="bi bi-arrow-left-right"></i>
+                <span class="marketplace-loader-option">
+                  <span>Replace with ${escapeHtml(replacement.name)}</span>
+                  <span class="marketplace-loader-option-description">${escapeHtml(replacement.description)}</span>
+                </span>
+              </button>
+              <button type="button" role="menuitem" class="marketplace-version-menu-item"
+                      data-version-repo="${escapeHtml(plugin.repo)}">
+                <i class="bi bi-clock-history"></i>
+                <span>Change version of ${escapeHtml(plugin.name)}</span>
+              </button>
+            </div>` : isCskCollection || isLoader ? '' : `
             <button type="button" class="marketplace-card-version-btn"
                     data-plugin-repo="${escapeHtml(plugin.repo)}"
                     aria-haspopup="menu" aria-expanded="false"
@@ -628,6 +686,11 @@ export {};
         const plugin = plugins.find(
           (item) => item.name === pluginName && item.repo === pluginRepo,
         );
+
+        if (specialInstaller === 'plugin-loader') {
+          await switchLoaderFromCard(pluginRepo, btn);
+          return;
+        }
 
         let ssbuVersion = await window.pluginMarketplace.getConfiguredSsbuVersion();
         if (!ssbuVersion) {
@@ -787,19 +850,41 @@ export {};
         menu.hidden = !opening;
         toggle.setAttribute('aria-expanded', String(opening));
       });
-      menu.querySelector<HTMLButtonElement>('.marketplace-version-menu-item')!
-        .addEventListener('click', () => {
+      menu.querySelectorAll<HTMLButtonElement>('.marketplace-version-menu-item').forEach((menuItem) => {
+        menuItem.addEventListener('click', () => {
           closeVersionMenus();
-          const plugin = plugins.find((item) => item.repo === toggle.dataset.pluginRepo);
+          if (menuItem.dataset.replaceRepo) {
+            const installBtn = toggle.parentElement!.querySelector<HTMLButtonElement>(
+              '.marketplace-card-install-btn',
+            )!;
+            void switchLoaderFromCard(menuItem.dataset.replaceRepo, installBtn);
+            return;
+          }
+          const repo = menuItem.dataset.versionRepo || toggle.dataset.pluginRepo;
+          const plugin = plugins.find((item) => item.repo === repo);
           const marketplaceModal = toggle.closest<HTMLElement>('#plugin-marketplace-modal');
-          if (plugin && marketplaceModal) this.openPluginVersionModal(plugin, marketplaceModal);
+          if (!plugin || !marketplaceModal) return;
+          const onInstalled = plugin.specialInstaller === 'plugin-loader'
+            ? () => {
+                const loaderRepos = plugins
+                  .filter((item) => item.specialInstaller === 'plugin-loader')
+                  .map((item) => item.repo.toLowerCase());
+                this.renderMarketplaceResults(plugins, container, [
+                  ...installedRepos.filter((installed) => !loaderRepos.includes(installed.toLowerCase())),
+                  plugin.repo,
+                ]);
+              }
+            : undefined;
+          this.openPluginVersionModal(plugin, marketplaceModal, onInstalled);
         });
+      });
     });
   };
 
   M.prototype.openPluginVersionModal = async function (
     plugin: any,
     marketplaceModal: HTMLElement,
+    onInstalled?: () => void,
   ) {
     document.querySelectorAll('#plugin-version-modal').forEach((existing) => existing.remove());
     const confirmLabel = '<i class="bi bi-download"></i><span data-i18n="plugins.installSelectedVersion">Install selected version</span>';
@@ -809,7 +894,7 @@ export {};
     modal.style.maxWidth = '560px';
     modal.innerHTML = `
       <div class="modal-header">
-        <h2><span data-i18n="plugins.chooseVersion">Choose version</span> · ${escapeHtml(plugin.name)}</h2>
+        <h2><span data-i18n="plugins.changeVersionOf">Change version of</span> ${escapeHtml(plugin.name)}</h2>
       </div>
       <div class="modal-body" id="plugin-version-body">
         <div class="marketplace-loading"><i class="bi bi-arrow-repeat spin"></i><span data-i18n="plugins.loadingVersions">Loading versions...</span></div>
@@ -886,6 +971,13 @@ export {};
       const fileKey = Object.entries(mappings)
         .find(([, repo]) => repo.toLowerCase() === plugin.repo.toLowerCase())?.[0];
       installedVersion = fileKey ? normalizeVersion((storedVersions || {})[fileKey]) : '';
+      if (plugin.specialInstaller === 'plugin-loader') {
+        const loader = await window.electronAPI.store.get('pluginLoader');
+        const loaderRepo = loader === 'ozone' ? 'WuBoytH/ozone' : 'skyline-dev/skyline';
+        installedVersion = loaderRepo === plugin.repo
+          ? normalizeVersion(String((await window.electronAPI.store.get('pluginLoaderVersion')) || ''))
+          : '';
+      }
     } catch (error) {
       console.warn('[openPluginVersionModal] Failed to read installed version:', error);
     }
@@ -927,7 +1019,12 @@ export {};
 
       let installed = false;
       try {
-        if (plugin.specialInstaller === 'one-slot-effects') {
+        if (plugin.specialInstaller === 'plugin-loader') {
+          installed = await window.pluginManager.switchLoader(
+            plugin.repo === 'WuBoytH/ozone' ? 'ozone' : 'skyline',
+            { downloadUrl: choice.url, version: choice.version },
+          );
+        } else if (plugin.specialInstaller === 'one-slot-effects') {
           await window.pluginMarketplace.installOneSlotEffects({ downloadUrl: choice.url, version: choice.version });
           window.toastManager?.success(`${plugin.name} ${choice.version} installed`);
           installed = true;
@@ -956,6 +1053,7 @@ export {};
         installBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span data-i18n="plugins.reinstall">Reinstall</span>';
         window.i18n?.updateDOM();
       }
+      onInstalled?.();
       close();
     });
   };

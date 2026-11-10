@@ -11,7 +11,7 @@ function createTutorialSwitchSteps(ctx: TutorialStepContext): TutorialStep[] {
     </div>
 
     <h3 class="tutorial-question-title">Is your Switch modded?</h3>
-    <p class="tutorial-question-text">MOSAIC needs a modded Switch before installing Skyline, ARCropolis, and Smash mods.</p>
+    <p class="tutorial-question-text">MOSAIC needs a modded Switch before installing Ozone, ARCropolis, and Smash mods.</p>
 
     <div class="tutorial-options">
         <label class="switch-modded-option tutorial-choice" data-value="yes">
@@ -566,9 +566,9 @@ function createTutorialSwitchSteps(ctx: TutorialStepContext): TutorialStep[] {
     },
     {
       icon: 'bi-download',
-      title: 'Installing Skyline & ARCropolis (Switch)',
+      title: 'Installing Ozone & ARCropolis (Switch)',
       description:
-        'Downloading and installing Skyline (exefs) and ARCropolis (romfs) on your SD card',
+        'Downloading and installing Ozone (exefs) and ARCropolis (romfs) on your SD card',
       content: `
 <div class="tutorial-center">
     <h3 class="tutorial-status-title">Installing ARCropolis</h3>
@@ -714,7 +714,7 @@ function createTutorialSwitchSteps(ctx: TutorialStepContext): TutorialStep[] {
             document.querySelector<HTMLElement>('#change-answer-btn');
           changeAnswerBtn?.addEventListener('click', async () => {
             ctx.currentStep = ctx.steps.findIndex(
-              (s) => s.title === 'Installing Skyline & ARCropolis (Switch)',
+              (s) => s.title === 'Installing Ozone & ARCropolis (Switch)',
             );
             await ctx.renderProgressDots();
             ctx.renderStep(ctx.currentStep);

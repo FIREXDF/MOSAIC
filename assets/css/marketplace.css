@@ -289,6 +289,26 @@
   background: var(--bg-accent-subtle);
 }
 
+.marketplace-loader-menu {
+  width: 260px;
+}
+
+.marketplace-loader-menu .marketplace-version-menu-item {
+  align-items: flex-start;
+}
+
+.marketplace-loader-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.marketplace-loader-option-description {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .plugin-version-choices-scroll {
   max-height: min(420px, calc(100vh - 260px));
   overflow-y: auto;

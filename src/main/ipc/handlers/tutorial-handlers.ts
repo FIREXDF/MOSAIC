@@ -17,6 +17,7 @@ import {
   getLatestArcropolisRelease,
   getArcropolisRelease,
   getLatestSkylineRelease,
+  getLatestOzoneRelease,
   downloadArcropolis,
   extractAndInstallArcropolis,
   extractAndInstallSkyline,
@@ -138,6 +139,8 @@ const TutorialHandlers = {
       let release;
       if (repo === 'skyline-dev/skyline') {
         release = await getLatestSkylineRelease();
+      } else if (repo === 'WuBoytH/ozone') {
+        release = await getLatestOzoneRelease();
       } else if (tag) {
         release = await getArcropolisRelease(tag);
       } else {

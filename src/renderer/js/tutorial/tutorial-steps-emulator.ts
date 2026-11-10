@@ -266,9 +266,9 @@ function createTutorialEmulatorSteps(ctx: TutorialStepContext): TutorialStep[] {
     },
     {
       icon: 'bi-download',
-      title: 'Installing Skyline & ARCropolis (Yuzu)',
+      title: 'Installing Ozone & ARCropolis (Yuzu)',
       description:
-        'Downloading and installing Skyline (exefs) and ARCropolis (romfs) for Yuzu',
+        'Downloading and installing Ozone (exefs) and ARCropolis (romfs) for Yuzu',
       content: `
 <div class="tutorial-center">
     <h3 class="tutorial-status-title">Installing ARCropolis</h3>
@@ -466,7 +466,7 @@ function createTutorialEmulatorSteps(ctx: TutorialStepContext): TutorialStep[] {
           );
           changeAnswerBtn?.addEventListener('click', async () => {
             ctx.currentStep = ctx.steps.findIndex(
-              (s) => s.title === 'Installing Skyline & ARCropolis (Yuzu)',
+              (s) => s.title === 'Installing Ozone & ARCropolis (Yuzu)',
             );
             await ctx.renderProgressDots();
             ctx.renderStep(ctx.currentStep);
@@ -631,9 +631,9 @@ function createTutorialEmulatorSteps(ctx: TutorialStepContext): TutorialStep[] {
     },
     {
       icon: 'bi-download',
-      title: 'Installing Skyline & ARCropolis (Ryujinx)',
+      title: 'Installing Ozone & ARCropolis (Ryujinx)',
       description:
-        'Downloading and installing Skyline (exefs) and ARCropolis (romfs) for Ryujinx',
+        'Downloading and installing Ozone (exefs) and ARCropolis (romfs) for Ryujinx',
       content: `
 <div class="tutorial-center">
     <h3 class="tutorial-status-title">Installing ARCropolis</h3>
@@ -808,7 +808,7 @@ function createTutorialEmulatorSteps(ctx: TutorialStepContext): TutorialStep[] {
           );
           changeAnswerBtn?.addEventListener('click', async () => {
             ctx.currentStep = ctx.steps.findIndex(
-              (s) => s.title === 'Installing Skyline & ARCropolis (Ryujinx)',
+              (s) => s.title === 'Installing Ozone & ARCropolis (Ryujinx)',
             );
             await ctx.renderProgressDots();
             ctx.renderStep(ctx.currentStep);

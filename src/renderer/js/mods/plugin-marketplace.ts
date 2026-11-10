@@ -8,7 +8,8 @@ export interface MarketplacePlugin {
     modelName: string;
     submissionId: string;
   };
-  specialInstaller?: 'arcropolis' | 'csk-collection' | 'one-slot-effects';
+  specialInstaller?: 'arcropolis' | 'csk-collection' | 'one-slot-effects' | 'plugin-loader';
+  replaceWith?: string;
 }
 
 class PluginMarketplace {
@@ -16,6 +17,23 @@ class PluginMarketplace {
 
   constructor() {
     this.plugins = [
+      {
+        name: 'Ozone',
+        repo: 'WuBoytH/ozone',
+        description:
+          'Ozone replaces Skyline plugin loading for a more stable modding experience. All Skyline plugins will work with Ozone.',
+        url: 'https://github.com/WuBoytH/ozone/releases',
+        specialInstaller: 'plugin-loader',
+        replaceWith: 'skyline-dev/skyline',
+      },
+      {
+        name: 'Skyline',
+        repo: 'skyline-dev/skyline',
+        description: 'The original plugin loader for Smash Ultimate.',
+        url: 'https://github.com/skyline-dev/skyline/releases',
+        specialInstaller: 'plugin-loader',
+        replaceWith: 'WuBoytH/ozone',
+      },
       {
         name: 'ARCropolis',
         repo: 'Raytwo/ARCropolis',

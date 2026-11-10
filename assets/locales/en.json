@@ -475,6 +475,7 @@
     "installed": "Installed",
     "moreInstallOptions": "More install options",
     "chooseVersion": "Choose version",
+    "changeVersionOf": "Change version of",
     "loadingVersions": "Loading versions...",
     "versionsUnavailable": "Versions could not be loaded.",
     "noVersions": "No installable version found.",

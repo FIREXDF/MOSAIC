@@ -39,16 +39,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return { success: true, drives: [] };
       return window.tutorialAPI.detectSdDrives();
     },
-    async getSkylineRelease(): Promise<any> {
+    async getOzoneRelease(): Promise<any> {
       if (tutorialDevMode && devOverrides['dev.installFail']) {
         return {
           success: false,
-          error: 'DEV: Simulated Skyline release fetch failure',
+          error: 'DEV: Simulated Ozone release fetch failure',
           code: 'DEV_INSTALL_FAILURE',
-          details: { stage: 'fetch-skyline-release' },
+          details: { stage: 'fetch-ozone-release' },
         };
       }
-      return window.tutorialAPI.getSkylineRelease();
+      return window.tutorialAPI.getGithubRelease('WuBoytH/ozone');
     },
     async detectYuzuPath(): Promise<any> {
       if (tutorialDevMode && devOverrides['dev.emulatorNotFound'])
@@ -167,21 +167,21 @@ document.addEventListener('DOMContentLoaded', () => {
     extraDirs: string[][],
   ) => {
     renderInstallProgress(statusDiv, 'Fetching latest releases...', 10);
-    const skylineRelease = await apiWrapper.getSkylineRelease();
-    if (!skylineRelease.success)
+    const ozoneRelease = await apiWrapper.getOzoneRelease();
+    if (!ozoneRelease.success)
       throw createTutorialIpcError(
-        'Failed to get Skyline release',
-        skylineRelease,
+        'Failed to get Ozone release',
+        ozoneRelease,
       );
     const arcropolisRelease = await chooseArcropolisRelease(statusDiv);
 
     renderInstallProgress(
       statusDiv,
-      `Downloading Skyline ${skylineRelease.version} (exefs)...`,
+      `Downloading Ozone ${ozoneRelease.version} (exefs)...`,
       20,
     );
-    const skyline = await downloadToTemp(skylineRelease.downloadUrl, 'skyline');
-    if (!skyline.success) throw new Error('Skyline download failed');
+    const ozone = await downloadToTemp(ozoneRelease.downloadUrl, 'ozone');
+    if (!ozone.success) throw new Error('Ozone download failed');
 
     renderInstallProgress(
       statusDiv,
@@ -194,17 +194,19 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     if (!arcropolis.success) throw new Error('ARCropolis download failed');
 
-    renderInstallProgress(statusDiv, 'Installing Skyline (exefs)...', 60);
+    renderInstallProgress(statusDiv, 'Installing Ozone (exefs)...', 60);
     const contentsDir = await joinTutorialPath(
       dataRoot,
       ...ARCROPOLIS_CONTENTS_PATH,
     );
     await window.tutorialAPI.createDirectory(contentsDir);
-    const skylineExtract = await window.tutorialAPI.extractSkyline(
-      skyline.path,
+    const ozoneExtract = await window.tutorialAPI.extractSkyline(
+      ozone.path,
       contentsDir,
     );
-    if (!skylineExtract.success) throw new Error('Skyline extraction failed');
+    if (!ozoneExtract.success) throw new Error('Ozone extraction failed');
+    await window.tutorialAPI.store.set('pluginLoader', 'ozone');
+    await window.tutorialAPI.store.set('pluginLoaderVersion', ozoneRelease.version);
 
     renderInstallProgress(statusDiv, 'Installing ARCropolis (romfs)...', 80);
     const arcropolisExtract = await window.tutorialAPI.extractArcropolis(
@@ -226,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i class="bi bi-check-circle-fill tutorial-icon-success"></i>
                         <div>
                             <strong class="tutorial-label">Installation complete!</strong>
-                            <span class="tutorial-text-muted-sm">Skyline ${skylineRelease.version} (exefs) + ARCropolis ${arcropolisRelease.version} (romfs)</span>
+                            <span class="tutorial-text-muted-sm">Ozone ${ozoneRelease.version} (exefs) + ARCropolis ${arcropolisRelease.version} (romfs)</span>
                         </div>
                     </div>
                 </div>
@@ -354,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const switchOnlyTitles = [
       'Switch SD Card Setup',
-      'Installing Skyline & ARCropolis (Switch)',
+      'Installing Ozone & ARCropolis (Switch)',
       'Verify ARCropolis (Switch)',
     ];
     if (switchOnlyTitles.includes(title)) {
@@ -375,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const yuzuOnlyTitles = [
       'Yuzu Setup',
-      'Installing Skyline & ARCropolis (Yuzu)',
+      'Installing Ozone & ARCropolis (Yuzu)',
       'Verify ARCropolis (Yuzu)',
     ];
     if (yuzuOnlyTitles.includes(title)) {
@@ -388,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ryujinxOnlyTitles = [
       'Ryujinx Setup',
-      'Installing Skyline & ARCropolis (Ryujinx)',
+      'Installing Ozone & ARCropolis (Ryujinx)',
       'Verify ARCropolis (Ryujinx)',
     ];
     if (ryujinxOnlyTitles.includes(title)) {
@@ -730,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hardwareType && arcropolisInstalled === false) {
           if (hardwareType === 'hardware' && switchModded === true) {
             addStepByTitle('Switch SD Card Setup');
-            addStepByTitle('Installing Skyline & ARCropolis (Switch)');
+            addStepByTitle('Installing Ozone & ARCropolis (Switch)');
             addStepByTitle('Verify ARCropolis (Switch)');
             addStepByTitle('Real Hardware Library');
             canShowConfigurePaths = true;
@@ -743,12 +745,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (emulatorTypeResponse === 'yuzu') {
               addStepByTitle('Yuzu Setup');
-              addStepByTitle('Installing Skyline & ARCropolis (Yuzu)');
+              addStepByTitle('Installing Ozone & ARCropolis (Yuzu)');
               addStepByTitle('Verify ARCropolis (Yuzu)');
               canShowConfigurePaths = true;
             } else if (emulatorTypeResponse === 'ryujinx') {
               addStepByTitle('Ryujinx Setup');
-              addStepByTitle('Installing Skyline & ARCropolis (Ryujinx)');
+              addStepByTitle('Installing Ozone & ARCropolis (Ryujinx)');
               addStepByTitle('Verify ARCropolis (Ryujinx)');
               canShowConfigurePaths = true;
             }
