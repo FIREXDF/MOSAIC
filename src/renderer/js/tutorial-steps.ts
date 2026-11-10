@@ -320,7 +320,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let resumedStep: number | null = null;
   let resumeMessage = "Let's pick up where we left off.";
   let renderTimeout: ReturnType<typeof setTimeout> | null = null;
-
   async function isStepRelevant(index: number): Promise<boolean> {
     const step = steps[index];
     if (!step || !window.tutorialAPI) return true;
@@ -1018,8 +1017,6 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTimeout = null;
     }
 
-    const startHeight = container ? container.offsetHeight : 0;
-
     contentDiv!.scrollTop = 0;
     contentDiv!.style.opacity = '0';
     contentDiv!.style.transform = 'translateY(10px) scale(0.98)';
@@ -1045,32 +1042,7 @@ ${step.content}
 </div>
 `;
 
-      if (container && startHeight > 0) {
-        contentDiv!.style.flex = '0 0 auto';
-        const savedMaxHeight = container.style.maxHeight;
-        container.style.maxHeight = 'none';
-        container.style.height = 'auto';
-        container.offsetHeight;
-
-        let endHeight = container.offsetHeight;
-        const maxAllowed = window.innerHeight * 0.85;
-        if (endHeight > maxAllowed) endHeight = maxAllowed;
-
-        contentDiv!.style.flex = '';
-        container.style.maxHeight = savedMaxHeight;
-
-        container.style.transition = 'none';
-        container.style.height = startHeight + 'px';
-        container.offsetHeight;
-
-        container.style.transition = 'height 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-        container.style.height = endHeight + 'px';
-
-        setTimeout(() => {
-          container.style.height = '';
-          container.style.transition = '';
-        }, 450);
-      }
+      if (container) animateHeightChanges(container);
 
       requestAnimationFrame(() => {
         contentDiv!.style.opacity = '1';
