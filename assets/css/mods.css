@@ -231,6 +231,10 @@
   font-size: 12px;
 }
 
+.mod-size .spin {
+  display: inline-block;
+}
+
 .plugin-actions {
   display: flex;
   gap: 8px;

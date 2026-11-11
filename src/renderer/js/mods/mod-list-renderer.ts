@@ -128,7 +128,14 @@ class ModListRenderer {
     if (this.modManager.sortOrder === 'size-desc') {
       const modSize = document.createElement('span');
       modSize.className = 'mod-size';
-      modSize.textContent = mod.size;
+      if (mod.sizeBytes === undefined) {
+        const spinner = document.createElement('i');
+        spinner.className = 'bi bi-arrow-repeat spin';
+        spinner.setAttribute('aria-hidden', 'true');
+        modSize.appendChild(spinner);
+      } else {
+        modSize.textContent = mod.size;
+      }
       textContainer.appendChild(modSize);
     }
 
