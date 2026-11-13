@@ -397,22 +397,6 @@
   color: #e0e0e0;
 }
 
-.tutorial-choice-heading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-primary);
-  font-weight: 700;
-}
-
-.tutorial-choice-description {
-  display: block;
-  margin: 8px 0 0 24px;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
 .tutorial-hero-icon {
   width: 80px;
   height: 80px;
@@ -667,44 +651,6 @@
 
 .tutorial-mono {
   font-family: monospace;
-}
-
-.tutorial-release-list {
-  border: 0;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 12px;
-}
-
-.tutorial-release-legend {
-  color: var(--text-primary);
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.tutorial-release-recommended {
-  display: block;
-  cursor: pointer;
-  padding: 16px;
-  border: 1px solid rgba(var(--success-color-rgb), 0.45);
-  border-radius: 12px;
-  background: rgba(var(--success-color-rgb), 0.1);
-}
-
-.tutorial-release-option {
-  display: block;
-  cursor: pointer;
-  padding: 16px;
-  border: 1px solid rgba(var(--accent-rgb), 0.35);
-  border-radius: 12px;
-  background: rgba(var(--accent-rgb), 0.08);
-}
-
-.tutorial-release-continue {
-  justify-self: end;
-  margin-top: 4px;
 }
 
 .tutorial-welcome-title {

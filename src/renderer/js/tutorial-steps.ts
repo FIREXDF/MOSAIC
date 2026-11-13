@@ -72,62 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   };
 
-  const chooseArcropolisRelease = async (container: HTMLElement) => {
-    const savedVersion = await apiWrapper.storeGet('ssbuVersion');
-
-    container.innerHTML = `
-      <fieldset class="tutorial-release-list">
-        <legend class="tutorial-release-legend">Which version of Super Smash Bros. Ultimate do you have?</legend>
-        <label class="tutorial-release-recommended">
-          <span class="tutorial-choice-heading">
-            <input type="radio" name="ssbu-version" value="13.0.4" ${savedVersion === '13.0.4' ? 'checked' : ''}>
-            SSBU 13.0.4
-          </span>
-          <span class="tutorial-choice-description">
-            Installs ARCropolis 4.0.8. Marketplace will use SSBU 13.0.4 versions where available.
-          </span>
-        </label>
-        <label class="tutorial-release-option">
-          <span class="tutorial-choice-heading">
-            <input type="radio" name="ssbu-version" value="13.0.5" ${savedVersion === '13.0.5' ? 'checked' : ''}>
-            SSBU 13.0.5
-          </span>
-          <span class="tutorial-choice-description">
-            Installs ARCropolis 4.1.1. Marketplace will use SSBU 13.0.5 versions where available.
-          </span>
-        </label>
-        <button id="install-selected-arcropolis" type="button" class="tutorial-btn tutorial-btn-primary tutorial-release-continue" disabled>
-          Continue and install
-        </button>
-      </fieldset>
-    `;
-
-    const installButton = container.querySelector<HTMLButtonElement>('#install-selected-arcropolis')!;
-    installButton.disabled = !container.querySelector('input[name="ssbu-version"]:checked');
-    container.querySelectorAll<HTMLInputElement>('input[name="ssbu-version"]').forEach((radio) => {
-      radio.addEventListener('change', () => { installButton.disabled = false; });
-    });
-
-    return new Promise<any>((resolve, reject) => {
-      installButton.addEventListener('click', async () => {
-        const version = container.querySelector<HTMLInputElement>('input[name="ssbu-version"]:checked')?.value;
-        if (version !== '13.0.4' && version !== '13.0.5') return;
-        installButton.disabled = true;
-        try {
-          const release = await window.tutorialAPI.getGithubRelease(
-            'Raytwo/ARCropolis', version === '13.0.4' ? 'v4.0.8' : 'v4.1.1',
-          );
-          if (!release.success) throw new Error(`Failed to get ARCropolis for SSBU ${version}`);
-          const saved = await window.tutorialAPI.store.set('ssbuVersion', version);
-          if (!saved?.success) throw new Error('Failed to save SSBU version');
-          resolve(release);
-        } catch (error) {
-          reject(error);
-        }
-      });
-    });
-  };
-
   const joinTutorialPath = async (...parts: string[]) => {
     const result = await window.tutorialAPI.joinPath(...parts);
     if (!result.success) throw new Error('Failed to construct path');
@@ -173,7 +117,12 @@ document.addEventListener('DOMContentLoaded', () => {
         'Failed to get Ozone release',
         ozoneRelease,
       );
-    const arcropolisRelease = await chooseArcropolisRelease(statusDiv);
+    const arcropolisRelease = await window.tutorialAPI.getGithubRelease('Raytwo/ARCropolis');
+    if (!arcropolisRelease.success)
+      throw createTutorialIpcError(
+        'Failed to get ARCropolis release',
+        arcropolisRelease,
+      );
 
     renderInstallProgress(
       statusDiv,

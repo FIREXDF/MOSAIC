@@ -102,9 +102,9 @@ class PluginMarketplace {
     return this.plugins;
   }
 
-  async getConfiguredSsbuVersion(): Promise<'13.0.4' | '13.0.5' | null> {
+  async getConfiguredSsbuVersion(): Promise<'13.0.4' | '13.0.5' | 'any' | null> {
     const version = await window.electronAPI.store.get('ssbuVersion');
-    return version === '13.0.4' || version === '13.0.5' ? version : null;
+    return version === '13.0.4' || version === '13.0.5' || version === 'any' ? version : null;
   }
 
   async getCompatibleGithubDownload(repo: string, ssbuVersion: '13.0.4' | '13.0.5') {

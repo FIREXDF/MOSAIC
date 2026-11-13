@@ -464,6 +464,8 @@
 }
 
 .ssbu-version-choices label:has(input:checked) { border-color: var(--accent-color); }
+.ssbu-version-choices .ssbu-version-any { flex-direction: column; align-items: flex-start; gap: 4px; }
+.ssbu-version-any small { color: var(--text-secondary); font-size: 12px; }
 .ssbu-version-warning { color: var(--text-secondary); font-size: 13px; }
 
 @media (max-width: 600px) {

@@ -467,6 +467,8 @@
     "changeSsbuVersion": "Changer de version",
     "ssbuModalTitle": "Votre version de SSBU",
     "ssbuModalMessage": "Choisissez la version du jeu installée sur votre Switch ou émulateur.",
+    "ssbuAnyVersion": "Me laisser choisir n’importe quelle version",
+    "ssbuAnyVersionHint": "Ne sélectionnez ceci que si vous savez exactement quelle version vous voulez pour chaque plugin.",
     "ssbuReinstallWarning": "Après avoir changé de version, réinstallez tous les plugins installés pour qu’ils correspondent au jeu.",
     "install": "Installer",
     "reinstall": "Réinstaller",

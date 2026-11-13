@@ -1,5 +1,10 @@
 export {};
 (function () {
+  const ssbuVersionLabel = (version: string | null) =>
+    version === 'any'
+      ? (window.i18n?.t?.('plugins.ssbuAnyVersion') || 'Let me choose any version')
+      : version || (window.i18n?.t?.('plugins.ssbuNotSelected') || 'Not selected');
+
   const M = window.ModalManagerClass;
   if (!M) {
     console.error('[plugin-modals] ModalManagerClass not found');
@@ -364,9 +369,7 @@ export {};
 
     const versionLabel = modal.querySelector<HTMLElement>('#marketplace-ssbu-version')!;
     const refreshVersion = async () => {
-      versionLabel.textContent =
-        (await window.pluginMarketplace.getConfiguredSsbuVersion()) ||
-        (window.i18n?.t?.('plugins.ssbuNotSelected') || 'Not selected');
+      versionLabel.textContent = ssbuVersionLabel(await window.pluginMarketplace.getConfiguredSsbuVersion());
     };
     await refreshVersion();
     modal.querySelector<HTMLButtonElement>('#marketplace-change-ssbu-version')!
@@ -433,6 +436,10 @@ export {};
         <fieldset class="ssbu-version-choices">
           <label><input type="radio" name="ssbu-marketplace-version" value="13.0.4" ${current === '13.0.4' ? 'checked' : ''}> 13.0.4</label>
           <label><input type="radio" name="ssbu-marketplace-version" value="13.0.5" ${current === '13.0.5' ? 'checked' : ''}> 13.0.5</label>
+          <label class="ssbu-version-any">
+            <span><input type="radio" name="ssbu-marketplace-version" value="any" ${current === 'any' ? 'checked' : ''}> <span data-i18n="plugins.ssbuAnyVersion">Let me choose any version</span></span>
+            <small data-i18n="plugins.ssbuAnyVersionHint">Only select this if you know exactly which version you want for every plugin.</small>
+          </label>
         </fieldset>
         <p class="ssbu-version-warning" data-i18n="plugins.ssbuReinstallWarning">After switching version, reinstall every installed plugin so it matches your game.</p>
       </div>
@@ -473,7 +480,7 @@ export {};
         .addEventListener('click', () => close(null));
       save.addEventListener('click', async () => {
         const version = modal.querySelector<HTMLInputElement>('input[name="ssbu-marketplace-version"]:checked')?.value;
-        if (version !== '13.0.4' && version !== '13.0.5') return;
+        if (version !== '13.0.4' && version !== '13.0.5' && version !== 'any') return;
         save.disabled = true;
         try {
           const saved = await window.electronAPI.store.set('ssbuVersion', version);
@@ -512,20 +519,30 @@ export {};
     const isRepoInstalled = (repo: string) =>
       installedRepos.some((installedRepo) => installedRepo.toLowerCase() === repo.toLowerCase());
 
+    const showInstalledLoader = (repo: string) => {
+      const loaderRepos = plugins
+        .filter((item) => item.specialInstaller === 'plugin-loader')
+        .map((item) => item.repo.toLowerCase());
+      this.renderMarketplaceResults(plugins, container, [
+        ...installedRepos.filter((installed) => !loaderRepos.includes(installed.toLowerCase())),
+        repo,
+      ]);
+    };
+
     const switchLoaderFromCard = async (repo: string, btn: HTMLButtonElement) => {
+      const marketplaceModal = btn.closest<HTMLElement>('#plugin-marketplace-modal');
+      const loader = plugins.find((item) => item.repo === repo);
+      if ((await window.pluginMarketplace.getConfiguredSsbuVersion()) === 'any' && loader && marketplaceModal) {
+        this.openPluginVersionModal(loader, marketplaceModal, () => showInstalledLoader(repo));
+        return;
+      }
       const restore = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML =
         '<i class="bi bi-arrow-repeat spin"></i> <span data-i18n="plugins.installing">Installing...</span>';
       window.i18n?.updateDOM();
       if (await window.pluginManager.switchLoader(repo === 'WuBoytH/ozone' ? 'ozone' : 'skyline')) {
-        const loaderRepos = plugins
-          .filter((item) => item.specialInstaller === 'plugin-loader')
-          .map((item) => item.repo.toLowerCase());
-        this.renderMarketplaceResults(plugins, container, [
-          ...installedRepos.filter((installed) => !loaderRepos.includes(installed.toLowerCase())),
-          repo,
-        ]);
+        showInstalledLoader(repo);
         return;
       }
       btn.disabled = false;
@@ -692,13 +709,24 @@ export {};
           return;
         }
 
+        const marketplaceModal = btn.closest<HTMLElement>('#plugin-marketplace-modal');
         let ssbuVersion = await window.pluginMarketplace.getConfiguredSsbuVersion();
         if (!ssbuVersion) {
-          const marketplaceModal = btn.closest<HTMLElement>('#plugin-marketplace-modal');
           if (!marketplaceModal) return;
           ssbuVersion = await this.openSsbuVersionModal(marketplaceModal);
           if (!ssbuVersion) return;
-          marketplaceModal.querySelector<HTMLElement>('#marketplace-ssbu-version')!.textContent = ssbuVersion;
+          marketplaceModal.querySelector<HTMLElement>('#marketplace-ssbu-version')!.textContent =
+            ssbuVersionLabel(ssbuVersion);
+        }
+        if (ssbuVersion === 'any') {
+          if (!plugin || !marketplaceModal) return;
+          if (isCskCollection) {
+            marketplaceModal.style.display = 'none';
+            await this.openCskCollectionInstallModal(plugin, marketplaceModal, isInstalled);
+          } else {
+            this.openPluginVersionModal(plugin, marketplaceModal);
+          }
+          return;
         }
 
         btn.disabled = true;
@@ -865,15 +893,7 @@ export {};
           const marketplaceModal = toggle.closest<HTMLElement>('#plugin-marketplace-modal');
           if (!plugin || !marketplaceModal) return;
           const onInstalled = plugin.specialInstaller === 'plugin-loader'
-            ? () => {
-                const loaderRepos = plugins
-                  .filter((item) => item.specialInstaller === 'plugin-loader')
-                  .map((item) => item.repo.toLowerCase());
-                this.renderMarketplaceResults(plugins, container, [
-                  ...installedRepos.filter((installed) => !loaderRepos.includes(installed.toLowerCase())),
-                  plugin.repo,
-                ]);
-              }
+            ? () => showInstalledLoader(plugin.repo)
             : undefined;
           this.openPluginVersionModal(plugin, marketplaceModal, onInstalled);
         });
