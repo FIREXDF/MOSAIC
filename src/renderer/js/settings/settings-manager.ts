@@ -188,6 +188,174 @@ class SettingsManager {
       return;
     }
 
+    type FeedbackLogFile = {
+      name: string;
+      filePath: string;
+      size: number;
+      modifiedAt?: string;
+    };
+    const MAX_LOG_FILES = 5;
+    const MAX_LOG_FILE_BYTES = 2 * 1024 * 1024;
+    let attachedLogs: FeedbackLogFile[] = [];
+
+    const formatSize = (bytes: number) =>
+      bytes < 1024 * 1024
+        ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+        : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+    const renderAttachedLogs = () => {
+      const container = document.querySelector<HTMLElement>(
+        '#feedback-logs-selected',
+      );
+      if (!container) return;
+      container.hidden = attachedLogs.length === 0;
+      const summary = container.querySelector('#feedback-logs-summary');
+      const names = container.querySelector('#feedback-logs-names');
+      if (summary) {
+        summary.textContent = this.translate('settings.feedbackSelectedLogs', {
+          count: attachedLogs.length,
+          size: formatSize(
+            attachedLogs.reduce((total, log) => total + log.size, 0),
+          ),
+        });
+      }
+      if (names) {
+        names.textContent = attachedLogs.map((log) => log.name).join(', ');
+      }
+    };
+
+    const setAttachedLogs = (logs: FeedbackLogFile[]) => {
+      const unique = logs.filter(
+        (log, index) =>
+          logs.findIndex((other) => other.filePath === log.filePath) === index,
+      );
+      const tooLarge = unique.filter((log) => log.size > MAX_LOG_FILE_BYTES);
+      if (tooLarge.length) {
+        this.showToast(
+          `${this.translate('toasts.feedbackLogTooLarge')}: ${tooLarge
+            .map((log) => log.name)
+            .join(', ')}`,
+          'error',
+        );
+      }
+      const valid = unique.filter((log) => log.size <= MAX_LOG_FILE_BYTES);
+      if (valid.length > MAX_LOG_FILES) {
+        this.showToast(this.translate('toasts.feedbackTooManyLogs'), 'error');
+      }
+      attachedLogs = valid.slice(0, MAX_LOG_FILES);
+      renderAttachedLogs();
+    };
+
+    const listSavedLogs = async (): Promise<Required<FeedbackLogFile>[]> => {
+      const result = await window.electronAPI?.listLogFiles?.();
+      return result?.success ? result.files : [];
+    };
+
+    const openLogsModal = () => {
+      const body = document.createElement('div');
+      body.className = 'feedback-logs-list';
+      body.textContent = this.translate('settings.feedbackLogsLoading');
+
+      window.modalManager.showCustomModal({
+        id: 'feedback-logs-modal',
+        title: this.translate('settings.feedbackLogsModalTitle'),
+        body,
+        buttons: [
+          { text: this.translate('common.cancel'), type: 'cancel' },
+          {
+            text: this.translate('settings.feedbackSelectLogFile'),
+            type: 'secondary',
+            onClick: async () => {
+              const result =
+                await window.electronAPI?.selectFeedbackLogFiles?.();
+              if (result?.files?.length) {
+                setAttachedLogs([...attachedLogs, ...result.files]);
+              }
+            },
+          },
+          {
+            text: this.translate('settings.feedbackAttachSelectedLogs'),
+            type: 'primary',
+            onClick: () => {
+              const checked = Array.from(
+                body.querySelectorAll<HTMLInputElement>('input:checked'),
+              ).map((input) => savedLogs[Number(input.value)]);
+              if (!checked.length) {
+                this.showToast(
+                  this.translate('toasts.feedbackNoLogSelected'),
+                  'error',
+                );
+                return false;
+              }
+              const fromExplorer = attachedLogs.filter(
+                (log) =>
+                  !savedLogs.some((saved) => saved.filePath === log.filePath),
+              );
+              setAttachedLogs([...fromExplorer, ...checked]);
+            },
+          },
+        ],
+      });
+
+      let savedLogs: Required<FeedbackLogFile>[] = [];
+      listSavedLogs()
+        .then((logs) => {
+          savedLogs = logs;
+          body.replaceChildren();
+          if (!logs.length) {
+            const empty = document.createElement('p');
+            empty.className = 'feedback-logs-empty';
+            empty.textContent = this.translate('settings.feedbackNoSavedLogs');
+            body.appendChild(empty);
+            return;
+          }
+          logs.forEach((log, index) => {
+            const item = document.createElement('label');
+            item.className = 'feedback-logs-item';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = String(index);
+            checkbox.checked = attachedLogs.some(
+              (attached) => attached.filePath === log.filePath,
+            );
+            const text = document.createElement('div');
+            text.className = 'feedback-logs-item-text';
+            const name = document.createElement('strong');
+            name.textContent = log.name;
+            const details = document.createElement('span');
+            details.textContent = `${new Date(
+              log.modifiedAt,
+            ).toLocaleString()} - ${formatSize(log.size)}`;
+            text.append(name, details);
+            item.append(checkbox, text);
+            body.appendChild(item);
+          });
+        })
+        .catch((error) => {
+          console.error('Failed to list log files:', error);
+          body.textContent = this.translate('settings.feedbackNoSavedLogs');
+        });
+    };
+
+    document
+      .querySelector('#feedback-current-logs-btn')
+      ?.addEventListener('click', async () => {
+        const currentLog = (await listSavedLogs()).find((log) =>
+          /^app-.*\.log$/i.test(log.name),
+        );
+        if (!currentLog) {
+          this.showToast(this.translate('settings.feedbackNoSavedLogs'), 'error');
+          return;
+        }
+        setAttachedLogs([...attachedLogs, currentLog]);
+      });
+    document
+      .querySelector('#feedback-choose-logs-btn')
+      ?.addEventListener('click', openLogsModal);
+    document
+      .querySelector('#feedback-logs-clear-btn')
+      ?.addEventListener('click', () => setAttachedLogs([]));
+
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
 
@@ -198,6 +366,20 @@ class SettingsManager {
           'error',
         );
         return;
+      }
+
+      if (!contactInput?.value.trim()) {
+        const sendAnyway = await this.confirmWithModal(
+          'feedback-no-contact-modal',
+          this.translate('settings.feedbackNoContactTitle'),
+          this.translate('settings.feedbackNoContactMessage'),
+          this.translate('settings.feedbackSendAnyway'),
+          'primary',
+        );
+        if (!sendAnyway) {
+          contactInput?.focus();
+          return;
+        }
       }
 
       const previousLabel = submitButton?.textContent || '';
@@ -219,10 +401,12 @@ class SettingsManager {
           appVersion: appInfo?.version || null,
           locale: window.i18n?.currentLocale || document.documentElement.lang,
           platform: navigator.platform,
+          logFilePaths: attachedLogs.map((log) => log.filePath),
         });
 
         if (result?.success) {
           form.reset();
+          setAttachedLogs([]);
           this.showToast(this.translate('toasts.feedbackSent'), 'success');
         } else {
           this.showToast(

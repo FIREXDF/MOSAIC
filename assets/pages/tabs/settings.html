@@ -1508,6 +1508,55 @@
             placeholder="Discord, email, or GitHub username"
           />
 
+          <span class="settings-label" data-i18n="settings.feedbackLogs"
+            >Logs (optional)</span
+          >
+          <div class="feedback-logs">
+            <div class="feedback-logs-buttons">
+              <button
+                class="settings-btn"
+                id="feedback-current-logs-btn"
+                type="button"
+              >
+                <i class="bi bi-journal-text"></i>
+                <span data-i18n="settings.feedbackUseCurrentLogs"
+                  >Use current logs</span
+                >
+              </button>
+              <button
+                class="settings-btn"
+                id="feedback-choose-logs-btn"
+                type="button"
+              >
+                <i class="bi bi-paperclip"></i>
+                <span data-i18n="settings.feedbackChooseLogs"
+                  >Choose log file</span
+                >
+              </button>
+            </div>
+            <div class="feedback-logs-selected" id="feedback-logs-selected" hidden>
+              <i class="bi bi-file-earmark-text"></i>
+              <div class="feedback-logs-selected-text">
+                <strong id="feedback-logs-summary"></strong>
+                <span id="feedback-logs-names"></span>
+              </div>
+              <button
+                class="feedback-logs-clear"
+                id="feedback-logs-clear-btn"
+                type="button"
+                data-i18n="common.remove"
+                data-i18n-aria-label
+                aria-label="Remove"
+              >
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+            <p class="settings-hint" data-i18n="settings.feedbackLogsHint">
+              Recommended for bug reports: logs help fix bugs much faster. You
+              can attach up to 5 .log, .txt, or .json files, 2 MB each.
+            </p>
+          </div>
+
           <div class="feedback-actions">
             <p class="settings-hint" data-i18n="settings.feedbackHint">
               Sends app context with your report so issues are easier to
