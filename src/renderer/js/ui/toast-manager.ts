@@ -63,6 +63,11 @@ class ToastManager {
       (t) => t.parentElement && !t.classList.contains('toast-hide'),
     );
 
+    this.container?.style.setProperty(
+      '--toast-count',
+      String(visibleToasts.length),
+    );
+
     for (let i = 0; i < visibleToasts.length; i++) {
       const toast = visibleToasts[i];
       const index = Math.min(i, 4);
@@ -201,7 +206,10 @@ ${actionButtonHtml}
     toast.addEventListener('mouseleave', () => {
       toast.classList.remove('toast-paused');
       if (pauseStart > 0) {
-        remainingTime = Math.max(remainingTime - (Date.now() - pauseStart), 500);
+        remainingTime = Math.max(
+          remainingTime - (Date.now() - pauseStart),
+          500,
+        );
         pauseStart = 0;
       }
       startAutoHide();
@@ -285,6 +293,7 @@ ${actionButtonHtml}
       }
     });
     this.toasts = [];
+    this.updateStackState();
   }
 }
 
