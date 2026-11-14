@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import store from '../store';
+import store from '../store/store';
 
 import {
   type CharacterCssEntry,
@@ -1157,18 +1157,8 @@ export function duplicateCharacterCssEntry(
   const duplicatedEntry = clone(sourceEntry);
   duplicatedEntry['@index'] = String(structs.length);
   setHashText(duplicatedEntry, 'hash40', 'ui_chara_id', newUiCharaId);
-  setHashText(
-    duplicatedEntry,
-    'hash40',
-    'fighter_type',
-    'fighter_type_normal',
-  );
-  setHashText(
-    duplicatedEntry,
-    'hash40',
-    'alt_chara_id',
-    '0x02302d482a',
-  );
+  setHashText(duplicatedEntry, 'hash40', 'fighter_type', 'fighter_type_normal');
+  setHashText(duplicatedEntry, 'hash40', 'alt_chara_id', '0x02302d482a');
   duplicatedEntry.string['#text'] = newNameId;
   const duplicatedOrder = getCharacterCssSbyteOrder(structs.length);
   setHashTextIfPresent(
@@ -1425,14 +1415,12 @@ export async function saveCharacterCssLayout(
   const targetCharaPrcPath = path.join(databaseDir, SOURCE_CHARA_PRC_FILE);
   const targetLayoutPrcPath = path.join(databaseDir, SOURCE_LAYOUT_PRC_FILE);
   const targetMsgNamePath = path.join(messageDir, GENERATED_MSG_NAME_FILE);
-  ['ui_chara_db.prcxml', 'ui_layout_db.prcxml'].forEach(
-    (obsoleteFileName) => {
-      const obsoletePath = path.join(databaseDir, obsoleteFileName);
-      if (fs.existsSync(obsoletePath)) {
-        fs.unlinkSync(obsoletePath);
-      }
-    },
-  );
+  ['ui_chara_db.prcxml', 'ui_layout_db.prcxml'].forEach((obsoleteFileName) => {
+    const obsoletePath = path.join(databaseDir, obsoleteFileName);
+    if (fs.existsSync(obsoletePath)) {
+      fs.unlinkSync(obsoletePath);
+    }
+  });
   fs.copyFileSync(generatedCharaPrcPath, targetCharaPrcPath);
   fs.copyFileSync(generatedLayoutPrcPath, targetLayoutPrcPath);
   fs.copyFileSync(generatedMsgNamePath, targetMsgNamePath);
@@ -1450,18 +1438,10 @@ export async function saveCharacterCssLayout(
     modCharaPrcPath: targetCharaPrcPath,
     modLayoutPrcPath: targetLayoutPrcPath,
     modMsgNamePath: targetMsgNamePath,
-    stdout: [
-      charaPrcResult.stdout,
-      layoutPrcResult.stdout,
-      msbtResult.stdout,
-    ]
+    stdout: [charaPrcResult.stdout, layoutPrcResult.stdout, msbtResult.stdout]
       .filter(Boolean)
       .join('\n'),
-    stderr: [
-      charaPrcResult.stderr,
-      layoutPrcResult.stderr,
-      msbtResult.stderr,
-    ]
+    stderr: [charaPrcResult.stderr, layoutPrcResult.stderr, msbtResult.stderr]
       .filter(Boolean)
       .join('\n'),
   };

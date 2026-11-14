@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, IpcMain } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import store from '../../store';
+import store from '../../store/store';
 import {
   BaseHandlerArg,
   GenericHandler,
@@ -248,8 +248,7 @@ const ConfigBackupHandlers = {
           defaultId: 0,
           cancelId: 0,
           title: 'MOSAIC version mismatch',
-          message:
-            'This backup was created with a different MOSAIC version.',
+          message: 'This backup was created with a different MOSAIC version.',
           detail: `Backup version: ${backup.appVersion}\nCurrent version: ${currentAppVersion}\n\nRestoring it may break or downgrade some settings if the configuration format changed. Continue only if you trust this backup.`,
         });
 

@@ -1,5 +1,5 @@
 import { IpcMain } from 'electron';
-import store from '../../store';
+import store from '../../store/store';
 
 import {
   BaseHandlerArg,
@@ -356,7 +356,8 @@ const UmcHandlers = {
           if (!includeDetails) return normalize(summary);
           try {
             const detail = await getJson(`/movesets/${summary.movesetId}`);
-            if (detail?.movesetId !== summary.movesetId) throw new Error('Invalid UMC moveset details');
+            if (detail?.movesetId !== summary.movesetId)
+              throw new Error('Invalid UMC moveset details');
             return normalize(summary, detail);
           } catch {
             // Keep the summary usable if the richer detail request fails.

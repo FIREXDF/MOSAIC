@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
-import store from './store';
+import store from './store/store';
 
 let tutorialWindow: BrowserWindow | null = null;
 
@@ -70,7 +70,9 @@ export function createTutorialWindow(parentWindow?: BrowserWindow | null) {
 
 export function completeTutorialWindow() {
   store.set('hasLaunchedBefore', true);
-  store.set('tutorial.guideProgress', { stepTitle: "Let's guide you to MOSAIC" });
+  store.set('tutorial.guideProgress', {
+    stepTitle: "Let's guide you to MOSAIC",
+  });
   store.delete('tutorial.setupProgress');
   closeTutorialWindow();
 }

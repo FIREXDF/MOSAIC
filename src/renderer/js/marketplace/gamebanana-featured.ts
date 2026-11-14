@@ -47,7 +47,9 @@ class GameBananaFeaturedSection {
     const imageUrl = escapeHtml(this.manager.getGameBananaSubmissionImage(mod));
     const creator = escapeHtml(mod._aSubmitter?._sName || 'Unknown');
     const category = escapeHtml(mod._aRootCategory?._sName || 'Mod');
-    const period = escapeHtml(this.manager.detail.formatGameBananaPeriod(mod._sPeriod));
+    const period = escapeHtml(
+      this.manager.detail.formatGameBananaPeriod(mod._sPeriod),
+    );
     const likes = Number(mod._nLikeCount || 0);
     const comments = Number(mod._nPostCount || 0);
     const model = escapeHtml(mod._sModelName || 'Mod');
@@ -71,9 +73,13 @@ class GameBananaFeaturedSection {
           </div>
           <h3 class="social-gamebanana-card-title">${name}</h3>
           <p class="social-gamebanana-card-creator">${escapeHtml(
-            this.manager.getSocialTranslation('social.byAuthor', 'by {{author}}', {
-              author: creator,
-            }),
+            this.manager.getSocialTranslation(
+              'social.byAuthor',
+              'by {{author}}',
+              {
+                author: creator,
+              },
+            ),
           )}</p>
           <div class="social-gamebanana-card-footer">
             <span><i class="bi bi-hand-thumbs-up"></i> ${likes}</span>

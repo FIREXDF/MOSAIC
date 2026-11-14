@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
-import store from '../store';
+import store from '../store/store';
 
 const IMAGE_STORE_KEY = 'cssCustomImages';
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;

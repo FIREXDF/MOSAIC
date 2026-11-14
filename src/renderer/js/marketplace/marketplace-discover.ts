@@ -2,7 +2,8 @@ class MarketplaceDiscover extends SocialGameBananaManager {
   private started = false;
 
   async initialize() {
-    if (this.started || !document.querySelector('#social-discover-content')) return;
+    if (this.started || !document.querySelector('#social-discover-content'))
+      return;
 
     this.started = true;
     this.filters.setupGameBananaSearchEvents();

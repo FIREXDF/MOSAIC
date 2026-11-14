@@ -30,7 +30,10 @@ export class SlotChanger {
     return relativePath.replace(/\\/g, '/');
   }
 
-  private static buildFinalPath(normalizedPath: string, newSlot: string): string {
+  private static buildFinalPath(
+    normalizedPath: string,
+    newSlot: string,
+  ): string {
     let newNum = newSlot.replace('c', '');
     if (newNum.length === 1) newNum = '0' + newNum;
 
@@ -44,7 +47,8 @@ export class SlotChanger {
     const tempPathParts = originalPath.split(/[/\\]/);
     const lastPart = tempPathParts[tempPathParts.length - 1];
 
-    tempPathParts[tempPathParts.length - 1] = `.temp_${currentSlot}_${lastPart}`;
+    tempPathParts[tempPathParts.length - 1] =
+      `.temp_${currentSlot}_${lastPart}`;
 
     return tempPathParts.join('/');
   }
@@ -92,7 +96,10 @@ export class SlotChanger {
         continue;
       }
 
-      if (!bestMatch || mapping.originalPath.length > bestMatch.originalPath.length) {
+      if (
+        !bestMatch ||
+        mapping.originalPath.length > bestMatch.originalPath.length
+      ) {
         bestMatch = mapping;
       }
     }
@@ -169,7 +176,9 @@ export class SlotChanger {
         }
       });
 
-      for (const [currentSlot, slotData] of Object.entries(pathData[fighterName])) {
+      for (const [currentSlot, slotData] of Object.entries(
+        pathData[fighterName],
+      )) {
         const newSlot = fighterAssignments.get(currentSlot);
 
         if (!newSlot || !slotData) {
@@ -401,12 +410,12 @@ export class SlotChanger {
               SLOT_PATTERN.test(sourceSlot) && SLOT_PATTERN.test(targetSlot),
           )
           .map(([sourceSlot, targetSlot]) => ({
-          sourceSlot,
-          targetSlot,
-          shareSlot: ConfigGenerator.getDefaultShareSlot(
-            fighterName,
             sourceSlot,
-          ),
+            targetSlot,
+            shareSlot: ConfigGenerator.getDefaultShareSlot(
+              fighterName,
+              sourceSlot,
+            ),
           })),
         hasGeneratedConfig || configMode === 'merge',
         Array.from(assignments)

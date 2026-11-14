@@ -46,9 +46,7 @@ export default class PluginUpdateChecker {
     const urlMatch = trimmed.match(/gamebanana\.com\/(?:mods|sounds)\/(\d+)/i);
     if (urlMatch) {
       return {
-        modelName: trimmed.toLowerCase().includes('/sounds/')
-          ? 'Sound'
-          : 'Mod',
+        modelName: trimmed.toLowerCase().includes('/sounds/') ? 'Sound' : 'Mod',
         submissionId: urlMatch[1],
       };
     }
@@ -168,7 +166,10 @@ export default class PluginUpdateChecker {
     }
   }
 
-  static async getLatestGameBananaFile(modelName: string, submissionId: string) {
+  static async getLatestGameBananaFile(
+    modelName: string,
+    submissionId: string,
+  ) {
     try {
       const safeModelName = encodeURIComponent(modelName || 'Mod');
       const safeSubmissionId = encodeURIComponent(submissionId);
@@ -367,7 +368,10 @@ export default class PluginUpdateChecker {
         );
         const latest = newest?._tsDateAdded || 0;
         if (latest <= entry.seen) continue;
-        const ext = String(newest._sFile || '').split('.').pop() || 'zip';
+        const ext =
+          String(newest._sFile || '')
+            .split('.')
+            .pop() || 'zip';
 
         const updates = (await this.fetchJson(
           `${base}/Updates?_nPage=1&_nPerpage=1`,

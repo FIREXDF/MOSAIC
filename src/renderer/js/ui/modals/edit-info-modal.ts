@@ -1,37 +1,58 @@
 export {};
 (function () {
   const M = window.ModalManagerClass;
-  if (!M) { console.error('[edit-info-modal] ModalManagerClass not found'); return; }
+  if (!M) {
+    console.error('[edit-info-modal] ModalManagerClass not found');
+    return;
+  }
 
   M.prototype.openEditInfoModal = function (modPath, currentInfo, callback) {
     this.editInfoCallback = callback;
     this.currentModPath = modPath;
 
     const modal = document.querySelector<HTMLDivElement>('#edit-info-modal');
-    const displayNameInput = document.querySelector<HTMLInputElement>('#edit-info-display-name');
-    const authorsInput = document.querySelector<HTMLInputElement>('#edit-info-authors');
-    const versionInput = document.querySelector<HTMLInputElement>('#edit-info-version');
-    const categoryWrap = document.querySelector<HTMLElement>('#edit-info-category-select');
+    const displayNameInput = document.querySelector<HTMLInputElement>(
+      '#edit-info-display-name',
+    );
+    const authorsInput =
+      document.querySelector<HTMLInputElement>('#edit-info-authors');
+    const versionInput =
+      document.querySelector<HTMLInputElement>('#edit-info-version');
+    const categoryWrap = document.querySelector<HTMLElement>(
+      '#edit-info-category-select',
+    );
     const urlInput = document.querySelector<HTMLInputElement>('#edit-info-url');
-    const descriptionTextarea = document.querySelector<HTMLInputElement>('#edit-info-description');
-    const previewStatus = document.querySelector<HTMLElement>('#edit-info-preview-status');
-    const previewInput = document.querySelector<HTMLInputElement>('#edit-info-preview-input');
+    const descriptionTextarea = document.querySelector<HTMLInputElement>(
+      '#edit-info-description',
+    );
+    const previewStatus = document.querySelector<HTMLElement>(
+      '#edit-info-preview-status',
+    );
+    const previewInput = document.querySelector<HTMLInputElement>(
+      '#edit-info-preview-input',
+    );
 
     if (modal) {
       modal.classList.remove('closing');
 
-      if (displayNameInput) displayNameInput.value = currentInfo?.display_name || '';
+      if (displayNameInput)
+        displayNameInput.value = currentInfo?.display_name || '';
       if (authorsInput) authorsInput.value = currentInfo?.authors || '';
       if (versionInput) versionInput.value = currentInfo?.version || '';
       if (categoryWrap) {
-        document.querySelectorAll('#edit-info-category-dropdown [data-custom]').forEach((o) => o.remove());
-        (window.modManager?.mods || []).forEach((m) => this.addCustomCategoryOption(m.category));
+        document
+          .querySelectorAll('#edit-info-category-dropdown [data-custom]')
+          .forEach((o) => o.remove());
+        (window.modManager?.mods || []).forEach((m) =>
+          this.addCustomCategoryOption(m.category),
+        );
         this.setEditInfoCategory(currentInfo?.category || '');
         this.bindEditInfoCategory(categoryWrap);
         this.closeEditInfoCategory?.();
       }
       if (urlInput) urlInput.value = currentInfo?.url || '';
-      if (descriptionTextarea) descriptionTextarea.value = currentInfo?.description || '';
+      if (descriptionTextarea)
+        descriptionTextarea.value = currentInfo?.description || '';
       if (previewStatus) previewStatus.textContent = '';
       if (previewInput) previewInput.value = '';
       this.refreshEditInfoPreview?.();
@@ -44,10 +65,12 @@ export {};
   M.prototype.addCustomCategoryOption = function (category) {
     const name = category?.trim();
     if (!name) return null;
-    const dropdown = document.querySelector<HTMLElement>('#edit-info-category-dropdown')!;
-    const existing = Array.from(dropdown.querySelectorAll<HTMLElement>('.custom-select-option')).find(
-      (o) => (o.dataset.value || '').toLowerCase() === name.toLowerCase(),
-    );
+    const dropdown = document.querySelector<HTMLElement>(
+      '#edit-info-category-dropdown',
+    )!;
+    const existing = Array.from(
+      dropdown.querySelectorAll<HTMLElement>('.custom-select-option'),
+    ).find((o) => (o.dataset.value || '').toLowerCase() === name.toLowerCase());
     if (existing) return existing;
 
     const option = document.createElement('div');
@@ -56,28 +79,39 @@ export {};
     option.dataset.custom = '1';
     option.innerHTML = '<i class="bi bi-tag-fill"></i><span></span>';
     option.querySelector('span')!.textContent = name;
-    dropdown.insertBefore(option, dropdown.querySelector('[data-value="__custom__"]'));
+    dropdown.insertBefore(
+      option,
+      dropdown.querySelector('[data-value="__custom__"]'),
+    );
     return option;
   };
 
   M.prototype.setEditInfoCategory = function (category) {
-    const wrap = document.querySelector<HTMLElement>('#edit-info-category-select')!;
+    const wrap = document.querySelector<HTMLElement>(
+      '#edit-info-category-select',
+    )!;
     const option =
       this.addCustomCategoryOption(category) ||
-      document.querySelector<HTMLElement>('#edit-info-category-dropdown [data-value=""]')!;
+      document.querySelector<HTMLElement>(
+        '#edit-info-category-dropdown [data-value=""]',
+      )!;
 
     document
       .querySelectorAll('#edit-info-category-dropdown .custom-select-option')
       .forEach((o) => o.classList.toggle('active', o === option));
-    wrap.querySelector<HTMLInputElement>('#edit-info-category')!.value = option.dataset.value || '';
-    wrap.querySelector('.selected-value')!.textContent = option.querySelector('span')!.textContent;
+    wrap.querySelector<HTMLInputElement>('#edit-info-category')!.value =
+      option.dataset.value || '';
+    wrap.querySelector('.selected-value')!.textContent =
+      option.querySelector('span')!.textContent;
   };
 
   M.prototype.bindEditInfoCategory = function (wrap) {
     if (wrap.dataset.bound) return;
     wrap.dataset.bound = '1';
 
-    const dropdown = document.querySelector<HTMLElement>('#edit-info-category-dropdown')!;
+    const dropdown = document.querySelector<HTMLElement>(
+      '#edit-info-category-dropdown',
+    )!;
     const close = () => {
       dropdown.classList.remove('floating-open');
       dropdown.removeAttribute('style');
@@ -93,7 +127,9 @@ export {};
       dropdown.style.right = 'auto';
       dropdown.style.maxHeight = `${Math.min(300, flip ? r.top - 16 : below)}px`;
       dropdown.style.top = flip ? 'auto' : `${r.bottom + 8}px`;
-      dropdown.style.bottom = flip ? `${window.innerHeight - r.top + 8}px` : 'auto';
+      dropdown.style.bottom = flip
+        ? `${window.innerHeight - r.top + 8}px`
+        : 'auto';
     };
     const open = () => {
       document.body.appendChild(dropdown);
@@ -103,9 +139,13 @@ export {};
     };
     this.closeEditInfoCategory = close;
 
-    wrap.addEventListener('click', () => (wrap.classList.contains('open') ? close() : open()));
+    wrap.addEventListener('click', () =>
+      wrap.classList.contains('open') ? close() : open(),
+    );
     dropdown.addEventListener('click', (e) => {
-      const option = (e.target as HTMLElement).closest<HTMLElement>('.custom-select-option');
+      const option = (e.target as HTMLElement).closest<HTMLElement>(
+        '.custom-select-option',
+      );
       if (!option) return;
       close();
       if (option.dataset.value === '__custom__') this.openCustomCategoryModal();
@@ -175,7 +215,9 @@ export {};
     this.currentModPath = modPath;
 
     const modal = document.querySelector<HTMLElement>('#advanced-info-modal');
-    const textarea = document.querySelector<HTMLTextAreaElement>('#advanced-info-textarea');
+    const textarea = document.querySelector<HTMLTextAreaElement>(
+      '#advanced-info-textarea',
+    );
 
     if (modal && textarea) {
       modal.classList.remove('closing');
@@ -193,11 +235,17 @@ export {};
   };
 
   M.prototype.refreshEditInfoPreview = async function () {
-    const previewImage = document.querySelector<HTMLImageElement>('#edit-info-preview-image');
-    const previewPlaceholder = document.querySelector<HTMLElement>('#edit-info-preview-placeholder');
+    const previewImage = document.querySelector<HTMLImageElement>(
+      '#edit-info-preview-image',
+    );
+    const previewPlaceholder = document.querySelector<HTMLElement>(
+      '#edit-info-preview-placeholder',
+    );
     if (!previewImage || !previewPlaceholder || !this.currentModPath) return;
 
-    const previewPath = await window.electronAPI.getPreviewImage(this.currentModPath);
+    const previewPath = await window.electronAPI.getPreviewImage(
+      this.currentModPath,
+    );
     if (previewPath) {
       previewImage.src = previewPath;
       previewImage.style.display = 'block';
@@ -210,7 +258,9 @@ export {};
   };
 
   M.prototype.openEditInfoPreviewPicker = function () {
-    const previewInput = document.querySelector<HTMLInputElement>('#edit-info-preview-input');
+    const previewInput = document.querySelector<HTMLInputElement>(
+      '#edit-info-preview-input',
+    );
     previewInput?.click();
   };
 
@@ -218,14 +268,19 @@ export {};
     const file = input?.files?.[0];
     if (!file || !this.currentModPath) return;
 
-    const previewStatus = document.querySelector<HTMLElement>('#edit-info-preview-status');
+    const previewStatus = document.querySelector<HTMLElement>(
+      '#edit-info-preview-status',
+    );
     if (previewStatus) {
       previewStatus.textContent = 'Importing...';
     }
 
     try {
       const data = await this.preparePreviewWebpData(file);
-      const result = await window.electronAPI.saveModPreview(this.currentModPath, data);
+      const result = await window.electronAPI.saveModPreview(
+        this.currentModPath,
+        data,
+      );
 
       if (result.success) {
         if (window.toastManager) {
@@ -265,7 +320,10 @@ export {};
   };
 
   M.prototype.preparePreviewWebpData = async function (file) {
-    if (file.type === 'image/webp' || file.name.toLowerCase().endsWith('.webp')) {
+    if (
+      file.type === 'image/webp' ||
+      file.name.toLowerCase().endsWith('.webp')
+    ) {
       return new Uint8Array(await file.arrayBuffer());
     }
 
@@ -283,13 +341,17 @@ export {};
       context.drawImage(bitmap, 0, 0);
 
       const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((convertedBlob) => {
-          if (convertedBlob) {
-            resolve(convertedBlob);
-          } else {
-            reject(new Error('Failed to convert image to WebP'));
-          }
-        }, 'image/webp', 0.92);
+        canvas.toBlob(
+          (convertedBlob) => {
+            if (convertedBlob) {
+              resolve(convertedBlob);
+            } else {
+              reject(new Error('Failed to convert image to WebP'));
+            }
+          },
+          'image/webp',
+          0.92,
+        );
       });
 
       return new Uint8Array(await blob.arrayBuffer());
@@ -299,14 +361,19 @@ export {};
   };
 
   M.prototype.confirmAdvancedInfo = async function () {
-    const textarea = document.querySelector<HTMLTextAreaElement>('#advanced-info-textarea');
+    const textarea = document.querySelector<HTMLTextAreaElement>(
+      '#advanced-info-textarea',
+    );
 
     if (!textarea || !this.currentModPath) return;
 
     const tomlContent = textarea.value;
 
     try {
-      const result = await window.electronAPI.saveModInfoRaw(this.currentModPath, tomlContent);
+      const result = await window.electronAPI.saveModInfoRaw(
+        this.currentModPath,
+        tomlContent,
+      );
 
       if (result.success) {
         if (window.toastManager) {

@@ -286,7 +286,11 @@ class ProtocolListener {
         );
 
         if (data.statusText !== undefined || data.subItems !== undefined) {
-          window.downloadManager.updateStatus(rendererId, data.statusText, data.subItems);
+          window.downloadManager.updateStatus(
+            rendererId,
+            data.statusText,
+            data.subItems,
+          );
         }
       }
     });
@@ -336,8 +340,7 @@ class ProtocolListener {
     });
 
     window.electronAPI.onModInstallSuccess(async (data) => {
-      const gameBananaName =
-        this.gameBananaNames.get(data.downloadId) || null;
+      const gameBananaName = this.gameBananaNames.get(data.downloadId) || null;
       await this.resolveUnnamedMods(data.resultingMods, gameBananaName);
 
       const textFiles = data.resultingMods.flatMap((mod) =>

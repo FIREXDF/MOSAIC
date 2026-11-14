@@ -1,16 +1,22 @@
 import { app, BrowserWindow, ipcMain, session } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import './user-data-migration';
-import store from './store';
-import { initializeProtocol } from './main-protocol-setup';
+import './migration/user-data-migration';
+import store from './store/store';
+import { initializeProtocol } from './protocol/main-protocol-setup';
 import { createTutorialWindow } from './tutorial-window';
-import { migrateFromV3 } from './migration';
+import { migrateFromV3 } from './migration/migration';
 import DiscordRPCManager from './discord-rpc';
 import { registerAllHandlers } from './ipc';
 import { PATHS } from './config';
 import autoUpdater from './auto-updater';
-import { initPosthog, identifyUser, shutdownPosthog, captureError, captureEvent } from './posthog';
+import {
+  initPosthog,
+  identifyUser,
+  shutdownPosthog,
+  captureError,
+  captureEvent,
+} from './posthog';
 
 process.on('uncaughtException', (error) => {
   console.error('[Main] Uncaught Exception:', error);
@@ -19,17 +25,27 @@ process.on('uncaughtException', (error) => {
 
 process.on('unhandledRejection', (reason: any) => {
   console.error('[Main] Unhandled Rejection:', reason);
-  captureError(reason instanceof Error ? reason : new Error(String(reason)), { source: 'main_unhandled_rejection', fatal: true });
+  captureError(reason instanceof Error ? reason : new Error(String(reason)), {
+    source: 'main_unhandled_rejection',
+    fatal: true,
+  });
 });
 
 app.on('render-process-gone', (event, webContents, details) => {
   console.error('[Main] Renderer Process Gone:', details);
-  captureEvent('renderer_crash', { reason: details.reason, exitCode: details.exitCode });
+  captureEvent('renderer_crash', {
+    reason: details.reason,
+    exitCode: details.exitCode,
+  });
 });
 
 app.on('child-process-gone', (event, details) => {
   console.error('[Main] Child Process Gone:', details);
-  captureEvent('child_process_crash', { type: details.type, reason: details.reason, name: details.name });
+  captureEvent('child_process_crash', {
+    type: details.type,
+    reason: details.reason,
+    name: details.name,
+  });
 });
 
 const logsDir = PATHS.logsDir();
@@ -211,7 +227,6 @@ function createWindow(options: CreateWindowOptions = {}) {
           }
         }, 500);
       }
-
     }
   };
 
@@ -286,7 +301,7 @@ function createWindow(options: CreateWindowOptions = {}) {
   autoUpdater.setMainWindow(mainWindow);
   autoUpdater.checkForUpdatesOnStartup();
 
-  const fppArg = process.argv.find(arg => arg.endsWith('.fpp'));
+  const fppArg = process.argv.find((arg) => arg.endsWith('.fpp'));
   if (fppArg && fs.existsSync(fppArg)) {
     mainWindow.webContents.once('did-finish-load', () => {
       setTimeout(() => {
@@ -330,8 +345,13 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on('second-instance', (event, commandLine) => {
-    const fppFile = commandLine.find(arg => arg.endsWith('.fpp'));
-    if (fppFile && fs.existsSync(fppFile) && mainWindow && !mainWindow.isDestroyed()) {
+    const fppFile = commandLine.find((arg) => arg.endsWith('.fpp'));
+    if (
+      fppFile &&
+      fs.existsSync(fppFile) &&
+      mainWindow &&
+      !mainWindow.isDestroyed()
+    ) {
       mainWindow.webContents.send('open-fpp-file', { filePath: fppFile });
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();

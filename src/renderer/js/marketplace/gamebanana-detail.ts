@@ -118,13 +118,14 @@ class GameBananaDetailSection {
     const name = escapeHtml(merged._sName || 'Unknown Mod');
     const creator = escapeHtml(merged._aSubmitter?._sName || 'Unknown');
     const model = escapeHtml(merged._sModelName || 'Mod');
-    const rootCategory = escapeHtml(
-      merged._aRootCategory?._sName || 'Unknown',
-    );
+    const rootCategory = escapeHtml(merged._aRootCategory?._sName || 'Unknown');
     const subCategory = escapeHtml(merged._aSubCategory?._sName || '');
     const profileUrl = escapeHtml(merged._sProfileUrl || '');
     const description = escapeHtml(
-      this.manager.getGameBananaSubmissionDescription(details, fallback || undefined) ||
+      this.manager.getGameBananaSubmissionDescription(
+        details,
+        fallback || undefined,
+      ) ||
         this.manager.getSocialTranslation(
           'social.noDescriptionAvailable',
           'No description available.',
@@ -133,7 +134,9 @@ class GameBananaDetailSection {
     const likes = Number(merged._nLikeCount || 0);
     const comments = Number(merged._nPostCount || 0);
     const views = Number(merged._nViewCount || 0);
-    const dateAdded = escapeHtml(this.manager.getGameBananaSubmissionDate(merged));
+    const dateAdded = escapeHtml(
+      this.manager.getGameBananaSubmissionDate(merged),
+    );
 
     const detailImage = loading
       ? '<div class="social-gamebanana-detail-image social-gamebanana-detail-image-skeleton social-gamebanana-skeleton-block"></div>'
@@ -149,9 +152,13 @@ class GameBananaDetailSection {
           </div>
           <h3 class="social-gamebanana-detail-name">${name}</h3>
           <p class="social-gamebanana-detail-author">${escapeHtml(
-            this.manager.getSocialTranslation('social.byAuthor', 'by {{author}}', {
-              author: creator,
-            }),
+            this.manager.getSocialTranslation(
+              'social.byAuthor',
+              'by {{author}}',
+              {
+                author: creator,
+              },
+            ),
           )}</p>
           <div class="social-gamebanana-detail-stats">
             <span><i class="bi bi-hand-thumbs-up"></i> ${likes}</span>
@@ -232,7 +239,10 @@ class GameBananaDetailSection {
     const section = document.querySelector<HTMLElement>(
       '#social-discover-content [data-umc-section]',
     );
-    if (!section || section.dataset.umcSection !== this.manager.gameBananaUmcState?.key)
+    if (
+      !section ||
+      section.dataset.umcSection !== this.manager.gameBananaUmcState?.key
+    )
       return;
     section.outerHTML = this.renderGameBananaUmcSection();
   }
@@ -329,7 +339,10 @@ class GameBananaDetailSection {
     return `
       <div class="social-gamebanana-wip-info">
         <h4 class="social-gamebanana-wip-title">${escapeHtml(
-          this.manager.getSocialTranslation('social.wipProgress', 'Work in progress'),
+          this.manager.getSocialTranslation(
+            'social.wipProgress',
+            'Work in progress',
+          ),
         )}</h4>
         <div class="social-gamebanana-wip-grid">
           ${
@@ -366,9 +379,7 @@ class GameBananaDetailSection {
                   'social.completion',
                   'Completion {{percent}}%',
                   {
-                    percent: String(
-                      Math.max(0, Math.min(100, completion)),
-                    ),
+                    percent: String(Math.max(0, Math.min(100, completion))),
                   },
                 ),
               )}">
@@ -388,7 +399,10 @@ class GameBananaDetailSection {
           work?._sName ||
           work?.name ||
           work?._sProfileUrl ||
-          this.manager.getSocialTranslation('social.finishedWork', 'Finished work'),
+          this.manager.getSocialTranslation(
+            'social.finishedWork',
+            'Finished work',
+          ),
         url: work?._sProfileUrl || work?.url || '',
       })),
       ...remoteWorks.map((work) => ({
@@ -406,7 +420,10 @@ class GameBananaDetailSection {
     return `
       <div class="social-gamebanana-wip-finished">
         <span>${escapeHtml(
-          this.manager.getSocialTranslation('social.finishedWork', 'Finished work'),
+          this.manager.getSocialTranslation(
+            'social.finishedWork',
+            'Finished work',
+          ),
         )}</span>
         ${links
           .map((work) => {
@@ -611,9 +628,7 @@ class GameBananaDetailSection {
     );
     const fileName = escapeHtml(file._sFile || downloadText);
     const description = escapeHtml(file._sDescription || '');
-    const size = escapeHtml(
-      this.formatGameBananaFileSize(file._nFilesize),
-    );
+    const size = escapeHtml(this.formatGameBananaFileSize(file._nFilesize));
     const downloads = Number(file._nDownloadCount || 0);
     const downloadUrl = escapeHtml(this.getGameBananaFileInstallUrl(file));
     const analysis = escapeHtml(file._sAnalysisResult || '');
@@ -673,7 +688,10 @@ class GameBananaDetailSection {
   }
 
   createGameBananaSocialPayload(downloadUrl: string) {
-    if (!this.manager.gameBananaCurrentDetail || !this.manager.gameBananaLastDetailSource) {
+    if (
+      !this.manager.gameBananaCurrentDetail ||
+      !this.manager.gameBananaLastDetailSource
+    ) {
       return null;
     }
 

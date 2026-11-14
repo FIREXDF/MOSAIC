@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import store from './store';
+import store from '../store/store';
 
 type LegacyConfig = Record<string, unknown>;
 

@@ -512,9 +512,10 @@ class BatchTestingManager {
                       ),
                       type: 'secondary' as const,
                       onClick: async () => {
-                        const result = await window.electronAPI.openFolder(
-                          disabledPluginsPath,
-                        );
+                        const result =
+                          await window.electronAPI.openFolder(
+                            disabledPluginsPath,
+                          );
                         if (!result.success) {
                           this.showToast(
                             result.error ||
@@ -1386,10 +1387,7 @@ class BatchTestingManager {
         throw new Error(result.error || 'Failed to delete plugin');
       }
       this.showToast(
-        this.t(
-          'toasts.batchTestingPluginDeleted',
-          'Plugin deleted',
-        ),
+        this.t('toasts.batchTestingPluginDeleted', 'Plugin deleted'),
         'success',
       );
     }
@@ -1452,10 +1450,7 @@ class BatchTestingManager {
 
     if (result.success) {
       this.showToast(
-        this.t(
-          'toasts.emulatorLaunchedSuccessfully',
-          'Emulator launched',
-        ),
+        this.t('toasts.emulatorLaunchedSuccessfully', 'Emulator launched'),
         'success',
       );
       return;

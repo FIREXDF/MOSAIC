@@ -68,7 +68,10 @@ function animateHeightChanges(box: HTMLElement): void {
     targets.forEach((el) => observed.add(el));
   };
 
-  new MutationObserver(refreshTargets).observe(box, { childList: true, subtree: true });
+  new MutationObserver(refreshTargets).observe(box, {
+    childList: true,
+    subtree: true,
+  });
   refreshTargets();
 }
 
@@ -76,7 +79,9 @@ function attachAutoHeight(root: ParentNode): void {
   if (root instanceof HTMLElement && root.matches(AUTO_HEIGHT_SELECTOR)) {
     animateHeightChanges(root);
   }
-  root.querySelectorAll<HTMLElement>(AUTO_HEIGHT_SELECTOR).forEach(animateHeightChanges);
+  root
+    .querySelectorAll<HTMLElement>(AUTO_HEIGHT_SELECTOR)
+    .forEach(animateHeightChanges);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

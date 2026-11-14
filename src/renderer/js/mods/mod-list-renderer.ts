@@ -142,8 +142,7 @@ class ModListRenderer {
     if (isStagesLayoutMod) {
       const badge = document.createElement('span');
       badge.className = 'mod-special-badge';
-      badge.textContent =
-        window.i18n?.t('stages.modBadge') || 'Stages Layout';
+      badge.textContent = window.i18n?.t('stages.modBadge') || 'Stages Layout';
       textContainer.appendChild(badge);
     }
 

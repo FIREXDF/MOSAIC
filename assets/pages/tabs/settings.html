@@ -154,8 +154,8 @@
           </div>
         </div>
         <p class="settings-hint" data-i18n="settings.appRunModeHint">
-          Choose whether MOSAIC should monitor a real Switch connection or
-          run in emulator mode.
+          Choose whether MOSAIC should monitor a real Switch connection or run
+          in emulator mode.
         </p>
       </div>
 
@@ -190,8 +190,8 @@
           id="hardware-library-mode-hint"
           data-i18n="settings.hardwareLibraryModeHint"
         >
-          Sync mode keeps your MOSAIC library on this PC. Direct mode uses
-          the mounted Switch SD card as the library.
+          Sync mode keeps your MOSAIC library on this PC. Direct mode uses the
+          mounted Switch SD card as the library.
         </p>
       </div>
 
@@ -810,9 +810,7 @@
           >
           <div class="custom-select" id="update-channel-select" style="flex: 1">
             <div class="custom-select-trigger">
-              <span
-                class="selected-value"
-                data-i18n="settings.channelBeta"
+              <span class="selected-value" data-i18n="settings.channelBeta"
                 >Beta</span
               >
               <i class="bi bi-chevron-down"></i>
@@ -957,15 +955,29 @@
         </div>
         <div class="settings-input-group">
           <label class="settings-switch">
-            <input type="checkbox" id="css-umc-images-enabled" aria-describedby="css-umc-images-hint" checked />
+            <input
+              type="checkbox"
+              id="css-umc-images-enabled"
+              aria-describedby="css-umc-images-hint"
+              checked
+            />
             <span class="settings-switch-slider"></span>
           </label>
-          <label for="css-umc-images-enabled" style="margin-left: 12px; color: var(--text-secondary)" data-i18n="settings.enableCssUmcImages">
+          <label
+            for="css-umc-images-enabled"
+            style="margin-left: 12px; color: var(--text-secondary)"
+            data-i18n="settings.enableCssUmcImages"
+          >
             Enable automatic UMC images
           </label>
         </div>
-        <p class="settings-hint" id="css-umc-images-hint" data-i18n="settings.cssUmcImagesHint">
-          Automatically use UMC images for characters without a local image. Applies immediately.
+        <p
+          class="settings-hint"
+          id="css-umc-images-hint"
+          data-i18n="settings.cssUmcImagesHint"
+        >
+          Automatically use UMC images for characters without a local image.
+          Applies immediately.
         </p>
       </div>
 
@@ -1091,8 +1103,8 @@
           >
         </div>
         <p class="settings-hint" data-i18n="settings.libraryPathValidationHint">
-          When enabled, MOSAIC asks you to fix broken library paths after
-          moving between systems.
+          When enabled, MOSAIC asks you to fix broken library paths after moving
+          between systems.
         </p>
       </div>
 
@@ -1534,7 +1546,11 @@
                 >
               </button>
             </div>
-            <div class="feedback-logs-selected" id="feedback-logs-selected" hidden>
+            <div
+              class="feedback-logs-selected"
+              id="feedback-logs-selected"
+              hidden
+            >
               <i class="bi bi-file-earmark-text"></i>
               <div class="feedback-logs-selected-text">
                 <strong id="feedback-logs-summary"></strong>
@@ -1987,8 +2003,8 @@
             <span
               class="settings-btn-action-desc"
               data-i18n="settings.exportConfigBackupDesc"
-              >Save settings, Character CSS layout, presets, and
-              custom CSS/JS files</span
+              >Save settings, Character CSS layout, presets, and custom CSS/JS
+              files</span
             >
           </div>
           <i class="bi bi-arrow-right"></i>
@@ -2007,15 +2023,14 @@
             <span
               class="settings-btn-action-desc"
               data-i18n="settings.restoreConfigBackupDesc"
-              >Replace the current configuration from a MOSAIC backup
-              file</span
+              >Replace the current configuration from a MOSAIC backup file</span
             >
           </div>
           <i class="bi bi-arrow-right"></i>
         </button>
         <p class="settings-hint" data-i18n="settings.configBackupHint">
-          Restoring a backup locks the app until MOSAIC is restarted so
-          every setting is loaded cleanly.
+          Restoring a backup locks the app until MOSAIC is restarted so every
+          setting is loaded cleanly.
         </p>
       </div>
 
@@ -2032,12 +2047,20 @@
         </p>
 
         <div id="batch-testing-session-card" class="batch-session" hidden>
-          <span id="batch-testing-session-title" class="batch-session-title"></span>
-          <span id="batch-testing-session-badge" class="batch-session-status"></span>
+          <span
+            id="batch-testing-session-title"
+            class="batch-session-title"
+          ></span>
+          <span
+            id="batch-testing-session-badge"
+            class="batch-session-status"
+          ></span>
         </div>
 
         <div class="batch-start-order">
-          <span class="settings-label" data-i18n="settings.batchTestingStartOrder"
+          <span
+            class="settings-label"
+            data-i18n="settings.batchTestingStartOrder"
             >Start With:</span
           >
           <div class="batch-segmented" role="radiogroup">

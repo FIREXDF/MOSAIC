@@ -11,7 +11,10 @@ class BatchTestingSessionStore {
     }
 
     try {
-      return ((await window.electronAPI.store.get(this.storeKey)) as T | null) || null;
+      return (
+        ((await window.electronAPI.store.get(this.storeKey)) as T | null) ||
+        null
+      );
     } catch (error) {
       console.error('[BatchTesting] Failed to load stored session:', error);
       return null;

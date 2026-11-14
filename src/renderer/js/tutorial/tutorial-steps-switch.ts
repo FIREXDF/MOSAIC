@@ -374,7 +374,10 @@ function createTutorialSwitchSteps(ctx: TutorialStepContext): TutorialStep[] {
                   ?.addEventListener('click', () => {
                     statusDiv!.innerHTML =
                       '<div class="tutorial-detecting">Detecting drives...</div>';
-                    setTimeout(() => ctx.steps[ctx.currentStep].onRender!(), 1000);
+                    setTimeout(
+                      () => ctx.steps[ctx.currentStep].onRender!(),
+                      1000,
+                    );
                   });
               } else if (drives.length === 1) {
                 const drive = drives[0];
@@ -1049,7 +1052,9 @@ function createTutorialSwitchSteps(ctx: TutorialStepContext): TutorialStep[] {
             ((await ctx.apiWrapper.storeGet('tutorial.sdDrive')) as
               | string
               | null) ||
-            ((await ctx.apiWrapper.storeGet('switchDriveLetter')) as string | null);
+            ((await ctx.apiWrapper.storeGet('switchDriveLetter')) as
+              | string
+              | null);
 
           if (sdDrive) {
             await window.tutorialAPI.store.set('switchDriveLetter', sdDrive);
@@ -1061,9 +1066,9 @@ function createTutorialSwitchSteps(ctx: TutorialStepContext): TutorialStep[] {
               return;
             }
 
-            const currentModsPath = (await ctx.apiWrapper.storeGet('modsPath')) as
-              | string
-              | null;
+            const currentModsPath = (await ctx.apiWrapper.storeGet(
+              'modsPath',
+            )) as string | null;
             const currentPluginsPath = (await ctx.apiWrapper.storeGet(
               'pluginsPath',
             )) as string | null;

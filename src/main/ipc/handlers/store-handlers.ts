@@ -1,6 +1,6 @@
 import { IpcMain } from 'electron';
 import { isDeepStrictEqual } from 'util';
-import store from '../../store';
+import store from '../../store/store';
 import {
   createErrorResponse,
   ErrorCodes,

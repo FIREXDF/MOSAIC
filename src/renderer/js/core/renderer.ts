@@ -2,7 +2,8 @@ window.addEventListener('error', (event) => {
   console.error('[Renderer] Uncaught Error:', event.error || event.message);
   if (window.electronAPI && window.electronAPI.trackError) {
     const errorMsg = event.error ? event.error.message : event.message;
-    const errorStack = event.error && event.error.stack ? event.error.stack : '';
+    const errorStack =
+      event.error && event.error.stack ? event.error.stack : '';
     window.electronAPI.trackError(errorMsg, errorStack, {
       source: 'renderer_window_error',
       filename: event.filename,
@@ -14,8 +15,14 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
   console.error('[Renderer] Unhandled Rejection:', event.reason);
   if (window.electronAPI && window.electronAPI.trackError) {
-    const errorMsg = event.reason instanceof Error ? event.reason.message : String(event.reason);
-    const errorStack = event.reason instanceof Error && event.reason.stack ? event.reason.stack : '';
+    const errorMsg =
+      event.reason instanceof Error
+        ? event.reason.message
+        : String(event.reason);
+    const errorStack =
+      event.reason instanceof Error && event.reason.stack
+        ? event.reason.stack
+        : '';
     window.electronAPI.trackError(errorMsg, errorStack, {
       source: 'renderer_unhandled_rejection',
     });
@@ -140,7 +147,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   const params = new URLSearchParams(window.location.search);
-  const guideProgress = await window.electronAPI?.store.get('tutorial.guideProgress');
+  const guideProgress = await window.electronAPI?.store.get(
+    'tutorial.guideProgress',
+  );
   if (params.get('postTutorialIntro') === 'true' || guideProgress) {
     setTimeout(() => window.tutorial?.showInApp?.(), 800);
   }
@@ -154,13 +163,17 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (window.statusBarManager && tabId) {
         window.statusBarManager.updateStatus(tabId);
       } else {
-        console.warn('[Renderer] StatusBarManager missing or tabId invalid for active tab');
+        console.warn(
+          '[Renderer] StatusBarManager missing or tabId invalid for active tab',
+        );
       }
     } else {
       if (window.statusBarManager) {
         window.statusBarManager.updateStatus('tools');
       } else {
-        console.warn('[Renderer] StatusBarManager missing, cannot default to tools');
+        console.warn(
+          '[Renderer] StatusBarManager missing, cannot default to tools',
+        );
       }
     }
   }, 100);

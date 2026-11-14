@@ -113,11 +113,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderInstallProgress(statusDiv, 'Fetching latest releases...', 10);
     const ozoneRelease = await apiWrapper.getOzoneRelease();
     if (!ozoneRelease.success)
-      throw createTutorialIpcError(
-        'Failed to get Ozone release',
-        ozoneRelease,
-      );
-    const arcropolisRelease = await window.tutorialAPI.getGithubRelease('Raytwo/ARCropolis');
+      throw createTutorialIpcError('Failed to get Ozone release', ozoneRelease);
+    const arcropolisRelease =
+      await window.tutorialAPI.getGithubRelease('Raytwo/ARCropolis');
     if (!arcropolisRelease.success)
       throw createTutorialIpcError(
         'Failed to get ARCropolis release',
@@ -155,7 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     if (!ozoneExtract.success) throw new Error('Ozone extraction failed');
     await window.tutorialAPI.store.set('pluginLoader', 'ozone');
-    await window.tutorialAPI.store.set('pluginLoaderVersion', ozoneRelease.version);
+    await window.tutorialAPI.store.set(
+      'pluginLoaderVersion',
+      ozoneRelease.version,
+    );
 
     renderInstallProgress(statusDiv, 'Installing ARCropolis (romfs)...', 80);
     const arcropolisExtract = await window.tutorialAPI.extractArcropolis(
@@ -508,13 +509,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const welcomeTitle = translations?.tutorial?.welcomeTitle;
       if (typeof welcomeTitle === 'string') {
-        const localizedAppName = welcomeTitle.match(/MOSAIC|FightPlanner/i)?.[0];
+        const localizedAppName =
+          welcomeTitle.match(/MOSAIC|FightPlanner/i)?.[0];
         const title = localizedAppName
           ? welcomeTitle.replace(localizedAppName, appName)
           : appName;
-        const titleElement = document.querySelector<HTMLElement>(
-          '#welcome-text h1',
-        );
+        const titleElement =
+          document.querySelector<HTMLElement>('#welcome-text h1');
         if (titleElement) {
           titleElement.textContent = title;
         }
@@ -522,9 +523,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const welcomeSubtitle = translations?.tutorial?.welcomeSubtitle;
       if (typeof welcomeSubtitle === 'string') {
-        const subtitleElement = document.querySelector<HTMLElement>(
-          '#welcome-text p',
-        );
+        const subtitleElement =
+          document.querySelector<HTMLElement>('#welcome-text p');
         if (subtitleElement) {
           subtitleElement.textContent = welcomeSubtitle;
         }
@@ -619,16 +619,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    introVideo.addEventListener(
-      'playing',
-      () => startTimeline(true),
-      { once: true },
-    );
-    introVideo.addEventListener(
-      'error',
-      () => startTimeline(false),
-      { once: true },
-    );
+    introVideo.addEventListener('playing', () => startTimeline(true), {
+      once: true,
+    });
+    introVideo.addEventListener('error', () => startTimeline(false), {
+      once: true,
+    });
     introVideo.play().then(
       () => startTimeline(true),
       (error) => {
@@ -879,7 +875,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function createTutorialIpcError(action: string, result: any) {
-    const error = new Error(`${action}: ${result?.error || 'Unknown error'}`) as Error & {
+    const error = new Error(
+      `${action}: ${result?.error || 'Unknown error'}`,
+    ) as Error & {
       code?: string;
       details?: unknown;
     };
@@ -888,13 +886,22 @@ document.addEventListener('DOMContentLoaded', () => {
     return error;
   }
 
-  function renderTutorialInstallationError(container: HTMLElement, error: unknown) {
-    const installationError = error instanceof Error ? error : new Error(String(error));
-    const ipcError = installationError as Error & { code?: string; details?: unknown };
+  function renderTutorialInstallationError(
+    container: HTMLElement,
+    error: unknown,
+  ) {
+    const installationError =
+      error instanceof Error ? error : new Error(String(error));
+    const ipcError = installationError as Error & {
+      code?: string;
+      details?: unknown;
+    };
     const details = [
       `Message: ${installationError.message}`,
       ipcError.code ? `Code: ${ipcError.code}` : '',
-      ipcError.details ? `Details: ${JSON.stringify(ipcError.details, null, 2)}` : '',
+      ipcError.details
+        ? `Details: ${JSON.stringify(ipcError.details, null, 2)}`
+        : '',
       installationError.stack ? `Stack:\n${installationError.stack}` : '',
     ]
       .filter(Boolean)
@@ -912,15 +919,23 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    const detailsButton = container.querySelector<HTMLButtonElement>('[data-tutorial-error-details]');
-    const detailsOutput = container.querySelector<HTMLElement>('[data-tutorial-error-output]');
+    const detailsButton = container.querySelector<HTMLButtonElement>(
+      '[data-tutorial-error-details]',
+    );
+    const detailsOutput = container.querySelector<HTMLElement>(
+      '[data-tutorial-error-output]',
+    );
     detailsButton?.addEventListener('click', () => {
       const isHidden = detailsOutput?.hidden ?? true;
       if (detailsOutput) detailsOutput.hidden = !isHidden;
-      detailsButton.textContent = isHidden ? 'Hide error details' : 'View error details';
+      detailsButton.textContent = isHidden
+        ? 'Hide error details'
+        : 'View error details';
     });
 
-    const retryButton = container.querySelector<HTMLButtonElement>('[data-tutorial-install-retry]');
+    const retryButton = container.querySelector<HTMLButtonElement>(
+      '[data-tutorial-install-retry]',
+    );
     retryButton?.addEventListener('click', () => {
       retryButton.disabled = true;
       retryButton.textContent = 'Retrying…';
@@ -944,7 +959,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Could not save tutorial progress:', result);
           }
         })
-        .catch((error) => console.error('Could not save tutorial progress:', error));
+        .catch((error) =>
+          console.error('Could not save tutorial progress:', error),
+        );
     }
     const contentDiv = document.querySelector<HTMLElement>('#tutorial-content');
     const prevBtn = document.querySelector<HTMLElement>('#prev-btn');
@@ -1052,7 +1069,9 @@ ${step.content}
     }
   }
 
-  async function closeTutorial(action: 'close' | 'complete' | 'skip' = 'close') {
+  async function closeTutorial(
+    action: 'close' | 'complete' | 'skip' = 'close',
+  ) {
     if (window.tutorialAPI) {
       try {
         if (action === 'complete') {

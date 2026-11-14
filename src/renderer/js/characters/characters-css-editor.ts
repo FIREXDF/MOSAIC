@@ -46,8 +46,8 @@ class CharactersCssEditorSection {
         throw new Error(result.error || 'Failed to add moveset to CSS');
       }
 
-      this.manager.cssVisibleCharacters = result.visibleCharacters.map((entry) =>
-        this.manager.cssImages.hydrateCssCharacter(entry),
+      this.manager.cssVisibleCharacters = result.visibleCharacters.map(
+        (entry) => this.manager.cssImages.hydrateCssCharacter(entry),
       );
       this.manager.cssHiddenCharacters = result.hiddenCharacters.map((entry) =>
         this.manager.cssImages.hydrateCssCharacter(entry),
@@ -282,48 +282,56 @@ class CharactersCssEditorSection {
       });
       if (modIds.length) {
         void Promise.all(
-          modIds.map((modId) => this.manager.movesets.getUmcMovesets(modId, true)),
-        ).then((results) => {
-          if (closed || !modal.isConnected) return;
-          suggestions = [
-            ...new Map(
-              results
-                .flat()
-                .filter((entry) => {
-                  const fighterId = window.resolveFolderName
-                    ? window.resolveFolderName(entry.fighterId)
-                    : entry.fighterId.toLowerCase();
-                  return fighterId === movesetCharacter.id;
-                })
-                .map((entry) => [entry.id, entry]),
-            ).values(),
-          ];
-          if (!suggestions.length) {
+          modIds.map((modId) =>
+            this.manager.movesets.getUmcMovesets(modId, true),
+          ),
+        )
+          .then((results) => {
+            if (closed || !modal.isConnected) return;
+            suggestions = [
+              ...new Map(
+                results
+                  .flat()
+                  .filter((entry) => {
+                    const fighterId = window.resolveFolderName
+                      ? window.resolveFolderName(entry.fighterId)
+                      : entry.fighterId.toLowerCase();
+                    return fighterId === movesetCharacter.id;
+                  })
+                  .map((entry) => [entry.id, entry]),
+              ).values(),
+            ];
+            if (!suggestions.length) {
+              modal.querySelector<HTMLElement>('[data-umc-picker]')!.hidden =
+                true;
+              status.textContent = text(
+                'unavailable',
+                'No UMC information available. Enter the moveset IDs and costume range.',
+              );
+              return;
+            }
+            selector.replaceChildren(
+              ...suggestions.map((moveset) => {
+                const option = document.createElement('option');
+                option.value = String(moveset.id);
+                option.textContent = moveset.slottedId
+                  ? `${moveset.name} (${moveset.slottedId})`
+                  : moveset.name;
+                return option;
+              }),
+            );
+            selector.disabled = false;
+            applySuggestion(suggestions[0], true);
+          })
+          .catch(() => {
+            if (closed || !modal.isConnected) return;
             modal.querySelector<HTMLElement>('[data-umc-picker]')!.hidden =
               true;
             status.textContent = text(
               'unavailable',
               'No UMC information available. Enter the moveset IDs and costume range.',
             );
-            return;
-          }
-          selector.replaceChildren(
-            ...suggestions.map((moveset) => {
-              const option = document.createElement('option');
-              option.value = String(moveset.id);
-              option.textContent = moveset.slottedId
-                ? `${moveset.name} (${moveset.slottedId})`
-                : moveset.name;
-              return option;
-            }),
-          );
-          selector.disabled = false;
-          applySuggestion(suggestions[0], true);
-        }).catch(() => {
-          if (closed || !modal.isConnected) return;
-          modal.querySelector<HTMLElement>('[data-umc-picker]')!.hidden = true;
-          status.textContent = text('unavailable', 'No UMC information available. Enter the moveset IDs and costume range.');
-        });
+          });
       }
       form.addEventListener('submit', (event) => {
         event.preventDefault();
@@ -469,8 +477,8 @@ class CharactersCssEditorSection {
         throw new Error(result.error || 'Failed to load character CSS layout');
       }
 
-      this.manager.cssVisibleCharacters = result.visibleCharacters.map((entry) =>
-        this.manager.cssImages.hydrateCssCharacter(entry),
+      this.manager.cssVisibleCharacters = result.visibleCharacters.map(
+        (entry) => this.manager.cssImages.hydrateCssCharacter(entry),
       );
       this.manager.cssHiddenCharacters = result.hiddenCharacters.map((entry) =>
         this.manager.cssImages.hydrateCssCharacter(entry),
@@ -480,8 +488,9 @@ class CharactersCssEditorSection {
       this.manager.cssRenamedCharacters.clear();
       this.manager.cssCharacterUpdates.clear();
       this.manager.cssSelectedCharacterId =
-        this.manager.cssVisibleCharacters.find((character) => !character.isRandom)
-          ?.id ||
+        this.manager.cssVisibleCharacters.find(
+          (character) => !character.isRandom,
+        )?.id ||
         this.manager.cssVisibleCharacters[0]?.id ||
         null;
       this.manager.cssLoaded = true;
@@ -701,8 +710,8 @@ class CharactersCssEditorSection {
       }
 
       this.manager.cssPrefetchedLayout = null;
-      this.manager.cssVisibleCharacters = result.visibleCharacters.map((entry) =>
-        this.manager.cssImages.hydrateCssCharacter(entry),
+      this.manager.cssVisibleCharacters = result.visibleCharacters.map(
+        (entry) => this.manager.cssImages.hydrateCssCharacter(entry),
       );
       this.manager.cssHiddenCharacters = result.hiddenCharacters.map((entry) =>
         this.manager.cssImages.hydrateCssCharacter(entry),
@@ -712,8 +721,9 @@ class CharactersCssEditorSection {
       this.manager.cssRenamedCharacters.clear();
       this.manager.cssCharacterUpdates.clear();
       this.manager.cssSelectedCharacterId =
-        this.manager.cssVisibleCharacters.find((character) => !character.isRandom)
-          ?.id ||
+        this.manager.cssVisibleCharacters.find(
+          (character) => !character.isRandom,
+        )?.id ||
         this.manager.cssVisibleCharacters[0]?.id ||
         null;
       this.manager.cssLoaded = true;
@@ -740,7 +750,9 @@ class CharactersCssEditorSection {
     return new Map(
       Object.entries(groups || {}).map(([groupId, characters]) => [
         groupId,
-        characters.map((character) => this.manager.cssImages.hydrateCssCharacter(character)),
+        characters.map((character) =>
+          this.manager.cssImages.hydrateCssCharacter(character),
+        ),
       ]),
     );
   }
@@ -796,14 +808,16 @@ class CharactersCssEditorSection {
         this.manager.cssHiddenCharacters.length === 0 || this.manager.cssSaving;
     }
     if (changeSourceButton) {
-      changeSourceButton.disabled = this.manager.cssSaving || this.manager.cssSourceImporting;
+      changeSourceButton.disabled =
+        this.manager.cssSaving || this.manager.cssSourceImporting;
     }
     if (randomizeButton) {
       randomizeButton.disabled = this.manager.cssSaving;
     }
     if (previewButton) {
       previewButton.disabled =
-        this.manager.cssSaving || this.manager.cssVisibleCharacters.length === 0;
+        this.manager.cssSaving ||
+        this.manager.cssVisibleCharacters.length === 0;
     }
     if (slotsButton) {
       slotsButton.disabled = this.manager.cssSaving;
@@ -816,7 +830,9 @@ class CharactersCssEditorSection {
       saveButton.classList.toggle('is-loading', this.manager.cssSaving);
       const label = saveButton.querySelector('span');
       if (label) {
-        label.textContent = this.manager.cssSaving ? 'Applying...' : 'Apply Layout';
+        label.textContent = this.manager.cssSaving
+          ? 'Applying...'
+          : 'Apply Layout';
       }
     }
   }
@@ -913,7 +929,8 @@ ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</spa
   }
 
   setCssCharacterUpdate(characterId: string, key: string, value: any) {
-    const currentUpdate = this.manager.cssCharacterUpdates.get(characterId) || {};
+    const currentUpdate =
+      this.manager.cssCharacterUpdates.get(characterId) || {};
     this.manager.cssCharacterUpdates.set(characterId, {
       ...currentUpdate,
       [key]: value,
@@ -927,7 +944,8 @@ ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</spa
     key: string,
     value: string,
   ) {
-    const currentUpdate = this.manager.cssCharacterUpdates.get(characterId) || {};
+    const currentUpdate =
+      this.manager.cssCharacterUpdates.get(characterId) || {};
     const currentSlots = currentUpdate.slots || {};
     this.manager.cssCharacterUpdates.set(characterId, {
       ...currentUpdate,
@@ -1010,7 +1028,9 @@ ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</spa
       return;
     }
 
-    const character = this.findCssCharacter(this.manager.cssSelectedCharacterId);
+    const character = this.findCssCharacter(
+      this.manager.cssSelectedCharacterId,
+    );
     if (!character) {
       return;
     }
@@ -1062,7 +1082,8 @@ ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</spa
       return;
     }
 
-    const previousImageLookupId = this.manager.cssImages.getCssCharacterLookupId(character);
+    const previousImageLookupId =
+      this.manager.cssImages.getCssCharacterLookupId(character);
     const previousNameId = character.nameId;
     if (key === 'nameId') {
       character.nameId = String(value);
@@ -1077,7 +1098,8 @@ ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</spa
     }
     if (
       (key === 'uiCharaId' &&
-        this.manager.cssImages.getCssCharacterLookupId(character) !== previousImageLookupId) ||
+        this.manager.cssImages.getCssCharacterLookupId(character) !==
+          previousImageLookupId) ||
       (key === 'nameId' && character.nameId !== previousNameId)
     ) {
       this.manager.cssImages.scheduleCssCharacterImageLookup(character);
@@ -1097,14 +1119,19 @@ ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</spa
       .filter((character) => !character.isRandom)
       .sort(() => Math.random() - 0.5);
 
-    this.manager.cssVisibleCharacters = [...fixedCharacters, ...shuffledCharacters];
+    this.manager.cssVisibleCharacters = [
+      ...fixedCharacters,
+      ...shuffledCharacters,
+    ];
     this.manager.cssDirty = true;
     this.renderCssEditor();
   }
 
   getCssPreviewCharacters() {
     return this.manager.cssVisibleCharacters.flatMap((character) =>
-      character.isGroup ? this.manager.cssGroups.get(character.id) || [] : [character],
+      character.isGroup
+        ? this.manager.cssGroups.get(character.id) || []
+        : [character],
     );
   }
 
@@ -1233,8 +1260,12 @@ ${image}
     this.manager.cssInspector.setCssInspectorSaving(true);
 
     try {
-      const renamedCharacters = Object.fromEntries(this.manager.cssRenamedCharacters);
-      const characterUpdates = Object.fromEntries(this.manager.cssCharacterUpdates);
+      const renamedCharacters = Object.fromEntries(
+        this.manager.cssRenamedCharacters,
+      );
+      const characterUpdates = Object.fromEntries(
+        this.manager.cssCharacterUpdates,
+      );
       const charactersById = new Map(
         this.getAllCssCharacters().map((character) => [
           character.id,
@@ -1279,9 +1310,10 @@ ${image}
           );
         }
 
-        this.manager.cssVisibleCharacters = refreshedLayout.visibleCharacters.map(
-          (entry) => this.manager.cssImages.hydrateCssCharacter(entry),
-        );
+        this.manager.cssVisibleCharacters =
+          refreshedLayout.visibleCharacters.map((entry) =>
+            this.manager.cssImages.hydrateCssCharacter(entry),
+          );
         this.manager.cssHiddenCharacters = refreshedLayout.hiddenCharacters.map(
           (entry) => this.manager.cssImages.hydrateCssCharacter(entry),
         );

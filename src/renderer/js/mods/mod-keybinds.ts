@@ -50,7 +50,9 @@ class ModKeybindsHandler {
         case 'Backspace':
           if (isCtrlOrCmd || e.key === 'Delete') {
             e.preventDefault();
-            await this.handleDelete(selectedMods.length > 0 ? selectedMods : [selectedMod]);
+            await this.handleDelete(
+              selectedMods.length > 0 ? selectedMods : [selectedMod],
+            );
           }
           break;
 

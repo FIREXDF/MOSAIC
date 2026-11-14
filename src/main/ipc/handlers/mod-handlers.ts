@@ -1,23 +1,17 @@
-import { shell, dialog, ipcMain, IpcMainInvokeEvent, app, IpcMain, BrowserWindow } from 'electron';
+import { dialog, IpcMain, BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import ModUtils, {
-  Mod,
-  ModSlotCount,
-  SlotCountIssue,
-} from '../../mod-utils';
+import ModUtils, { Mod, ModSlotCount, SlotCountIssue } from '../../mod-utils';
 import { captureModsDebugSnapshot } from '../../debug-library-snapshot';
-import store from '../../store';
-import downloadsStore from '../../store-downloads';
-import ProtocolHandler from '../../protocol-handler';
+import store from '../../store/store';
 import {
   handleError,
   createErrorResponse,
   ErrorCodes,
 } from '../../utils/error-handler';
 import { resolveVirtualPath } from '../../utils/virtual-paths';
-import FppHandler from '../../fpp-handler';
+import FppHandler from '../../transfer/fpp-handler';
 import { HandlerResponse } from '../../types/common';
 import { BaseHandlerArg, GenericHandler } from '../../types/common';
 import {
@@ -30,7 +24,7 @@ import { SoundAssigner } from '../../mod-utils/sound-assigner';
 import PluginUpdateChecker, {
   ModUpdateResult,
   ModUpdateWatch,
-} from '../../plugin-update-checker';
+} from '../../plugins/plugin-update-checker';
 
 const MOD_LOCK_ERROR_CODES = new Set(['EPERM', 'EACCES', 'EBUSY']);
 const MOD_RENAME_RETRY_DELAYS_MS = [0, 50, 100, 250];
@@ -83,7 +77,9 @@ const ModHandlers = {
     }>;
   }> => {
     try {
-      const modRoot = fs.realpathSync(path.resolve(resolveVirtualPath(modPath)));
+      const modRoot = fs.realpathSync(
+        path.resolve(resolveVirtualPath(modPath)),
+      );
       const requestedPath = path.resolve(modRoot, relativePath);
       const relativeTarget = path.relative(modRoot, requestedPath);
 
@@ -168,7 +164,9 @@ const ModHandlers = {
     truncated: boolean;
   }> => {
     try {
-      const modRoot = fs.realpathSync(path.resolve(resolveVirtualPath(modPath)));
+      const modRoot = fs.realpathSync(
+        path.resolve(resolveVirtualPath(modPath)),
+      );
       const requestedPath = path.resolve(modRoot, relativePath);
       const relativeTarget = path.relative(modRoot, requestedPath);
 
@@ -180,7 +178,10 @@ const ModHandlers = {
         !fs.existsSync(requestedPath) ||
         !fs.statSync(requestedPath).isFile()
       ) {
-        return createErrorResponse(ErrorCodes.MOD_READ_ERROR, 'Invalid file path');
+        return createErrorResponse(
+          ErrorCodes.MOD_READ_ERROR,
+          'Invalid file path',
+        );
       }
 
       const realRequestedPath = fs.realpathSync(requestedPath);
@@ -198,9 +199,31 @@ const ModHandlers = {
 
       const stat = await fs.promises.stat(realRequestedPath);
       const previewableExtensions = new Set([
-        '.txt', '.md', '.json', '.toml', '.ini', '.cfg', '.xml', '.prcxml',
-        '.csv', '.yaml', '.yml', '.lua', '.nut', '.py', '.js', '.ts', '.css',
-        '.html', '.rs', '.c', '.h', '.cpp', '.hpp', '.sh', '.log',
+        '.txt',
+        '.md',
+        '.json',
+        '.toml',
+        '.ini',
+        '.cfg',
+        '.xml',
+        '.prcxml',
+        '.csv',
+        '.yaml',
+        '.yml',
+        '.lua',
+        '.nut',
+        '.py',
+        '.js',
+        '.ts',
+        '.css',
+        '.html',
+        '.rs',
+        '.c',
+        '.h',
+        '.cpp',
+        '.hpp',
+        '.sh',
+        '.log',
       ]);
       const extension = path.extname(realRequestedPath).toLowerCase();
       const previewable = previewableExtensions.has(extension);
@@ -289,7 +312,11 @@ const ModHandlers = {
   ): HandlerResponse => {
     try {
       const resolvedModsPath = modsPath ? resolveVirtualPath(modsPath) : '';
-      if (!resolvedModsPath || !fs.existsSync(resolvedModsPath) || !fs.statSync(resolvedModsPath).isDirectory()) {
+      if (
+        !resolvedModsPath ||
+        !fs.existsSync(resolvedModsPath) ||
+        !fs.statSync(resolvedModsPath).isDirectory()
+      ) {
         console.error('[ModHandlers] Mods folder unavailable:', {
           requestedPath: modsPath,
           resolvedPath: resolvedModsPath,
@@ -390,7 +417,11 @@ const ModHandlers = {
     previewData: ArrayBuffer | Uint8Array,
   ): HandlerResponse<{ previewPath: string }> => {
     try {
-      if (!modPath || !fs.existsSync(modPath) || !fs.statSync(modPath).isDirectory()) {
+      if (
+        !modPath ||
+        !fs.existsSync(modPath) ||
+        !fs.statSync(modPath).isDirectory()
+      ) {
         return createErrorResponse(
           ErrorCodes.MOD_NOT_FOUND,
           'Mod folder does not exist',
@@ -398,9 +429,11 @@ const ModHandlers = {
       }
 
       const previewPath = path.join(modPath, 'preview.webp');
-      const buffer = Buffer.from(previewData instanceof Uint8Array
-        ? previewData
-        : new Uint8Array(previewData));
+      const buffer = Buffer.from(
+        previewData instanceof Uint8Array
+          ? previewData
+          : new Uint8Array(previewData),
+      );
 
       fs.writeFileSync(previewPath, buffer);
 
@@ -422,7 +455,12 @@ const ModHandlers = {
     modPaths: string[],
   ): HandlerResponse<{ filePath?: string }> => {
     try {
-      if (!name || !modPaths || !Array.isArray(modPaths) || modPaths.length === 0) {
+      if (
+        !name ||
+        !modPaths ||
+        !Array.isArray(modPaths) ||
+        modPaths.length === 0
+      ) {
         return createErrorResponse(
           ErrorCodes.UNKNOWN_ERROR,
           'Name and modPaths array are required',
@@ -449,10 +487,19 @@ const ModHandlers = {
         return { success: false, canceled: true };
       }
 
-      console.log(`Creating FPP pack: ${name} (v${fppVersion}) with ${modPaths.length} mods`);
+      console.log(
+        `Creating FPP pack: ${name} (v${fppVersion}) with ${modPaths.length} mods`,
+      );
 
       const outputPath = saveResult.filePath;
-      const result = await FppHandler.createFpp(name, fppVersion, thumbnailPath, modPaths, outputPath, mainWindow);
+      const result = await FppHandler.createFpp(
+        name,
+        fppVersion,
+        thumbnailPath,
+        modPaths,
+        outputPath,
+        mainWindow,
+      );
 
       return {
         success: result.success,
@@ -519,7 +566,11 @@ const ModHandlers = {
     conflictFilePath: string,
   ): HandlerResponse => {
     try {
-      if (!modPath || !fs.existsSync(modPath) || !fs.statSync(modPath).isDirectory()) {
+      if (
+        !modPath ||
+        !fs.existsSync(modPath) ||
+        !fs.statSync(modPath).isDirectory()
+      ) {
         return createErrorResponse(
           ErrorCodes.MOD_NOT_FOUND,
           'Mod folder does not exist',
@@ -574,7 +625,8 @@ const ModHandlers = {
       const parentDir = path.dirname(resolvedModsBasePath);
       const disabledModsPath = path.join(parentDir, '{disabled_mod}');
       const isInActiveMods =
-        modPath.includes(resolvedModsBasePath) && !modPath.includes('{disabled_mods}');
+        modPath.includes(resolvedModsBasePath) &&
+        !modPath.includes('{disabled_mods}');
 
       let targetPath;
       if (isInActiveMods) {
@@ -724,7 +776,9 @@ const ModHandlers = {
     try {
       const { fighters } = await SoundAssigner.readSoundMod(soundModPath);
       const { activeMods, disabledMods } = ModUtils.readAllMods(modsPath);
-      const targets: Array<Pick<Mod, 'name' | 'path' | 'status'> & { slots: string[] }> = [];
+      const targets: Array<
+        Pick<Mod, 'name' | 'path' | 'status'> & { slots: string[] }
+      > = [];
 
       for (const mod of [...activeMods, ...disabledMods]) {
         if (path.resolve(mod.path) === path.resolve(soundModPath)) continue;

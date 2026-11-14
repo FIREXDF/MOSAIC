@@ -651,7 +651,9 @@ function createTutorialEmulatorSteps(ctx: TutorialStepContext): TutorialStep[] {
           missingPathMessage:
             'Ryujinx path not found. Please go back and select your Ryujinx folder.',
           dataFolder: 'sdcard',
-          extraDirs: [[...ARCROPOLIS_CONTENTS_PATH, 'romfs', 'skyline', 'plugins']],
+          extraDirs: [
+            [...ARCROPOLIS_CONTENTS_PATH, 'romfs', 'skyline', 'plugins'],
+          ],
         }),
     },
     {

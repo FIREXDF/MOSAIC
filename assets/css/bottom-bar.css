@@ -1,9 +1,12 @@
 .bottom-bar {
-  background: repeating-linear-gradient(-45deg,
+  background: repeating-linear-gradient(
+      -45deg,
       var(--bg-secondary),
       var(--bg-secondary) 10px,
       var(--bg-primary) 10px,
-      var(--bg-primary) 20px) fixed;
+      var(--bg-primary) 20px
+    )
+    fixed;
   height: 35px;
   display: flex;
   align-items: center;
@@ -281,9 +284,11 @@ body.reduced-animations .bottom-text-left.status-changing {
 }
 
 .download-item {
-  background: linear-gradient(135deg,
-      var(--border-color) 0%,
-      var(--bg-tertiary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--border-color) 0%,
+    var(--bg-tertiary) 100%
+  );
   border: 1px solid var(--bg-transparent-08);
   border-radius: 16px;
   padding: 20px;
@@ -315,21 +320,27 @@ body.reduced-animations .bottom-text-left.status-changing {
 }
 
 .download-item.download-active::before {
-  background: linear-gradient(180deg,
-      var(--accent-color) 0%,
-      var(--accent-hover) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--accent-color) 0%,
+    var(--accent-hover) 100%
+  );
 }
 
 .download-item.download-completed::before {
-  background: linear-gradient(180deg,
-      var(--success-color) 0%,
-      var(--success-color) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--success-color) 0%,
+    var(--success-color) 100%
+  );
 }
 
 .download-item.download-failed::before {
-  background: linear-gradient(180deg,
-      var(--danger-color) 0%,
-      var(--danger-hover) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--danger-color) 0%,
+    var(--danger-hover) 100%
+  );
 }
 
 .download-icon {
@@ -338,9 +349,11 @@ body.reduced-animations .bottom-text-left.status-changing {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg,
-      rgba(var(--accent-rgb), 0.15) 0%,
-      rgba(var(--accent-rgb), 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--accent-rgb), 0.15) 0%,
+    rgba(var(--accent-rgb), 0.05) 100%
+  );
   border-radius: 14px;
   flex-shrink: 0;
   border: 1px solid rgba(var(--accent-rgb), 0.2);
@@ -353,9 +366,11 @@ body.reduced-animations .bottom-text-left.status-changing {
 }
 
 .download-icon.download-icon-success {
-  background: linear-gradient(135deg,
-      rgba(74, 222, 128, 0.15) 0%,
-      rgba(74, 222, 128, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(74, 222, 128, 0.15) 0%,
+    rgba(74, 222, 128, 0.05) 100%
+  );
   border-color: rgba(74, 222, 128, 0.2);
   box-shadow: 0 2px 8px rgba(74, 222, 128, 0.1);
 }
@@ -407,10 +422,12 @@ body.reduced-animations .bottom-text-left.status-changing {
 
 .download-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg,
-      var(--accent-color) 0%,
-      var(--accent-hover) 50%,
-      var(--accent-color) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--accent-color) 0%,
+    var(--accent-hover) 50%,
+    var(--accent-color) 100%
+  );
   background-size: 200% 100%;
   border-radius: 8px;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -582,12 +599,19 @@ body.reduced-animations .bottom-text-left.status-changing {
     border-color 0.3s ease;
   overflow: visible;
   box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.2);
-  background-image: repeating-linear-gradient(-45deg,
-      transparent,
-      transparent 10px,
-      rgba(255, 255, 255, 0.03) 10px,
-      rgba(255, 255, 255, 0.03) 20px);
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.03) 10px,
+    rgba(255, 255, 255, 0.03) 20px
+  );
+  font-family:
+    'Inter',
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   transform-origin: left bottom;
   will-change: transform, filter, box-shadow;
   isolation: isolate;
@@ -713,23 +737,33 @@ body.reduced-animations .bottom-text-left.status-changing {
   display: flex;
   align-items: stretch;
   padding: 16px 20px;
-  background: repeating-linear-gradient(-45deg,
+  background: repeating-linear-gradient(
+      -45deg,
       var(--bg-secondary),
       var(--bg-secondary) 10px,
       var(--bg-primary) 10px,
-      var(--bg-primary) 20px) fixed;
+      var(--bg-primary) 20px
+    )
+    fixed;
   border: 1px solid var(--border-color);
   border-bottom: none;
   border-radius: 0 14px 0 0;
   box-shadow:
     0 -8px 24px rgba(0, 0, 0, 0.3),
     4px 0 12px rgba(0, 0, 0, 0.1);
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Inter',
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   transform: translateY(18px) scale(0.985, 0.9);
   transform-origin: left bottom;
   opacity: 0;
   pointer-events: none;
-  clip-path: inset(100% -50px 0 -50px); /* Hide completely from bottom up, allow side shadows */
+  clip-path: inset(
+    100% -50px 0 -50px
+  ); /* Hide completely from bottom up, allow side shadows */
   filter: blur(14px) saturate(0.88);
   transition:
     clip-path 0.72s cubic-bezier(0.22, 1, 0.36, 1),
@@ -1015,7 +1049,9 @@ body.reduced-animations .bottom-text-left.status-changing {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
   min-height: 1px;
 }
 
@@ -1583,7 +1619,9 @@ body.reduced-animations .ext-conflict-card,
 body.reduced-animations .ext-multi-dl-item,
 body.reduced-animations .ext-count-bump,
 body.reduced-animations .ext-text-swap,
-body.reduced-animations .bottom-bar.expanded.download-mode .ext-progress-fill::after {
+body.reduced-animations
+  .bottom-bar.expanded.download-mode
+  .ext-progress-fill::after {
   animation-duration: 0.18s !important;
 }
 
@@ -1598,7 +1636,9 @@ body.no-animations .ext-conflict-card,
 body.no-animations .ext-multi-dl-item,
 body.no-animations .ext-count-bump,
 body.no-animations .ext-text-swap,
-body.no-animations .bottom-bar.expanded.download-mode .ext-progress-fill::after {
+body.no-animations
+  .bottom-bar.expanded.download-mode
+  .ext-progress-fill::after {
   animation: none !important;
   transition: none !important;
   filter: none !important;

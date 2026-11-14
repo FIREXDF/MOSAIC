@@ -52,11 +52,7 @@ interface FolderModState {
   }>;
 }
 
-type ModSortOrder =
-  | 'name-asc'
-  | 'added-desc'
-  | 'modified-desc'
-  | 'size-desc';
+type ModSortOrder = 'name-asc' | 'added-desc' | 'modified-desc' | 'size-desc';
 
 class ModManager {
   mods: Mod[];
@@ -149,7 +145,6 @@ class ModManager {
     if (!this.keybindsHandler) {
       this.keybindsHandler = new window.ModKeybindsHandler(this);
     }
-
   }
 
   reinitialize() {
@@ -453,7 +448,11 @@ class ModManager {
     this.batchTestingOverrideActive = false;
   }
 
-  private t(key: string, fallback: string, params: Record<string, string> = {}) {
+  private t(
+    key: string,
+    fallback: string,
+    params: Record<string, string> = {},
+  ) {
     const translated = window.i18n?.t?.(key, params);
     return translated && translated !== key ? translated : fallback;
   }
@@ -469,10 +468,7 @@ class ModManager {
     return `fightplanner.hardwareModsCache:${modsPath || 'unknown'}`;
   }
 
-  private saveHardwareLibraryCache(
-    modsPath: string,
-    result: FolderModState,
-  ) {
+  private saveHardwareLibraryCache(modsPath: string, result: FolderModState) {
     if (!this.isDirectHardwareLibraryMode()) {
       return;
     }
@@ -492,7 +488,9 @@ class ModManager {
 
   private readHardwareLibraryCache(modsPath: string | null) {
     try {
-      const raw = localStorage.getItem(this.getHardwareLibraryCacheKey(modsPath));
+      const raw = localStorage.getItem(
+        this.getHardwareLibraryCacheKey(modsPath),
+      );
       if (!raw) {
         return null;
       }
@@ -600,7 +598,8 @@ class ModManager {
 
   private createModsPathUnavailableMessage(targetPath: string | null) {
     const blocker = document.createElement('div');
-    blocker.className = 'hardware-library-message mods-path-unavailable-message';
+    blocker.className =
+      'hardware-library-message mods-path-unavailable-message';
 
     const icon = document.createElement('i');
     icon.className = 'bi bi-folder-x';
@@ -649,10 +648,14 @@ class ModManager {
       'Go to Settings',
     )}</span>`;
     settingsButton.addEventListener('click', () => {
-      document.querySelector<HTMLElement>('.sidebar-btn[data-tab="settings"]')?.click();
+      document
+        .querySelector<HTMLElement>('.sidebar-btn[data-tab="settings"]')
+        ?.click();
       setTimeout(() => {
         document
-          .querySelector<HTMLElement>('.settings-tab-btn[data-settings-tab="library"]')
+          .querySelector<HTMLElement>(
+            '.settings-tab-btn[data-settings-tab="library"]',
+          )
           ?.click();
       }, 150);
     });
@@ -766,8 +769,15 @@ class ModManager {
         ? t('tools.noModsAvailable', 'No mods available.')
         : t('tools.modsFolderNotConfigured', 'No mods folder configured.');
       const message = this.modsPath
-        ? t('tools.downloadOnGameBanana', `Go download some on ${gameBananaLink}!`, { site: gameBananaLink })
-        : t('tools.chooseModsFolderInSettings', 'Choose a mods folder in Settings > Library.');
+        ? t(
+            'tools.downloadOnGameBanana',
+            `Go download some on ${gameBananaLink}!`,
+            { site: gameBananaLink },
+          )
+        : t(
+            'tools.chooseModsFolderInSettings',
+            'Choose a mods folder in Settings > Library.',
+          );
 
       this.modListContainer.innerHTML =
         '<div class="no-results-message" style="color: var(--text-muted); text-align: center; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px;">' +
@@ -1907,20 +1917,19 @@ class ModManager {
             return;
           }
 
-        this.renderHardwareReconnectBlocker(modsPath);
+          this.renderHardwareReconnectBlocker(modsPath);
+          return;
+        }
+
+        if (await this.isModsFolderUnavailable(modsPath)) {
+          this.renderModsPathUnavailableBlocker(modsPath);
+          return;
+        }
+
+        this.setHardwareLibraryBlockedState(false);
+        await this.loadModsFromFolder(modsPath, forcedChangedPaths);
         return;
       }
-
-      if (await this.isModsFolderUnavailable(modsPath)) {
-        this.renderModsPathUnavailableBlocker(modsPath);
-        return;
-      }
-
-      this.setHardwareLibraryBlockedState(false);
-      await this.loadModsFromFolder(modsPath, forcedChangedPaths);
-        return;
-      }
-
     }
 
     this.setHardwareLibraryBlockedState(false);
@@ -2153,8 +2162,7 @@ class ModManager {
 
     window.modalManager.showCustomModal({
       id: 'nro-limit-warning-modal',
-      title:
-        window.i18n?.t?.('modals.nroLimit.title') || 'NRO limit exceeded',
+      title: window.i18n?.t?.('modals.nroLimit.title') || 'NRO limit exceeded',
       body,
       size: 'normal',
       buttons: [

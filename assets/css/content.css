@@ -1109,7 +1109,9 @@ body.no-animations .mod-info-item {
 }
 
 #edit-info-category-dropdown {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .custom-select-dropdown.floating-open {

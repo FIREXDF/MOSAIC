@@ -65,7 +65,9 @@ export class StatusBarManager {
 
   getStatusTextElement() {
     const statusText =
-      document.querySelector<HTMLElement>('#main-status-bar .bottom-text-left') ||
+      document.querySelector<HTMLElement>(
+        '#main-status-bar .bottom-text-left',
+      ) ||
       document.querySelector<HTMLElement>('.bottom-text-left') ||
       document.querySelector<HTMLElement>('.bottom-text');
 
@@ -148,7 +150,7 @@ export class StatusBarManager {
       return true;
     }
 
-    const activeDownloadsMap = (window.downloadManager).activeDownloads;
+    const activeDownloadsMap = window.downloadManager.activeDownloads;
     if (!activeDownloadsMap) {
       return false;
     }
@@ -179,7 +181,9 @@ export class StatusBarManager {
   }
 
   syncCurrentTabFromSidebar() {
-    const activeButton = document.querySelector<HTMLElement>('.sidebar-btn.active');
+    const activeButton = document.querySelector<HTMLElement>(
+      '.sidebar-btn.active',
+    );
     const tabId = activeButton?.getAttribute('data-tab');
     const normalizedTab = this.normalizeTab(tabId);
     if (normalizedTab) {
@@ -244,10 +248,7 @@ export class StatusBarManager {
       .replace(/Â/g, '');
   }
 
-  renderStatus(
-    snapshot: StatusSnapshot,
-    options: { force?: boolean } = {},
-  ) {
+  renderStatus(snapshot: StatusSnapshot, options: { force?: boolean } = {}) {
     if ((this.preservedStatus || this.hasTemporaryStatus()) && !options.force) {
       return false;
     }

@@ -2106,8 +2106,7 @@
   color: #ff9ab9;
 }
 
-.social-supporter-profile-promo-content
-  .social-supporter-profile-promo-note {
+.social-supporter-profile-promo-content .social-supporter-profile-promo-note {
   margin-top: 10px;
   color: var(--text-muted);
   font-size: 12px;
@@ -2343,8 +2342,7 @@
 }
 
 #social-section-profile.is-customizing-profile .social-profile-modebar-copy,
-#social-section-profile.is-customizing-profile
-  .social-open-customizer-btn,
+#social-section-profile.is-customizing-profile .social-open-customizer-btn,
 #social-section-profile.is-customizing-profile .social-profile-content {
   display: none !important;
 }
@@ -4019,16 +4017,8 @@
 .social-user-profile-header.has-profile-background.profile-background-style-gradient {
   background: linear-gradient(
     145deg,
-    color-mix(
-      in srgb,
-      var(--profile-background-c1, #24213d) 42%,
-      #08080c
-    ),
-    color-mix(
-      in srgb,
-      var(--profile-background-c2, #111116) 42%,
-      #08080c
-    )
+    color-mix(in srgb, var(--profile-background-c1, #24213d) 42%, #08080c),
+    color-mix(in srgb, var(--profile-background-c2, #111116) 42%, #08080c)
   );
 }
 
@@ -4037,17 +4027,8 @@
 .social-user-profile-header.has-profile-background.profile-background-style-spotlight {
   background: radial-gradient(
     circle at 22% 18%,
-    color-mix(
-      in srgb,
-      var(--profile-background-c1, #24213d) 42%,
-      #08080c
-    ),
-    color-mix(
-        in srgb,
-        var(--profile-background-c2, #111116) 42%,
-        #08080c
-      )
-      72%
+    color-mix(in srgb, var(--profile-background-c1, #24213d) 42%, #08080c),
+    color-mix(in srgb, var(--profile-background-c2, #111116) 42%, #08080c) 72%
   );
 }
 
@@ -4168,17 +4149,17 @@
   text-shadow:
     0 0 6px var(--profile-accent, var(--accent-color)),
     0 0 12px
-      color-mix(in srgb, var(--profile-accent, var(--accent-color)) 42%, transparent);
+      color-mix(
+        in srgb,
+        var(--profile-accent, var(--accent-color)) 42%,
+        transparent
+      );
 }
 
 .profile-username-shadow {
   color: var(--profile-username-color, var(--text-primary));
   text-shadow: 2px 2px 0
-    color-mix(
-      in srgb,
-      var(--profile-banner-c1, var(--accent-color)) 74%,
-      black
-    );
+    color-mix(in srgb, var(--profile-banner-c1, var(--accent-color)) 74%, black);
 }
 
 .social-customization-heading {
@@ -4392,8 +4373,7 @@
     width: 100%;
   }
 
-  #social-section-profile.is-customizing-profile
-    .social-profile-preview-stage {
+  #social-section-profile.is-customizing-profile .social-profile-preview-stage {
     padding: 12px;
   }
 }

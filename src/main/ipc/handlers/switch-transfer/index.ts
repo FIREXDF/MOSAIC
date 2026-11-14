@@ -2,7 +2,7 @@ import { IpcMain } from 'electron';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
-import FTPClient from '../../../ftp-client';
+import FTPClient from '../../../transfer/ftp-client';
 import {
   handleError,
   createErrorResponse,
@@ -304,7 +304,6 @@ const SwitchTransferHandlers = {
               uploadOptions,
             );
           }
-
         } catch (modError) {
           console.error(`Error sending ${item.itemName}:`, modError);
           failedItems.push(
@@ -339,9 +338,7 @@ const SwitchTransferHandlers = {
 
       await ftpClient.disconnect();
 
-      console.log(
-        `Copied ${copiedCount} files to Switch over FTP`,
-      );
+      console.log(`Copied ${copiedCount} files to Switch over FTP`);
       return { success: true, transferredCount: copiedCount };
     } catch (error) {
       handleError(error, 'send-mods-to-switch');

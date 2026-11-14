@@ -2,11 +2,11 @@ import * as https from 'https';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { FileExtractor } from './utils/file-extractor';
+import { FileExtractor } from '../utils/file-extractor';
 import {
   findBundledArcropolisDirectory,
   getArcropolisDirectoryForLibrary,
-} from './utils/arcropolis-installer';
+} from '../utils/arcropolis-installer';
 
 export type PluginInstallResult =
   | {

@@ -55,10 +55,7 @@ function prepareExecutableTool(executablePath: string) {
     app.getVersion(),
     path.basename(sourceDirectory),
   );
-  const preparedPath = path.join(
-    cacheDirectory,
-    path.basename(executablePath),
-  );
+  const preparedPath = path.join(cacheDirectory, path.basename(executablePath));
 
   if (!fs.existsSync(preparedPath)) {
     fs.cpSync(sourceDirectory, cacheDirectory, {
@@ -202,7 +199,10 @@ export function runParamXml(inputXmlPath: string) {
   );
 }
 
-export function runParamXmlDisassemble(inputPrcPath: string, outputXmlPath: string) {
+export function runParamXmlDisassemble(
+  inputPrcPath: string,
+  outputXmlPath: string,
+) {
   const executablePath = resolveParamXmlExecutable();
   const workingDirectory = path.dirname(inputPrcPath);
 
@@ -392,7 +392,10 @@ function runDotnetTool(toolPath: string, args: string[]) {
   });
 }
 
-export async function runMsbtToJson(inputMsbtPath: string, outputJsonPath: string) {
+export async function runMsbtToJson(
+  inputMsbtPath: string,
+  outputJsonPath: string,
+) {
   if (fs.existsSync(outputJsonPath)) {
     fs.unlinkSync(outputJsonPath);
   }
@@ -401,7 +404,10 @@ export async function runMsbtToJson(inputMsbtPath: string, outputJsonPath: strin
   return runNativeTool(msbtToolPath, [inputMsbtPath, outputJsonPath]);
 }
 
-export async function runPrcToJson(inputPrcPath: string, outputJsonPath: string) {
+export async function runPrcToJson(
+  inputPrcPath: string,
+  outputJsonPath: string,
+) {
   if (fs.existsSync(outputJsonPath)) {
     fs.unlinkSync(outputJsonPath);
   }

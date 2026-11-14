@@ -4,11 +4,11 @@ import * as fsPromises from 'fs/promises';
 import * as crypto from 'crypto';
 import { app } from 'electron';
 
-import { ModInstallResult } from '../plugin-update-installer';
+import { ModInstallResult } from '../plugins/plugin-update-installer';
 import { FileExtractor } from '../utils/file-extractor';
 import { resolveVirtualPath } from '../utils/virtual-paths';
 import { CONFLICT_WHITELIST_PATTERNS, PATHS } from '../config';
-import sharedStore from '../store';
+import sharedStore from '../store/store';
 import { prcXmlContentsConflict } from './prcxml-conflicts';
 import { SlotChanger } from './slot-changer';
 import {
@@ -18,7 +18,7 @@ import {
   readColorNums,
   setColorNum,
 } from './slot-counts';
-import PluginUtils from '../plugin-utils';
+import PluginUtils from '../plugins/plugin-utils';
 
 interface ModInstallOptions {
   onExtractProgress?: (progress: {
@@ -260,7 +260,9 @@ export default class ModUtils {
 
       let entries: fs.Dirent[];
       try {
-        entries = await fsPromises.readdir(currentPath, { withFileTypes: true });
+        entries = await fsPromises.readdir(currentPath, {
+          withFileTypes: true,
+        });
       } catch {
         continue;
       }
@@ -376,7 +378,9 @@ export default class ModUtils {
         };
       }
 
-      queue.push(...childDirs.map((entry) => path.join(currentDir, entry.name)));
+      queue.push(
+        ...childDirs.map((entry) => path.join(currentDir, entry.name)),
+      );
     }
 
     return null;
@@ -1485,7 +1489,11 @@ export default class ModUtils {
             const previewDest = path.join(modPath, previewName);
             try {
               await fsPromises.access(previewSource);
-              await fsPromises.copyFile(previewSource, previewDest, fs.constants.COPYFILE_EXCL);
+              await fsPromises.copyFile(
+                previewSource,
+                previewDest,
+                fs.constants.COPYFILE_EXCL,
+              );
               break;
             } catch {}
           }

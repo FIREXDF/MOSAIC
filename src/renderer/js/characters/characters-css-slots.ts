@@ -6,13 +6,16 @@ class CharactersCssSlotsSection {
   }
 
   async openEchoSlotWizard() {
-    if (this.manager.cssSaving || this.manager.cssVisibleCharacters.length === 0) {
+    if (
+      this.manager.cssSaving ||
+      this.manager.cssVisibleCharacters.length === 0
+    ) {
       return;
     }
 
-    const characters = this.manager.cssEditor.getAllCssCharacters().filter(
-      (character) => !character.isRandom && !character.isGroup,
-    );
+    const characters = this.manager.cssEditor
+      .getAllCssCharacters()
+      .filter((character) => !character.isRandom && !character.isGroup);
     const selectedCandidate = this.manager.cssEditor.findCssCharacter(
       this.manager.cssSelectedCharacterId || '',
     );
@@ -209,7 +212,9 @@ class CharactersCssSlotsSection {
       return;
     }
 
-    const character = this.manager.cssEditor.findCssCharacter(this.manager.cssSelectedCharacterId);
+    const character = this.manager.cssEditor.findCssCharacter(
+      this.manager.cssSelectedCharacterId,
+    );
     if (!character) {
       return;
     }
@@ -238,13 +243,15 @@ class CharactersCssSlotsSection {
         throw new Error(result.error || 'Failed to duplicate character');
       }
 
-      this.manager.cssVisibleCharacters = result.visibleCharacters.map((entry) =>
-        this.manager.cssImages.hydrateCssCharacter(entry),
+      this.manager.cssVisibleCharacters = result.visibleCharacters.map(
+        (entry) => this.manager.cssImages.hydrateCssCharacter(entry),
       );
       this.manager.cssHiddenCharacters = result.hiddenCharacters.map((entry) =>
         this.manager.cssImages.hydrateCssCharacter(entry),
       );
-      this.manager.cssGroups = this.manager.cssEditor.hydrateCssGroups(result.groups);
+      this.manager.cssGroups = this.manager.cssEditor.hydrateCssGroups(
+        result.groups,
+      );
       this.manager.cssCreatedGroups.clear();
       this.manager.cssSelectedCharacterId = duplicateOptions.newUiCharaId;
       this.manager.cssSelectedSlotIndex = 0;
@@ -384,7 +391,9 @@ Duplicate
       return;
     }
 
-    const character = this.manager.cssEditor.findCssCharacter(this.manager.cssSelectedCharacterId);
+    const character = this.manager.cssEditor.findCssCharacter(
+      this.manager.cssSelectedCharacterId,
+    );
     if (!character) {
       return;
     }
@@ -412,13 +421,15 @@ Duplicate
         throw new Error(result.error || 'Failed to remove character');
       }
 
-      this.manager.cssVisibleCharacters = result.visibleCharacters.map((entry) =>
-        this.manager.cssImages.hydrateCssCharacter(entry),
+      this.manager.cssVisibleCharacters = result.visibleCharacters.map(
+        (entry) => this.manager.cssImages.hydrateCssCharacter(entry),
       );
       this.manager.cssHiddenCharacters = result.hiddenCharacters.map((entry) =>
         this.manager.cssImages.hydrateCssCharacter(entry),
       );
-      this.manager.cssGroups = this.manager.cssEditor.hydrateCssGroups(result.groups);
+      this.manager.cssGroups = this.manager.cssEditor.hydrateCssGroups(
+        result.groups,
+      );
       this.manager.cssCreatedGroups.clear();
       this.manager.cssSelectedCharacterId =
         this.manager.cssVisibleCharacters[0]?.id ||
@@ -573,7 +584,9 @@ Remove
           this.manager.cssEditor.getAllCssCharacters().map((entry) => entry.id),
         );
         const nameIds = new Set(
-          this.manager.cssEditor.getAllCssCharacters().map((entry) => entry.nameId),
+          this.manager.cssEditor
+            .getAllCssCharacters()
+            .map((entry) => entry.nameId),
         );
         let message = '';
         if (id === 'ui_chara_' || !nameId || !displayName) {
@@ -692,9 +705,10 @@ Remove
       return;
     }
 
-    this.manager.cssVisibleCharacters = this.manager.cssVisibleCharacters.filter(
-      (entry) => entry.id !== characterId,
-    );
+    this.manager.cssVisibleCharacters =
+      this.manager.cssVisibleCharacters.filter(
+        (entry) => entry.id !== characterId,
+      );
     this.manager.cssHiddenCharacters = this.manager.cssHiddenCharacters.filter(
       (entry) => entry.id !== characterId,
     );
@@ -829,7 +843,10 @@ Remove
       return;
     }
 
-    const [character] = this.manager.cssVisibleCharacters.splice(sourceIndex, 1);
+    const [character] = this.manager.cssVisibleCharacters.splice(
+      sourceIndex,
+      1,
+    );
     this.manager.cssVisibleCharacters.splice(targetIndex, 0, character);
     this.manager.cssSelectedCharacterId = character.id;
     this.manager.cssDirty = true;
@@ -850,11 +867,13 @@ Remove
 
     const [character] = this.manager.cssVisibleCharacters.splice(index, 1);
     if (this.manager.cssSelectedCharacterId === character.id) {
-      this.manager.cssSelectedCharacterId = this.manager.cssVisibleCharacters[0]?.id || null;
+      this.manager.cssSelectedCharacterId =
+        this.manager.cssVisibleCharacters[0]?.id || null;
     }
-    this.manager.cssHiddenCharacters = [...this.manager.cssHiddenCharacters, character].sort(
-      (left, right) => left.displayName.localeCompare(right.displayName),
-    );
+    this.manager.cssHiddenCharacters = [
+      ...this.manager.cssHiddenCharacters,
+      character,
+    ].sort((left, right) => left.displayName.localeCompare(right.displayName));
     this.manager.cssDirty = true;
     this.manager.cssEditor.renderCssEditor();
   }
@@ -872,7 +891,10 @@ Remove
     }
 
     const [character] = this.manager.cssHiddenCharacters.splice(index, 1);
-    this.manager.cssVisibleCharacters = [...this.manager.cssVisibleCharacters, character];
+    this.manager.cssVisibleCharacters = [
+      ...this.manager.cssVisibleCharacters,
+      character,
+    ];
     this.manager.cssSelectedCharacterId = character.id;
     this.manager.cssDirty = true;
     this.manager.cssEditor.renderCssEditor();
@@ -953,12 +975,14 @@ Unhide
   }
 
   openCssUsedSlotsModal() {
-    const fighters = this.manager.cssEditor.getAllCssCharacters().filter(
-      (character) =>
-        !character.isGroup &&
-        character.fighterKind.trim() &&
-        Number(character.colorNum) > 0,
-    );
+    const fighters = this.manager.cssEditor
+      .getAllCssCharacters()
+      .filter(
+        (character) =>
+          !character.isGroup &&
+          character.fighterKind.trim() &&
+          Number(character.colorNum) > 0,
+      );
     const usage = new Map<string, Map<number, CharacterCssEntry[]>>();
     fighters.forEach((character) => {
       const fighterSlots =
@@ -1067,7 +1091,8 @@ Unhide
           const characterId = cell.dataset.characterId;
           if (!characterId) return;
           this.manager.cssSelectedCharacterId = characterId;
-          const character = this.manager.cssEditor.findCssCharacter(characterId);
+          const character =
+            this.manager.cssEditor.findCssCharacter(characterId);
           if (character?.groupId) {
             this.openCssGroupModal(character.groupId);
           }

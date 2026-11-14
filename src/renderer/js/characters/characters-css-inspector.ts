@@ -39,7 +39,9 @@ class CharactersCssInspectorSection {
     }
 
     const character = this.manager.cssSelectedCharacterId
-      ? this.manager.cssEditor.findCssCharacter(this.manager.cssSelectedCharacterId)
+      ? this.manager.cssEditor.findCssCharacter(
+          this.manager.cssSelectedCharacterId,
+        )
       : null;
 
     if (!character) {
@@ -101,7 +103,9 @@ ${this.manager.cssPanelMode === 'prc' ? this.renderCssPrcPanel(character) : this
       .querySelectorAll<HTMLButtonElement>('[data-css-panel-mode]')
       .forEach((button) => {
         button.addEventListener('click', () => {
-          this.manager.cssPanelMode = button.dataset.cssPanelMode as 'prc' | 'msbt';
+          this.manager.cssPanelMode = button.dataset.cssPanelMode as
+            | 'prc'
+            | 'msbt';
           this.renderCssInspector();
         });
       });
@@ -212,16 +216,19 @@ ${this.manager.cssPanelMode === 'prc' ? this.renderCssPrcPanel(character) : this
       ) {
         return;
       }
-      this.manager.cssVisibleCharacters = this.manager.cssVisibleCharacters.filter(
-        (entry) => entry.id !== group.id,
-      );
-      this.manager.cssHiddenCharacters = this.manager.cssHiddenCharacters.filter(
-        (entry) => entry.id !== group.id,
-      );
+      this.manager.cssVisibleCharacters =
+        this.manager.cssVisibleCharacters.filter(
+          (entry) => entry.id !== group.id,
+        );
+      this.manager.cssHiddenCharacters =
+        this.manager.cssHiddenCharacters.filter(
+          (entry) => entry.id !== group.id,
+        );
       this.manager.cssGroups.delete(group.id);
       this.manager.cssCreatedGroups.delete(group.id);
       this.manager.cssRenamedCharacters.delete(group.nameId);
-      this.manager.cssSelectedCharacterId = this.manager.cssVisibleCharacters[0]?.id || null;
+      this.manager.cssSelectedCharacterId =
+        this.manager.cssVisibleCharacters[0]?.id || null;
       this.manager.cssDirty = true;
       this.manager.cssEditor.renderCssEditor();
       return;
@@ -272,7 +279,8 @@ ${options
     ];
     const echoOptions = [
       { value: '', label: 'None' },
-      ...this.manager.cssEditor.getAllCssCharacters()
+      ...this.manager.cssEditor
+        .getAllCssCharacters()
         .filter((entry) => !entry.isGroup && entry.id !== character.id)
         .map((entry) => ({
           value: entry.id,

@@ -20,7 +20,8 @@ class CharactersCssImagesSection {
 
   getCssCharacterLookupId(character: CharacterCssEntry) {
     return String(
-      this.manager.cssCharacterUpdates.get(character.id)?.uiCharaId ?? character.id,
+      this.manager.cssCharacterUpdates.get(character.id)?.uiCharaId ??
+        character.id,
     ).trim();
   }
 
@@ -41,7 +42,9 @@ class CharactersCssImagesSection {
         ]);
         if (!customImages.success)
           throw new Error(customImages.error || 'Failed to load custom images');
-        this.manager.cssCustomImages = new Map(Object.entries(customImages.images));
+        this.manager.cssCustomImages = new Map(
+          Object.entries(customImages.images),
+        );
         if (revision === this.manager.cssUmcImageRevision)
           this.manager.cssUmcImagesEnabled = enabled !== false;
         this.manager.cssUmcImageExclusions = new Set(
@@ -130,7 +133,8 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
         if (result.canceled || !result.imageUrl) return;
         this.manager.cssCustomImages.set(key, result.imageUrl);
       }
-      this.manager.cssEditor.getAllCssCharacters()
+      this.manager.cssEditor
+        .getAllCssCharacters()
         .filter((entry) => this.getCssUmcImageKey(entry) === key)
         .forEach((entry) => {
           this.scheduleCssCharacterImageLookup(entry);
@@ -142,7 +146,9 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
       });
     } finally {
       this.manager.cssCustomImageBusy = false;
-      const selected = this.manager.cssEditor.findCssCharacter(this.manager.cssSelectedCharacterId || '');
+      const selected = this.manager.cssEditor.findCssCharacter(
+        this.manager.cssSelectedCharacterId || '',
+      );
       if (selected) this.refreshCssUmcImageControls(selected);
     }
   }
@@ -191,7 +197,8 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
       this.manager.cssImageLookupTimers.delete(character);
       try {
         await this.loadCssUmcImagePreferences();
-        if (this.manager.cssEditor.findCssCharacter(character.id) !== character) return;
+        if (this.manager.cssEditor.findCssCharacter(character.id) !== character)
+          return;
         const previousImage = character.imageUrl;
         const previousSource = character.imageSource;
         this.applyCssCharacterImage(character);
@@ -208,7 +215,9 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
         if (
           character.imageUrl ||
           !this.manager.cssUmcImagesEnabled ||
-          this.manager.cssUmcImageExclusions.has(this.getCssUmcImageKey(character))
+          this.manager.cssUmcImageExclusions.has(
+            this.getCssUmcImageKey(character),
+          )
         )
           return;
         const result =
@@ -219,7 +228,9 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
           this.manager.cssCustomImages.has(this.getCssUmcImageKey(character)) ||
           !this.manager.cssUmcImagesEnabled ||
           revision !== this.manager.cssUmcImageRevision ||
-          this.manager.cssUmcImageExclusions.has(this.getCssUmcImageKey(character)) ||
+          this.manager.cssUmcImageExclusions.has(
+            this.getCssUmcImageKey(character),
+          ) ||
           this.manager.cssEditor.findCssCharacter(character.id) !== character ||
           this.getCssCharacterLookupId(character) !== characterId ||
           character.nameId !== nameId
@@ -248,9 +259,9 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
         const frame = cell.querySelector<HTMLElement>(
           '.character-css-image-frame',
         );
-        const updatedFrame = this.manager.cssEditor.createCssCharacterCell(
-          character,
-        ).querySelector<HTMLElement>('.character-css-image-frame');
+        const updatedFrame = this.manager.cssEditor
+          .createCssCharacterCell(character)
+          .querySelector<HTMLElement>('.character-css-image-frame');
         if (frame && updatedFrame) frame.replaceWith(updatedFrame);
       });
     if (this.manager.cssSelectedCharacterId === character.id) {
@@ -273,7 +284,8 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
       .forEach((tile) => {
         if (tile.dataset.previewCharacterId !== character.id) return;
         const template = document.createElement('template');
-        template.innerHTML = this.manager.cssEditor.renderCssPreviewTile(character);
+        template.innerHTML =
+          this.manager.cssEditor.renderCssPreviewTile(character);
         tile
           .querySelectorAll('img, .character-css-preview-placeholder')
           .forEach((image) => image.remove());

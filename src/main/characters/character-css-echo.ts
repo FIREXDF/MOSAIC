@@ -3,7 +3,7 @@ import * as path from 'path';
 import { ConfigGenerator } from '../mod-utils/config-generator';
 import { ModScanner } from '../mod-utils/mod-scanner';
 import { SlotChanger } from '../mod-utils/slot-changer';
-import store from '../store';
+import store from '../store/store';
 
 import {
   type CharacterCssLayoutPayload,
@@ -201,10 +201,7 @@ async function restoreEchoDirectoryBackup(backup: EchoDirectoryBackup) {
   try {
     await fs.promises.rename(backup.backupPath, backup.originalPath);
   } catch (error) {
-    if (
-      fs.existsSync(failedPath) &&
-      !fs.existsSync(backup.originalPath)
-    ) {
+    if (fs.existsSync(failedPath) && !fs.existsSync(backup.originalPath)) {
       await fs.promises.rename(failedPath, backup.originalPath);
     }
     throw error;
@@ -353,7 +350,9 @@ export async function createEchoSlot(payload: CreateEchoSlotPayload) {
 
   const modsPath = store.get('modsPath') as string | null;
   if (!modsPath || !fs.existsSync(modsPath)) {
-    throw new Error('Configure an existing mods folder before creating an Echo');
+    throw new Error(
+      'Configure an existing mods folder before creating an Echo',
+    );
   }
 
   const sourceEntry = [

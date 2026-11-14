@@ -1,7 +1,10 @@
 export {};
 (function () {
   const M = window.ModalManagerClass;
-  if (!M) { console.error('[uninstall-modal] ModalManagerClass not found'); return; }
+  if (!M) {
+    console.error('[uninstall-modal] ModalManagerClass not found');
+    return;
+  }
 
   function t(key, params = {}) {
     return window.i18n && window.i18n.t ? window.i18n.t(key, params) : key;
@@ -10,11 +13,17 @@ export {};
   function renderUninstallModalContent(modOrMods) {
     const mods = Array.isArray(modOrMods) ? modOrMods : [modOrMods];
     const isMultiple = mods.length > 1;
-    const titleEl = document.querySelector<HTMLElement>('#uninstall-modal-title');
-    const warningEl = document.querySelector<HTMLElement>('#uninstall-warning-text');
+    const titleEl = document.querySelector<HTMLElement>(
+      '#uninstall-modal-title',
+    );
+    const warningEl = document.querySelector<HTMLElement>(
+      '#uninstall-warning-text',
+    );
     const listEl = document.querySelector<HTMLElement>('#uninstall-mod-list');
     const hintEl = document.querySelector<HTMLElement>('#uninstall-modal-hint');
-    const confirmLabelEl = document.querySelector<HTMLElement>('#uninstall-confirm-label');
+    const confirmLabelEl = document.querySelector<HTMLElement>(
+      '#uninstall-confirm-label',
+    );
 
     if (!warningEl || !listEl || !hintEl || !confirmLabelEl) {
       return;

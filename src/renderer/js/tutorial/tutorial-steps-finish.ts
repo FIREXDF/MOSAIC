@@ -94,7 +94,8 @@ function createTutorialFinishSteps(ctx: TutorialStepContext): TutorialStep[] {
             overlay.addEventListener('click', (e) => {
               const action = (e.target as HTMLElement).dataset.action;
               if (action === 'confirm') close(true);
-              else if (action === 'cancel' || e.target === overlay) close(false);
+              else if (action === 'cancel' || e.target === overlay)
+                close(false);
             });
             document.body.appendChild(overlay);
           });

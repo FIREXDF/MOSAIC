@@ -77,11 +77,12 @@ class BatchTestingStateHelpers {
     basePath: string,
   ) {
     if (category === 'mods') {
-      const result = await window.electronAPI.ensureModsFolderAvailable(basePath);
+      const result =
+        await window.electronAPI.ensureModsFolderAvailable(basePath);
       if (!result.success) {
         throw new Error(
-          result.error
-            || this.t(
+          result.error ||
+            this.t(
               'toasts.batchTestingModsFolderUnavailable',
               'Mods folder is not available. Reconnect your Switch and make sure the folder exists.',
             ),
@@ -91,11 +92,12 @@ class BatchTestingStateHelpers {
       return;
     }
 
-    const result = await window.electronAPI.ensurePluginsFolderAvailable(basePath);
+    const result =
+      await window.electronAPI.ensurePluginsFolderAvailable(basePath);
     if (!result.success) {
       throw new Error(
-        result.error
-          || this.t(
+        result.error ||
+          this.t(
             'toasts.batchTestingPluginsFolderUnavailable',
             'Plugins folder is not available. Reconnect your Switch and make sure the folder exists.',
           ),
@@ -264,7 +266,9 @@ class BatchTestingStateHelpers {
       };
     }
 
-    const disabledEntry = state.disabled.find((entry) => entry.name === itemName);
+    const disabledEntry = state.disabled.find(
+      (entry) => entry.name === itemName,
+    );
     if (disabledEntry) {
       return {
         entry: disabledEntry,

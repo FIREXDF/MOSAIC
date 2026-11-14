@@ -2,7 +2,7 @@ import { shell, IpcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { spawn } from 'child_process';
-import { getProtocolHandler } from '../../main-protocol-setup';
+import { getProtocolHandler } from '../../protocol/main-protocol-setup';
 import {
   handleError,
   createErrorResponse,
@@ -11,7 +11,7 @@ import {
 import { PATHS, TEMP_FOLDERS } from '../../config';
 import { HandlerResponse } from '../../types/common';
 import { BaseHandlerArg, GenericHandler } from '../../types/common';
-import store from '../../store';
+import store from '../../store/store';
 import { openPathDetached } from '../../utils';
 import type { ChildProcess } from 'child_process';
 
@@ -119,7 +119,10 @@ const SystemHandlers = {
   ['open-url']: async (common: BaseHandlerArg, url: string) => {
     try {
       if (!['http:', 'https:'].includes(new URL(url).protocol)) {
-        return createErrorResponse(ErrorCodes.INVALID_PATH, 'Only web links can be opened');
+        return createErrorResponse(
+          ErrorCodes.INVALID_PATH,
+          'Only web links can be opened',
+        );
       }
       await shell.openExternal(url);
       return { success: true };

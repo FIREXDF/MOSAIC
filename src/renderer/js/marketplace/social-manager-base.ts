@@ -185,7 +185,11 @@ class SocialManagerBase {
     }
   }
 
-  async fetchWithCache(url: string, options: RequestInit = {}, cacheKey: string | null = null) {
+  async fetchWithCache(
+    url: string,
+    options: RequestInit = {},
+    cacheKey: string | null = null,
+  ) {
     if (cacheKey && this.isCacheValid(cacheKey)) {
       return this.getCached(cacheKey);
     }

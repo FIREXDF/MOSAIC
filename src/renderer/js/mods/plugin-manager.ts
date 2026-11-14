@@ -165,10 +165,7 @@ class PluginManager {
       batchManager?.modal && document.body.contains(batchManager.modal)
     );
 
-    return !!(
-      isModalOpen ||
-      batchManager?.isRestoring
-    );
+    return !!(isModalOpen || batchManager?.isRestoring);
   }
 
   applyBatchTestingState(pluginsData, pluginsPath: string | null) {
@@ -289,10 +286,15 @@ class PluginManager {
             '#browse-plugins-folder',
           );
           if (pluginsPathContainer) {
-            const settingsSection = pluginsPathContainer.closest('.settings-section') as HTMLElement;
+            const settingsSection = pluginsPathContainer.closest(
+              '.settings-section',
+            ) as HTMLElement;
             if (settingsSection) {
               settingsSection.classList.add('highlight-setting');
-              settingsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              settingsSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+              });
 
               const fadeOutHighlight = () => {
                 settingsSection.classList.remove('highlight-setting');
@@ -305,14 +307,23 @@ class PluginManager {
 
               const browseClickHandler = () => {
                 fadeOutHighlight();
-                pluginsPathContainer.removeEventListener('click', browseClickHandler);
+                pluginsPathContainer.removeEventListener(
+                  'click',
+                  browseClickHandler,
+                );
               };
-              pluginsPathContainer.addEventListener('click', browseClickHandler);
+              pluginsPathContainer.addEventListener(
+                'click',
+                browseClickHandler,
+              );
 
               setTimeout(() => {
                 if (settingsSection.classList.contains('highlight-setting')) {
                   fadeOutHighlight();
-                  pluginsPathContainer.removeEventListener('click', browseClickHandler);
+                  pluginsPathContainer.removeEventListener(
+                    'click',
+                    browseClickHandler,
+                  );
                 }
               }, 3000);
             }
@@ -337,16 +348,18 @@ class PluginManager {
 <span class="plugin-size">${plugin.version ? `v${escapeHtml(plugin.version.replace(/^v/i, ''))} · ` : ''}${plugin.size}</span>
 </div>
 <div class="plugin-actions">
-${plugin.status === 'active'
-        ? `<button class="action-btn-small toggle-plugin-btn" data-plugin-id="${plugin.id}" title="Disable">
+${
+  plugin.status === 'active'
+    ? `<button class="action-btn-small toggle-plugin-btn" data-plugin-id="${plugin.id}" title="Disable">
 <i class="bi bi-toggle-on"></i>
 </button>`
-        : `<button class="action-btn-small toggle-plugin-btn" data-plugin-id="${plugin.id}" title="Enable">
+    : `<button class="action-btn-small toggle-plugin-btn" data-plugin-id="${plugin.id}" title="Enable">
 <i class="bi bi-toggle-off"></i>
 </button>`
-      }
-<button class="action-btn-small delete-plugin-btn" data-plugin-id="${plugin.id
-      }" title="Delete">
+}
+<button class="action-btn-small delete-plugin-btn" data-plugin-id="${
+      plugin.id
+    }" title="Delete">
 <i class="bi bi-trash"></i>
 </button>
 </div>
@@ -611,7 +624,6 @@ ${plugin.status === 'active'
         return;
       }
     }
-
   }
 
   async fetchPlugins() {
@@ -639,8 +651,13 @@ ${plugin.status === 'active'
   }
 
   async checkRecordedVersions(manual = false) {
-    if (this.versionAuditInProgress || this.isBatchTestingLocked() ||
-        !this.pluginsPath || !this.plugins.length) return;
+    if (
+      this.versionAuditInProgress ||
+      this.isBatchTestingLocked() ||
+      !this.pluginsPath ||
+      !this.plugins.length
+    )
+      return;
 
     const auditPath = this.pluginsPath;
     const auditKey = 'pluginRecordedVersionAudit';
@@ -654,14 +671,23 @@ ${plugin.status === 'active'
     if (manual) window.toastManager?.info(t('versionAuditChecking'));
     try {
       if (!manual) {
-        const last = (await window.electronAPI.store.get(auditKey)) as
-          | { path?: string; checkedAt?: number; complete?: boolean; hasMismatches?: boolean }
-          | null;
+        const last = (await window.electronAPI.store.get(auditKey)) as {
+          path?: string;
+          checkedAt?: number;
+          complete?: boolean;
+          hasMismatches?: boolean;
+        } | null;
         const interval = last?.complete ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000;
-        if (last?.path === auditPath && typeof last.checkedAt === 'number' &&
-            Date.now() - last.checkedAt < interval &&
-            !(last.hasMismatches && this.versionAuditPath !== auditPath)) {
-          if (this.versionAuditPath === auditPath && !this.versionAuditDismissed) {
+        if (
+          last?.path === auditPath &&
+          typeof last.checkedAt === 'number' &&
+          Date.now() - last.checkedAt < interval &&
+          !(last.hasMismatches && this.versionAuditPath !== auditPath)
+        ) {
+          if (
+            this.versionAuditPath === auditPath &&
+            !this.versionAuditDismissed
+          ) {
             await new Promise<void>((resolve) => setTimeout(resolve, 0));
             if (this.pluginsPath === auditPath) {
               this.showRecordedVersionAudit(this.versionAuditMismatches);
@@ -691,15 +717,17 @@ ${plugin.status === 'active'
       if (this.pluginsPath !== auditPath) return;
       this.showRecordedVersionAudit(result.mismatches);
       if (manual && result.mismatches.length === 0) {
-        const fullyRecognized = result.complete &&
-          result.recognizedCount === result.scannedCount;
+        const fullyRecognized =
+          result.complete && result.recognizedCount === result.scannedCount;
         const lookupFailed = !result.complete && result.recognizedCount === 0;
         this.showRecordedVersionCheckResult(
-          t(lookupFailed
-            ? 'versionAuditFailed'
-            : fullyRecognized
-              ? 'versionAuditCurrent'
-              : 'versionAuditPartial'),
+          t(
+            lookupFailed
+              ? 'versionAuditFailed'
+              : fullyRecognized
+                ? 'versionAuditCurrent'
+                : 'versionAuditPartial',
+          ),
           fullyRecognized,
           lookupFailed,
         );
@@ -746,10 +774,12 @@ ${plugin.status === 'active'
       id: 'plugin-recorded-version-check-result-modal',
       title: window.i18n?.t?.('plugins.verifyVersions') || 'Verify Versions',
       body,
-      buttons: [{
-        text: window.i18n?.t?.('common.close') || 'Close',
-        type: 'primary',
-      }],
+      buttons: [
+        {
+          text: window.i18n?.t?.('common.close') || 'Close',
+          type: 'primary',
+        },
+      ],
     });
   }
 
@@ -775,8 +805,11 @@ ${plugin.status === 'active'
   }
 
   showRecordedVersionAuditModal(mismatches: RecordedVersionMismatch[]) {
-    if (!window.modalManager?.showCustomModal ||
-        document.querySelector('#plugin-recorded-version-audit-modal')) return;
+    if (
+      !window.modalManager?.showCustomModal ||
+      document.querySelector('#plugin-recorded-version-audit-modal')
+    )
+      return;
 
     const t = (key: string) => window.i18n?.t?.(`plugins.${key}`) || key;
     let correctionRequested = false;
@@ -849,7 +882,8 @@ ${plugin.status === 'active'
         window.toastManager?.success(t('versionAuditSaved'));
         void this.refreshPlugins();
       }
-      if (result.skipped.length) window.toastManager?.error(t('versionAuditStale'));
+      if (result.skipped.length)
+        window.toastManager?.error(t('versionAuditStale'));
     } catch (error) {
       console.error('[PluginManager] Could not save UMC versions:', error);
       window.toastManager?.error(t('versionAuditFailed'));
@@ -1098,7 +1132,9 @@ ${plugin.status === 'active'
   }
 
   async getLoader(): Promise<'ozone' | 'skyline'> {
-    const loader = await window.electronAPI.store.get('pluginLoader').catch(() => null);
+    const loader = await window.electronAPI.store
+      .get('pluginLoader')
+      .catch(() => null);
     return loader === 'ozone' ? 'ozone' : 'skyline';
   }
 
@@ -1107,13 +1143,17 @@ ${plugin.status === 'active'
     selected?: { downloadUrl: string; version: string },
   ): Promise<boolean> {
     const targetName = target === 'ozone' ? 'Ozone' : 'Skyline';
-    const pluginsPath = window.settingsManager?.getPluginsPath() || this.pluginsPath;
+    const pluginsPath =
+      window.settingsManager?.getPluginsPath() || this.pluginsPath;
     const contentsDir = pluginsPath?.replace(
       /[\\/]romfs[\\/]skyline[\\/]plugins[\\/]?$/i,
       '',
     );
-    if (!contentsDir || contentsDir === pluginsPath ||
-        !/01006a800016e000$/i.test(contentsDir)) {
+    if (
+      !contentsDir ||
+      contentsDir === pluginsPath ||
+      !/01006a800016e000$/i.test(contentsDir)
+    ) {
       window.toastManager?.error(
         'Plugins folder must be atmosphere/contents/01006A800016E000/romfs/skyline/plugins to switch the loader',
       );
@@ -1128,24 +1168,37 @@ ${plugin.status === 'active'
         const latest = await api.getGithubRelease(
           target === 'ozone' ? 'WuBoytH/ozone' : 'skyline-dev/skyline',
         );
-        if (!latest.success) throw new Error(latest.error || 'Release not found');
+        if (!latest.success)
+          throw new Error(latest.error || 'Release not found');
         release = { downloadUrl: latest.downloadUrl, version: latest.version };
       }
       const temp = await api.getTempDir();
       if (!temp.success) throw new Error('Temp directory unavailable');
-      const zipPath = await api.joinPath(temp.path, `${target}-${Date.now()}.zip`);
+      const zipPath = await api.joinPath(
+        temp.path,
+        `${target}-${Date.now()}.zip`,
+      );
       if (!zipPath.success) throw new Error('Failed to build download path');
-      const download = await api.downloadArcropolis(release.downloadUrl, zipPath.path);
-      if (!download.success) throw new Error(download.error || 'Download failed');
+      const download = await api.downloadArcropolis(
+        release.downloadUrl,
+        zipPath.path,
+      );
+      if (!download.success)
+        throw new Error(download.error || 'Download failed');
       const extract = await api.extractSkyline(download.path, contentsDir);
-      if (!extract.success) throw new Error('error' in extract ? extract.error : 'Install failed');
+      if (!extract.success)
+        throw new Error('error' in extract ? extract.error : 'Install failed');
       await api.store.set('pluginLoader', target);
       await api.store.set('pluginLoaderVersion', release.version);
-      window.toastManager?.success(`${targetName} ${release.version} installed`);
+      window.toastManager?.success(
+        `${targetName} ${release.version} installed`,
+      );
       return true;
     } catch (error) {
       console.error('[PluginManager] Loader switch failed:', error);
-      window.toastManager?.error(`Failed to install ${targetName}: ${error.message}`);
+      window.toastManager?.error(
+        `Failed to install ${targetName}: ${error.message}`,
+      );
       return false;
     }
   }

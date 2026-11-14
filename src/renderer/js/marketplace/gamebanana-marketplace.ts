@@ -50,15 +50,28 @@ export class GameBananaMarketplace {
     const external = target.closest<HTMLElement>('[data-marketplace-external]');
     if (external) {
       event.preventDefault();
-      await window.electronAPI.openUrl(external.getAttribute('href') || 'https://gamebanana.com/games/6498');
+      await window.electronAPI.openUrl(
+        external.getAttribute('href') || 'https://gamebanana.com/games/6498',
+      );
       return;
     }
     const previous = target.closest('#marketplace-previous');
     const next = target.closest('#marketplace-next');
-    if (previous && this.page > 1) { this.page--; await this.load(); return; }
-    if (next && this.page < this.totalPages) { this.page++; await this.load(); return; }
+    if (previous && this.page > 1) {
+      this.page--;
+      await this.load();
+      return;
+    }
+    if (next && this.page < this.totalPages) {
+      this.page++;
+      await this.load();
+      return;
+    }
     const view = target.closest<HTMLElement>('[data-marketplace-view]');
-    if (view) { await window.electronAPI.openUrl(view.dataset.marketplaceView || ''); return; }
+    if (view) {
+      await window.electronAPI.openUrl(view.dataset.marketplaceView || '');
+      return;
+    }
     const install = target.closest<HTMLElement>('[data-marketplace-install]');
     if (install) await this.showFiles(install);
     const file = target.closest<HTMLElement>('[data-marketplace-file]');
@@ -68,20 +81,36 @@ export class GameBananaMarketplace {
   private async load() {
     const results = document.getElementById('marketplace-results');
     if (!results) return;
-    results.innerHTML = '<div class="marketplace__empty"><i class="bi bi-hourglass-split"></i><span>Loading GameBanana mods…</span></div>';
+    results.innerHTML =
+      '<div class="marketplace__empty"><i class="bi bi-hourglass-split"></i><span>Loading GameBanana mods…</span></div>';
     try {
-      const params = new URLSearchParams({ _nPage: String(this.page), _nPerpage: '18', _sSort: this.sort });
+      const params = new URLSearchParams({
+        _nPage: String(this.page),
+        _nPerpage: '18',
+        _sSort: this.sort,
+      });
       params.set('_aFilters[Generic_Game]', '6498');
-      if (this.search) params.set('_aFilters[Generic_Name]', `contains,${this.search}`);
-      const response = await fetch(`https://gamebanana.com/apiv12/Mod/Index?${params}`);
+      if (this.search)
+        params.set('_aFilters[Generic_Name]', `contains,${this.search}`);
+      const response = await fetch(
+        `https://gamebanana.com/apiv12/Mod/Index?${params}`,
+      );
       const data = await response.json();
-      if (!response.ok) throw new Error(`GameBanana returned ${response.status}`);
+      if (!response.ok)
+        throw new Error(`GameBanana returned ${response.status}`);
       const metadata = data?._aMetadata || {};
-      this.totalPages = Math.max(1, Math.ceil(Number(metadata._nRecordCount || 0) / Number(metadata._nPerpage || 18)));
+      this.totalPages = Math.max(
+        1,
+        Math.ceil(
+          Number(metadata._nRecordCount || 0) /
+            Number(metadata._nPerpage || 18),
+        ),
+      );
       this.render(Array.isArray(data?._aRecords) ? data._aRecords : []);
     } catch (error) {
       console.error('[Marketplace] Failed to load GameBanana mods:', error);
-      results.innerHTML = '<div class="marketplace__empty"><i class="bi bi-exclamation-triangle"></i><span>Unable to load GameBanana. Please try again.</span></div>';
+      results.innerHTML =
+        '<div class="marketplace__empty"><i class="bi bi-exclamation-triangle"></i><span>Unable to load GameBanana. Please try again.</span></div>';
     }
     this.updatePagination();
   }
@@ -89,14 +118,20 @@ export class GameBananaMarketplace {
   private render(mods: GameBananaSubmission[]) {
     const results = document.getElementById('marketplace-results');
     if (!results) return;
-    if (!mods.length) { results.innerHTML = '<div class="marketplace__empty"><i class="bi bi-inbox"></i><span>No mods found.</span></div>'; return; }
+    if (!mods.length) {
+      results.innerHTML =
+        '<div class="marketplace__empty"><i class="bi bi-inbox"></i><span>No mods found.</span></div>';
+      return;
+    }
     results.innerHTML = `<div class="marketplace__grid">${mods.map((mod) => this.card(mod)).join('')}</div>`;
   }
 
   private card(mod: GameBananaSubmission) {
     const name = this.escape(mod._sName || 'Unknown mod');
     const author = this.escape(mod._aSubmitter?._sName || 'Unknown author');
-    const category = this.escape(mod._aSubCategory?._sName || mod._aRootCategory?._sName || 'Mod');
+    const category = this.escape(
+      mod._aSubCategory?._sName || mod._aRootCategory?._sName || 'Mod',
+    );
     const url = mod._sProfileUrl || `https://gamebanana.com/mods/${mod._idRow}`;
     const image = this.image(mod);
     return `<article class="marketplace__card" data-marketplace-card="${mod._idRow}">
@@ -118,34 +153,76 @@ export class GameBananaMarketplace {
       if (!result.success) {
         throw new Error(result.error || 'Failed to load GameBanana files');
       }
-      const entries = (result.files || []).filter((file) => file?._sFightPlannerDownloadUrl || file?._sDownloadUrl);
-      files.innerHTML = entries.length ? entries.map((file) => `<div class="marketplace__file"><span class="marketplace__file-name">${this.escape(file._sFile || 'Download')}</span><button type="button" data-marketplace-file="${this.escape(file._sFightPlannerDownloadUrl || file._sDownloadUrl)}" data-marketplace-file-id="${this.escape(file._idRow || '')}">Install</button></div>`).join('') : '<span class="marketplace__file">No installable file found.</span>';
-    } catch (error) { console.error('[Marketplace] Failed to get files:', error); files.innerHTML = '<span class="marketplace__file">Unable to load files.</span>'; }
+      const entries = (result.files || []).filter(
+        (file) => file?._sFightPlannerDownloadUrl || file?._sDownloadUrl,
+      );
+      files.innerHTML = entries.length
+        ? entries
+            .map(
+              (file) =>
+                `<div class="marketplace__file"><span class="marketplace__file-name">${this.escape(file._sFile || 'Download')}</span><button type="button" data-marketplace-file="${this.escape(file._sFightPlannerDownloadUrl || file._sDownloadUrl)}" data-marketplace-file-id="${this.escape(file._idRow || '')}">Install</button></div>`,
+            )
+            .join('')
+        : '<span class="marketplace__file">No installable file found.</span>';
+    } catch (error) {
+      console.error('[Marketplace] Failed to get files:', error);
+      files.innerHTML =
+        '<span class="marketplace__file">Unable to load files.</span>';
+    }
   }
 
   private async installFile(button: HTMLElement) {
     const url = button.dataset.marketplaceFile;
     if (!url) return;
-    const submissionId = button.closest<HTMLElement>('[data-marketplace-card]')?.dataset.marketplaceCard;
-    const fileId = button.dataset.marketplaceFileId || url.match(/\/(?:dl|mmdl)\/(\d+)/i)?.[1];
-    if (submissionId && /^\d+$/.test(submissionId) && fileId && /^\d+$/.test(fileId)) {
-      await window.electronAPI.openFightPlannerLink(`fightplanner:https://gamebanana.com/mmdl/${fileId},Mod,${submissionId}`);
+    const submissionId = button.closest<HTMLElement>('[data-marketplace-card]')
+      ?.dataset.marketplaceCard;
+    const fileId =
+      button.dataset.marketplaceFileId ||
+      url.match(/\/(?:dl|mmdl)\/(\d+)/i)?.[1];
+    if (
+      submissionId &&
+      /^\d+$/.test(submissionId) &&
+      fileId &&
+      /^\d+$/.test(fileId)
+    ) {
+      await window.electronAPI.openFightPlannerLink(
+        `fightplanner:https://gamebanana.com/mmdl/${fileId},Mod,${submissionId}`,
+      );
       return;
     }
-    await window.electronAPI.openFightPlannerLink(/^(?:fightplanner|mosaic):/i.test(url) ? url : `fightplanner:${url}`);
+    await window.electronAPI.openFightPlannerLink(
+      /^(?:fightplanner|mosaic):/i.test(url) ? url : `fightplanner:${url}`,
+    );
   }
 
   private updatePagination() {
-    const previous = document.getElementById('marketplace-previous') as HTMLButtonElement | null;
-    const next = document.getElementById('marketplace-next') as HTMLButtonElement | null;
+    const previous = document.getElementById(
+      'marketplace-previous',
+    ) as HTMLButtonElement | null;
+    const next = document.getElementById(
+      'marketplace-next',
+    ) as HTMLButtonElement | null;
     const label = document.getElementById('marketplace-page');
     if (previous) previous.disabled = this.page <= 1;
     if (next) next.disabled = this.page >= this.totalPages;
     if (label) label.textContent = `${this.page} / ${this.totalPages}`;
   }
 
-  private image(mod: GameBananaSubmission) { const media = mod._aPreviewMedia?.[0]; return mod._sImageUrl || mod._sThumbnailUrl || (media?._sBaseUrl && media?._sFile ? `${media._sBaseUrl}/${media._sFile}` : ''); }
-  private escape(value: unknown) { const element = document.createElement('div'); element.textContent = String(value ?? ''); return element.innerHTML; }
+  private image(mod: GameBananaSubmission) {
+    const media = mod._aPreviewMedia?.[0];
+    return (
+      mod._sImageUrl ||
+      mod._sThumbnailUrl ||
+      (media?._sBaseUrl && media?._sFile
+        ? `${media._sBaseUrl}/${media._sFile}`
+        : '')
+    );
+  }
+  private escape(value: unknown) {
+    const element = document.createElement('div');
+    element.textContent = String(value ?? '');
+    return element.innerHTML;
+  }
 }
 
 window.gameBananaMarketplace = new GameBananaMarketplace();

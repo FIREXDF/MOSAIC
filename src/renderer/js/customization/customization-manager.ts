@@ -51,7 +51,6 @@ class CustomizationManager {
       reloadAllCssBtn.addEventListener('click', () => this.reloadAllCss());
       reloadAllCssBtn.dataset.listenerAttached = 'true';
     }
-
   }
 
   async loadSavedCustomizations() {
@@ -82,7 +81,6 @@ class CustomizationManager {
       for (const jsPath of customJsPaths) {
         await this.loadCustomJsFile(jsPath);
       }
-
     } catch (error) {
       console.error('Error loading saved customizations:', error);
     }
@@ -716,7 +714,6 @@ class CustomizationManager {
       this.customCssElement.id = 'custom-css';
       this.customCssElement.textContent = result.content;
       document.head.appendChild(this.customCssElement);
-
     } catch (error) {
       console.error('Error loading custom CSS:', error);
 
@@ -764,7 +761,6 @@ class CustomizationManager {
       };
 
       document.body.appendChild(this.customJsElement);
-
     } catch (error) {
       console.error('Error loading custom JavaScript:', error);
       throw error;

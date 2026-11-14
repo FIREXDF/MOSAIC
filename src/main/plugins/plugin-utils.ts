@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { resolveVirtualPath } from './utils/virtual-paths';
+import { resolveVirtualPath } from '../utils/virtual-paths';
 
 export interface SimplePlugin {
   name: string;
@@ -135,8 +135,14 @@ export default class PluginUtils {
     const disabledPlugins = currentState.disabledPlugins;
     const enabledSet = new Set(enabledPluginNames);
     const allPlugins = [
-      ...activePlugins.map((plugin) => ({ ...plugin, status: 'active' as const })),
-      ...disabledPlugins.map((plugin) => ({ ...plugin, status: 'disabled' as const })),
+      ...activePlugins.map((plugin) => ({
+        ...plugin,
+        status: 'active' as const,
+      })),
+      ...disabledPlugins.map((plugin) => ({
+        ...plugin,
+        status: 'disabled' as const,
+      })),
     ];
 
     const seenNames = new Set<string>();
@@ -161,7 +167,9 @@ export default class PluginUtils {
         continue;
       }
 
-      const targetStatus: BatchPluginState = shouldBeActive ? 'active' : 'disabled';
+      const targetStatus: BatchPluginState = shouldBeActive
+        ? 'active'
+        : 'disabled';
       const targetBasePath =
         targetStatus === 'active' ? pluginsBasePath : disabledPluginsPath;
       const targetPath = path.join(targetBasePath, plugin.name);

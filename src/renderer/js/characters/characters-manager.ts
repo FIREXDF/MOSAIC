@@ -143,7 +143,6 @@ class CharactersManager {
         this.syncLiveModStatuses();
       }
     });
-
   }
 
   preloadCssLayout() {

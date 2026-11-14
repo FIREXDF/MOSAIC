@@ -213,12 +213,9 @@ export class ConflictModalManager {
 
       const warning = document.createElement('p');
       warning.className = 'modal-warning';
-      warning.textContent = this.t(
-        'modals.conflict.deleteSelectedWarning',
-        {
-          count: items.length,
-        },
-      );
+      warning.textContent = this.t('modals.conflict.deleteSelectedWarning', {
+        count: items.length,
+      });
 
       const fileList = document.createElement('div');
       fileList.className = 'conflict-delete-confirm-file';
@@ -447,9 +444,8 @@ export class ConflictModalManager {
 
     const whitelistPatterns =
       window.settingsManager?.settings.conflictWhitelistPatterns || [];
-    const conflictResult = await window.modManager.checkConflicts(
-      whitelistPatterns,
-    );
+    const conflictResult =
+      await window.modManager.checkConflicts(whitelistPatterns);
 
     if (conflictResult.success && window.modManager.conflictGroups.length > 0) {
       await this.showConflictModal();
@@ -465,9 +461,13 @@ export class ConflictModalManager {
       return;
     }
 
-    const added = await window.settingsManager.ignoredConflicts.addIgnoredConflictPath(filePath, {
-      refreshConflicts: false,
-    });
+    const added =
+      await window.settingsManager.ignoredConflicts.addIgnoredConflictPath(
+        filePath,
+        {
+          refreshConflicts: false,
+        },
+      );
 
     if (!added) {
       return;
@@ -475,9 +475,8 @@ export class ConflictModalManager {
 
     const whitelistPatterns =
       window.settingsManager.settings.conflictWhitelistPatterns || [];
-    const conflictResult = await window.modManager.checkConflicts(
-      whitelistPatterns,
-    );
+    const conflictResult =
+      await window.modManager.checkConflicts(whitelistPatterns);
 
     if (conflictResult.success && window.modManager.conflictGroups.length > 0) {
       await this.showConflictModal();
@@ -936,9 +935,8 @@ export class ConflictModalManager {
 
     const whitelistPatterns =
       window.settingsManager?.settings.conflictWhitelistPatterns || [];
-    const conflictResult = await window.modManager.checkConflicts(
-      whitelistPatterns,
-    );
+    const conflictResult =
+      await window.modManager.checkConflicts(whitelistPatterns);
 
     if (conflictResult.success && window.modManager.conflictGroups.length > 0) {
       await this.showConflictModal();
@@ -1103,7 +1101,6 @@ export class ConflictModalManager {
       }
     }, 100);
   }
-
 
   openAutoSlotChangeModal() {
     if (

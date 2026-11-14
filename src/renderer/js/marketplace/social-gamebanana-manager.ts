@@ -278,7 +278,10 @@ class SocialGameBananaManager extends SocialManagerBase {
       if (pluginName && repo) {
         requirementInstallBtn.disabled = true;
         try {
-          await this.requirements.installGameBananaRequirement(pluginName, repo);
+          await this.requirements.installGameBananaRequirement(
+            pluginName,
+            repo,
+          );
           await window.pluginManager?.refreshPlugins?.();
           if (this.gameBananaCurrentDetail) {
             this.detail.renderGameBananaDetailPage(
@@ -313,7 +316,10 @@ class SocialGameBananaManager extends SocialManagerBase {
       const query = requirementSearchBtn.getAttribute('data-query') || '';
       const provider =
         requirementSearchBtn.getAttribute('data-provider') || 'google';
-      const url = this.requirements.getGameBananaRequirementSearchUrl(query, provider);
+      const url = this.requirements.getGameBananaRequirementSearchUrl(
+        query,
+        provider,
+      );
       if (window.electronAPI?.openUrl) {
         await window.electronAPI.openUrl(url);
       }
@@ -412,11 +418,16 @@ class SocialGameBananaManager extends SocialManagerBase {
             await this.confirmMissingGameBananaRequirements(downloadUrl);
           if (!shouldContinue) return;
 
-          const pendingDownload = this.detail.createGameBananaSocialPayload(downloadUrl);
-          const fallbackProtocolUrl = /^(?:fightplanner|mosaic):/i.test(downloadUrl)
+          const pendingDownload =
+            this.detail.createGameBananaSocialPayload(downloadUrl);
+          const fallbackProtocolUrl = /^(?:fightplanner|mosaic):/i.test(
+            downloadUrl,
+          )
             ? downloadUrl
             : `fightplanner:${downloadUrl}`;
-          await window.electronAPI.openFightPlannerLink(pendingDownload?.link || fallbackProtocolUrl);
+          await window.electronAPI.openFightPlannerLink(
+            pendingDownload?.link || fallbackProtocolUrl,
+          );
         } finally {
           fileDownloadBtn.disabled = false;
           fileDownloadBtn.innerHTML = originalContent;
@@ -436,7 +447,8 @@ class SocialGameBananaManager extends SocialManagerBase {
         this.gameBananaLastDetailSource = {
           modelName,
           submissionId,
-          sourceKind: this.transitions.getGameBananaCardSourceKind(gameBananaCard),
+          sourceKind:
+            this.transitions.getGameBananaCardSourceKind(gameBananaCard),
           page: this.gameBananaModsPage,
           scrollTop: this.transitions.getSocialMainScrollTop(),
         };
@@ -777,8 +789,9 @@ class SocialGameBananaManager extends SocialManagerBase {
     const filter = this.filters.getGameBananaCategoryFilter();
     if (filter === 'all') return null;
     const config =
-      this.filters.getGameBananaCategoryFilters().find((item) => item.id === filter) ||
-      null;
+      this.filters
+        .getGameBananaCategoryFilters()
+        .find((item) => item.id === filter) || null;
     if (config?.id === 'skins') {
       return {
         ...config,
@@ -902,10 +915,14 @@ class SocialGameBananaManager extends SocialManagerBase {
         <i class="bi bi-chevron-left"></i>
       </button>
       <span class="social-gamebanana-page-label">${escapeHtml(
-        this.getSocialTranslation('social.pageLabel', 'Page {{current}} / {{total}}', {
-          current: String(this.gameBananaModsPage),
-          total: String(this.gameBananaModsTotalPages),
-        }),
+        this.getSocialTranslation(
+          'social.pageLabel',
+          'Page {{current}} / {{total}}',
+          {
+            current: String(this.gameBananaModsPage),
+            total: String(this.gameBananaModsTotalPages),
+          },
+        ),
       )}</span>
       <button class="social-gamebanana-page-btn" data-page-action="next" ${canGoNext ? '' : 'disabled'}>
         <i class="bi bi-chevron-right"></i>
@@ -1275,9 +1292,12 @@ class SocialGameBananaManager extends SocialManagerBase {
       });
     }, 20000);
 
-    const requirementsPromise = this.requirements.getGameBananaReadmeRequirements(
-      downloadUrl,
-    ).then((requirements) => ({ type: 'requirements' as const, requirements }));
+    const requirementsPromise = this.requirements
+      .getGameBananaReadmeRequirements(downloadUrl)
+      .then((requirements) => ({
+        type: 'requirements' as const,
+        requirements,
+      }));
 
     const dependencyCheckResult = await Promise.race([
       requirementsPromise,
@@ -1383,8 +1403,7 @@ class SocialGameBananaManager extends SocialManagerBase {
 
   async disableGameBananaDependencyChecks() {
     if (window.settingsManager?.settings) {
-      window.settingsManager.settings.checkDependenciesOnDiscoverDownload =
-        false;
+      window.settingsManager.settings.checkDependenciesOnDiscoverDownload = false;
     }
 
     const toggle = document.querySelector<HTMLInputElement>(
@@ -1420,7 +1439,8 @@ class SocialGameBananaManager extends SocialManagerBase {
     const fallback =
       this.getCachedGameBananaSubmission(modelName, submissionId) || null;
     const sourceRect =
-      sourceRectOverride || this.transitions.getGameBananaSourcePreviewRect(sourceCard);
+      sourceRectOverride ||
+      this.transitions.getGameBananaSourcePreviewRect(sourceCard);
 
     if (fallback) {
       this.detail.renderGameBananaDetailPage(null, fallback, false, [], true);
@@ -1472,10 +1492,18 @@ class SocialGameBananaManager extends SocialManagerBase {
       if (requestId !== this.gameBananaDetailRequestId) return;
       await this.requirements.refreshSkylineDependencyStatus();
       if (requestId !== this.gameBananaDetailRequestId) return;
-      this.detail.renderGameBananaDetailPage(detailData, fallback, false, filesData);
+      this.detail.renderGameBananaDetailPage(
+        detailData,
+        fallback,
+        false,
+        filesData,
+      );
       this.transitions.scrollGameBananaDetailToTop();
       if (!fallback) {
-        this.transitions.animateGameBananaPreviewToDetail(sourceCard, sourceRect);
+        this.transitions.animateGameBananaPreviewToDetail(
+          sourceCard,
+          sourceRect,
+        );
       }
       await this.transitions.fadeGameBananaDetailInfo('in');
     } catch (error) {
@@ -1484,7 +1512,10 @@ class SocialGameBananaManager extends SocialManagerBase {
       this.detail.renderGameBananaDetailPage(null, fallback, false);
       this.transitions.scrollGameBananaDetailToTop();
       if (!fallback) {
-        this.transitions.animateGameBananaPreviewToDetail(sourceCard, sourceRect);
+        this.transitions.animateGameBananaPreviewToDetail(
+          sourceCard,
+          sourceRect,
+        );
       }
       await this.transitions.fadeGameBananaDetailInfo('in');
     }

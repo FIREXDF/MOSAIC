@@ -24,7 +24,7 @@ import { ParamsWithoutFirstArg } from './types/common';
 import { WindowHandlers } from './ipc/handlers/window-handlers';
 import { DiscordHandlers } from './ipc/handlers/discord-handlers';
 import { AnalyticsHandlers } from './ipc/handlers/analytics-handlers';
-import { ProtocolHandlerEvents } from './protocol-handler';
+import { ProtocolHandlerEvents } from './protocol/protocol-handler';
 import { MainEvents } from './main';
 import { AnimationEvents } from './animations/animation-handler';
 import { UpdateEvents } from './auto-updater';
@@ -47,8 +47,8 @@ function wrapInvoke<
   return <K extends keyof Handlers>(channel: K) => {
     return ((...args: any[]) =>
       ipcRenderer.invoke(channel as string, ...args)) as (
-        ...args: ParamsWithoutFirstArg<Handlers[K]>
-      ) => ReturnType<Handlers[K]>;
+      ...args: ParamsWithoutFirstArg<Handlers[K]>
+    ) => ReturnType<Handlers[K]>;
   };
 }
 
@@ -133,8 +133,12 @@ const electronAPI = {
   ),
   deletePlugin: invokePluginHandler('delete-plugin'),
   checkPluginUpdates: invokePluginHandler('check-plugin-updates'),
-  checkPluginRecordedVersions: invokePluginHandler('check-plugin-recorded-versions'),
-  applyPluginRecordedVersions: invokePluginHandler('apply-plugin-recorded-versions'),
+  checkPluginRecordedVersions: invokePluginHandler(
+    'check-plugin-recorded-versions',
+  ),
+  applyPluginRecordedVersions: invokePluginHandler(
+    'apply-plugin-recorded-versions',
+  ),
   updatePlugin: invokePluginHandler('update-plugin'),
   inspectCskCollectionArchive: invokePluginHandler(
     'inspect-csk-collection-archive',
@@ -227,21 +231,41 @@ const electronAPI = {
 
   openConfigFile: invokeSystemHandler('open-config-file'),
 
-  createFpp: (name: string, fppVersion: string, thumbnailPath: string | null, modPaths: string[]) => ipcRenderer.invoke('createFpp', name, fppVersion, thumbnailPath, modPaths),
+  createFpp: (
+    name: string,
+    fppVersion: string,
+    thumbnailPath: string | null,
+    modPaths: string[],
+  ) =>
+    ipcRenderer.invoke('createFpp', name, fppVersion, thumbnailPath, modPaths),
   readFpp: (fppPath: string) => ipcRenderer.invoke('read-fpp', fppPath),
   installFpp: invokeFppHandler('install-fpp'),
   selectFppFile: invokeFppHandler('select-fpp-file'),
   getCharacterCssLayout: invokeCharacterCssHandler('get-character-css-layout'),
   getCssCharacterImages: invokeCharacterCssHandler('get-css-character-images'),
-  selectCssCharacterImage: invokeCharacterCssHandler('select-css-character-image'),
-  removeCssCharacterImage: invokeCharacterCssHandler('remove-css-character-image'),
-  selectCharacterCssSourceFile: invokeCharacterCssHandler('select-character-css-source-file'),
-  importCharacterCssSourceFiles: invokeCharacterCssHandler('import-character-css-source-files'),
-  saveCharacterCssLayout: invokeCharacterCssHandler('save-character-css-layout'),
-  duplicateCharacterCssEntry: invokeCharacterCssHandler('duplicate-character-css-entry'),
+  selectCssCharacterImage: invokeCharacterCssHandler(
+    'select-css-character-image',
+  ),
+  removeCssCharacterImage: invokeCharacterCssHandler(
+    'remove-css-character-image',
+  ),
+  selectCharacterCssSourceFile: invokeCharacterCssHandler(
+    'select-character-css-source-file',
+  ),
+  importCharacterCssSourceFiles: invokeCharacterCssHandler(
+    'import-character-css-source-files',
+  ),
+  saveCharacterCssLayout: invokeCharacterCssHandler(
+    'save-character-css-layout',
+  ),
+  duplicateCharacterCssEntry: invokeCharacterCssHandler(
+    'duplicate-character-css-entry',
+  ),
   createEchoSlot: invokeCharacterCssHandler('create-echo-slot'),
   removeEchoSlot: invokeCharacterCssHandler('remove-echo-slot'),
-  removeCharacterCssEntry: invokeCharacterCssHandler('remove-character-css-entry'),
+  removeCharacterCssEntry: invokeCharacterCssHandler(
+    'remove-character-css-entry',
+  ),
   loadModProfiles: invokeModProfileHandler('load-mod-profiles'),
   saveModProfiles: invokeModProfileHandler('save-mod-profiles'),
   exportConfigBackup: invokeConfigBackupHandler('export-config-backup'),
@@ -249,7 +273,9 @@ const electronAPI = {
   submitFeedback: invokeFeedbackHandler('submit-feedback'),
   selectFeedbackLogFiles: invokeFeedbackHandler('select-feedback-log-files'),
   getUmcMovesets: invokeUmcHandler('get-umc-movesets'),
-  getUmcMovesetsByGameBanana: invokeUmcHandler('get-umc-movesets-by-gamebanana'),
+  getUmcMovesetsByGameBanana: invokeUmcHandler(
+    'get-umc-movesets-by-gamebanana',
+  ),
   getUmcCharacterImage: invokeUmcHandler('get-umc-character-image'),
   getUmcCompatibility: invokeUmcHandler('get-umc-compatibility'),
 

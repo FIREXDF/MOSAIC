@@ -56,7 +56,10 @@ export function getArcropolisDirectoryForLibrary(
   return path.join(pluginsDirectory, 'ultimate', 'arcropolis');
 }
 
-async function getGitHubRelease(repo: string, tag?: string): Promise<{
+async function getGitHubRelease(
+  repo: string,
+  tag?: string,
+): Promise<{
   tag: string;
   downloadUrl: string;
   version: string;
@@ -281,8 +284,7 @@ export async function extractAndInstallSkyline(
               if (exefsContents.length > 0) {
                 return fullPath;
               }
-            } catch (e) {
-            }
+            } catch (e) {}
           }
 
           if (entry.isDirectory()) {
@@ -323,8 +325,7 @@ export async function extractAndInstallSkyline(
               exefsSource = commonPath;
               break;
             }
-          } catch (e) {
-          }
+          } catch (e) {}
         }
       }
     }
@@ -392,8 +393,7 @@ export async function extractAndInstallArcropolis(
               if (romfsContents.length > 0) {
                 return fullPath;
               }
-            } catch (e) {
-            }
+            } catch (e) {}
           }
 
           if (entry.isDirectory()) {
@@ -435,8 +435,7 @@ export async function extractAndInstallArcropolis(
               romfsSource = commonPath;
               break;
             }
-          } catch (e) {
-          }
+          } catch (e) {}
         }
       }
     }

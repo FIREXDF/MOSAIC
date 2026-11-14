@@ -7,12 +7,12 @@ import { exec, execSync } from 'child_process';
 import * as crypto from 'crypto';
 import { RequestOptions } from 'https';
 
-import ModUtils from './mod-utils';
-import sharedStore from './store';
-import downloadsStore from './store-downloads';
-import { ensureModInfoMetadata, ensureModInfoUrl } from './utils/mod-info-url';
+import ModUtils from '../mod-utils';
+import sharedStore from '../store/store';
+import downloadsStore from '../store/store-downloads';
+import { ensureModInfoMetadata, ensureModInfoUrl } from '../utils/mod-info-url';
 
-const packageJson = require('../../package.json');
+const packageJson = require('../../../package.json');
 
 const USER_AGENT = `MOSAIC/${packageJson.version} (Electron ${process.versions.electron}; Node ${process.versions.node}; ${process.platform})`;
 
@@ -42,16 +42,22 @@ const gameBananaEntities: Record<string, string> = {
 };
 
 function decodeGameBananaEntities(value: string): string {
-  return value.replace(/&(#(?:x[\da-f]+|\d+)|[a-z][\da-z]+);/gi, (match, entity: string) => {
-    if (entity.startsWith('#')) {
-      const hexadecimal = /^#x/i.test(entity);
-      const codePoint = parseInt(entity.slice(hexadecimal ? 2 : 1), hexadecimal ? 16 : 10);
-      return codePoint > 0 && codePoint <= 0x10ffff
-        ? String.fromCodePoint(codePoint)
-        : match;
-    }
-    return gameBananaEntities[entity.toLowerCase()] || match;
-  });
+  return value.replace(
+    /&(#(?:x[\da-f]+|\d+)|[a-z][\da-z]+);/gi,
+    (match, entity: string) => {
+      if (entity.startsWith('#')) {
+        const hexadecimal = /^#x/i.test(entity);
+        const codePoint = parseInt(
+          entity.slice(hexadecimal ? 2 : 1),
+          hexadecimal ? 16 : 10,
+        );
+        return codePoint > 0 && codePoint <= 0x10ffff
+          ? String.fromCodePoint(codePoint)
+          : match;
+      }
+      return gameBananaEntities[entity.toLowerCase()] || match;
+    },
+  );
 }
 
 function gameBananaDescriptionToText(value: unknown): string {
@@ -63,9 +69,15 @@ function gameBananaDescriptionToText(value: unknown): string {
   const withLinks = withoutScripts.replace(
     /<a\b([^>]*)>([\s\S]*?)<\/a\s*>/gi,
     (_match, attributes: string, body: string) => {
-      const href = attributes.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
-      const url = decodeGameBananaEntities(href?.[1] || href?.[2] || href?.[3] || '').trim();
-      const label = decodeGameBananaEntities(body.replace(/<[^>]*>/g, '')).trim();
+      const href = attributes.match(
+        /\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i,
+      );
+      const url = decodeGameBananaEntities(
+        href?.[1] || href?.[2] || href?.[3] || '',
+      ).trim();
+      const label = decodeGameBananaEntities(
+        body.replace(/<[^>]*>/g, ''),
+      ).trim();
       if (!/^https?:\/\//i.test(url)) return label;
       return label && label !== url ? `${label} (${url})` : url;
     },
@@ -76,7 +88,10 @@ function gameBananaDescriptionToText(value: unknown): string {
       .replace(/<br\s*\/?\s*>/gi, '\n')
       .replace(/<li\b[^>]*>/gi, '\n- ')
       .replace(/<hr\b[^>]*\/?\s*>/gi, '\n')
-      .replace(/<\/(?:p|div|h[1-6]|section|article|ul|ol|li|blockquote|tr)\s*>/gi, '\n')
+      .replace(
+        /<\/(?:p|div|h[1-6]|section|article|ul|ol|li|blockquote|tr)\s*>/gi,
+        '\n',
+      )
       .replace(/<\/?[a-z][^>]*>/gi, ''),
   )
     .replace(/\r\n?/g, '\n')
@@ -167,7 +182,13 @@ export default class ProtocolHandler {
   >;
   pendingInstalls: Map<
     string,
-    { url: string; modId: string | null; downloadId: string; modType: string; protocolUrl: string }
+    {
+      url: string;
+      modId: string | null;
+      downloadId: string;
+      modType: string;
+      protocolUrl: string;
+    }
   >;
   processingUrls: Set<string>;
   pollingIntervalId: NodeJS.Timeout | null = null;
@@ -373,7 +394,9 @@ export default class ProtocolHandler {
       const cleanUrl = url.replace(PROTOCOL_URL_PREFIX, '');
       const strippedUrl = cleanUrl.replace(/^\/+/, '');
 
-      const pairingMatch = strippedUrl.match(/^registerKey,(\d+),([a-zA-Z0-9_-]+)$/i);
+      const pairingMatch = strippedUrl.match(
+        /^registerKey,(\d+),([a-zA-Z0-9_-]+)$/i,
+      );
       if (pairingMatch) {
         const memberId = pairingMatch[1];
         const secretKey = pairingMatch[2];
@@ -470,17 +493,33 @@ export default class ProtocolHandler {
       try {
         data = JSON.parse(response);
       } catch (e) {
-        console.error('[protocol] Failed to parse RemoteInstall API response', e);
+        console.error(
+          '[protocol] Failed to parse RemoteInstall API response',
+          e,
+        );
         return;
       }
 
-      if (data && typeof data === 'object' && !Array.isArray(data) && data.error) {
-        console.error('[protocol] RemoteInstall API returned error:', data.error);
-        if (data.error.includes("Invalid credentials") || data.error.toLowerCase().includes("unauthorized")) {
+      if (
+        data &&
+        typeof data === 'object' &&
+        !Array.isArray(data) &&
+        data.error
+      ) {
+        console.error(
+          '[protocol] RemoteInstall API returned error:',
+          data.error,
+        );
+        if (
+          data.error.includes('Invalid credentials') ||
+          data.error.toLowerCase().includes('unauthorized')
+        ) {
           this.stopRemoteInstallPolling();
           sharedStore.delete('gb_secret_key');
           sharedStore.delete('gb_member_id');
-          this.showError("GameBanana remote install pairing revoked or invalid.");
+          this.showError(
+            'GameBanana remote install pairing revoked or invalid.',
+          );
         }
         return;
       }
@@ -510,14 +549,20 @@ export default class ProtocolHandler {
                 ? `${urlToHandle}&FromRemoteInstall=true`
                 : `${urlToHandle}?FromRemoteInstall=true`;
 
-              console.log('[protocol] Processing new Remote Install request:', processedUrl);
+              console.log(
+                '[protocol] Processing new Remote Install request:',
+                processedUrl,
+              );
               this.handleDeepLink(processedUrl);
             }
           }
         }
       }
     } catch (error) {
-      console.error('[protocol] Error fetching from RemoteInstall API:', error.message);
+      console.error(
+        '[protocol] Error fetching from RemoteInstall API:',
+        error.message,
+      );
     }
   }
 
@@ -546,7 +591,12 @@ export default class ProtocolHandler {
       return;
     }
 
-    const { url: downloadUrl, modId, modType = 'Mod', protocolUrl } = installData;
+    const {
+      url: downloadUrl,
+      modId,
+      modType = 'Mod',
+      protocolUrl,
+    } = installData;
 
     const _handleSaveError = (error: Error) => {
       console.error('Error during installation:', error);
@@ -640,7 +690,8 @@ export default class ProtocolHandler {
               statusText: 'Extracting mod...',
             });
           },
-          isCancelled: () => this.activeDownloads.get(downloadId)?.cancelled === true,
+          isCancelled: () =>
+            this.activeDownloads.get(downloadId)?.cancelled === true,
         },
       );
 
@@ -658,12 +709,22 @@ export default class ProtocolHandler {
         }
 
         for (const modData of modInstallResult.resultingMods) {
-          this.saveDownloadedModUrl(modData.modPath, protocolUrl || downloadUrl, modId, modType);
+          this.saveDownloadedModUrl(
+            modData.modPath,
+            protocolUrl || downloadUrl,
+            modId,
+            modType,
+          );
         }
 
-        const dls = (downloadsStore.get('downloads') as Record<string, string>) || {};
+        const dls =
+          (downloadsStore.get('downloads') as Record<string, string>) || {};
         for (const modData of modInstallResult.resultingMods) {
-          const modHash = crypto.createHash('sha256').update(modData.modName).digest('hex').substring(0, 12);
+          const modHash = crypto
+            .createHash('sha256')
+            .update(modData.modName)
+            .digest('hex')
+            .substring(0, 12);
           dls[modHash] = protocolUrl || downloadUrl;
         }
         downloadsStore.set('downloads', dls);
@@ -734,7 +795,9 @@ export default class ProtocolHandler {
       const mmdlSubmission = this.getMmdlSubmission(url);
       if (mmdlSubmission) return mmdlSubmission.modId;
 
-      const pageMatch = url.match(/gamebanana\.com\/(?:mods|sounds)(?:\/download)?\/(\d+)/i);
+      const pageMatch = url.match(
+        /gamebanana\.com\/(?:mods|sounds)(?:\/download)?\/(\d+)/i,
+      );
       if (pageMatch && pageMatch[1]) {
         return pageMatch[1];
       }
@@ -769,19 +832,28 @@ export default class ProtocolHandler {
       return null;
     }
 
-    const downloadPageMatch = parsedUrl.match(/gamebanana\.com\/(mods|sounds)\/download\/(\d+)/i);
+    const downloadPageMatch = parsedUrl.match(
+      /gamebanana\.com\/(mods|sounds)\/download\/(\d+)/i,
+    );
     if (!downloadPageMatch) {
       return parsedUrl;
     }
 
-    const modType = downloadPageMatch[1].toLowerCase() === 'sounds' ? 'Sound' : 'Mod';
+    const modType =
+      downloadPageMatch[1].toLowerCase() === 'sounds' ? 'Sound' : 'Mod';
     const modId = downloadPageMatch[2];
-    const apiDownloadUrl = await this.fetchPrimaryGameBananaDownloadUrl(modId, modType);
+    const apiDownloadUrl = await this.fetchPrimaryGameBananaDownloadUrl(
+      modId,
+      modType,
+    );
 
     return apiDownloadUrl || parsedUrl;
   }
 
-  async fetchPrimaryGameBananaDownloadUrl(modId: string, modType = 'Mod'): Promise<string | null> {
+  async fetchPrimaryGameBananaDownloadUrl(
+    modId: string,
+    modType = 'Mod',
+  ): Promise<string | null> {
     try {
       const apiUrl = `https://gamebanana.com/apiv11/${modType}/${modId}?_csvProperties=_aFiles`;
       const response = await this.fetchWithTimeout(apiUrl, 10000);
@@ -814,10 +886,15 @@ export default class ProtocolHandler {
         }
       }
 
-      console.warn(`[protocol] No API file download URL found for ${modType} ${modId}`);
+      console.warn(
+        `[protocol] No API file download URL found for ${modType} ${modId}`,
+      );
       return null;
     } catch (error) {
-      console.error(`[protocol] Failed to resolve GameBanana download URL for ${modType} ${modId}:`, error.message);
+      console.error(
+        `[protocol] Failed to resolve GameBanana download URL for ${modType} ${modId}:`,
+        error.message,
+      );
       return null;
     }
   }
@@ -838,7 +915,8 @@ export default class ProtocolHandler {
       ) {
         return null;
       }
-      if (/^\/dl\/\d+\/?$/i.test(parsedUrl.pathname)) return parsedUrl.toString();
+      if (/^\/dl\/\d+\/?$/i.test(parsedUrl.pathname))
+        return parsedUrl.toString();
       if (/^\/(?:mods|sounds)\/download\/\d+\/?$/i.test(parsedUrl.pathname)) {
         return parsedUrl.toString();
       }
@@ -850,7 +928,15 @@ export default class ProtocolHandler {
     }
   }
 
-  async downloadMod(url: string, downloadId: string, onProgress?: (progress: number, receivedBytes: number, totalBytes: number) => void): Promise<string> {
+  async downloadMod(
+    url: string,
+    downloadId: string,
+    onProgress?: (
+      progress: number,
+      receivedBytes: number,
+      totalBytes: number,
+    ) => void,
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
       const tempDir = path.join(app.getPath('temp'), 'fightplanner-downloads');
 
@@ -883,7 +969,10 @@ export default class ProtocolHandler {
         try {
           resumeFrom = fs.statSync(filePath).size;
         } catch (error) {
-          console.warn('[protocol][download] failed to stat partial file:', error.message);
+          console.warn(
+            '[protocol][download] failed to stat partial file:',
+            error.message,
+          );
           resumeFrom = 0;
         }
       }
@@ -910,7 +999,8 @@ export default class ProtocolHandler {
         settled = true;
 
         const download = this.activeDownloads.get(downloadId);
-        const keepPartial = download?.paused || error.message === 'Download paused';
+        const keepPartial =
+          download?.paused || error.message === 'Download paused';
 
         if (!keepPartial) {
           this.activeDownloads.delete(downloadId);
@@ -920,7 +1010,10 @@ export default class ProtocolHandler {
           try {
             file.destroy();
           } catch (closeError) {
-            console.warn('[protocol][download] failed to close file:', closeError.message);
+            console.warn(
+              '[protocol][download] failed to close file:',
+              closeError.message,
+            );
           }
         }
 
@@ -928,7 +1021,10 @@ export default class ProtocolHandler {
           try {
             fs.unlinkSync(filePath);
           } catch (unlinkError) {
-            console.warn('[protocol][download] failed to delete file:', unlinkError.message);
+            console.warn(
+              '[protocol][download] failed to delete file:',
+              unlinkError.message,
+            );
           }
         }
 
@@ -953,7 +1049,12 @@ export default class ProtocolHandler {
 
         if (download && download.cancelled) {
           response.destroy();
-          fail(new Error(download.paused ? 'Download paused' : 'Download cancelled'), !download.paused);
+          fail(
+            new Error(
+              download.paused ? 'Download paused' : 'Download cancelled',
+            ),
+            !download.paused,
+          );
 
           return;
         }
@@ -969,8 +1070,14 @@ export default class ProtocolHandler {
         const canAppend = resumeFrom > 0 && response.statusCode === 206;
         const shouldRestart = resumeFrom > 0 && response.statusCode === 200;
 
-        if (response.statusCode === 416 && resumeFrom > 0 && fs.existsSync(filePath)) {
-          console.log('[protocol][download] range already satisfied, using partial file as complete');
+        if (
+          response.statusCode === 416 &&
+          resumeFrom > 0 &&
+          fs.existsSync(filePath)
+        ) {
+          console.log(
+            '[protocol][download] range already satisfied, using partial file as complete',
+          );
           response.resume();
           const activeDownload = this.activeDownloads.get(downloadId);
           if (activeDownload) {
@@ -993,12 +1100,18 @@ export default class ProtocolHandler {
 
         if (String(contentType).toLowerCase().includes('text/html')) {
           response.resume();
-          fail(new Error('Download returned a web page instead of an archive. GameBanana may have blocked or changed the download URL.'));
+          fail(
+            new Error(
+              'Download returned a web page instead of an archive. GameBanana may have blocked or changed the download URL.',
+            ),
+          );
           return;
         }
 
         if (shouldRestart) {
-          console.log('[protocol][download] server ignored Range, restarting from byte 0');
+          console.log(
+            '[protocol][download] server ignored Range, restarting from byte 0',
+          );
           receivedBytes = 0;
           resumeFrom = 0;
         }
@@ -1016,10 +1129,13 @@ export default class ProtocolHandler {
           }
         }
 
-        const contentLength = parseInt(response.headers['content-length'] as string, 10) || 0;
+        const contentLength =
+          parseInt(response.headers['content-length'] as string, 10) || 0;
         const contentRange = response.headers['content-range'];
         const rangeTotalMatch =
-          typeof contentRange === 'string' ? contentRange.match(/\/(\d+)$/) : null;
+          typeof contentRange === 'string'
+            ? contentRange.match(/\/(\d+)$/)
+            : null;
         totalBytes =
           rangeTotalMatch && rangeTotalMatch[1]
             ? parseInt(rangeTotalMatch[1], 10)
@@ -1068,7 +1184,12 @@ export default class ProtocolHandler {
         file.on('finish', () => {
           const downloadCheck = this.activeDownloads.get(downloadId);
           if (downloadCheck && downloadCheck.cancelled) {
-            fail(new Error(downloadCheck.paused ? 'Download paused' : 'Download cancelled'), !downloadCheck.paused);
+            fail(
+              new Error(
+                downloadCheck.paused ? 'Download paused' : 'Download cancelled',
+              ),
+              !downloadCheck.paused,
+            );
             return;
           }
 
@@ -1107,7 +1228,12 @@ export default class ProtocolHandler {
       request.on('error', (err) => {
         const download = this.activeDownloads.get(downloadId);
         if (download?.cancelled) {
-          fail(new Error(download.paused ? 'Download paused' : 'Download cancelled'), !download.paused);
+          fail(
+            new Error(
+              download.paused ? 'Download paused' : 'Download cancelled',
+            ),
+            !download.paused,
+          );
           return;
         }
 
@@ -1148,7 +1274,10 @@ export default class ProtocolHandler {
           textData?._sText || textData?._sDescription || '',
         ),
       });
-      ensureModInfoUrl(modFolderPath, `https://gamebanana.com/${modType.toLowerCase()}s/${modId}`);
+      ensureModInfoUrl(
+        modFolderPath,
+        `https://gamebanana.com/${modType.toLowerCase()}s/${modId}`,
+      );
 
       if (!hasPreview) {
         const firstImage = data._aPreviewMedia?._aImages?.[0];
@@ -1161,7 +1290,6 @@ export default class ProtocolHandler {
           }
         }
       }
-
     } catch (error) {
       console.error('Failed to fetch mod metadata:', error.message);
     }
@@ -1227,13 +1355,19 @@ export default class ProtocolHandler {
         response.on('error', reject);
       });
       request.on('error', reject);
-      request.setTimeout(15000, () => request.destroy(new Error('Preview download timeout')));
+      request.setTimeout(15000, () =>
+        request.destroy(new Error('Preview download timeout')),
+      );
     });
 
-    const isWebp = imageData.toString('ascii', 0, 4) === 'RIFF' &&
+    const isWebp =
+      imageData.toString('ascii', 0, 4) === 'RIFF' &&
       imageData.toString('ascii', 8, 12) === 'WEBP';
     if (isWebp) {
-      await fs.promises.writeFile(path.join(modFolderPath, 'preview.webp'), imageData);
+      await fs.promises.writeFile(
+        path.join(modFolderPath, 'preview.webp'),
+        imageData,
+      );
       return;
     }
 
@@ -1256,19 +1390,31 @@ export default class ProtocolHandler {
           }
         })()
       `);
-      if (typeof webpDataUrl !== 'string' || !webpDataUrl.startsWith('data:image/webp;base64,')) {
+      if (
+        typeof webpDataUrl !== 'string' ||
+        !webpDataUrl.startsWith('data:image/webp;base64,')
+      ) {
         throw new Error('WebP conversion unavailable');
       }
 
       await fs.promises.writeFile(
         path.join(modFolderPath, 'preview.webp'),
-        Buffer.from(webpDataUrl.slice('data:image/webp;base64,'.length), 'base64'),
+        Buffer.from(
+          webpDataUrl.slice('data:image/webp;base64,'.length),
+          'base64',
+        ),
       );
     } catch (error) {
       const extension = path.extname(new URL(imageUrl).pathname).toLowerCase();
       if (!['.jpg', '.jpeg', '.png'].includes(extension)) throw error;
-      console.warn('Failed to convert preview to WebP, saving original image:', error);
-      await fs.promises.writeFile(path.join(modFolderPath, `preview${extension}`), imageData);
+      console.warn(
+        'Failed to convert preview to WebP, saving original image:',
+        error,
+      );
+      await fs.promises.writeFile(
+        path.join(modFolderPath, `preview${extension}`),
+        imageData,
+      );
     }
   }
 
@@ -1292,18 +1438,35 @@ export default class ProtocolHandler {
     fs.writeFileSync(tomlPath, content, 'utf8');
   }
 
-  private saveDownloadedModUrl(modFolderPath: string, source: string, modId?: string | null, modType = 'Mod') {
+  private saveDownloadedModUrl(
+    modFolderPath: string,
+    source: string,
+    modId?: string | null,
+    modType = 'Mod',
+  ) {
     try {
-      const cleanSource = source.replace(PROTOCOL_URL_PREFIX, '').replace(/^\/+/, '');
+      const cleanSource = source
+        .replace(PROTOCOL_URL_PREFIX, '')
+        .replace(/^\/+/, '');
       const url = new URL(cleanSource);
-      if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) return;
-      const isGameBanana = ['gamebanana.com', 'www.gamebanana.com'].includes(url.hostname.toLowerCase());
+      if (
+        !['https:', 'http:'].includes(url.protocol) ||
+        url.username ||
+        url.password
+      )
+        return;
+      const isGameBanana = ['gamebanana.com', 'www.gamebanana.com'].includes(
+        url.hostname.toLowerCase(),
+      );
       if (!isGameBanana) return;
       const id = modId || this.extractModId(source);
       const type = modId ? modType : this.extractModType(source);
       // /dl and /mmdl contain file IDs, which are not submission IDs.
       if (!id || !/^\d+$/.test(id) || !/^(Mod|Sound)$/i.test(type)) return;
-      ensureModInfoUrl(modFolderPath, `https://gamebanana.com/${type.toLowerCase()}s/${id}`);
+      ensureModInfoUrl(
+        modFolderPath,
+        `https://gamebanana.com/${type.toLowerCase()}s/${id}`,
+      );
     } catch (error) {
       console.warn('[protocol] Failed to save mod source URL:', error.message);
     }
@@ -1319,7 +1482,11 @@ export default class ProtocolHandler {
     dialog.showErrorBox('MOSAIC Protocol Error', message);
   }
 
-  async handleFppBatchDownload(packName: string, urls: string[], fppPath: string) {
+  async handleFppBatchDownload(
+    packName: string,
+    urls: string[],
+    fppPath: string,
+  ) {
     const downloadId = `fpp_batch_${Date.now()}`;
     const modsPath = sharedStore.get('modsPath') as string | null;
 
@@ -1342,7 +1509,7 @@ export default class ProtocolHandler {
     });
 
     const totalMods = urls.length;
-    const resultingMods: { modPath: string; modName: string; }[] = [];
+    const resultingMods: { modPath: string; modName: string }[] = [];
 
     // We treat errors per-file but proceed with the rest
     let hasError = false;
@@ -1375,9 +1542,10 @@ export default class ProtocolHandler {
           progress: overallProgress,
           receivedBytes: 0,
           totalBytes: 0,
-          statusText: extractingCount > 0
-            ? `Extracting .FPP (${completedCount}/${totalMods})`
-            : `Downloading .FPP (${completedCount}/${totalMods})`,
+          statusText:
+            extractingCount > 0
+              ? `Extracting .FPP (${completedCount}/${totalMods})`
+              : `Downloading .FPP (${completedCount}/${totalMods})`,
           subItems: subItems,
         });
       }
@@ -1392,23 +1560,32 @@ export default class ProtocolHandler {
           updateGlobalProgress();
         };
 
-        const filePath = await this.downloadMod(downloadUrl, downloadId, onProgress);
+        const filePath = await this.downloadMod(
+          downloadUrl,
+          downloadId,
+          onProgress,
+        );
         if (!filePath) return;
 
         fileProgresses[i] = 0;
         extractStatuses[i] = true;
         updateGlobalProgress();
 
-        const modInstallResult = await ModUtils.installModFromPath(filePath, modsPath, {
-          onExtractProgress: ({ percent }) => {
-            fileProgresses[i] = percent;
-            updateGlobalProgress();
+        const modInstallResult = await ModUtils.installModFromPath(
+          filePath,
+          modsPath,
+          {
+            onExtractProgress: ({ percent }) => {
+              fileProgresses[i] = percent;
+              updateGlobalProgress();
+            },
           },
-        });
+        );
 
         completedCount++;
 
-        const idMatch = originalUrl.match(/mmdl\/(\d+)/) || originalUrl.match(/(\d+)/);
+        const idMatch =
+          originalUrl.match(/mmdl\/(\d+)/) || originalUrl.match(/(\d+)/);
         if (idMatch) {
           const modBadge = `Mod #${idMatch[1]}`;
           const badgeIndex = subItems.indexOf(modBadge);
@@ -1427,19 +1604,30 @@ export default class ProtocolHandler {
             this.saveDownloadedModUrl(modData.modPath, originalUrl);
           }
 
-          const dls = (downloadsStore.get('downloads') as Record<string, string>) || {};
+          const dls =
+            (downloadsStore.get('downloads') as Record<string, string>) || {};
           for (const modData of modInstallResult.resultingMods) {
-            const modHash = crypto.createHash('sha256').update(modData.modName).digest('hex').substring(0, 12);
+            const modHash = crypto
+              .createHash('sha256')
+              .update(modData.modName)
+              .digest('hex')
+              .substring(0, 12);
             dls[modHash] = originalUrl;
           }
           downloadsStore.set('downloads', dls);
         } else {
-          console.error(`[protocol] Batch install error for ${originalUrl}: ${modInstallResult.error}`);
+          console.error(
+            `[protocol] Batch install error for ${originalUrl}: ${modInstallResult.error}`,
+          );
           hasError = true;
-          lastError = modInstallResult.error || 'Unknown error during extraction';
+          lastError =
+            modInstallResult.error || 'Unknown error during extraction';
         }
       } catch (error) {
-        console.error(`[protocol] Batch download error for ${originalUrl}:`, error);
+        console.error(
+          `[protocol] Batch download error for ${originalUrl}:`,
+          error,
+        );
         hasError = true;
         lastError = error.message;
       }

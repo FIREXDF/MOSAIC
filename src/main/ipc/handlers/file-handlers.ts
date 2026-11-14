@@ -15,7 +15,10 @@ export type FileHandlers = typeof FileHandlers;
 const getEmulatorDialogOptions = () => {
   if (process.platform === 'darwin') {
     return {
-      properties: ['openFile', 'openDirectory'] as ('openFile' | 'openDirectory')[],
+      properties: ['openFile', 'openDirectory'] as (
+        | 'openFile'
+        | 'openDirectory'
+      )[],
       filters: [
         { name: 'Applications', extensions: ['app'] },
         { name: 'All Files', extensions: ['*'] },
@@ -25,7 +28,7 @@ const getEmulatorDialogOptions = () => {
 
   if (process.platform === 'linux') {
     return {
-      properties: ['openFile'] as ('openFile')[],
+      properties: ['openFile'] as 'openFile'[],
       filters: [
         { name: 'Linux Executables', extensions: ['AppImage', 'sh'] },
         { name: 'All Files', extensions: ['*'] },
@@ -34,7 +37,7 @@ const getEmulatorDialogOptions = () => {
   }
 
   return {
-    properties: ['openFile'] as ('openFile')[],
+    properties: ['openFile'] as 'openFile'[],
     filters: [
       { name: 'Executable Files', extensions: ['exe'] },
       { name: 'All Files', extensions: ['*'] },
@@ -171,7 +174,9 @@ const FileHandlers = {
     folderPath: string,
   ): HandlerResponse<{ exists: boolean }> => {
     try {
-      const resolvedFolderPath = folderPath ? resolveVirtualPath(folderPath) : '';
+      const resolvedFolderPath = folderPath
+        ? resolveVirtualPath(folderPath)
+        : '';
       const exists =
         !!folderPath &&
         fs.existsSync(resolvedFolderPath) &&

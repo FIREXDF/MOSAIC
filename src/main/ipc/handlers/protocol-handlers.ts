@@ -2,7 +2,7 @@ import { IpcMain } from 'electron';
 import * as fs from 'fs';
 import * as https from 'https';
 import * as path from 'path';
-import { getProtocolHandler } from '../../main-protocol-setup';
+import { getProtocolHandler } from '../../protocol/main-protocol-setup';
 import {
   handleError,
   createErrorResponse,
@@ -357,7 +357,8 @@ const ProtocolHandlers = {
         () => {},
       );
 
-      const archiveEntries = await FileExtractor.listFppContents(downloadedPath);
+      const archiveEntries =
+        await FileExtractor.listFppContents(downloadedPath);
       const readmeEntries = findReadmeArchiveEntries(archiveEntries);
 
       if (!readmeEntries.length) {
@@ -400,7 +401,6 @@ const ProtocolHandlers = {
           cleanupError,
         );
       }
-
     }
   },
 } as const;

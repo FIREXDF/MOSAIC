@@ -2,11 +2,11 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import ModUtils, { Mod } from './mod-utils';
-import PluginUtils, { SimplePlugin } from './plugin-utils';
-import store from './store';
-import downloadsStore from './store-downloads';
+import PluginUtils, { SimplePlugin } from './plugins/plugin-utils';
+import store from './store/store';
+import downloadsStore from './store/store-downloads';
 import { resolveVirtualPath } from './utils/virtual-paths';
-import { identifyPluginVersions } from './plugin-version-identification';
+import { identifyPluginVersions } from './plugins/plugin-version-identification';
 
 type Library = 'mods' | 'plugins';
 type Status = 'active' | 'disabled';

@@ -39,10 +39,7 @@ class StatusBarAnimations {
     });
   }
 
-  renderDownloadCardWithFlip(
-    content: HTMLElement,
-    render: () => void,
-  ) {
+  renderDownloadCardWithFlip(content: HTMLElement, render: () => void) {
     const { gsapRef, flipRef } = this.resolveFlipRuntime();
 
     if (
@@ -112,15 +109,9 @@ class StatusBarAnimations {
         const flipModule = require('gsap/Flip');
 
         gsapRef =
-          gsapRef ||
-          gsapModule?.gsap ||
-          gsapModule?.default ||
-          gsapModule;
+          gsapRef || gsapModule?.gsap || gsapModule?.default || gsapModule;
         flipRef =
-          flipRef ||
-          flipModule?.Flip ||
-          flipModule?.default ||
-          flipModule;
+          flipRef || flipModule?.Flip || flipModule?.default || flipModule;
 
         if (!window.gsap && gsapRef) {
           window.gsap = gsapRef;
@@ -137,10 +128,7 @@ class StatusBarAnimations {
     return { gsapRef, flipRef };
   }
 
-  animateExtendedContentHeight(
-    content: HTMLElement,
-    previousHeight: number,
-  ) {
+  animateExtendedContentHeight(content: HTMLElement, previousHeight: number) {
     const { gsapRef } = this.resolveFlipRuntime();
 
     if (
@@ -317,7 +305,8 @@ class StatusBarAnimations {
 
   createMultiDownloadItemElement(dl: DownloadItem) {
     const item = document.createElement('div');
-    const { progress, displayName, pctText } = this.getMultiDownloadViewData(dl);
+    const { progress, displayName, pctText } =
+      this.getMultiDownloadViewData(dl);
 
     item.className = 'ext-multi-dl-item';
     item.dataset.dlId = dl.id;
@@ -336,17 +325,31 @@ class StatusBarAnimations {
   }
 
   updateMultiDownloadItemElement(itemEl: HTMLElement, dl: DownloadItem) {
-    const { progress, displayName, pctText } = this.getMultiDownloadViewData(dl);
+    const { progress, displayName, pctText } =
+      this.getMultiDownloadViewData(dl);
     const nameEl = itemEl.querySelector('.ext-multi-dl-name');
     const pctEl = itemEl.querySelector('.ext-multi-dl-pct');
-    const fillEl = itemEl.querySelector('.ext-multi-dl-fill') as HTMLElement | null;
+    const fillEl = itemEl.querySelector(
+      '.ext-multi-dl-fill',
+    ) as HTMLElement | null;
 
     itemEl.dataset.dlId = dl.id;
     if (nameEl) {
       (nameEl as HTMLElement).title = displayName;
-      this.animateElementTextChange(nameEl as HTMLElement, displayName, 'ext-text-swap', 280);
+      this.animateElementTextChange(
+        nameEl as HTMLElement,
+        displayName,
+        'ext-text-swap',
+        280,
+      );
     }
-    if (pctEl) this.animateElementTextChange(pctEl as HTMLElement, pctText, 'ext-text-swap', 280);
+    if (pctEl)
+      this.animateElementTextChange(
+        pctEl as HTMLElement,
+        pctText,
+        'ext-text-swap',
+        280,
+      );
     this.animateProgressFill(fillEl, progress);
   }
 
@@ -502,8 +505,9 @@ class StatusBarAnimations {
 
   animateExtendedBarEntrance(bottomBar: HTMLElement, content: HTMLElement) {
     const gsapRef = window.gsap;
-    const statusBarContent =
-      bottomBar.querySelector<HTMLElement>('.status-bar-content');
+    const statusBarContent = bottomBar.querySelector<HTMLElement>(
+      '.status-bar-content',
+    );
 
     if (
       !gsapRef ||
@@ -522,7 +526,8 @@ class StatusBarAnimations {
     const card = content.firstElementChild as HTMLElement | null;
     const iconContainer =
       card?.querySelector<HTMLElement>('.ext-card-icon-container') || null;
-    const details = card?.querySelector<HTMLElement>('.ext-card-details') || null;
+    const details =
+      card?.querySelector<HTMLElement>('.ext-card-details') || null;
     const primaryMeta =
       card?.querySelector<HTMLElement>(
         '.ext-progress-row, .ext-card-meta, .ext-conflict-message, .ext-multi-dl-list',
@@ -687,8 +692,9 @@ class StatusBarAnimations {
     onComplete: () => void,
   ) {
     const gsapRef = window.gsap;
-    const statusBarContent =
-      bottomBar.querySelector<HTMLElement>('.status-bar-content');
+    const statusBarContent = bottomBar.querySelector<HTMLElement>(
+      '.status-bar-content',
+    );
 
     if (
       !gsapRef ||
@@ -892,7 +898,11 @@ class StatusBarAnimations {
 
     this.clearIslandAnimationTimers();
 
-    bottomBar.classList.remove('island-pulse', 'island-settle', 'island-collapse');
+    bottomBar.classList.remove(
+      'island-pulse',
+      'island-settle',
+      'island-collapse',
+    );
     bottomBar.dataset.islandMode = mode;
 
     // Force reflow so repeated pulses retrigger cleanly.
@@ -916,7 +926,11 @@ class StatusBarAnimations {
 
   triggerIslandCollapse(bottomBar: HTMLElement) {
     if (document.body.classList.contains('no-animations')) {
-      bottomBar.classList.remove('island-pulse', 'island-settle', 'island-collapse');
+      bottomBar.classList.remove(
+        'island-pulse',
+        'island-settle',
+        'island-collapse',
+      );
       return;
     }
 

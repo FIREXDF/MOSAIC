@@ -130,10 +130,7 @@ class ModOperations {
     }
   }
 
-  async toggleModsStatus(
-    mods: Mod[],
-    targetStatus?: 'active' | 'disabled',
-  ) {
+  async toggleModsStatus(mods: Mod[], targetStatus?: 'active' | 'disabled') {
     const uniqueMods = this.getUniqueMods(mods).filter((mod) => !!mod.path);
 
     if (uniqueMods.length === 0 || !this.modManager.modsPath) {
@@ -472,9 +469,7 @@ class ModOperations {
             if (
               values.some(
                 ({ colorNum }) =>
-                  !Number.isInteger(colorNum) ||
-                  colorNum < 1 ||
-                  colorNum > 255,
+                  !Number.isInteger(colorNum) || colorNum < 1 || colorNum > 255,
               )
             ) {
               window.toastManager?.error('toasts.invalidSlotCount');

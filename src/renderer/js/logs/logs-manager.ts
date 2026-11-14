@@ -189,7 +189,10 @@ class LogsManager {
     if (!developerLogsBtn) return;
 
     developerLogsBtn.classList.toggle('active', this.showDeveloperLogs);
-    developerLogsBtn.setAttribute('aria-pressed', String(this.showDeveloperLogs));
+    developerLogsBtn.setAttribute(
+      'aria-pressed',
+      String(this.showDeveloperLogs),
+    );
   }
 
   isDeveloperLog(log: Log) {

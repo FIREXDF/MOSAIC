@@ -1,5 +1,5 @@
 import { IpcMain } from 'electron';
-import { getMigrationStatus } from '../../migration';
+import { getMigrationStatus } from '../../migration/migration';
 import {
   handleError,
   createErrorResponse,

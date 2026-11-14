@@ -123,13 +123,13 @@ class AnimationManager {
     try {
       introAudio.currentTime = 0;
       introAudio.play().catch((error) => {
-        console.error(
-          '[AnimationManager] Error playing intro audio:',
-          error,
-        );
+        console.error('[AnimationManager] Error playing intro audio:', error);
       });
     } catch (error) {
-      console.error('[AnimationManager] Failed to initialize intro audio:', error);
+      console.error(
+        '[AnimationManager] Failed to initialize intro audio:',
+        error,
+      );
     }
   }
 

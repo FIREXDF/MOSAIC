@@ -29,12 +29,16 @@ export class SoundAssigner {
       path.join(PATHS.dataDir(), 'names.data'),
     );
 
-    return new Set(namesData.split('\n').map((line) => line.split(',')[0].trim()));
+    return new Set(
+      namesData.split('\n').map((line) => line.split(',')[0].trim()),
+    );
   }
 
   static async readSoundMod(modPath: string): Promise<SoundModInfo> {
     if (!(await this.isSoundMod(modPath))) {
-      throw new Error('This mod must have a sound folder and no fighter folder');
+      throw new Error(
+        'This mod must have a sound folder and no fighter folder',
+      );
     }
 
     const soundRoot = path.join(modPath, 'sound');
@@ -131,7 +135,9 @@ export class SoundAssigner {
     const targetSlot = slot.toLowerCase();
     const { fighters, files } = await this.readSoundMod(soundModPath);
 
-    if (!(await this.listModelSlots(targetModPath, fighters)).includes(targetSlot)) {
+    if (
+      !(await this.listModelSlots(targetModPath, fighters)).includes(targetSlot)
+    ) {
       throw new Error(
         `The model mod has no ${fighters.join(' + ')} ${targetSlot} model`,
       );
@@ -163,7 +169,10 @@ export class SoundAssigner {
         fighters.includes(fighter) &&
         !(await ConfigGenerator.isVanillaFile(targetFile))
       ) {
-        addedFiles.set(fighter, [...(addedFiles.get(fighter) || []), targetFile]);
+        addedFiles.set(fighter, [
+          ...(addedFiles.get(fighter) || []),
+          targetFile,
+        ]);
       }
     }
 

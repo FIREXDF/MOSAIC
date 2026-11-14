@@ -1,7 +1,7 @@
 import { autoUpdater } from 'electron-updater';
 import { app, BrowserWindow } from 'electron';
 import { UpdateInfo } from 'electron-updater';
-import store from './store';
+import store from './store/store';
 
 type UpdateChannel = 'alpha' | 'beta' | 'stable';
 const DEFAULT_UPDATE_CHANNEL: UpdateChannel = 'beta';

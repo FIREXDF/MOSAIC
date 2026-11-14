@@ -5,7 +5,9 @@ function isGameBananaDownloadUrl(value: string): boolean {
   try {
     const url = new URL(value);
     return (
-      ['gamebanana.com', 'www.gamebanana.com'].includes(url.hostname.toLowerCase()) &&
+      ['gamebanana.com', 'www.gamebanana.com'].includes(
+        url.hostname.toLowerCase(),
+      ) &&
       (/^\/(?:dl|mmdl)\/\d+(?:\/|,|$)/i.test(url.pathname) ||
         /^\/(?:mods|sounds)\/download\/\d+\/?$/i.test(url.pathname))
     );
@@ -33,8 +35,16 @@ export function ensureModInfoMetadata(
   }
 
   const newline = content.includes('\r\n') ? '\r\n' : '\n';
-  const missing = (['display_name', 'authors', 'version', 'category', 'description'] as const)
-    .filter((key) => metadata[key] && !new RegExp(`^\\s*(?:${key}|"${key}"|'${key}')\\s*=`, 'm').test(content))
+  const missing = (
+    ['display_name', 'authors', 'version', 'category', 'description'] as const
+  )
+    .filter(
+      (key) =>
+        metadata[key] &&
+        !new RegExp(`^\\s*(?:${key}|"${key}"|'${key}')\\s*=`, 'm').test(
+          content,
+        ),
+    )
     .map((key) => {
       const value = metadata[key] as string;
       if (key === 'description') {

@@ -81,7 +81,9 @@ class CharactersUmcSection {
       );
       const previousSelectionSize = this.manager.umcSelectedMovesetIds.size;
       this.manager.umcSelectedMovesetIds = new Set(
-        [...this.manager.umcSelectedMovesetIds].filter((id) => availableIds.has(id)),
+        [...this.manager.umcSelectedMovesetIds].filter((id) =>
+          availableIds.has(id),
+        ),
       );
       if (previousSelectionSize !== this.manager.umcSelectedMovesetIds.size) {
         this.resetUmcCompatibility();
@@ -112,13 +114,19 @@ class CharactersUmcSection {
     );
     if (refreshButton) {
       refreshButton.disabled = this.manager.umcMovesetsLoading;
-      refreshButton.classList.toggle('is-loading', this.manager.umcMovesetsLoading);
+      refreshButton.classList.toggle(
+        'is-loading',
+        this.manager.umcMovesetsLoading,
+      );
       refreshButton.title = this.manager.t(
         'characters.umcRefreshTitle',
         'Refresh UMC movesets',
       );
       refreshButton.setAttribute('aria-label', refreshButton.title);
-      refreshButton.setAttribute('aria-busy', String(this.manager.umcMovesetsLoading));
+      refreshButton.setAttribute(
+        'aria-busy',
+        String(this.manager.umcMovesetsLoading),
+      );
     }
 
     const refreshState = document.querySelector<HTMLElement>(
@@ -128,7 +136,8 @@ class CharactersUmcSection {
       const hasCachedList =
         this.manager.umcMovesetsLoaded && this.manager.umcMovesets.length > 0;
       refreshState.hidden =
-        !hasCachedList || (!this.manager.umcMovesetsLoading && !this.manager.umcMovesetsError);
+        !hasCachedList ||
+        (!this.manager.umcMovesetsLoading && !this.manager.umcMovesetsError);
       refreshState.textContent = this.manager.umcMovesetsLoading
         ? this.manager.t('characters.umcRefreshing', 'Refreshing...')
         : this.manager.t(
@@ -147,7 +156,10 @@ class CharactersUmcSection {
       return;
     }
 
-    if (this.manager.umcMovesetsLoading && this.manager.umcMovesets.length === 0) {
+    if (
+      this.manager.umcMovesetsLoading &&
+      this.manager.umcMovesets.length === 0
+    ) {
       grid.innerHTML = `
 <div class="character-umc-state" role="status" aria-live="polite">
   <i class="bi bi-arrow-repeat character-umc-spinner" aria-hidden="true"></i>
@@ -156,7 +168,10 @@ class CharactersUmcSection {
       return;
     }
 
-    if (this.manager.umcMovesetsError && this.manager.umcMovesets.length === 0) {
+    if (
+      this.manager.umcMovesetsError &&
+      this.manager.umcMovesets.length === 0
+    ) {
       grid.innerHTML = `
 <div class="character-umc-state" role="status" aria-live="polite">
   <i class="bi bi-cloud-slash" aria-hidden="true"></i>
@@ -213,7 +228,9 @@ class CharactersUmcSection {
 
     grid.innerHTML = movesets
       .map((moveset) => {
-        const selected = this.manager.umcSelectedMovesetIds.has(moveset.movesetId);
+        const selected = this.manager.umcSelectedMovesetIds.has(
+          moveset.movesetId,
+        );
         const imageUrl = this.getUmcImageUrl(moveset.thumbhImageUrl);
         const metadata = [
           moveset.vanillaCharDisplayName,
@@ -299,7 +316,10 @@ class CharactersUmcSection {
     if (!result) {
       return;
     }
-    result.setAttribute('aria-busy', String(this.manager.umcCheckingCompatibility));
+    result.setAttribute(
+      'aria-busy',
+      String(this.manager.umcCheckingCompatibility),
+    );
 
     if (this.manager.umcCheckingCompatibility) {
       result.className = 'character-umc-result is-neutral';
@@ -464,7 +484,11 @@ class CharactersUmcSection {
   }
 
   selectUmcMoveset(movesetId: number) {
-    if (!this.manager.umcMovesets.some((moveset) => moveset.movesetId === movesetId)) {
+    if (
+      !this.manager.umcMovesets.some(
+        (moveset) => moveset.movesetId === movesetId,
+      )
+    ) {
       return;
     }
 

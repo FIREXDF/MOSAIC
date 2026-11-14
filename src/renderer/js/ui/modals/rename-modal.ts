@@ -1,7 +1,10 @@
 export {};
 (function () {
   const M = window.ModalManagerClass;
-  if (!M) { console.error('[rename-modal] ModalManagerClass not found'); return; }
+  if (!M) {
+    console.error('[rename-modal] ModalManagerClass not found');
+    return;
+  }
 
   M.prototype.openRenameModal = function (mod, callback) {
     this.currentMod = mod;

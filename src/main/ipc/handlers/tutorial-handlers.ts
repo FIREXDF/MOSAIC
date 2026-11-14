@@ -1,4 +1,4 @@
-import { BrowserWindow, IpcMain, dialog, ipcMain } from 'electron';
+import { BrowserWindow, IpcMain, dialog } from 'electron';
 import {
   createTutorialWindow,
   closeTutorialWindow,

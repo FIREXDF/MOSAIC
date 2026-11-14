@@ -148,10 +148,7 @@ class I18nClient {
       ) {
         element.placeholder = translation;
         updatedCount++;
-      } else if (
-        element.hasAttribute('data-i18n-alt') &&
-        'alt' in element
-      ) {
+      } else if (element.hasAttribute('data-i18n-alt') && 'alt' in element) {
         element.alt = translation;
         updatedCount++;
       } else if (element.hasAttribute('data-i18n-aria-label')) {

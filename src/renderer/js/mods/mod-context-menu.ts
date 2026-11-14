@@ -563,9 +563,12 @@ class ModContextMenuHandler {
     if (restoreItem) {
       const backup =
         !useSelection && mod.path
-          ? await window.electronAPI?.hasSlotBackup?.(mod.path).catch(() => null)
+          ? await window.electronAPI
+              ?.hasSlotBackup?.(mod.path)
+              .catch(() => null)
           : null;
-      restoreItem.style.display = backup?.success && backup.exists ? '' : 'none';
+      restoreItem.style.display =
+        backup?.success && backup.exists ? '' : 'none';
     }
     const assignSoundItem = contextMenu.querySelector<HTMLElement>(
       '[data-action="assign-sound"]',

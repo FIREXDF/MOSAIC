@@ -363,12 +363,16 @@ class TutorialManager {
   async saveProgress() {
     if (!this.overlay || !window.electronAPI?.store) return;
     try {
-      const result = await window.electronAPI.store.set('tutorial.guideProgress', {
-        stepTitle: this.steps[this.currentStep].title,
-        installMethod: this.installMethod,
-        selectedLocale: this.selectedLocale,
-      });
-      if (!result.success) console.error('Could not save guide progress:', result);
+      const result = await window.electronAPI.store.set(
+        'tutorial.guideProgress',
+        {
+          stepTitle: this.steps[this.currentStep].title,
+          installMethod: this.installMethod,
+          selectedLocale: this.selectedLocale,
+        },
+      );
+      if (!result.success)
+        console.error('Could not save guide progress:', result);
     } catch (error) {
       console.error('Could not save guide progress:', error);
     }
@@ -482,9 +486,10 @@ class TutorialManager {
     if (resumeMessage) {
       resumeMessage.hidden = this.currentStep !== this.resumedStep;
       const translated = window.i18n?.t?.('tutorial.resumeMessage');
-      resumeMessage.textContent = translated && translated !== 'tutorial.resumeMessage'
-        ? translated
-        : "Let's pick up where we left off.";
+      resumeMessage.textContent =
+        translated && translated !== 'tutorial.resumeMessage'
+          ? translated
+          : "Let's pick up where we left off.";
     }
 
     const title = this.overlay.querySelector<HTMLElement>('#tutorial-title');
@@ -492,18 +497,15 @@ class TutorialManager {
       '#tutorial-description',
     );
     const count = this.overlay.querySelector<HTMLElement>('#tutorial-count');
-    const language = this.overlay.querySelector<HTMLElement>(
-      '#tutorial-language',
-    );
+    const language =
+      this.overlay.querySelector<HTMLElement>('#tutorial-language');
     const installChoice = this.overlay.querySelector<HTMLElement>(
       '#tutorial-install-choice',
     );
-    const prevBtn = this.overlay.querySelector<HTMLButtonElement>(
-      '#tutorial-prev',
-    );
-    const nextBtn = this.overlay.querySelector<HTMLButtonElement>(
-      '#tutorial-next',
-    );
+    const prevBtn =
+      this.overlay.querySelector<HTMLButtonElement>('#tutorial-prev');
+    const nextBtn =
+      this.overlay.querySelector<HTMLButtonElement>('#tutorial-next');
 
     if (title) title.textContent = this.guideText(step.title);
     if (description) description.textContent = this.guideText(step.description);
@@ -541,9 +543,8 @@ class TutorialManager {
   updateNextState() {
     if (!this.overlay) return;
     const step = this.steps[this.currentStep];
-    const nextBtn = this.overlay.querySelector<HTMLButtonElement>(
-      '#tutorial-next',
-    );
+    const nextBtn =
+      this.overlay.querySelector<HTMLButtonElement>('#tutorial-next');
     if (!nextBtn) return;
 
     const requiredTabActive = this.isRequiredTabActive(step);
@@ -559,11 +560,11 @@ class TutorialManager {
       step.requiredDownloadComplete && !this.isInstallDownloadComplete();
     const waiting = Boolean(
       waitingForTab ||
-        waitingForVisible ||
-        waitingForHidden ||
-        waitingForChoice ||
-        waitingForInstallClick ||
-        waitingForDownloadComplete,
+      waitingForVisible ||
+      waitingForHidden ||
+      waitingForChoice ||
+      waitingForInstallClick ||
+      waitingForDownloadComplete,
     );
     const waitingReason = waitingForTab
       ? 'tab'
@@ -643,11 +644,11 @@ class TutorialManager {
     const step = this.steps[this.currentStep];
     return Boolean(
       (step.requiredTab && !this.isRequiredTabActive(step)) ||
-        (step.requiredVisible && !this.queryFirstVisible(step.requiredVisible)) ||
-        (step.requiredHidden && this.queryFirstVisible(step.requiredHidden)) ||
-        (step.kind === 'choice' && !this.installMethod) ||
-        (step.requiredInstallClick && !this.installConfirmClicked) ||
-        (step.requiredDownloadComplete && !this.isInstallDownloadComplete()),
+      (step.requiredVisible && !this.queryFirstVisible(step.requiredVisible)) ||
+      (step.requiredHidden && this.queryFirstVisible(step.requiredHidden)) ||
+      (step.kind === 'choice' && !this.installMethod) ||
+      (step.requiredInstallClick && !this.installConfirmClicked) ||
+      (step.requiredDownloadComplete && !this.isInstallDownloadComplete()),
     );
   }
 
@@ -703,18 +704,15 @@ class TutorialManager {
   }
 
   updateStaticLabels() {
-    const prevBtn = this.overlay?.querySelector<HTMLButtonElement>(
-      '#tutorial-prev',
-    );
+    const prevBtn =
+      this.overlay?.querySelector<HTMLButtonElement>('#tutorial-prev');
     if (prevBtn) prevBtn.textContent = this.guideText('Back');
 
     const fightPlannerChoice = this.overlay?.querySelector<HTMLElement>(
       '[data-choice-label="fightplanner"]',
     );
     if (fightPlannerChoice) {
-      fightPlannerChoice.textContent = this.guideText(
-        'Install inside MOSAIC',
-      );
+      fightPlannerChoice.textContent = this.guideText('Install inside MOSAIC');
     }
 
     const gameBananaChoice = this.overlay?.querySelector<HTMLElement>(
@@ -729,7 +727,9 @@ class TutorialManager {
     if (!step.requiredTab) return false;
     return Boolean(
       document
-        .querySelector<HTMLElement>(`.sidebar-btn[data-tab="${step.requiredTab}"]`)
+        .querySelector<HTMLElement>(
+          `.sidebar-btn[data-tab="${step.requiredTab}"]`,
+        )
         ?.classList.contains('active'),
     );
   }

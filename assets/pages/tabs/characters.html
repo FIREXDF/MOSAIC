@@ -55,13 +55,10 @@
   >
     <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
     <span data-i18n="characters.movesetsRefreshHint">
-      A new Moveset mod was installed or its info changed. Refreshing the tracker is recommended.
+      A new Moveset mod was installed or its info changed. Refreshing the
+      tracker is recommended.
     </span>
-    <button
-      class="input-btn"
-      id="character-movesets-refresh-btn"
-      type="button"
-    >
+    <button class="input-btn" id="character-movesets-refresh-btn" type="button">
       <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
       <span data-i18n="characters.refreshMovesets">Refresh Movesets</span>
     </button>
@@ -115,11 +112,7 @@
       hidden
     >
       <div class="character-umc-toolbar">
-        <button
-          class="input-btn"
-          id="character-umc-back-btn"
-          type="button"
-        >
+        <button class="input-btn" id="character-umc-back-btn" type="button">
           <i class="bi bi-arrow-left"></i>
           <span data-i18n="characters.umcBack">Back</span>
         </button>
@@ -146,21 +139,37 @@
         </button>
       </div>
 
-      <section class="character-umc-comparison" aria-labelledby="character-umc-title">
+      <section
+        class="character-umc-comparison"
+        aria-labelledby="character-umc-title"
+      >
         <div class="character-umc-comparison-heading">
           <div>
             <h3 id="character-umc-title" data-i18n="characters.umcCompareTitle">
               Compare movesets
             </h3>
             <p data-i18n="characters.umcCompareHint">
-              Select 2 to 10 movesets to check automatically. Click again to deselect.
+              Select 2 to 10 movesets to check automatically. Click again to
+              deselect.
             </p>
           </div>
-          <span class="character-umc-selected-count" id="character-umc-selected-count" aria-live="polite"></span>
+          <span
+            class="character-umc-selected-count"
+            id="character-umc-selected-count"
+            aria-live="polite"
+          ></span>
         </div>
 
-        <div class="character-umc-selection" id="character-umc-selection" role="group" aria-label="Selected movesets">
-          <span class="character-umc-selection-empty" data-i18n="characters.umcChooseMultiple">
+        <div
+          class="character-umc-selection"
+          id="character-umc-selection"
+          role="group"
+          aria-label="Selected movesets"
+        >
+          <span
+            class="character-umc-selection-empty"
+            data-i18n="characters.umcChooseMultiple"
+          >
             Choose at least two movesets in the grid.
           </span>
         </div>
@@ -174,7 +183,11 @@
       </section>
 
       <div class="character-umc-list-toolbar">
-        <label class="visually-hidden" for="character-umc-search" data-i18n="characters.umcSearchLabel">
+        <label
+          class="visually-hidden"
+          for="character-umc-search"
+          data-i18n="characters.umcSearchLabel"
+        >
           Search UMC movesets
         </label>
         <input
@@ -191,9 +204,13 @@
           href="https://lilylavender.github.io/UltimateMovesetCompatibility/#/"
           target="_blank"
           rel="noopener noreferrer"
-          onclick="window.electronAPI.openUrl(this.href); return false;"
+          onclick="
+            window.electronAPI.openUrl(this.href);
+            return false;
+          "
           data-i18n="characters.umcSource"
-        >Provided by UMC</a>
+          >Provided by UMC</a
+        >
       </div>
 
       <div

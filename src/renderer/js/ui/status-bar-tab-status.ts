@@ -13,7 +13,9 @@ class StatusBarTabStatus {
     try {
       if (window.modManager?.mods) {
         const mods = window.modManager.mods;
-        const enabledMods = mods.filter((mod) => mod.status === 'active').length;
+        const enabledMods = mods.filter(
+          (mod) => mod.status === 'active',
+        ).length;
 
         return {
           content: this.manager.t('statusBar.modsEnabled', {
@@ -34,8 +36,9 @@ class StatusBarTabStatus {
     try {
       if (window.pluginManager) {
         const plugins = window.pluginManager.plugins || [];
-        const enabledPlugins = plugins.filter((plugin) => plugin.enabled !== false)
-          .length;
+        const enabledPlugins = plugins.filter(
+          (plugin) => plugin.enabled !== false,
+        ).length;
 
         return {
           content: this.manager.t('statusBar.pluginsEnabled', {
@@ -75,7 +78,7 @@ class StatusBarTabStatus {
   }
 
   getDownloadsIdleSnapshot(): StatusSnapshot {
-    if (!window.downloadManager || !(window.downloadManager).activeDownloads) {
+    if (!window.downloadManager || !window.downloadManager.activeDownloads) {
       return { content: this.manager.t('statusBar.downloadsReady') };
     }
 
@@ -257,7 +260,9 @@ class StatusBarTabStatus {
             }),
           );
         } else {
-          this.manager.setStatusText(this.manager.t('statusBar.charactersReady'));
+          this.manager.setStatusText(
+            this.manager.t('statusBar.charactersReady'),
+          );
         }
       } catch (error) {
         this.manager.setStatusText(this.manager.t('statusBar.charactersReady'));

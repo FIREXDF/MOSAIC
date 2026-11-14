@@ -1,7 +1,7 @@
 import { app, BrowserWindow, dialog, IpcMain } from 'electron';
 import * as fs from 'fs';
 import * as os from 'os';
-import store from '../../store';
+import store from '../../store/store';
 import { getDebugLibrarySnapshot } from '../../debug-library-snapshot';
 import { getCharacterCssDebugReport } from '../../characters/character-css-service';
 import { BaseHandlerArg, GenericHandler } from '../../types/common';
@@ -86,7 +86,8 @@ const anonymizeHomeDirectory = (value: unknown): unknown => {
     `${escapedHomeDirectory}(?=[\\\\/]|$)`,
     process.platform === 'win32' ? 'gi' : 'g',
   );
-  const redactString = (text: string) => text.replace(homeDirectoryPattern, '~');
+  const redactString = (text: string) =>
+    text.replace(homeDirectoryPattern, '~');
 
   const anonymize = (nestedValue: unknown): unknown => {
     if (typeof nestedValue === 'string') return redactString(nestedValue);

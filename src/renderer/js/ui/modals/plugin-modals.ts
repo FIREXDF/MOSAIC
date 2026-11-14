@@ -2,8 +2,11 @@ export {};
 (function () {
   const ssbuVersionLabel = (version: string | null) =>
     version === 'any'
-      ? (window.i18n?.t?.('plugins.ssbuAnyVersion') || 'Let me choose any version')
-      : version || (window.i18n?.t?.('plugins.ssbuNotSelected') || 'Not selected');
+      ? window.i18n?.t?.('plugins.ssbuAnyVersion') ||
+        'Let me choose any version'
+      : version ||
+        window.i18n?.t?.('plugins.ssbuNotSelected') ||
+        'Not selected';
 
   const M = window.ModalManagerClass;
   if (!M) {
@@ -301,14 +304,16 @@ export {};
       await window.electronAPI.store.set('modUpdateWatch', watch);
     };
 
-    modal.querySelectorAll<HTMLButtonElement>('[data-install]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const update = updates.find((u) => u.url === btn.dataset.install);
-        btn.disabled = true;
-        await window.electronAPI.openFightPlannerLink(update.installLink);
-        await markSeen([update]);
+    modal
+      .querySelectorAll<HTMLButtonElement>('[data-install]')
+      .forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const update = updates.find((u) => u.url === btn.dataset.install);
+          btn.disabled = true;
+          await window.electronAPI.openFightPlannerLink(update.installLink);
+          await markSeen([update]);
+        });
       });
-    });
 
     modal
       .querySelector<HTMLButtonElement>('#close-mod-update-modal')!
@@ -367,12 +372,17 @@ export {};
       '#marketplace-results',
     );
 
-    const versionLabel = modal.querySelector<HTMLElement>('#marketplace-ssbu-version')!;
+    const versionLabel = modal.querySelector<HTMLElement>(
+      '#marketplace-ssbu-version',
+    )!;
     const refreshVersion = async () => {
-      versionLabel.textContent = ssbuVersionLabel(await window.pluginMarketplace.getConfiguredSsbuVersion());
+      versionLabel.textContent = ssbuVersionLabel(
+        await window.pluginMarketplace.getConfiguredSsbuVersion(),
+      );
     };
     await refreshVersion();
-    modal.querySelector<HTMLButtonElement>('#marketplace-change-ssbu-version')!
+    modal
+      .querySelector<HTMLButtonElement>('#marketplace-change-ssbu-version')!
       .addEventListener('click', async () => {
         await this.openSsbuVersionModal(modal);
         await refreshVersion();
@@ -423,7 +433,9 @@ export {};
     document.addEventListener('keydown', escapeHandler);
   };
 
-  M.prototype.openSsbuVersionModal = async function (marketplaceModal: HTMLElement) {
+  M.prototype.openSsbuVersionModal = async function (
+    marketplaceModal: HTMLElement,
+  ) {
     const current = await window.pluginMarketplace.getConfiguredSsbuVersion();
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -454,7 +466,8 @@ export {};
     window.i18n?.updateDOM();
 
     return new Promise<string | null>((resolve) => {
-      const save = modal.querySelector<HTMLButtonElement>('#save-ssbu-version')!;
+      const save =
+        modal.querySelector<HTMLButtonElement>('#save-ssbu-version')!;
       const escapeHandler = (event: KeyboardEvent) => {
         if (event.key === 'Escape') {
           event.stopPropagation();
@@ -474,20 +487,36 @@ export {};
         });
       };
       document.addEventListener('keydown', escapeHandler, true);
-      modal.querySelectorAll<HTMLInputElement>('input[name="ssbu-marketplace-version"]')
-        .forEach((radio) => radio.addEventListener('change', () => { save.disabled = false; }));
-      modal.querySelector<HTMLButtonElement>('#cancel-ssbu-version')!
+      modal
+        .querySelectorAll<HTMLInputElement>(
+          'input[name="ssbu-marketplace-version"]',
+        )
+        .forEach((radio) =>
+          radio.addEventListener('change', () => {
+            save.disabled = false;
+          }),
+        );
+      modal
+        .querySelector<HTMLButtonElement>('#cancel-ssbu-version')!
         .addEventListener('click', () => close(null));
       save.addEventListener('click', async () => {
-        const version = modal.querySelector<HTMLInputElement>('input[name="ssbu-marketplace-version"]:checked')?.value;
-        if (version !== '13.0.4' && version !== '13.0.5' && version !== 'any') return;
+        const version = modal.querySelector<HTMLInputElement>(
+          'input[name="ssbu-marketplace-version"]:checked',
+        )?.value;
+        if (version !== '13.0.4' && version !== '13.0.5' && version !== 'any')
+          return;
         save.disabled = true;
         try {
-          const saved = await window.electronAPI.store.set('ssbuVersion', version);
+          const saved = await window.electronAPI.store.set(
+            'ssbuVersion',
+            version,
+          );
           if (!saved?.success) throw new Error('Failed to save SSBU version');
           if (version !== current) {
-            window.toastManager?.info(window.i18n?.t?.('plugins.ssbuReinstallWarning') ||
-              'After switching version, reinstall every installed plugin so it matches your game.');
+            window.toastManager?.info(
+              window.i18n?.t?.('plugins.ssbuReinstallWarning') ||
+                'After switching version, reinstall every installed plugin so it matches your game.',
+            );
           }
           close(version);
         } catch (error) {
@@ -517,23 +546,38 @@ export {};
     }
 
     const isRepoInstalled = (repo: string) =>
-      installedRepos.some((installedRepo) => installedRepo.toLowerCase() === repo.toLowerCase());
+      installedRepos.some(
+        (installedRepo) => installedRepo.toLowerCase() === repo.toLowerCase(),
+      );
 
     const showInstalledLoader = (repo: string) => {
       const loaderRepos = plugins
         .filter((item) => item.specialInstaller === 'plugin-loader')
         .map((item) => item.repo.toLowerCase());
       this.renderMarketplaceResults(plugins, container, [
-        ...installedRepos.filter((installed) => !loaderRepos.includes(installed.toLowerCase())),
+        ...installedRepos.filter(
+          (installed) => !loaderRepos.includes(installed.toLowerCase()),
+        ),
         repo,
       ]);
     };
 
-    const switchLoaderFromCard = async (repo: string, btn: HTMLButtonElement) => {
-      const marketplaceModal = btn.closest<HTMLElement>('#plugin-marketplace-modal');
+    const switchLoaderFromCard = async (
+      repo: string,
+      btn: HTMLButtonElement,
+    ) => {
+      const marketplaceModal = btn.closest<HTMLElement>(
+        '#plugin-marketplace-modal',
+      );
       const loader = plugins.find((item) => item.repo === repo);
-      if ((await window.pluginMarketplace.getConfiguredSsbuVersion()) === 'any' && loader && marketplaceModal) {
-        this.openPluginVersionModal(loader, marketplaceModal, () => showInstalledLoader(repo));
+      if (
+        (await window.pluginMarketplace.getConfiguredSsbuVersion()) === 'any' &&
+        loader &&
+        marketplaceModal
+      ) {
+        this.openPluginVersionModal(loader, marketplaceModal, () =>
+          showInstalledLoader(repo),
+        );
         return;
       }
       const restore = btn.innerHTML;
@@ -541,7 +585,11 @@ export {};
       btn.innerHTML =
         '<i class="bi bi-arrow-repeat spin"></i> <span data-i18n="plugins.installing">Installing...</span>';
       window.i18n?.updateDOM();
-      if (await window.pluginManager.switchLoader(repo === 'WuBoytH/ozone' ? 'ozone' : 'skyline')) {
+      if (
+        await window.pluginManager.switchLoader(
+          repo === 'WuBoytH/ozone' ? 'ozone' : 'skyline',
+        )
+      ) {
         showInstalledLoader(repo);
         return;
       }
@@ -551,7 +599,11 @@ export {};
     };
 
     const pluginsGrid = plugins
-      .filter((plugin) => plugin.specialInstaller !== 'plugin-loader' || isRepoInstalled(plugin.repo))
+      .filter(
+        (plugin) =>
+          plugin.specialInstaller !== 'plugin-loader' ||
+          isRepoInstalled(plugin.repo),
+      )
       .map((plugin) => {
         const replacement = plugin.replaceWith
           ? plugins.find((item) => item.repo === plugin.replaceWith)
@@ -611,7 +663,9 @@ export {};
               <i class="bi ${buttonIcon}"></i>
               <span ${buttonTextKey ? `data-i18n="${buttonTextKey}"` : ''}>${buttonDefaultText}</span>
             </button>
-            ${isLoader && replacement ? `
+            ${
+              isLoader && replacement
+                ? `
             <button type="button" class="marketplace-card-version-btn"
                     data-plugin-repo="${escapeHtml(plugin.repo)}"
                     aria-haspopup="menu" aria-expanded="false"
@@ -632,7 +686,10 @@ export {};
                 <i class="bi bi-clock-history"></i>
                 <span>Change version of ${escapeHtml(plugin.name)}</span>
               </button>
-            </div>` : isCskCollection || isLoader ? '' : `
+            </div>`
+                : isCskCollection || isLoader
+                  ? ''
+                  : `
             <button type="button" class="marketplace-card-version-btn"
                     data-plugin-repo="${escapeHtml(plugin.repo)}"
                     aria-haspopup="menu" aria-expanded="false"
@@ -644,7 +701,8 @@ export {};
                 <i class="bi bi-clock-history"></i>
                 <span data-i18n="plugins.chooseVersion">Choose version</span>
               </button>
-            </div>`}
+            </div>`
+            }
           </div>
         </div>
       </div>
@@ -709,20 +767,28 @@ export {};
           return;
         }
 
-        const marketplaceModal = btn.closest<HTMLElement>('#plugin-marketplace-modal');
-        let ssbuVersion = await window.pluginMarketplace.getConfiguredSsbuVersion();
+        const marketplaceModal = btn.closest<HTMLElement>(
+          '#plugin-marketplace-modal',
+        );
+        let ssbuVersion =
+          await window.pluginMarketplace.getConfiguredSsbuVersion();
         if (!ssbuVersion) {
           if (!marketplaceModal) return;
           ssbuVersion = await this.openSsbuVersionModal(marketplaceModal);
           if (!ssbuVersion) return;
-          marketplaceModal.querySelector<HTMLElement>('#marketplace-ssbu-version')!.textContent =
-            ssbuVersionLabel(ssbuVersion);
+          marketplaceModal.querySelector<HTMLElement>(
+            '#marketplace-ssbu-version',
+          )!.textContent = ssbuVersionLabel(ssbuVersion);
         }
         if (ssbuVersion === 'any') {
           if (!plugin || !marketplaceModal) return;
           if (isCskCollection) {
             marketplaceModal.style.display = 'none';
-            await this.openCskCollectionInstallModal(plugin, marketplaceModal, isInstalled);
+            await this.openCskCollectionInstallModal(
+              plugin,
+              marketplaceModal,
+              isInstalled,
+            );
           } else {
             this.openPluginVersionModal(plugin, marketplaceModal);
           }
@@ -737,111 +803,127 @@ export {};
         }
 
         try {
-        if (window.pluginMarketplace) {
-          if (specialInstaller === 'arcropolis' && plugin) {
-            const release = await window.electronAPI.getGithubRelease(
-              pluginRepo, ssbuVersion === '13.0.4' ? 'v4.0.8' : 'v4.1.1',
-            );
-            if (!release.success) throw new Error(release.error || 'ARCropolis release unavailable');
-            const installed = await window.pluginMarketplace.downloadAndInstallPlugin(
-              pluginName, pluginRepo,
-              { url: release.downloadUrl, version: release.version },
-            );
-            if (!installed) {
+          if (window.pluginMarketplace) {
+            if (specialInstaller === 'arcropolis' && plugin) {
+              const release = await window.electronAPI.getGithubRelease(
+                pluginRepo,
+                ssbuVersion === '13.0.4' ? 'v4.0.8' : 'v4.1.1',
+              );
+              if (!release.success)
+                throw new Error(
+                  release.error || 'ARCropolis release unavailable',
+                );
+              const installed =
+                await window.pluginMarketplace.downloadAndInstallPlugin(
+                  pluginName,
+                  pluginRepo,
+                  { url: release.downloadUrl, version: release.version },
+                );
+              if (!installed) {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi ${restoreIcon}"></i> <span ${restoreTextKey ? `data-i18n="${restoreTextKey}"` : ''}>${restoreText}</span>`;
+                window.i18n?.updateDOM();
+                return;
+              }
+              btn
+                .closest('.marketplace-plugin-card')
+                ?.classList.add('installed');
+              btn.dataset.isInstalled = 'true';
               btn.disabled = false;
-              btn.innerHTML = `<i class="bi ${restoreIcon}"></i> <span ${restoreTextKey ? `data-i18n="${restoreTextKey}"` : ''}>${restoreText}</span>`;
+              btn.innerHTML =
+                '<i class="bi bi-arrow-clockwise"></i> <span data-i18n="plugins.reinstall">Reinstall</span>';
               window.i18n?.updateDOM();
               return;
             }
-            btn.closest('.marketplace-plugin-card')?.classList.add('installed');
-            btn.dataset.isInstalled = 'true';
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span data-i18n="plugins.reinstall">Reinstall</span>';
-            window.i18n?.updateDOM();
-            return;
-          }
 
-          if (specialInstaller === 'csk-collection' && plugin) {
-            btn.disabled = false;
-            btn.innerHTML = `<i class="bi ${restoreIcon}"></i> <span ${restoreTextKey ? `data-i18n="${restoreTextKey}"` : ''}>${restoreText}</span>`;
-            if (window.i18n) {
-              window.i18n.updateDOM();
-            }
-            const marketplaceModal = btn.closest<HTMLElement>(
-              '#plugin-marketplace-modal',
-            );
-            if (marketplaceModal) {
-              marketplaceModal.style.display = 'none';
-            }
-            await this.openCskCollectionInstallModal(
-              plugin,
-              marketplaceModal,
-              isInstalled,
-            );
-            return;
-          }
-
-          if (specialInstaller === 'one-slot-effects' && plugin) {
-            const file = await window.pluginMarketplace.getCompatibleOneSlotEffectsFile(ssbuVersion);
-            await window.pluginMarketplace.installOneSlotEffects({
-              downloadUrl: file._sDownloadUrl,
-              version: file._sVersion || file._sFile || '',
-            });
-            btn.closest('.marketplace-plugin-card')?.classList.add('installed');
-            btn.dataset.isInstalled = 'true';
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span data-i18n="plugins.reinstall">Reinstall</span>';
-            window.i18n?.updateDOM();
-            window.toastManager?.success('One Slot Effects installed');
-            return;
-          }
-
-          const downloadUrl =
-            await window.pluginMarketplace.getCompatibleGithubDownload(
-              pluginRepo, ssbuVersion,
-            );
-
-          if (downloadUrl) {
-            const installed =
-              (await window.pluginMarketplace.downloadAndInstallPlugin(
-                pluginName,
-                pluginRepo,
-                downloadUrl,
-              )) === true;
-
-            const card = btn.closest('.marketplace-plugin-card');
-            if (installed && card) {
-              card.classList.add('installed');
-              btn.disabled = false;
-              btn.innerHTML =
-                '<i class="bi bi-check-circle-fill"></i> <span data-i18n="plugins.installed">Installed</span>';
-              if (window.i18n) {
-                window.i18n.updateDOM();
-              }
-            } else if (!installed) {
+            if (specialInstaller === 'csk-collection' && plugin) {
               btn.disabled = false;
               btn.innerHTML = `<i class="bi ${restoreIcon}"></i> <span ${restoreTextKey ? `data-i18n="${restoreTextKey}"` : ''}>${restoreText}</span>`;
               if (window.i18n) {
                 window.i18n.updateDOM();
               }
-            }
-          } else {
-            console.error(
-              `[renderMarketplaceResults] Failed to get download URL for ${pluginName} from repo ${pluginRepo}`,
-            );
-            if (window.toastManager) {
-              window.toastManager.error(
-                `No .nro or .zip file found in latest release for ${pluginName}. Please check the GitHub repository.`,
+              const marketplaceModal = btn.closest<HTMLElement>(
+                '#plugin-marketplace-modal',
               );
+              if (marketplaceModal) {
+                marketplaceModal.style.display = 'none';
+              }
+              await this.openCskCollectionInstallModal(
+                plugin,
+                marketplaceModal,
+                isInstalled,
+              );
+              return;
             }
-            btn.disabled = false;
-            btn.innerHTML =
-              '<i class="bi bi-download"></i> <span data-i18n="plugins.install">Install</span>';
-            if (window.i18n) {
-              window.i18n.updateDOM();
+
+            if (specialInstaller === 'one-slot-effects' && plugin) {
+              const file =
+                await window.pluginMarketplace.getCompatibleOneSlotEffectsFile(
+                  ssbuVersion,
+                );
+              await window.pluginMarketplace.installOneSlotEffects({
+                downloadUrl: file._sDownloadUrl,
+                version: file._sVersion || file._sFile || '',
+              });
+              btn
+                .closest('.marketplace-plugin-card')
+                ?.classList.add('installed');
+              btn.dataset.isInstalled = 'true';
+              btn.disabled = false;
+              btn.innerHTML =
+                '<i class="bi bi-arrow-clockwise"></i> <span data-i18n="plugins.reinstall">Reinstall</span>';
+              window.i18n?.updateDOM();
+              window.toastManager?.success('One Slot Effects installed');
+              return;
+            }
+
+            const downloadUrl =
+              await window.pluginMarketplace.getCompatibleGithubDownload(
+                pluginRepo,
+                ssbuVersion,
+              );
+
+            if (downloadUrl) {
+              const installed =
+                (await window.pluginMarketplace.downloadAndInstallPlugin(
+                  pluginName,
+                  pluginRepo,
+                  downloadUrl,
+                )) === true;
+
+              const card = btn.closest('.marketplace-plugin-card');
+              if (installed && card) {
+                card.classList.add('installed');
+                btn.disabled = false;
+                btn.innerHTML =
+                  '<i class="bi bi-check-circle-fill"></i> <span data-i18n="plugins.installed">Installed</span>';
+                if (window.i18n) {
+                  window.i18n.updateDOM();
+                }
+              } else if (!installed) {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi ${restoreIcon}"></i> <span ${restoreTextKey ? `data-i18n="${restoreTextKey}"` : ''}>${restoreText}</span>`;
+                if (window.i18n) {
+                  window.i18n.updateDOM();
+                }
+              }
+            } else {
+              console.error(
+                `[renderMarketplaceResults] Failed to get download URL for ${pluginName} from repo ${pluginRepo}`,
+              );
+              if (window.toastManager) {
+                window.toastManager.error(
+                  `No .nro or .zip file found in latest release for ${pluginName}. Please check the GitHub repository.`,
+                );
+              }
+              btn.disabled = false;
+              btn.innerHTML =
+                '<i class="bi bi-download"></i> <span data-i18n="plugins.install">Install</span>';
+              if (window.i18n) {
+                window.i18n.updateDOM();
+              }
             }
           }
-        }
         } catch (error) {
           console.error('[Marketplace] Install failed:', error);
           window.toastManager?.error(error.message || String(error));
@@ -853,10 +935,12 @@ export {};
     });
 
     const closeVersionMenus = () => {
-      container.querySelectorAll<HTMLElement>('.marketplace-version-menu').forEach((menu) => {
-        menu.hidden = true;
-        menu.previousElementSibling?.setAttribute('aria-expanded', 'false');
-      });
+      container
+        .querySelectorAll<HTMLElement>('.marketplace-version-menu')
+        .forEach((menu) => {
+          menu.hidden = true;
+          menu.previousElementSibling?.setAttribute('aria-expanded', 'false');
+        });
     };
     if (!container.dataset.versionMenuBound) {
       container.dataset.versionMenuBound = 'true';
@@ -865,40 +949,59 @@ export {};
           document.removeEventListener('click', outsideClick);
           return;
         }
-        if (!(event.target as HTMLElement).closest('.marketplace-install-group')) closeVersionMenus();
+        if (
+          !(event.target as HTMLElement).closest('.marketplace-install-group')
+        )
+          closeVersionMenus();
       };
       document.addEventListener('click', outsideClick);
     }
 
-    container.querySelectorAll<HTMLButtonElement>('.marketplace-card-version-btn').forEach((toggle) => {
-      const menu = toggle.nextElementSibling as HTMLElement;
-      toggle.addEventListener('click', () => {
-        const opening = menu.hidden;
-        closeVersionMenus();
-        menu.hidden = !opening;
-        toggle.setAttribute('aria-expanded', String(opening));
-      });
-      menu.querySelectorAll<HTMLButtonElement>('.marketplace-version-menu-item').forEach((menuItem) => {
-        menuItem.addEventListener('click', () => {
+    container
+      .querySelectorAll<HTMLButtonElement>('.marketplace-card-version-btn')
+      .forEach((toggle) => {
+        const menu = toggle.nextElementSibling as HTMLElement;
+        toggle.addEventListener('click', () => {
+          const opening = menu.hidden;
           closeVersionMenus();
-          if (menuItem.dataset.replaceRepo) {
-            const installBtn = toggle.parentElement!.querySelector<HTMLButtonElement>(
-              '.marketplace-card-install-btn',
-            )!;
-            void switchLoaderFromCard(menuItem.dataset.replaceRepo, installBtn);
-            return;
-          }
-          const repo = menuItem.dataset.versionRepo || toggle.dataset.pluginRepo;
-          const plugin = plugins.find((item) => item.repo === repo);
-          const marketplaceModal = toggle.closest<HTMLElement>('#plugin-marketplace-modal');
-          if (!plugin || !marketplaceModal) return;
-          const onInstalled = plugin.specialInstaller === 'plugin-loader'
-            ? () => showInstalledLoader(plugin.repo)
-            : undefined;
-          this.openPluginVersionModal(plugin, marketplaceModal, onInstalled);
+          menu.hidden = !opening;
+          toggle.setAttribute('aria-expanded', String(opening));
         });
+        menu
+          .querySelectorAll<HTMLButtonElement>('.marketplace-version-menu-item')
+          .forEach((menuItem) => {
+            menuItem.addEventListener('click', () => {
+              closeVersionMenus();
+              if (menuItem.dataset.replaceRepo) {
+                const installBtn =
+                  toggle.parentElement!.querySelector<HTMLButtonElement>(
+                    '.marketplace-card-install-btn',
+                  )!;
+                void switchLoaderFromCard(
+                  menuItem.dataset.replaceRepo,
+                  installBtn,
+                );
+                return;
+              }
+              const repo =
+                menuItem.dataset.versionRepo || toggle.dataset.pluginRepo;
+              const plugin = plugins.find((item) => item.repo === repo);
+              const marketplaceModal = toggle.closest<HTMLElement>(
+                '#plugin-marketplace-modal',
+              );
+              if (!plugin || !marketplaceModal) return;
+              const onInstalled =
+                plugin.specialInstaller === 'plugin-loader'
+                  ? () => showInstalledLoader(plugin.repo)
+                  : undefined;
+              this.openPluginVersionModal(
+                plugin,
+                marketplaceModal,
+                onInstalled,
+              );
+            });
+          });
       });
-    });
   };
 
   M.prototype.openPluginVersionModal = async function (
@@ -906,8 +1009,11 @@ export {};
     marketplaceModal: HTMLElement,
     onInstalled?: () => void,
   ) {
-    document.querySelectorAll('#plugin-version-modal').forEach((existing) => existing.remove());
-    const confirmLabel = '<i class="bi bi-download"></i><span data-i18n="plugins.installSelectedVersion">Install selected version</span>';
+    document
+      .querySelectorAll('#plugin-version-modal')
+      .forEach((existing) => existing.remove());
+    const confirmLabel =
+      '<i class="bi bi-download"></i><span data-i18n="plugins.installSelectedVersion">Install selected version</span>';
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.id = 'plugin-version-modal';
@@ -930,7 +1036,9 @@ export {};
     window.i18n?.updateDOM();
 
     const body = modal.querySelector<HTMLElement>('#plugin-version-body')!;
-    const confirmBtn = modal.querySelector<HTMLButtonElement>('#confirm-plugin-version')!;
+    const confirmBtn = modal.querySelector<HTMLButtonElement>(
+      '#confirm-plugin-version',
+    )!;
     let closing = false;
     const escapeHandler = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -946,15 +1054,24 @@ export {};
         skipHideOverlay: true,
         onModalClosed: () => {
           modal.remove();
-          if (document.body.contains(marketplaceModal)) marketplaceModal.style.display = 'block';
+          if (document.body.contains(marketplaceModal))
+            marketplaceModal.style.display = 'block';
           this.showOverlay();
         },
       });
     };
     document.addEventListener('keydown', escapeHandler, true);
-    modal.querySelector<HTMLButtonElement>('#cancel-plugin-version')!.addEventListener('click', close);
+    modal
+      .querySelector<HTMLButtonElement>('#cancel-plugin-version')!
+      .addEventListener('click', close);
 
-    let choices: Array<{ label: string; url: string; version: string; date: string; tag?: string }>;
+    let choices: Array<{
+      label: string;
+      url: string;
+      version: string;
+      date: string;
+      tag?: string;
+    }>;
     try {
       choices = await window.pluginMarketplace.getVersionChoices(plugin);
     } catch (error) {
@@ -980,26 +1097,45 @@ export {};
       return;
     }
 
-    const normalizeVersion = (version: string) => String(version || '').trim().replace(/^v/i, '').toLowerCase();
+    const normalizeVersion = (version: string) =>
+      String(version || '')
+        .trim()
+        .replace(/^v/i, '')
+        .toLowerCase();
     let installedVersion = '';
     try {
       const [mappingResult, storedVersions] = await Promise.all([
         window.electronAPI.getPluginRepoMapping(),
         window.electronAPI.store.get('pluginVersions'),
       ]);
-      const mappings = ('mappings' in mappingResult ? mappingResult.mappings : {}) as Record<string, string>;
-      const fileKey = Object.entries(mappings)
-        .find(([, repo]) => repo.toLowerCase() === plugin.repo.toLowerCase())?.[0];
-      installedVersion = fileKey ? normalizeVersion((storedVersions || {})[fileKey]) : '';
+      const mappings = (
+        'mappings' in mappingResult ? mappingResult.mappings : {}
+      ) as Record<string, string>;
+      const fileKey = Object.entries(mappings).find(
+        ([, repo]) => repo.toLowerCase() === plugin.repo.toLowerCase(),
+      )?.[0];
+      installedVersion = fileKey
+        ? normalizeVersion((storedVersions || {})[fileKey])
+        : '';
       if (plugin.specialInstaller === 'plugin-loader') {
         const loader = await window.electronAPI.store.get('pluginLoader');
-        const loaderRepo = loader === 'ozone' ? 'WuBoytH/ozone' : 'skyline-dev/skyline';
-        installedVersion = loaderRepo === plugin.repo
-          ? normalizeVersion(String((await window.electronAPI.store.get('pluginLoaderVersion')) || ''))
-          : '';
+        const loaderRepo =
+          loader === 'ozone' ? 'WuBoytH/ozone' : 'skyline-dev/skyline';
+        installedVersion =
+          loaderRepo === plugin.repo
+            ? normalizeVersion(
+                String(
+                  (await window.electronAPI.store.get('pluginLoaderVersion')) ||
+                    '',
+                ),
+              )
+            : '';
       }
     } catch (error) {
-      console.warn('[openPluginVersionModal] Failed to read installed version:', error);
+      console.warn(
+        '[openPluginVersionModal] Failed to read installed version:',
+        error,
+      );
     }
     if (closing) return;
 
@@ -1007,7 +1143,9 @@ export {};
     body.innerHTML = `
       <div class="plugin-version-choices-scroll">
       <fieldset class="plugin-version-choices">
-        ${choices.map((choice, index) => `
+        ${choices
+          .map(
+            (choice, index) => `
           <label class="plugin-version-option">
             <span class="plugin-version-option-title">
               <input type="radio" name="marketplace-plugin-version" value="${index}" ${index === 0 ? 'checked' : ''}>
@@ -1017,24 +1155,35 @@ export {};
               ${installedVersion && normalizeVersion(choice.version) === installedVersion ? '<span class="plugin-version-badge plugin-version-badge-installed"><i class="bi bi-check-circle-fill"></i> <span data-i18n="plugins.installedVersion">Installed version</span></span>' : ''}
             </span>
             ${choice.date ? `<span class="plugin-version-option-text">${escapeHtml(new Date(choice.date).toLocaleDateString())}</span>` : ''}
-          </label>`).join('')}
+          </label>`,
+          )
+          .join('')}
       </fieldset>
       </div>`;
     window.i18n?.updateDOM();
     confirmBtn.disabled = false;
 
-    const list = body.querySelector<HTMLElement>('.plugin-version-choices-scroll')!;
-    modal.addEventListener('wheel', (event) => {
-      event.preventDefault();
-      list.scrollTop += event.deltaY;
-    }, { passive: false });
+    const list = body.querySelector<HTMLElement>(
+      '.plugin-version-choices-scroll',
+    )!;
+    modal.addEventListener(
+      'wheel',
+      (event) => {
+        event.preventDefault();
+        list.scrollTop += event.deltaY;
+      },
+      { passive: false },
+    );
 
     confirmBtn.addEventListener('click', async () => {
-      const selected = body.querySelector<HTMLInputElement>('input[name="marketplace-plugin-version"]:checked');
+      const selected = body.querySelector<HTMLInputElement>(
+        'input[name="marketplace-plugin-version"]:checked',
+      );
       const choice = choices[Number(selected?.value)];
       if (!choice) return;
       confirmBtn.disabled = true;
-      confirmBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i><span data-i18n="plugins.installing">Installing...</span>';
+      confirmBtn.innerHTML =
+        '<i class="bi bi-arrow-repeat spin"></i><span data-i18n="plugins.installing">Installing...</span>';
       window.i18n?.updateDOM();
 
       let installed = false;
@@ -1045,13 +1194,21 @@ export {};
             { downloadUrl: choice.url, version: choice.version },
           );
         } else if (plugin.specialInstaller === 'one-slot-effects') {
-          await window.pluginMarketplace.installOneSlotEffects({ downloadUrl: choice.url, version: choice.version });
-          window.toastManager?.success(`${plugin.name} ${choice.version} installed`);
+          await window.pluginMarketplace.installOneSlotEffects({
+            downloadUrl: choice.url,
+            version: choice.version,
+          });
+          window.toastManager?.success(
+            `${plugin.name} ${choice.version} installed`,
+          );
           installed = true;
         } else {
-          installed = (await window.pluginMarketplace.downloadAndInstallPlugin(
-            plugin.name, plugin.repo, { url: choice.url, version: choice.version },
-          )) === true;
+          installed =
+            (await window.pluginMarketplace.downloadAndInstallPlugin(
+              plugin.name,
+              plugin.repo,
+              { url: choice.url, version: choice.version },
+            )) === true;
         }
       } catch (error) {
         window.toastManager?.error(error.message || String(error));
@@ -1065,12 +1222,17 @@ export {};
       }
 
       const installBtn = Array.from(
-        marketplaceModal.querySelectorAll<HTMLButtonElement>('.marketplace-card-install-btn'),
+        marketplaceModal.querySelectorAll<HTMLButtonElement>(
+          '.marketplace-card-install-btn',
+        ),
       ).find((button) => button.dataset.pluginRepo === plugin.repo);
       if (installBtn) {
         installBtn.dataset.isInstalled = 'true';
-        installBtn.closest('.marketplace-plugin-card')?.classList.add('installed');
-        installBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span data-i18n="plugins.reinstall">Reinstall</span>';
+        installBtn
+          .closest('.marketplace-plugin-card')
+          ?.classList.add('installed');
+        installBtn.innerHTML =
+          '<i class="bi bi-arrow-clockwise"></i> <span data-i18n="plugins.reinstall">Reinstall</span>';
         window.i18n?.updateDOM();
       }
       onInstalled?.();
@@ -1137,9 +1299,7 @@ export {};
     this.showOverlay();
     modal.style.display = 'block';
 
-    const body = modal.querySelector<HTMLElement>(
-      '#arcropolis-install-body',
-    )!;
+    const body = modal.querySelector<HTMLElement>('#arcropolis-install-body')!;
     const confirmBtn = modal.querySelector<HTMLButtonElement>(
       '#confirm-arcropolis-install',
     )!;
@@ -1235,9 +1395,9 @@ export {};
       ).find((button) => button.dataset.pluginRepo === plugin.repo);
       if (marketplaceButton) {
         marketplaceButton.dataset.isInstalled = 'true';
-        marketplaceButton.closest('.marketplace-plugin-card')?.classList.add(
-          'installed',
-        );
+        marketplaceButton
+          .closest('.marketplace-plugin-card')
+          ?.classList.add('installed');
         marketplaceButton.innerHTML =
           '<i class="bi bi-arrow-clockwise"></i><span data-i18n="plugins.reinstall">Reinstall</span>';
       }
@@ -1313,16 +1473,18 @@ export {};
     this.showOverlay();
     modal.style.display = 'block';
 
-    const versionSelect =
-      modal.querySelector<HTMLSelectElement>('#csk-version-select')!;
-    const optionsList = modal.querySelector<HTMLElement>('#csk-options-list')!;
-    const confirmBtn =
-      modal.querySelector<HTMLButtonElement>('#confirm-csk-install')!;
-    const cancelBtn =
-      modal.querySelector<HTMLButtonElement>('#cancel-csk-install')!;
-    const closeBtn = modal.querySelector<HTMLButtonElement>(
-      '#close-csk-install',
+    const versionSelect = modal.querySelector<HTMLSelectElement>(
+      '#csk-version-select',
     )!;
+    const optionsList = modal.querySelector<HTMLElement>('#csk-options-list')!;
+    const confirmBtn = modal.querySelector<HTMLButtonElement>(
+      '#confirm-csk-install',
+    )!;
+    const cancelBtn = modal.querySelector<HTMLButtonElement>(
+      '#cancel-csk-install',
+    )!;
+    const closeBtn =
+      modal.querySelector<HTMLButtonElement>('#close-csk-install')!;
     const selectAllBtn =
       modal.querySelector<HTMLButtonElement>('#csk-select-all')!;
     const selectNoneBtn =
@@ -1372,7 +1534,10 @@ export {};
 
         return new Set(installedNames);
       } catch (error) {
-        console.warn('[CSK Collection] Failed to detect installed toggles:', error);
+        console.warn(
+          '[CSK Collection] Failed to detect installed toggles:',
+          error,
+        );
         return new Set<string>();
       }
     };

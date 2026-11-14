@@ -184,9 +184,13 @@ class FightPlannerManager {
             img.src = avatarSrc;
             img.alt = person.name;
             img.className = 'credits-person-avatar';
-            img.addEventListener('error', () => img.replaceWith(fallbackIcon()), {
-              once: true,
-            });
+            img.addEventListener(
+              'error',
+              () => img.replaceWith(fallbackIcon()),
+              {
+                once: true,
+              },
+            );
             card.append(img);
           } else {
             card.append(fallbackIcon());
@@ -201,8 +205,7 @@ class FightPlannerManager {
 
           const role = document.createElement('span');
           role.className = 'credits-person-role';
-          const translated =
-            person.roleKey && window.i18n?.t(person.roleKey);
+          const translated = person.roleKey && window.i18n?.t(person.roleKey);
           if (person.roleKey && translated && translated !== person.roleKey) {
             role.dataset.i18n = person.roleKey;
             role.textContent = translated;
@@ -257,10 +260,12 @@ class FightPlannerManager {
   }
 
   setupOldTestersToggle() {
-    const existingToggleButton =
-      document.querySelector<HTMLButtonElement>('#toggle-old-testers');
-    const oldTestersSection =
-      document.querySelector<HTMLElement>('#old-testers-section');
+    const existingToggleButton = document.querySelector<HTMLButtonElement>(
+      '#toggle-old-testers',
+    );
+    const oldTestersSection = document.querySelector<HTMLElement>(
+      '#old-testers-section',
+    );
 
     if (!existingToggleButton || !oldTestersSection) {
       return;
@@ -271,7 +276,9 @@ class FightPlannerManager {
       this.localeChangedHandler = null;
     }
 
-    const toggleButton = existingToggleButton.cloneNode(true) as HTMLButtonElement;
+    const toggleButton = existingToggleButton.cloneNode(
+      true,
+    ) as HTMLButtonElement;
     existingToggleButton.replaceWith(toggleButton);
 
     toggleButton.addEventListener('click', () => {
@@ -346,7 +353,8 @@ class FightPlannerManager {
   }
 
   setupLogoVariantPicker() {
-    const existingLogo = document.querySelector<HTMLImageElement>('.credits-logo');
+    const existingLogo =
+      document.querySelector<HTMLImageElement>('.credits-logo');
     if (!existingLogo) return;
 
     const logo = existingLogo.cloneNode(true) as HTMLImageElement;
@@ -397,11 +405,9 @@ class FightPlannerManager {
     });
 
     setTimeout(() => {
-      document.addEventListener(
-        'click',
-        () => this.closeLogoVariantMenu(),
-        { once: true },
-      );
+      document.addEventListener('click', () => this.closeLogoVariantMenu(), {
+        once: true,
+      });
     }, 0);
 
     const menuRect = menu.getBoundingClientRect();
@@ -432,31 +438,37 @@ class FightPlannerManager {
     menu.classList.remove('is-open');
     menu.classList.add('is-closing');
 
-    window.setTimeout(() => {
-      menu.remove();
-    }, document.body.classList.contains('no-animations') ? 0 : 140);
+    window.setTimeout(
+      () => {
+        menu.remove();
+      },
+      document.body.classList.contains('no-animations') ? 0 : 140,
+    );
   }
 
   refreshOldTestersToggleState() {
-    const toggleButton =
-      document.querySelector<HTMLButtonElement>('#toggle-old-testers');
-    const oldTestersSection =
-      document.querySelector<HTMLElement>('#old-testers-section');
+    const toggleButton = document.querySelector<HTMLButtonElement>(
+      '#toggle-old-testers',
+    );
+    const oldTestersSection = document.querySelector<HTMLElement>(
+      '#old-testers-section',
+    );
 
     if (!toggleButton || !oldTestersSection) {
       return;
     }
 
-    const showLabel = window.i18n?.t(
-      'fightplanner.showOldTesters',
-    ) || 'See old testers';
-    const hideLabel = window.i18n?.t(
-      'fightplanner.hideOldTesters',
-    ) || 'Hide old testers';
+    const showLabel =
+      window.i18n?.t('fightplanner.showOldTesters') || 'See old testers';
+    const hideLabel =
+      window.i18n?.t('fightplanner.hideOldTesters') || 'Hide old testers';
 
     toggleButton.textContent = this.oldTestersExpanded ? hideLabel : showLabel;
     toggleButton.setAttribute('aria-expanded', String(this.oldTestersExpanded));
-    oldTestersSection.classList.toggle('is-collapsed', !this.oldTestersExpanded);
+    oldTestersSection.classList.toggle(
+      'is-collapsed',
+      !this.oldTestersExpanded,
+    );
     oldTestersSection.setAttribute(
       'aria-hidden',
       String(!this.oldTestersExpanded),

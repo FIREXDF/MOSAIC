@@ -52,10 +52,7 @@ class BatchTestingUiHelpers {
       const culpritLabel =
         session.result.culpritNames?.length === 1
           ? session.result.culpritNames[0]
-          : this.t(
-              'settings.batchTestingGroupCause',
-              'Suspect group of items',
-            );
+          : this.t('settings.batchTestingGroupCause', 'Suspect group of items');
 
       return {
         badge: this.t('settings.batchTestingStateFound', 'Cause found'),
@@ -134,7 +131,8 @@ class BatchTestingUiHelpers {
       };
     }
 
-    const currentCategory = session.order?.[session.currentCategoryIndex] || 'mods';
+    const currentCategory =
+      session.order?.[session.currentCategoryIndex] || 'mods';
 
     return {
       badge: this.t('settings.batchTestingStateRunning', 'In progress'),
@@ -363,10 +361,7 @@ class BatchTestingUiHelpers {
   ) {
     return `
       <div class="batch-list">
-        ${this.renderDetailRow(
-          this.t('tools.modInfo.name', 'Name'),
-          itemName,
-        )}
+        ${this.renderDetailRow(this.t('tools.modInfo.name', 'Name'), itemName)}
         ${this.renderDetailRow(
           this.t('settings.batchTestingInfoStatus', 'Status'),
           this.getStatusLabel(status),

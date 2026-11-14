@@ -94,8 +94,7 @@ async function fallbackWindowsDetection() {
           if (labelLines.length > 0 && labelLines[0]) {
             label = labelLines[0];
           }
-        } catch (e) {
-        }
+        } catch (e) {}
 
         fallbackDrives.push({
           letter: letter,
@@ -104,8 +103,7 @@ async function fallbackWindowsDetection() {
           path: drivePath,
         });
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   console.log('Fallback detected drives:', fallbackDrives);

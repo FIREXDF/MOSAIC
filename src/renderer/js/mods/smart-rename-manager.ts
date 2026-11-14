@@ -119,9 +119,10 @@ class SmartRenameManager {
           '#smart-rename-select-list .smart-rename-select-item',
         );
         items.forEach((item) => {
-          const name = item
-            .querySelector('.smart-rename-mod-name')
-            ?.textContent?.toLowerCase() || '';
+          const name =
+            item
+              .querySelector('.smart-rename-mod-name')
+              ?.textContent?.toLowerCase() || '';
           item.style.display = name.includes(query) ? '' : 'none';
         });
       };
@@ -289,7 +290,9 @@ class SmartRenameManager {
 
     for (let i = 0; i < mods.length; i++) {
       const mod = mods[i];
-      this.updateLoadingStatus(`Scanning ${mod.name} (${i + 1}/${mods.length})...`);
+      this.updateLoadingStatus(
+        `Scanning ${mod.name} (${i + 1}/${mods.length})...`,
+      );
       let baseName = mod.name;
       let hadInfoToml = false;
       let existingInfo: any = null;

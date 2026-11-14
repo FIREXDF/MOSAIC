@@ -209,7 +209,11 @@ export const ModScanner = {
     const itemIndex = pathParts.indexOf('item');
     const includesItemFolder = itemIndex !== -1;
 
-    if (!includesFighterFolder && includesItemFolder && pathParts.length > itemIndex + 1) {
+    if (
+      !includesFighterFolder &&
+      includesItemFolder &&
+      pathParts.length > itemIndex + 1
+    ) {
       // Keep item entries separate from fighters while preserving their item id.
       detectedFighterName = `item/${pathParts[itemIndex + 1]}`;
 
@@ -236,12 +240,12 @@ export const ModScanner = {
 
       const charaSlot = 'c' + charaMatch[2];
       const normalizedFileName = fileName
-        .replace(
-        charaMatchRegex,
-        (match, fighter, slotNum, ext) => {
-          return match.replace(new RegExp(`_${slotNum}(${ext.replace('.', '\\.')})$`), '_###$1');
-        },
-        )
+        .replace(charaMatchRegex, (match, fighter, slotNum, ext) => {
+          return match.replace(
+            new RegExp(`_${slotNum}(${ext.replace('.', '\\.')})$`),
+            '_###$1',
+          );
+        })
         .replace(cXXGlobalMatchRegex, '$1###');
 
       const charaNormalizedPath = path
@@ -265,7 +269,10 @@ export const ModScanner = {
     const cMatch = filePath.match(cXXMatchRegex);
     const dotMatch = fileName.match(dotXXMatchRegex);
 
-    if (dotMatch && (!detectedFighterName || detectedFighterName.includes('.'))) {
+    if (
+      dotMatch &&
+      (!detectedFighterName || detectedFighterName.includes('.'))
+    ) {
       detectedFighterName = dotMatch[1];
     }
 

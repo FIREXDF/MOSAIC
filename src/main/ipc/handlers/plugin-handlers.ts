@@ -3,17 +3,17 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { randomUUID } from 'crypto';
-import PluginUtils, { SimplePlugin } from '../../plugin-utils';
+import PluginUtils, { SimplePlugin } from '../../plugins/plugin-utils';
 import { capturePluginsDebugSnapshot } from '../../debug-library-snapshot';
 import {
   getPluginSha256,
   identifyPluginVersions,
-} from '../../plugin-version-identification';
+} from '../../plugins/plugin-version-identification';
 import PluginUpdateChecker, {
   PluginUpdateResult,
-} from '../../plugin-update-checker';
-import PluginUpdateInstaller from '../../plugin-update-installer';
-import store from '../../store';
+} from '../../plugins/plugin-update-checker';
+import PluginUpdateInstaller from '../../plugins/plugin-update-installer';
+import store from '../../store/store';
 import {
   handleError,
   createErrorResponse,
@@ -69,7 +69,10 @@ let pendingVersionCorrections = new Map<string, PendingVersionCorrection>();
 let pendingVersionCorrectionsPath: string | null = null;
 
 function normalizeVersion(version: string) {
-  return version.trim().replace(/^v(?=\d)/i, '').toLowerCase();
+  return version
+    .trim()
+    .replace(/^v(?=\d)/i, '')
+    .toLowerCase();
 }
 
 function findFileByRelativePath(rootDir: string, relativePath: string) {
@@ -245,10 +248,7 @@ const PluginHandlers = {
       };
     } catch (error) {
       handleError(error, 'apply-plugin-batch-state');
-      return createErrorResponse(
-        ErrorCodes.PLUGIN_READ_ERROR,
-        error.message,
-      );
+      return createErrorResponse(ErrorCodes.PLUGIN_READ_ERROR, error.message);
     }
   },
 
@@ -261,9 +261,9 @@ const PluginHandlers = {
         ? resolveVirtualPath(pluginsPath)
         : '';
       if (
-        !resolvedPluginsPath
-        || !fs.existsSync(resolvedPluginsPath)
-        || !fs.statSync(resolvedPluginsPath).isDirectory()
+        !resolvedPluginsPath ||
+        !fs.existsSync(resolvedPluginsPath) ||
+        !fs.statSync(resolvedPluginsPath).isDirectory()
       ) {
         console.error('[PluginHandlers] Plugins folder unavailable:', {
           requestedPath: pluginsPath,
@@ -383,7 +383,10 @@ const PluginHandlers = {
     pendingVersionCorrectionsPath = null;
     try {
       const pluginsPath = store.get('pluginsPath') as string | null;
-      if (!pluginsPath || !fs.statSync(resolveVirtualPath(pluginsPath)).isDirectory()) {
+      if (
+        !pluginsPath ||
+        !fs.statSync(resolveVirtualPath(pluginsPath)).isDirectory()
+      ) {
         return createErrorResponse(
           ErrorCodes.FOLDER_NOT_FOUND,
           'Plugins folder is not available',
@@ -403,17 +406,27 @@ const PluginHandlers = {
       const identified = await identifyPluginVersions(
         uniqueFiles.map((file) => file.path),
       );
-      const recorded = (store.get('pluginVersions') || {}) as Record<string, string>;
+      const recorded = (store.get('pluginVersions') || {}) as Record<
+        string,
+        string
+      >;
       const mismatches: RecordedVersionMismatch[] = [];
       let complete = true;
       let recognizedCount = 0;
 
       for (const file of uniqueFiles) {
         const identity = identified.get(file.path);
-        if (identity?.status === 'lookup-failed' || identity?.status === 'unreadable') {
+        if (
+          identity?.status === 'lookup-failed' ||
+          identity?.status === 'unreadable'
+        ) {
           complete = false;
         }
-        if (identity?.status !== 'matched' || !identity.actualVersion || !identity.sha256) {
+        if (
+          identity?.status !== 'matched' ||
+          !identity.actualVersion ||
+          !identity.sha256
+        ) {
           continue;
         }
         recognizedCount++;
@@ -421,7 +434,8 @@ const PluginHandlers = {
         const recordedVersion = recorded[pluginName] || null;
         if (
           recordedVersion &&
-          normalizeVersion(recordedVersion) === normalizeVersion(identity.actualVersion)
+          normalizeVersion(recordedVersion) ===
+            normalizeVersion(identity.actualVersion)
         ) {
           continue;
         }
@@ -456,17 +470,29 @@ const PluginHandlers = {
     pluginNames: string[],
   ): HandlerResponse<{ updated: string[]; skipped: string[] }> => {
     try {
-      if (!Array.isArray(pluginNames) || pluginNames.length > 500 ||
-          pluginNames.some((name) => typeof name !== 'string')) {
-        return createErrorResponse(ErrorCodes.PLUGIN_READ_ERROR, 'Invalid plugin selection');
+      if (
+        !Array.isArray(pluginNames) ||
+        pluginNames.length > 500 ||
+        pluginNames.some((name) => typeof name !== 'string')
+      ) {
+        return createErrorResponse(
+          ErrorCodes.PLUGIN_READ_ERROR,
+          'Invalid plugin selection',
+        );
       }
       const pluginsPath = store.get('pluginsPath') as string | null;
       if (!pluginsPath || pluginsPath !== pendingVersionCorrectionsPath) {
-        return createErrorResponse(ErrorCodes.PLUGIN_READ_ERROR, 'Run the version check again');
+        return createErrorResponse(
+          ErrorCodes.PLUGIN_READ_ERROR,
+          'Run the version check again',
+        );
       }
       const plugins = PluginUtils.readAllPlugins(pluginsPath);
       const files = [...plugins.activePlugins, ...plugins.disabledPlugins];
-      const versions = (store.get('pluginVersions') || {}) as Record<string, string>;
+      const versions = (store.get('pluginVersions') || {}) as Record<
+        string,
+        string
+      >;
       const updated: string[] = [];
       const skipped: string[] = [];
 
@@ -475,13 +501,16 @@ const PluginHandlers = {
         const matchingFiles = files.filter(
           (file) => file.name.replace(/\.nro$/i, '') === pluginName,
         );
-        if (!pending || matchingFiles.length !== 1 ||
-            matchingFiles[0].path !== pending.filePath) {
+        if (
+          !pending ||
+          matchingFiles.length !== 1 ||
+          matchingFiles[0].path !== pending.filePath
+        ) {
           skipped.push(pluginName);
           continue;
         }
         try {
-          if (await getPluginSha256(pending.filePath) !== pending.sha256) {
+          if ((await getPluginSha256(pending.filePath)) !== pending.sha256) {
             skipped.push(pluginName);
             continue;
           }
@@ -498,7 +527,10 @@ const PluginHandlers = {
       return { success: true, updated, skipped };
     } catch (error) {
       handleError(error, 'apply-plugin-recorded-versions');
-      return createErrorResponse(ErrorCodes.STORE_OPERATION_ERROR, error.message);
+      return createErrorResponse(
+        ErrorCodes.STORE_OPERATION_ERROR,
+        error.message,
+      );
     }
   },
 

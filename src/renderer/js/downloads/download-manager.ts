@@ -188,7 +188,6 @@ class DownloadManager {
     this.renderAllDownloads();
 
     this.updateUI();
-
   }
 
   renderAllDownloads() {
@@ -662,9 +661,7 @@ class DownloadManager {
 
     const result = await window.electronAPI?.pauseDownload?.(downloadId);
     if (!result?.success) {
-      window.toastManager?.error(
-        result?.error || 'Unable to pause download',
-      );
+      window.toastManager?.error(result?.error || 'Unable to pause download');
     }
   }
 
@@ -702,9 +699,7 @@ class DownloadManager {
     `;
     actions
       .querySelector<HTMLElement>('[data-action="pause"]')
-      ?.addEventListener('click', () =>
-        this.requestPauseDownload(download.id),
-      );
+      ?.addEventListener('click', () => this.requestPauseDownload(download.id));
     actions
       .querySelector<HTMLElement>('[data-action="cancel"]')
       ?.addEventListener('click', () => this.cancelDownload(download.id));
@@ -994,7 +989,9 @@ ${subItemsHtml}
     const names = modNames.join(', ');
     void window.electronAPI?.notifyWhenUnfocused?.(
       t('downloads.notificationTitle', 'Mod installed'),
-      t('downloads.notificationBody', `${names} is ready to use`, { name: names }),
+      t('downloads.notificationBody', `${names} is ready to use`, {
+        name: names,
+      }),
     );
   }
 
@@ -1277,7 +1274,9 @@ ${subItemsHtml}
       } else {
         window.appSoundManager?.stop('loading');
         window.appSoundManager?.play('error');
-        window.statusBarManager?.downloads.updateExtendedBar?.({ type: 'none' });
+        window.statusBarManager?.downloads.updateExtendedBar?.({
+          type: 'none',
+        });
         window.statusBarManager?.refreshStandardStatus?.();
         if (window.toastManager) {
           window.toastManager.error('toasts.failedToSendMods', 3000, {
@@ -1513,9 +1512,7 @@ ${subItemsHtml}
     const result = await window.electronAPI?.cancelDownload?.(downloadId);
     if (!result?.success) {
       if (actions) this.updateActiveDownloadActions(element!, download);
-      window.toastManager?.error(
-        result?.error || 'Unable to cancel download',
-      );
+      window.toastManager?.error(result?.error || 'Unable to cancel download');
     }
   }
 

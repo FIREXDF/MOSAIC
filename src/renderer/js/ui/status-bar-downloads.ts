@@ -17,16 +17,24 @@ class StatusBarDownloads {
       }
 
       if (this.manager.hasTemporaryStatus()) {
-        this.manager.renderStatus(this.manager.temporaryStatus!, { force: true });
+        this.manager.renderStatus(this.manager.temporaryStatus!, {
+          force: true,
+        });
         this.manager.clearUpdateLoop();
         return;
       }
 
-      if (this.manager.preservedStatus && !this.manager.hasDownloadsInProgress()) {
+      if (
+        this.manager.preservedStatus &&
+        !this.manager.hasDownloadsInProgress()
+      ) {
         return;
       }
 
-      if (this.manager.hasModalOpen() && !this.manager.hasDownloadsInProgress()) {
+      if (
+        this.manager.hasModalOpen() &&
+        !this.manager.hasDownloadsInProgress()
+      ) {
         return;
       }
 
@@ -49,8 +57,7 @@ class StatusBarDownloads {
             ),
           );
 
-          const statusContent =
-            this.getSwitchTransferStatusContent(transfer);
+          const statusContent = this.getSwitchTransferStatusContent(transfer);
 
           if (transfer.totalFiles > 0) {
             details.push(
@@ -85,7 +92,9 @@ class StatusBarDownloads {
 
         const activeDownloads = Array.from(
           window.downloadManager?.activeDownloads?.values() || [],
-        ).filter((download: any) => this.manager.isActiveDownloadState(download));
+        ).filter((download: any) =>
+          this.manager.isActiveDownloadState(download),
+        );
 
         if (activeDownloads.length === 0) {
           const statusText = this.manager.getStatusTextElement();
@@ -96,7 +105,10 @@ class StatusBarDownloads {
           this.manager.clearUpdateLoop();
 
           if (this.manager.currentTab === 'downloads') {
-            this.manager.applySnapshot(this.manager.tabStatus.getDownloadsIdleSnapshot(), { cycleId });
+            this.manager.applySnapshot(
+              this.manager.tabStatus.getDownloadsIdleSnapshot(),
+              { cycleId },
+            );
           } else {
             this.manager.refreshStandardStatus();
           }
@@ -156,7 +168,9 @@ class StatusBarDownloads {
 
         const dots = '.'.repeat(animationFrame % 4);
         const activeIndicator =
-          activeDownloads.length > 1 ? ` [${activeDownloads.length} active]` : '';
+          activeDownloads.length > 1
+            ? ` [${activeDownloads.length} active]`
+            : '';
 
         const progressPart = progressText ? ` \u2022 ${progressText}` : '';
         const sizePart = sizeInfo ? ` \u2022 ${sizeInfo}` : '';
@@ -170,7 +184,9 @@ class StatusBarDownloads {
                 progress: progressPart,
                 size: sizePart,
                 speed: speedPart,
-              }) + dots + activeIndicator,
+              }) +
+              dots +
+              activeIndicator,
             downloading: true,
           },
           { force: true },
@@ -187,7 +203,10 @@ class StatusBarDownloads {
         this.manager.clearUpdateLoop();
 
         if (this.manager.currentTab === 'downloads') {
-          this.manager.applySnapshot(this.manager.tabStatus.getDownloadsIdleSnapshot(), { cycleId });
+          this.manager.applySnapshot(
+            this.manager.tabStatus.getDownloadsIdleSnapshot(),
+            { cycleId },
+          );
         } else {
           this.manager.refreshStandardStatus();
         }
@@ -266,7 +285,8 @@ class StatusBarDownloads {
 
   _getDownloadDisplayName(dl: DownloadItem): string {
     if (dl.modName) return dl.modName;
-    if (dl.statusText && !/downloading|^extracting mod/i.test(dl.statusText)) return dl.statusText;
+    if (dl.statusText && !/downloading|^extracting mod/i.test(dl.statusText))
+      return dl.statusText;
     const name = dl.fileName || '';
     if (/^\d+$/.test(name) || name === 'mod.zip') return 'Downloading...';
     return name;
@@ -340,21 +360,25 @@ class StatusBarDownloads {
         if (isSwapping) return;
 
         this.manager.animations.triggerIslandCollapse(bottomBar);
-        this.manager.animations.animateExtendedBarExit(bottomBar, content as HTMLElement, () => {
-          bottomBar.classList.remove('expanded', 'conflict-mode');
-          bottomBar.dataset.islandMode = 'idle';
-          delete (content as HTMLElement).dataset.extendedSignature;
-          (content as HTMLElement).style.display = 'none';
-          (content as HTMLElement).replaceChildren();
+        this.manager.animations.animateExtendedBarExit(
+          bottomBar,
+          content as HTMLElement,
+          () => {
+            bottomBar.classList.remove('expanded', 'conflict-mode');
+            bottomBar.dataset.islandMode = 'idle';
+            delete (content as HTMLElement).dataset.extendedSignature;
+            (content as HTMLElement).style.display = 'none';
+            (content as HTMLElement).replaceChildren();
 
-          setTimeout(() => {
-            const nextUpdate = this.manager.islandSwapUpdate;
-            this.manager.islandSwapUpdate = null;
-            if (nextUpdate && this.manager.hasActiveDownloads) {
-              this.updateExtendedBar(nextUpdate);
-            }
-          }, 0);
-        });
+            setTimeout(() => {
+              const nextUpdate = this.manager.islandSwapUpdate;
+              this.manager.islandSwapUpdate = null;
+              if (nextUpdate && this.manager.hasActiveDownloads) {
+                this.updateExtendedBar(nextUpdate);
+              }
+            }, 0);
+          },
+        );
         return;
       }
 
@@ -414,7 +438,9 @@ class StatusBarDownloads {
         const percentText =
           isExtractingOrVerifying && progress <= 0 ? phaseText : `${progress}%`;
 
-        const isActiveDownloadCard = content.querySelector('.ext-download-card .ext-progress-container');
+        const isActiveDownloadCard = content.querySelector(
+          '.ext-download-card .ext-progress-container',
+        );
         const isMultiCard = content.querySelector('.ext-multi-download-card');
         const canPatchExistingCard =
           wasExpanded &&
@@ -423,80 +449,89 @@ class StatusBarDownloads {
           !isMultiCard;
 
         if (canPatchExistingCard) {
-            const fileNameEl = content.querySelector('.ext-filename');
-            const progressFillEl = content.querySelector('.ext-progress-fill') as HTMLElement;
-            const percentageEl = content.querySelector('.ext-percentage');
-            const speedEl = content.querySelector('.ext-speed');
-            const badgeEl = content.querySelector('.ext-status-badge');
-            const iconEl = content.querySelector('.ext-card-icon i');
-            const metaEl = content.querySelector('.ext-download-meta') as HTMLElement;
-            const phaseEl = content.querySelector('.ext-download-phase');
-            const separatorEl = content.querySelector('.ext-separator');
-            const glareEl = content.querySelector('.ext-progress-glare');
+          const fileNameEl = content.querySelector('.ext-filename');
+          const progressFillEl = content.querySelector(
+            '.ext-progress-fill',
+          ) as HTMLElement;
+          const percentageEl = content.querySelector('.ext-percentage');
+          const speedEl = content.querySelector('.ext-speed');
+          const badgeEl = content.querySelector('.ext-status-badge');
+          const iconEl = content.querySelector('.ext-card-icon i');
+          const metaEl = content.querySelector(
+            '.ext-download-meta',
+          ) as HTMLElement;
+          const phaseEl = content.querySelector('.ext-download-phase');
+          const separatorEl = content.querySelector('.ext-separator');
+          const glareEl = content.querySelector('.ext-progress-glare');
 
-            if (fileNameEl) {
-                fileNameEl.setAttribute('title', displayName);
-                this.manager.animations.animateElementTextChange(
-                  fileNameEl as HTMLElement,
-                  displayName,
-                  'ext-text-swap',
-                  280,
-                );
-            }
-            this.manager.animations.animateProgressFill(progressFillEl, progress);
+          if (fileNameEl) {
+            fileNameEl.setAttribute('title', displayName);
+            this.manager.animations.animateElementTextChange(
+              fileNameEl as HTMLElement,
+              displayName,
+              'ext-text-swap',
+              280,
+            );
+          }
+          this.manager.animations.animateProgressFill(progressFillEl, progress);
 
-            if (badgeEl) {
-                this.manager.animations.animateElementTextChange(badgeEl as HTMLElement, phaseText);
-            }
-            if (iconEl && iconEl.className !== `bi ${iconClass}`) {
-                iconEl.className = `bi ${iconClass}`;
-            }
+          if (badgeEl) {
+            this.manager.animations.animateElementTextChange(
+              badgeEl as HTMLElement,
+              phaseText,
+            );
+          }
+          if (iconEl && iconEl.className !== `bi ${iconClass}`) {
+            iconEl.className = `bi ${iconClass}`;
+          }
 
-            if (isExtractingOrVerifying) {
-              if (percentageEl) {
-                this.manager.animations.animateElementTextChange(
-                  percentageEl as HTMLElement,
-                  percentText,
-                  'ext-text-swap',
-                  280,
-                );
-              }
-              if (speedEl) {
-                this.manager.animations.animateElementTextChange(
-                  speedEl as HTMLElement,
-                  '',
-                  'ext-text-swap',
-                  280,
-                );
-              }
-            } else {
-              if (percentageEl) {
-                this.manager.animations.animateElementTextChange(
-                  percentageEl as HTMLElement,
-                  `${progress}%`,
-                  'ext-text-swap',
-                  280,
-                );
-              }
-              if (speedEl) {
-                this.manager.animations.animateElementTextChange(
-                  speedEl as HTMLElement,
-                  speed,
-                  'ext-text-swap',
-                  280,
-                );
-              }
+          if (isExtractingOrVerifying) {
+            if (percentageEl) {
+              this.manager.animations.animateElementTextChange(
+                percentageEl as HTMLElement,
+                percentText,
+                'ext-text-swap',
+                280,
+              );
             }
-
-            if (metaEl) {
-              metaEl.style.display = speed ? 'flex' : 'none';
+            if (speedEl) {
+              this.manager.animations.animateElementTextChange(
+                speedEl as HTMLElement,
+                '',
+                'ext-text-swap',
+                280,
+              );
             }
+          } else {
+            if (percentageEl) {
+              this.manager.animations.animateElementTextChange(
+                percentageEl as HTMLElement,
+                `${progress}%`,
+                'ext-text-swap',
+                280,
+              );
+            }
+            if (speedEl) {
+              this.manager.animations.animateElementTextChange(
+                speedEl as HTMLElement,
+                speed,
+                'ext-text-swap',
+                280,
+              );
+            }
+          }
 
-            phaseEl?.remove();
-            separatorEl?.remove();
-            glareEl?.remove();
+          if (metaEl) {
+            metaEl.style.display = speed ? 'flex' : 'none';
+          }
+
+          phaseEl?.remove();
+          separatorEl?.remove();
+          glareEl?.remove();
         } else {
-            this.manager.animations.renderDownloadCardWithFlip(content as HTMLElement, () => {
+          this.manager.animations.renderDownloadCardWithFlip(
+            content as HTMLElement,
+            () => {
               content.innerHTML = `
               <div class="ext-download-card" data-flip-id="download-shell">
                   <button class="ext-close-btn" data-flip-id="download-close" onclick="window.statusBarManager.downloads.updateExtendedBar('none')" title="Close">
@@ -533,7 +568,9 @@ class StatusBarDownloads {
               </div>
             `;
 
-              const metaEl = content.querySelector('.ext-download-meta') as HTMLElement | null;
+              const metaEl = content.querySelector(
+                '.ext-download-meta',
+              ) as HTMLElement | null;
               const phaseEl = content.querySelector('.ext-download-phase');
               const separatorEl = content.querySelector('.ext-separator');
 
@@ -543,7 +580,8 @@ class StatusBarDownloads {
 
               phaseEl?.remove();
               separatorEl?.remove();
-            });
+            },
+          );
         }
       } else {
         const existingItems = content.querySelectorAll('.ext-multi-dl-item');
@@ -553,30 +591,42 @@ class StatusBarDownloads {
           if (id) existingIds.add(id);
         });
 
-        const currentIds = new Set(downloads.map(d => d.id));
-        let needsFullRebuild = !content.querySelector('.ext-multi-download-card');
+        const currentIds = new Set(downloads.map((d) => d.id));
+        let needsFullRebuild = !content.querySelector(
+          '.ext-multi-download-card',
+        );
 
         if (!needsFullRebuild) {
           for (const id of existingIds) {
-            if (!currentIds.has(id)) { needsFullRebuild = true; break; }
+            if (!currentIds.has(id)) {
+              needsFullRebuild = true;
+              break;
+            }
           }
           for (const id of currentIds) {
-            if (!existingIds.has(id)) { needsFullRebuild = true; break; }
+            if (!existingIds.has(id)) {
+              needsFullRebuild = true;
+              break;
+            }
           }
         }
 
         if (needsFullRebuild) {
           if (
             content.querySelector('.ext-multi-download-card') &&
-            this.manager.animations.animateMultiDownloadListChanges(content as HTMLElement, downloads)
+            this.manager.animations.animateMultiDownloadListChanges(
+              content as HTMLElement,
+              downloads,
+            )
           ) {
             // The list update is animated internally without rebuilding the panel.
           } else {
-            const itemsHtml = downloads.map((dl) => {
-              const { progress, displayName, pctText } =
-                this.manager.animations.getMultiDownloadViewData(dl);
+            const itemsHtml = downloads
+              .map((dl) => {
+                const { progress, displayName, pctText } =
+                  this.manager.animations.getMultiDownloadViewData(dl);
 
-              return `
+                return `
                 <div class="ext-multi-dl-item" data-dl-id="${dl.id}" data-flip-id="${this.manager.animations.getDownloadFlipKey(dl.id)}">
                   <div class="ext-multi-dl-info">
                     <span class="ext-multi-dl-name" data-flip-id="${this.manager.animations.getDownloadNameFlipKey(dl.id)}" title="${displayName}">${displayName}</span>
@@ -586,10 +636,13 @@ class StatusBarDownloads {
                     <div class="ext-multi-dl-fill" style="width: ${progress}%"></div>
                   </div>
                 </div>`;
-            }).join('');
+              })
+              .join('');
 
-            this.manager.animations.renderDownloadCardWithFlip(content as HTMLElement, () => {
-            content.innerHTML = `
+            this.manager.animations.renderDownloadCardWithFlip(
+              content as HTMLElement,
+              () => {
+                content.innerHTML = `
             <div class="ext-multi-download-card ext-download-card" data-flip-id="download-shell">
                 <button class="ext-close-btn" data-flip-id="download-close" onclick="window.statusBarManager.downloads.updateExtendedBar('none')" title="Close">
                     <i class="bi bi-chevron-down"></i>
@@ -612,16 +665,19 @@ class StatusBarDownloads {
                 </div>
             </div>
           `;
-            });
+              },
+            );
           }
         } else {
           downloads.forEach((dl) => {
-            const itemEl = content.querySelector(`.ext-multi-dl-item[data-dl-id="${dl.id}"]`);
+            const itemEl = content.querySelector(
+              `.ext-multi-dl-item[data-dl-id="${dl.id}"]`,
+            );
             if (!itemEl) return;
             const progress = Math.round(dl.progress || 0);
             const displayName = this._getDownloadDisplayName(dl);
             let pctText = `${progress}%`;
-            
+
             if (dl.statusText) {
               const lowerStatus = dl.statusText.toLowerCase();
               if (lowerStatus.includes('extract')) pctText = 'Extracting...';
@@ -630,7 +686,9 @@ class StatusBarDownloads {
 
             const nameEl = itemEl.querySelector('.ext-multi-dl-name');
             const pctEl = itemEl.querySelector('.ext-multi-dl-pct');
-            const fillEl = itemEl.querySelector('.ext-multi-dl-fill') as HTMLElement;
+            const fillEl = itemEl.querySelector(
+              '.ext-multi-dl-fill',
+            ) as HTMLElement;
             if (nameEl) {
               (nameEl as HTMLElement).title = displayName;
               this.manager.animations.animateElementTextChange(
@@ -662,7 +720,10 @@ class StatusBarDownloads {
       }
 
       if (shouldAnimateEntrance) {
-        this.manager.animations.animateExtendedBarEntrance(bottomBar, content as HTMLElement);
+        this.manager.animations.animateExtendedBarEntrance(
+          bottomBar,
+          content as HTMLElement,
+        );
       }
     } else if (update.type === 'success') {
       delete (content as HTMLElement).dataset.extendedSignature;
@@ -708,7 +769,10 @@ class StatusBarDownloads {
         `;
 
       if (shouldAnimateEntrance) {
-        this.manager.animations.animateExtendedBarEntrance(bottomBar, content as HTMLElement);
+        this.manager.animations.animateExtendedBarEntrance(
+          bottomBar,
+          content as HTMLElement,
+        );
       }
     } else if (update.type === 'conflict') {
       if (
@@ -767,7 +831,10 @@ class StatusBarDownloads {
       }
 
       if (shouldAnimateEntrance) {
-        this.manager.animations.animateExtendedBarEntrance(bottomBar, contentEl);
+        this.manager.animations.animateExtendedBarEntrance(
+          bottomBar,
+          contentEl,
+        );
       }
     }
   }
@@ -804,10 +871,12 @@ class StatusBarDownloads {
       });
     }
 
-    return this.manager.t('statusBar.ftpSending', {
-      current: '',
-      total: '',
-    }).replace(` \u2022 / mods`, '');
+    return this.manager
+      .t('statusBar.ftpSending', {
+        current: '',
+        total: '',
+      })
+      .replace(` \u2022 / mods`, '');
   }
 
   checkActiveDownloads() {
@@ -882,8 +951,7 @@ class StatusBarDownloads {
         return true;
       }
 
-      const activeDownloadsMap = (window.downloadManager)
-        .activeDownloads;
+      const activeDownloadsMap = window.downloadManager.activeDownloads;
 
       if (!activeDownloadsMap) {
         return false;
@@ -964,11 +1032,13 @@ class StatusBarDownloads {
         }
 
         if (wasActive) {
-          const completed =
-            (window.downloadManager).completedDownloads || [];
+          const completed = window.downloadManager.completedDownloads || [];
           if (completed.length > 0) {
             const last = completed[0];
-            if (Date.now() - (last.endTime || 0) < 5000 && this.manager.lastHandledSuccessId !== last.id) {
+            if (
+              Date.now() - (last.endTime || 0) < 5000 &&
+              this.manager.lastHandledSuccessId !== last.id
+            ) {
               this.manager.lastHandledSuccessId = last.id; // Mark this download as handled for success UI
               this.manager.userDismissedExtendedBar = false; // Always show success
               this.updateExtendedBar({
@@ -1078,8 +1148,7 @@ class StatusBarDownloads {
           const dots = '.'.repeat(animationFrame % 4);
           animationFrame++;
 
-          let statusContent =
-            this.getSwitchTransferStatusContent(transfer);
+          let statusContent = this.getSwitchTransferStatusContent(transfer);
           statusContent += dots;
 
           if (this.manager.setStatusText(statusContent, true)) {
@@ -1168,12 +1237,15 @@ class StatusBarDownloads {
             let sizePart = sizeInfo ? ` • ${sizeInfo}` : '';
             let speedPart = speedText ? ` • ${speedText}` : '';
 
-            let statusContent = this.manager.t('statusBar.downloadsDownloading', {
-              fileName: shortFileName,
-              progress: progressPart,
-              size: sizePart,
-              speed: speedPart,
-            });
+            let statusContent = this.manager.t(
+              'statusBar.downloadsDownloading',
+              {
+                fileName: shortFileName,
+                progress: progressPart,
+                size: sizePart,
+                speed: speedPart,
+              },
+            );
             statusContent += dots;
             if (animIndicator) statusContent += animIndicator;
 
@@ -1204,7 +1276,10 @@ class StatusBarDownloads {
             }
 
             if (this.manager.currentTab !== 'downloads') {
-              if (!this.manager.hasModalOpen() && !this.manager.preservedStatus) {
+              if (
+                !this.manager.hasModalOpen() &&
+                !this.manager.preservedStatus
+              ) {
                 this.manager.updateStatus(this.manager.currentTab);
               }
               return;
@@ -1219,7 +1294,9 @@ class StatusBarDownloads {
                   }),
                 );
               } else {
-                this.manager.setStatusText(this.manager.t('statusBar.downloadsNoActive'));
+                this.manager.setStatusText(
+                  this.manager.t('statusBar.downloadsNoActive'),
+                );
               }
             }
           }
@@ -1243,7 +1320,9 @@ class StatusBarDownloads {
           }
 
           if (!this.manager.hasModalOpen() && !this.manager.preservedStatus) {
-            this.manager.setStatusText(this.manager.t('statusBar.downloadsReady'));
+            this.manager.setStatusText(
+              this.manager.t('statusBar.downloadsReady'),
+            );
           }
         }
       } catch (error) {
@@ -1283,7 +1362,10 @@ class StatusBarDownloads {
           statusText.offsetHeight;
         }
 
-        if (this.manager.currentTab && this.manager.currentTab !== 'downloads') {
+        if (
+          this.manager.currentTab &&
+          this.manager.currentTab !== 'downloads'
+        ) {
           this.manager.updateStatus(this.manager.currentTab);
         } else if (this.manager.currentTab === 'downloads') {
           const completedCount =
@@ -1296,7 +1378,9 @@ class StatusBarDownloads {
               }),
             );
           } else {
-            this.manager.setStatusText(this.manager.t('statusBar.downloadsNoActive'));
+            this.manager.setStatusText(
+              this.manager.t('statusBar.downloadsNoActive'),
+            );
           }
         }
       }

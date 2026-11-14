@@ -43,7 +43,10 @@ class GameBananaFiltersSection {
       },
       {
         id: 'downloads',
-        label: this.manager.getSocialTranslation('social.sortDownloads', 'Downloads'),
+        label: this.manager.getSocialTranslation(
+          'social.sortDownloads',
+          'Downloads',
+        ),
         icon: 'download',
       },
     ];
@@ -139,7 +142,10 @@ class GameBananaFiltersSection {
     const buttons = [
       {
         _idRow: 3330,
-        _sName: this.manager.getSocialTranslation('social.allSkins', 'All skins'),
+        _sName: this.manager.getSocialTranslation(
+          'social.allSkins',
+          'All skins',
+        ),
       },
       ...this.manager.gameBananaSkinSubcategories,
     ];
@@ -172,7 +178,10 @@ class GameBananaFiltersSection {
 
   getGameBananaCategoryFilters() {
     return [
-      { id: 'all', label: this.manager.getSocialTranslation('social.all', 'All') },
+      {
+        id: 'all',
+        label: this.manager.getSocialTranslation('social.all', 'All'),
+      },
       {
         id: 'skins',
         label: this.manager.getSocialTranslation('social.skins', 'Skins'),
@@ -236,7 +245,10 @@ class GameBananaFiltersSection {
 
     this.refreshGameBananaCategoryFilterUI();
     this.refreshGameBananaFilteredContent();
-    await this.manager.loadGameBananaModsPage(1, this.manager.gameBananaSearchQuery);
+    await this.manager.loadGameBananaModsPage(
+      1,
+      this.manager.gameBananaSearchQuery,
+    );
   }
 
   async toggleGameBananaSkinSubcategories() {
@@ -244,7 +256,8 @@ class GameBananaFiltersSection {
       await this.setGameBananaCategoryFilter('skins');
     }
 
-    this.manager.gameBananaSkinSubcategoryOpen = !this.manager.gameBananaSkinSubcategoryOpen;
+    this.manager.gameBananaSkinSubcategoryOpen =
+      !this.manager.gameBananaSkinSubcategoryOpen;
     this.refreshGameBananaCategoryFilterUI();
 
     if (
@@ -263,7 +276,10 @@ class GameBananaFiltersSection {
     this.manager.gameBananaModsTotalPages = 1;
     this.refreshGameBananaCategoryFilterUI();
     this.refreshGameBananaFilteredContent();
-    await this.manager.loadGameBananaModsPage(1, this.manager.gameBananaSearchQuery);
+    await this.manager.loadGameBananaModsPage(
+      1,
+      this.manager.gameBananaSearchQuery,
+    );
   }
 
   getGameBananaDiscoverSort() {
@@ -290,7 +306,10 @@ class GameBananaFiltersSection {
     this.manager.gameBananaDiscoverSort = nextSort;
     this.refreshGameBananaSortControlUI();
     this.manager.gameBananaModsTotalPages = 1;
-    await this.manager.loadGameBananaModsPage(1, this.manager.gameBananaSearchQuery);
+    await this.manager.loadGameBananaModsPage(
+      1,
+      this.manager.gameBananaSearchQuery,
+    );
   }
 
   refreshGameBananaSortControlUI() {
@@ -367,14 +386,16 @@ class GameBananaFiltersSection {
   }
 
   refreshGameBananaFilteredContent() {
-    this.manager.gameBananaFeaturedMods = this.manager.getFilteredGameBananaFeaturedMods();
+    this.manager.gameBananaFeaturedMods =
+      this.manager.getFilteredGameBananaFeaturedMods();
     this.manager.gameBananaFeaturedIndex = 0;
 
     const carousel = document.querySelector<HTMLElement>(
       '#social-gamebanana-carousel',
     );
     if (carousel) {
-      carousel.innerHTML = this.manager.featured.renderGameBananaFeaturedStack();
+      carousel.innerHTML =
+        this.manager.featured.renderGameBananaFeaturedStack();
       this.manager.featured.setGameBananaFeaturedCardPositions();
     }
 

@@ -1,13 +1,18 @@
 export {};
 (function () {
   const M = window.ModalManagerClass;
-  if (!M) { console.error('[alert-modal] ModalManagerClass not found'); return; }
+  if (!M) {
+    console.error('[alert-modal] ModalManagerClass not found');
+    return;
+  }
 
   M.prototype.showAlert = function (type, title, message, params = {}) {
     const modal = document.querySelector<HTMLElement>('#alert-modal');
     const header = document.querySelector<HTMLElement>('#alert-modal-header');
     const titleEl = document.querySelector<HTMLElement>('#alert-modal-title');
-    const messageEl = document.querySelector<HTMLElement>('#alert-modal-message');
+    const messageEl = document.querySelector<HTMLElement>(
+      '#alert-modal-message',
+    );
 
     if (!modal || !header || !titleEl || !messageEl) return;
 
@@ -33,16 +38,16 @@ export {};
 
     const translatedTitle =
       title &&
-        (title.startsWith('modals.') ||
-          title.startsWith('common.') ||
-          title.startsWith('toasts.'))
+      (title.startsWith('modals.') ||
+        title.startsWith('common.') ||
+        title.startsWith('toasts.'))
         ? t(title, params)
         : title || '';
     const translatedMessage =
       message &&
-        (message.startsWith('modals.') ||
-          message.startsWith('common.') ||
-          message.startsWith('toasts.'))
+      (message.startsWith('modals.') ||
+        message.startsWith('common.') ||
+        message.startsWith('toasts.'))
         ? t(message, params)
         : message || '';
 

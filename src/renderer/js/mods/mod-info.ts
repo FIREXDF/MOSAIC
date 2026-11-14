@@ -192,7 +192,10 @@ ${escapeHtml(modData.url)}
     };
     const selectedMods = window.modManager?.getCurrentSelectedMods?.() || [];
     const visibleMods = selectedMods.slice(0, 5);
-    const remainingCount = Math.max(selectedMods.length - visibleMods.length, 0);
+    const remainingCount = Math.max(
+      selectedMods.length - visibleMods.length,
+      0,
+    );
     const effectiveCount = selectedMods.length || count;
 
     container.style.animation = 'none';

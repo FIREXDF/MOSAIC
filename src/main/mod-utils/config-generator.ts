@@ -505,10 +505,10 @@ export class ConfigGenerator {
     mergeWithExisting = false,
     culledSlots: string[] = [],
   ) {
-    const fighterRoot =
-      ConfigGenerator.vanillaData?.dirs?.directories?.fighter?.directories?.[
-        this.fighterName
-      ] as unknown as VanillaDirectory | undefined;
+    const fighterRoot = ConfigGenerator.vanillaData?.dirs?.directories?.fighter
+      ?.directories?.[this.fighterName] as unknown as
+      | VanillaDirectory
+      | undefined;
     if (!fighterRoot) {
       throw new Error(
         `No data found for fighter '${this.fighterName}' in vanilla.json`,
@@ -626,7 +626,9 @@ export class ConfigGenerator {
       }
     }
 
-    const targetSlots = new Set(slotMappings.map(({ targetSlot }) => targetSlot));
+    const targetSlots = new Set(
+      slotMappings.map(({ targetSlot }) => targetSlot),
+    );
     for (const file of existingFiles) {
       const fileInfo = await ModScanner.extractFighterAndSlotInfo(file);
       if (
@@ -702,7 +704,9 @@ export class ConfigGenerator {
         this.fighterName
       ];
     if (!fighterRoot) {
-      throw new Error(`No data found for fighter '${this.fighterName}' in vanilla.json`);
+      throw new Error(
+        `No data found for fighter '${this.fighterName}' in vanilla.json`,
+      );
     }
 
     const config = {
@@ -712,7 +716,9 @@ export class ConfigGenerator {
       'new-dir-files': {} as Record<string, string[]>,
     };
     const existingFiles = new Set(
-      (await ModFileOperations.getAllModFiles(this.modDirectory)).map(fixWindowsPath),
+      (await ModFileOperations.getAllModFiles(this.modDirectory)).map(
+        fixWindowsPath,
+      ),
     );
     const fileArray = ConfigGenerator.vanillaData?.file_array || [];
     const replaceSlot = (filePath: string, targetSlot: string) =>
@@ -738,7 +744,11 @@ export class ConfigGenerator {
         if (!targetFiles.includes(targetFile)) targetFiles.push(targetFile);
 
         const normalizedSource = replaceSlot(sourceFile, sourceSlot);
-        if (usedSourceFiles.has(normalizedSource) || existingFiles.has(targetFile)) continue;
+        if (
+          usedSourceFiles.has(normalizedSource) ||
+          existingFiles.has(targetFile)
+        )
+          continue;
         usedSourceFiles.add(normalizedSource);
         const sharedTargets = (config['share-to-vanilla'][sourceFile] ||= []);
         if (!sharedTargets.includes(targetFile)) sharedTargets.push(targetFile);
@@ -752,7 +762,9 @@ export class ConfigGenerator {
 
     for (const { sourceSlot, targetSlot } of slotMappings) {
       if (!/^c\d{2,3}$/.test(sourceSlot) || !/^c\d{2,3}$/.test(targetSlot)) {
-        throw new Error(`Invalid CSK slot mapping: ${sourceSlot}-${targetSlot}`);
+        throw new Error(
+          `Invalid CSK slot mapping: ${sourceSlot}-${targetSlot}`,
+        );
       }
       const fighterDirectories = (fighterRoot as any).directories || {};
       const directSource = fighterDirectories[sourceSlot];
@@ -765,7 +777,9 @@ export class ConfigGenerator {
           targetSlot,
         );
       }
-      for (const [subdirName, subdir] of Object.entries<any>(fighterDirectories)) {
+      for (const [subdirName, subdir] of Object.entries<any>(
+        fighterDirectories,
+      )) {
         const nestedSource = subdir?.directories?.[sourceSlot];
         if (!nestedSource) continue;
         addSlotDirectory(

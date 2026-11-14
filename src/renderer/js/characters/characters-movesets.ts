@@ -63,7 +63,10 @@ class CharactersMovesetsSection {
     if (button) {
       button.disabled = this.manager.isRefreshingMovesets;
       button.classList.toggle('is-loading', this.manager.isRefreshingMovesets);
-      button.setAttribute('aria-busy', String(this.manager.isRefreshingMovesets));
+      button.setAttribute(
+        'aria-busy',
+        String(this.manager.isRefreshingMovesets),
+      );
       const icon = button.querySelector('i');
       if (icon) {
         icon.className = this.manager.isRefreshingMovesets
@@ -74,7 +77,9 @@ class CharactersMovesetsSection {
         this.manager.isRefreshingMovesets
           ? 'characters.refreshingMovesets'
           : 'characters.refreshMovesets',
-        this.manager.isRefreshingMovesets ? 'Refreshing...' : 'Refresh Movesets',
+        this.manager.isRefreshingMovesets
+          ? 'Refreshing...'
+          : 'Refresh Movesets',
       );
       const labelElement = button.querySelector<HTMLElement>(
         'span[data-i18n="characters.refreshMovesets"]',
@@ -192,13 +197,13 @@ class CharactersMovesetsSection {
     }
 
     const wasAtTop = list.scrollTop <= 24;
-    const movesetGroups = Array.from(this.manager.movesetCharacters.values()).sort(
-      (a, b) => {
-        const numA = parseFloat(a.info.number.replace('ε', '.5'));
-        const numB = parseFloat(b.info.number.replace('ε', '.5'));
-        return numA - numB;
-      },
-    );
+    const movesetGroups = Array.from(
+      this.manager.movesetCharacters.values(),
+    ).sort((a, b) => {
+      const numA = parseFloat(a.info.number.replace('ε', '.5'));
+      const numB = parseFloat(b.info.number.replace('ε', '.5'));
+      return numA - numB;
+    });
     const totalMovesets = movesetGroups.reduce(
       (total, character) => total + character.mods.length,
       0,

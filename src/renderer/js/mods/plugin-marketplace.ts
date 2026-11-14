@@ -8,7 +8,11 @@ export interface MarketplacePlugin {
     modelName: string;
     submissionId: string;
   };
-  specialInstaller?: 'arcropolis' | 'csk-collection' | 'one-slot-effects' | 'plugin-loader';
+  specialInstaller?:
+    | 'arcropolis'
+    | 'csk-collection'
+    | 'one-slot-effects'
+    | 'plugin-loader';
   replaceWith?: string;
 }
 
@@ -102,17 +106,25 @@ class PluginMarketplace {
     return this.plugins;
   }
 
-  async getConfiguredSsbuVersion(): Promise<'13.0.4' | '13.0.5' | 'any' | null> {
+  async getConfiguredSsbuVersion(): Promise<
+    '13.0.4' | '13.0.5' | 'any' | null
+  > {
     const version = await window.electronAPI.store.get('ssbuVersion');
-    return version === '13.0.4' || version === '13.0.5' || version === 'any' ? version : null;
+    return version === '13.0.4' || version === '13.0.5' || version === 'any'
+      ? version
+      : null;
   }
 
-  async getCompatibleGithubDownload(repo: string, ssbuVersion: '13.0.4' | '13.0.5') {
-    const tag = repo === 'ultimate-research/params-hook-plugin'
-      ? `v${ssbuVersion}`
-      : repo === 'HDR-Development/smashline' && ssbuVersion === '13.0.4'
-        ? 'v1.6.6'
-        : undefined;
+  async getCompatibleGithubDownload(
+    repo: string,
+    ssbuVersion: '13.0.4' | '13.0.5',
+  ) {
+    const tag =
+      repo === 'ultimate-research/params-hook-plugin'
+        ? `v${ssbuVersion}`
+        : repo === 'HDR-Development/smashline' && ssbuVersion === '13.0.4'
+          ? 'v1.6.6'
+          : undefined;
     return this.getLatestReleaseDownloadUrl(repo, tag);
   }
 
@@ -121,11 +133,15 @@ class PluginMarketplace {
     // GameBanana displays "(outdated)" outside the file metadata. Match the
     // actual archive, with its published file ID as the primary identifier.
     const fileId = ssbuVersion === '13.0.4' ? '1485627' : '1806494';
-    const fileName = ssbuVersion === '13.0.4'
-      ? 'one_slot_eff_13-0-4.zip'
-      : 'one_slot_eff_13-0-5.zip';
-    const selected = files.find((file) => String(file._idRow) === fileId) ||
-      files.find((file) => String(file._sFile || '').toLowerCase() === fileName);
+    const fileName =
+      ssbuVersion === '13.0.4'
+        ? 'one_slot_eff_13-0-4.zip'
+        : 'one_slot_eff_13-0-5.zip';
+    const selected =
+      files.find((file) => String(file._idRow) === fileId) ||
+      files.find(
+        (file) => String(file._sFile || '').toLowerCase() === fileName,
+      );
     if (!selected) {
       throw new Error(`No One Slot Effects file found for SSBU ${ssbuVersion}`);
     }
@@ -291,7 +307,9 @@ class PluginMarketplace {
         release = await latestResponse.json();
       } else {
         if (tag) {
-          console.error(`Release ${tag} unavailable for ${repo}: ${latestResponse.status}`);
+          console.error(
+            `Release ${tag} unavailable for ${repo}: ${latestResponse.status}`,
+          );
           return null;
         }
         const errorText = await latestResponse.text();
@@ -383,7 +401,9 @@ class PluginMarketplace {
         label: this.getGameBananaFileLabel(file),
         url: file._sDownloadUrl as string,
         version: (file._sVersion || file._sFile || '') as string,
-        date: file._tsDateAdded ? new Date(file._tsDateAdded * 1000).toISOString() : '',
+        date: file._tsDateAdded
+          ? new Date(file._tsDateAdded * 1000).toISOString()
+          : '',
       }));
     }
 
@@ -409,13 +429,15 @@ class PluginMarketplace {
     return releases.flatMap((release) => {
       const asset = release.assets?.find((a) => /\.(nro|zip)$/i.test(a.name));
       return asset
-        ? [{
-            label: release.name || release.tag_name,
-            tag: release.tag_name,
-            url: asset.browser_download_url,
-            version: release.tag_name.replace(/^v/, ''),
-            date: release.published_at || '',
-          }]
+        ? [
+            {
+              label: release.name || release.tag_name,
+              tag: release.tag_name,
+              url: asset.browser_download_url,
+              version: release.tag_name.replace(/^v/, ''),
+              date: release.published_at || '',
+            },
+          ]
         : [];
     });
   }

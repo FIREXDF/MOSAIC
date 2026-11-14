@@ -424,7 +424,6 @@
   overflow: hidden;
 }
 
-
 .tutorial-option-icon {
   width: 64px;
   height: 64px;
@@ -448,8 +447,6 @@
   max-width: 500px;
   margin: 0 auto;
 }
-
-
 
 .tutorial-check-badge-warning {
   position: absolute;

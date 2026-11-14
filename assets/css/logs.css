@@ -481,9 +481,11 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg,
-      var(--accent-color) 0%,
-      var(--accent-hover) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--accent-color) 0%,
+    var(--accent-hover) 100%
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -505,9 +507,11 @@
 }
 
 .marketplace-plugin-card.installed::before {
-  background: linear-gradient(90deg,
-      var(--success-color) 0%,
-      var(--success-color) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--success-color) 0%,
+    var(--success-color) 100%
+  );
   opacity: 1;
 }
 
@@ -600,9 +604,11 @@
 
 .marketplace-card-install-btn {
   padding: 10px 20px;
-  background: linear-gradient(135deg,
-      var(--accent-color) 0%,
-      var(--accent-hover) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--accent-color) 0%,
+    var(--accent-hover) 100%
+  );
   border: none;
   border-radius: 8px;
   color: var(--text-inverse);
@@ -617,9 +623,11 @@
 }
 
 .marketplace-card-install-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg,
-      var(--accent-hover) 0%,
-      var(--accent-color) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--accent-hover) 0%,
+    var(--accent-color) 100%
+  );
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.3);
   color: var(--text-inverse);
@@ -632,9 +640,11 @@
 }
 
 .marketplace-plugin-card.installed .marketplace-card-install-btn {
-  background: linear-gradient(135deg,
-      var(--success-color) 0%,
-      var(--success-color) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--success-color) 0%,
+    var(--success-color) 100%
+  );
   color: var(--text-inverse);
   cursor: default;
 }

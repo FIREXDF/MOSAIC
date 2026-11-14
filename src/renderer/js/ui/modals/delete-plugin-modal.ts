@@ -1,14 +1,19 @@
 export {};
 (function () {
   const M = window.ModalManagerClass;
-  if (!M) { console.error('[delete-plugin-modal] ModalManagerClass not found'); return; }
+  if (!M) {
+    console.error('[delete-plugin-modal] ModalManagerClass not found');
+    return;
+  }
 
   M.prototype.openDeletePluginModal = function (plugin, callback) {
     this.currentPlugin = plugin;
     this.deletePluginCallback = callback;
 
     const modal = document.querySelector<HTMLElement>('#delete-plugin-modal');
-    const pluginNameEl = document.querySelector<HTMLElement>('#delete-plugin-name');
+    const pluginNameEl = document.querySelector<HTMLElement>(
+      '#delete-plugin-name',
+    );
 
     if (modal && pluginNameEl) {
       modal.classList.remove('closing');

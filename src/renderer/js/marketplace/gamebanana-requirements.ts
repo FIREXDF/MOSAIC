@@ -337,7 +337,8 @@ class GameBananaRequirementsSection {
     const merged = this.getCurrentGameBananaMergedDetail();
     if (Array.isArray(merged)) return '';
 
-    const downloadId = this.manager.detail.getDownloadIdFromGameBananaUrl(downloadUrl);
+    const downloadId =
+      this.manager.detail.getDownloadIdFromGameBananaUrl(downloadUrl);
     const selectedFile = downloadId
       ? this.manager.detail.getGameBananaFileByDownloadId(downloadId)
       : null;

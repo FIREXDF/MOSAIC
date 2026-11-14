@@ -2,13 +2,17 @@ import { app, IpcMain } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import store from '../../store';
+import store from '../../store/store';
 import {
   createErrorResponse,
   ErrorCodes,
   handleError,
 } from '../../utils/error-handler';
-import { BaseHandlerArg, GenericHandler, HandlerResponse } from '../../types/common';
+import {
+  BaseHandlerArg,
+  GenericHandler,
+  HandlerResponse,
+} from '../../types/common';
 
 type ModProfileEntry = {
   name: string;

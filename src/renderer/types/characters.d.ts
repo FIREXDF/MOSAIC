@@ -1,5 +1,7 @@
-type UmcGameBananaMoveset = import('../../main/ipc/handlers/umc-handlers').UmcGameBananaMoveset;
-type UmcCompatibilityResult = import('../../main/ipc/handlers/umc-handlers').UmcCompatibilityDto;
+type UmcGameBananaMoveset =
+  import('../../main/ipc/handlers/umc-handlers').UmcGameBananaMoveset;
+type UmcCompatibilityResult =
+  import('../../main/ipc/handlers/umc-handlers').UmcCompatibilityDto;
 
 type CharacterModStatus = 'active' | 'disabled' | 'conflict';
 

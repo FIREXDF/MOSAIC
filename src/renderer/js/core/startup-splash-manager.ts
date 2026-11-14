@@ -33,7 +33,9 @@ class StartupSplashManager {
   }
 
   isStartupLaunch() {
-    return new URLSearchParams(window.location.search).get('startup') === 'true';
+    return (
+      new URLSearchParams(window.location.search).get('startup') === 'true'
+    );
   }
 
   async initialize() {
@@ -158,7 +160,10 @@ class StartupSplashManager {
       const cssPromise = window.charactersManager?.preloadCssLayout?.();
       if (cssPromise) tasks.push(cssPromise);
     } catch (error) {
-      console.warn('[StartupSplash] characters CSS preload kickoff failed:', error);
+      console.warn(
+        '[StartupSplash] characters CSS preload kickoff failed:',
+        error,
+      );
     }
     if (tasks.length) {
       await Promise.allSettled(tasks);
@@ -296,10 +301,7 @@ class StartupSplashManager {
           clearTimeout(startupTimeout);
           startupTimeout = null;
         }
-        durationTimeout = setTimeout(
-          finish,
-          STARTUP_SPLASH_VIDEO_DURATION_MS,
-        );
+        durationTimeout = setTimeout(finish, STARTUP_SPLASH_VIDEO_DURATION_MS);
       };
 
       const cleanup = () => {
@@ -327,13 +329,16 @@ class StartupSplashManager {
       video.addEventListener('playing', startDuration);
       video.addEventListener('error', finish);
       startupTimeout = setTimeout(finish, 8000);
-      video.play().then(startDuration).catch((error) => {
-        console.warn(
-          '[StartupSplash] Could not play startup splash video:',
-          error,
-        );
-        finish();
-      });
+      video
+        .play()
+        .then(startDuration)
+        .catch((error) => {
+          console.warn(
+            '[StartupSplash] Could not play startup splash video:',
+            error,
+          );
+          finish();
+        });
     });
   }
 

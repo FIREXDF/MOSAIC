@@ -2,7 +2,7 @@ import { BrowserWindow, dialog, IpcMain } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PATHS } from '../../config';
-import store from '../../store';
+import store from '../../store/store';
 import { BaseHandlerArg } from '../../types/common';
 
 export type FeedbackPayload = {

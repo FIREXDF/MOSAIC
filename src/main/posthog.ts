@@ -1,6 +1,6 @@
 import { PostHog } from 'posthog-node';
 import { app } from 'electron';
-import store from './store';
+import store from './store/store';
 import * as crypto from 'crypto';
 import * as os from 'os';
 
@@ -11,114 +11,110 @@ let posthogClient: PostHog | null = null;
 let distinctId: string = '';
 
 function getDistinctId(): string {
-    let id = store.get('posthog_distinct_id') as string | undefined;
-    if (!id) {
-        id = crypto.randomUUID();
-        store.set('posthog_distinct_id', id);
-    }
-    return id;
+  let id = store.get('posthog_distinct_id') as string | undefined;
+  if (!id) {
+    id = crypto.randomUUID();
+    store.set('posthog_distinct_id', id);
+  }
+  return id;
 }
 
 export function isAnalyticsEnabled(): boolean {
-    const enabled = store.get('analyticsEnabled');
-    return enabled !== false;
+  const enabled = store.get('analyticsEnabled');
+  return enabled !== false;
 }
 
 export function setAnalyticsEnabled(enabled: boolean): void {
-    store.set('analyticsEnabled', enabled);
-    console.log(`[PostHog] Analytics ${enabled ? 'enabled' : 'disabled'}`);
+  store.set('analyticsEnabled', enabled);
+  console.log(`[PostHog] Analytics ${enabled ? 'enabled' : 'disabled'}`);
 }
 
 export function initPosthog(): void {
-    try {
-        posthogClient = new PostHog(POSTHOG_API_KEY, {
-            host: POSTHOG_HOST,
-            flushAt: 5,
-            flushInterval: 10000,
-            enableExceptionAutocapture: true,
-        });
+  try {
+    posthogClient = new PostHog(POSTHOG_API_KEY, {
+      host: POSTHOG_HOST,
+      flushAt: 5,
+      flushInterval: 10000,
+      enableExceptionAutocapture: true,
+    });
 
-        distinctId = getDistinctId();
-    } catch (error) {
-        console.error('[PostHog] Init failed:', error);
-    }
+    distinctId = getDistinctId();
+  } catch (error) {
+    console.error('[PostHog] Init failed:', error);
+  }
 }
 
 export function identifyUser(): void {
-    if (!posthogClient || !isAnalyticsEnabled()) return;
+  if (!posthogClient || !isAnalyticsEnabled()) return;
 
-    try {
-        const appVersion = app.getVersion();
+  try {
+    const appVersion = app.getVersion();
 
-        posthogClient.identify({
-            distinctId,
-            properties: {
-                app_version: appVersion,
-                electron_version: process.versions.electron,
-                node_version: process.versions.node,
-                platform: process.platform,
-                arch: process.arch,
-                os_version: os.release(),
-                locale: app.getLocale(),
-                app_name: 'MOSAIC',
-            },
-        });
-
-    } catch (error) {
-        console.error('[PostHog] Identify failed:', error);
-    }
+    posthogClient.identify({
+      distinctId,
+      properties: {
+        app_version: appVersion,
+        electron_version: process.versions.electron,
+        node_version: process.versions.node,
+        platform: process.platform,
+        arch: process.arch,
+        os_version: os.release(),
+        locale: app.getLocale(),
+        app_name: 'MOSAIC',
+      },
+    });
+  } catch (error) {
+    console.error('[PostHog] Identify failed:', error);
+  }
 }
 
 export function captureEvent(
-    eventName: string,
-    properties: Record<string, any> = {},
+  eventName: string,
+  properties: Record<string, any> = {},
 ): void {
-    if (!posthogClient || !isAnalyticsEnabled()) return;
+  if (!posthogClient || !isAnalyticsEnabled()) return;
 
-    try {
-        posthogClient.capture({
-            distinctId,
-            event: eventName,
-            properties: {
-                app_version: app.getVersion(),
-                platform: process.platform,
-                ...properties,
-            },
-        });
-    } catch (error) {
-        console.error('[PostHog] Capture failed:', error);
-    }
+  try {
+    posthogClient.capture({
+      distinctId,
+      event: eventName,
+      properties: {
+        app_version: app.getVersion(),
+        platform: process.platform,
+        ...properties,
+      },
+    });
+  } catch (error) {
+    console.error('[PostHog] Capture failed:', error);
+  }
 }
 
 export function captureError(
-    error: Error | string,
-    context: Record<string, any> = {},
+  error: Error | string,
+  context: Record<string, any> = {},
 ): void {
-    if (!posthogClient || !isAnalyticsEnabled()) return;
+  if (!posthogClient || !isAnalyticsEnabled()) return;
 
-    try {
-        const errorObj =
-            typeof error === 'string' ? new Error(error) : error;
+  try {
+    const errorObj = typeof error === 'string' ? new Error(error) : error;
 
-        posthogClient.captureException(errorObj, distinctId, {
-            app_version: app.getVersion(),
-            platform: process.platform,
-            source: context.source || 'main',
-            ...context,
-        });
-
-    } catch (captureErr) {
-        console.error('[PostHog] Error capture failed:', captureErr);
-    }
+    posthogClient.captureException(errorObj, distinctId, {
+      app_version: app.getVersion(),
+      platform: process.platform,
+      source: context.source || 'main',
+      ...context,
+    });
+  } catch (captureErr) {
+    console.error('[PostHog] Error capture failed:', captureErr);
+  }
 }
 
 export async function shutdownPosthog(): Promise<void> {
-    if (!posthogClient) return;
+  if (!posthogClient) return;
 
-    try {
-        await posthogClient.shutdown();
-    } catch (error) {
-        console.error('[PostHog] Shutdown failed:', error);
-    }
+  try {
+    await posthogClient.shutdown();
+  } catch (error) {
+    console.error('[PostHog] Shutdown failed:', error);
+  }
 }
-

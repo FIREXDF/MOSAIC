@@ -344,7 +344,10 @@ class SettingsManager {
           /^app-.*\.log$/i.test(log.name),
         );
         if (!currentLog) {
-          this.showToast(this.translate('settings.feedbackNoSavedLogs'), 'error');
+          this.showToast(
+            this.translate('settings.feedbackNoSavedLogs'),
+            'error',
+          );
           return;
         }
         setAttachedLogs([...attachedLogs, currentLog]);
@@ -705,7 +708,10 @@ class SettingsManager {
             ...(this.settings.appSoundPaths || {}),
             [soundName]: filePath,
           };
-          window.appSoundManager?.setCustomSound?.(soundName as SettingsSoundName, filePath);
+          window.appSoundManager?.setCustomSound?.(
+            soundName as SettingsSoundName,
+            filePath,
+          );
           this.saveSettings();
           this.updateAppSoundsUI();
         });
@@ -728,7 +734,10 @@ class SettingsManager {
           const nextSoundPaths = { ...(this.settings.appSoundPaths || {}) };
           delete nextSoundPaths[soundName];
           this.settings.appSoundPaths = nextSoundPaths;
-          window.appSoundManager?.setCustomSound?.(soundName as SettingsSoundName, null);
+          window.appSoundManager?.setCustomSound?.(
+            soundName as SettingsSoundName,
+            null,
+          );
           this.saveSettings();
           this.updateAppSoundsUI();
         });

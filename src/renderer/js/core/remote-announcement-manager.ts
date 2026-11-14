@@ -236,11 +236,17 @@ class RemoteAnnouncementManager {
       }
     }
 
-    return this.comparePrerelease(parsedLeft.prerelease, parsedRight.prerelease);
+    return this.comparePrerelease(
+      parsedLeft.prerelease,
+      parsedRight.prerelease,
+    );
   }
 
   private parseVersion(version: string) {
-    const [core, prerelease = ''] = version.trim().replace(/^v/i, '').split('-');
+    const [core, prerelease = ''] = version
+      .trim()
+      .replace(/^v/i, '')
+      .split('-');
     const numbers = core.split('.').map((part) => {
       const value = Number.parseInt(part, 10);
       return Number.isFinite(value) ? value : 0;
