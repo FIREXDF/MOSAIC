@@ -109,6 +109,17 @@ sidebarButtons.forEach((btn) => {
 });
 
 window.addEventListener('DOMContentLoaded', async () => {
+  window.electronAPI
+    ?.getAppVersion?.()
+    .then((info) => {
+      if (/-beta/i.test(info?.version || '')) {
+        document
+          .getElementById('titlebar-beta-badge')
+          ?.removeAttribute('hidden');
+      }
+    })
+    .catch(() => {});
+
   if (window.HardwareConnectionManager && !window.hardwareConnectionManager) {
     window.hardwareConnectionManager = new window.HardwareConnectionManager();
     await window.hardwareConnectionManager.initialize();
@@ -155,6 +166,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   }, 100);
 
   setTimeout(async () => {
+    await showBetaNoticeOnce();
     await window.remoteAnnouncementManager?.checkOnStartup?.();
 
     if (window.pluginManager && window.settingsManager) {
@@ -188,3 +200,65 @@ document.addEventListener('keydown', async (e) => {
     }
   }
 });
+
+async function showBetaNoticeOnce() {
+  const info = await window.electronAPI?.getAppVersion?.().catch(() => null);
+  const version = info?.version;
+  if (
+    !version ||
+    !/-beta/i.test(version) ||
+    !window.modalManager?.showCustomModal
+  ) {
+    return;
+  }
+
+  const storageKey = `fightplanner:beta-notice:seen:${version}`;
+  try {
+    if (localStorage.getItem(storageKey) === '1') return;
+  } catch {}
+  const markSeen = () => {
+    try {
+      localStorage.setItem(storageKey, '1');
+    } catch {}
+  };
+
+  const t = (key: string, fallback: string, params?: Record<string, string>) =>
+    window.i18n?.t?.(key, params) || fallback;
+
+  const body = document.createElement('p');
+  body.textContent = t(
+    'modals.betaNotice.message',
+    `You're using MOSAIC ${version}, a beta version. Expect bugs and unfinished features. Don't hesitate to send us feedback, it really helps!`,
+    { version },
+  );
+
+  const modal = window.modalManager.showCustomModal({
+    id: 'beta-notice',
+    onClose: markSeen,
+    title: t('modals.betaNotice.title', 'Beta version'),
+    body,
+    buttons: [
+      { text: t('common.close', 'Close') },
+      {
+        text: t('modals.betaNotice.giveFeedback', 'Give feedback'),
+        type: 'primary',
+        onClick: () => {
+          document
+            .querySelector<HTMLElement>('.sidebar-btn[data-tab="settings"]')
+            ?.click();
+          setTimeout(() => {
+            document
+              .querySelector<HTMLElement>(
+                '.settings-tab-btn[data-settings-tab="feedback"]',
+              )
+              ?.click();
+          }, 150);
+        },
+      },
+    ],
+  });
+
+  const icon = document.createElement('i');
+  icon.className = 'bi bi-exclamation-triangle';
+  modal.querySelector<HTMLElement>('.modal-header h3')?.prepend(icon);
+}

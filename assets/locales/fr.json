@@ -2,7 +2,8 @@
   "app": {
     "title": "MOSAIC",
     "version": "4.0.0",
-    "ready": "Prêt"
+    "ready": "Prêt",
+    "beta": "Bêta"
   },
   "titlebar": {
     "minimize": "Réduire",
@@ -1230,6 +1231,11 @@
       "choose": "Choisir un modèle",
       "backupHint": "Les sons déjà présents dans ce mod modèle seront remplacés. Tu peux annuler avec « Restaurer la sauvegarde » sur le mod modèle.",
       "confirm": "Assigner"
+    },
+    "betaNotice": {
+      "title": "Version bêta",
+      "message": "Tu utilises MOSAIC {{version}}, une version bêta. Attends-toi à des bugs et à des fonctionnalités pas encore finies. N'hésite pas à nous envoyer tes retours, ça nous aide énormément à améliorer l'app !",
+      "giveFeedback": "Envoyer un retour"
     }
   },
   "contextMenu": {

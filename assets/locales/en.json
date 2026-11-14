@@ -2,7 +2,8 @@
   "app": {
     "title": "MOSAIC",
     "version": "4.0.0",
-    "ready": "Ready"
+    "ready": "Ready",
+    "beta": "Beta"
   },
   "titlebar": {
     "minimize": "Minimize",
@@ -1230,6 +1231,11 @@
       "choose": "Choose a model",
       "backupHint": "Existing sounds in that model mod are replaced. You can undo it with \"Restore backup\" on the model mod.",
       "confirm": "Assign"
+    },
+    "betaNotice": {
+      "title": "Beta version",
+      "message": "You're using MOSAIC {{version}}, a beta version. Expect bugs and unfinished features. Don't hesitate to send us your feedback, it really helps us improve the app!",
+      "giveFeedback": "Give feedback"
     }
   },
   "contextMenu": {
