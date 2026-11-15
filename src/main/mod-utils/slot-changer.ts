@@ -6,6 +6,9 @@ import { PathData, PathDataEntry } from './mod-scanner';
 import { ModFileOperations } from '../mod-file-operations';
 import { ConfigGenerator } from './config-generator';
 import { PATHS } from '../config';
+import { randomUUID } from 'crypto';
+
+const MOD_ID_FILE = '.fp-id';
 
 interface CustomData {
   cspName?: string;
@@ -535,24 +538,67 @@ export class SlotChanger {
     return path.join(PATHS.slotBackupsDir(), path.basename(modPath));
   }
 
-  static async backupMod(modPath: string) {
-    const backupPath = this.getBackupPath(modPath);
-    if (await fse.pathExists(backupPath)) return;
+  static readModId(modPath: string): string | null {
+    try {
+      return fse.readFileSync(path.join(modPath, MOD_ID_FILE), 'utf8').trim();
+    } catch {
+      return null;
+    }
+  }
 
+  static async backupBelongsTo(
+    modPath: string,
+    modId = this.readModId(modPath),
+  ) {
+    const backupPath = this.getBackupPath(modPath);
+    return (
+      (await fse.pathExists(backupPath)) && this.readModId(backupPath) === modId
+    );
+  }
+
+  static async backupMod(modPath: string) {
+    if (await this.backupBelongsTo(modPath)) return;
+
+    if (!this.readModId(modPath)) {
+      await fse.writeFile(
+        path.join(modPath, MOD_ID_FILE),
+        randomUUID(),
+        'utf8',
+      );
+    }
+
+    const backupPath = this.getBackupPath(modPath);
     const pendingPath = `${backupPath}.fp-pending`;
     await fse.remove(pendingPath);
     await fse.copy(modPath, pendingPath);
+    await fse.remove(backupPath);
     await fse.move(pendingPath, backupPath);
   }
 
   static async hasBackup(modPath: string): Promise<boolean> {
-    return fse.pathExists(this.getBackupPath(modPath));
+    return this.backupBelongsTo(modPath);
+  }
+
+  static async deleteBackup(modPath: string, modId: string | null) {
+    if (await this.backupBelongsTo(modPath, modId)) {
+      await fse.remove(this.getBackupPath(modPath));
+    }
+  }
+
+  static async renameBackup(oldModPath: string, newModPath: string) {
+    const modId = this.readModId(newModPath);
+    if (!(await this.backupBelongsTo(oldModPath, modId))) return;
+    if (await fse.pathExists(this.getBackupPath(newModPath))) return;
+    await fse.move(
+      this.getBackupPath(oldModPath),
+      this.getBackupPath(newModPath),
+    );
   }
 
   static async restoreBackup(modPath: string) {
     const backupPath = this.getBackupPath(modPath);
 
-    if (!(await fse.pathExists(backupPath))) {
+    if (!(await this.backupBelongsTo(modPath))) {
       throw new Error('No slot change backup found for this mod');
     }
 

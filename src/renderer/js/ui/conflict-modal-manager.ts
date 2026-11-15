@@ -274,6 +274,29 @@ export class ConflictModalManager {
     });
   }
 
+  async trashConflictFile(
+    modPath: string,
+    filePath: string,
+    state: { permanent?: boolean },
+  ) {
+    let result = await window.electronAPI.deleteConflictFile(modPath, filePath);
+    if (!result.success && result.code === 'TRASH_UNAVAILABLE') {
+      state.permanent ??=
+        (await window.modalManager?.confirmModWarning(
+          'permanentDeleteFile',
+          filePath,
+        )) ?? false;
+      if (state.permanent) {
+        result = await window.electronAPI.deleteConflictFile(
+          modPath,
+          filePath,
+          { permanent: true },
+        );
+      }
+    }
+    return result;
+  }
+
   async deleteConflictFile(
     mod: { name: string; path: string },
     filePath: string,
@@ -288,11 +311,9 @@ export class ConflictModalManager {
     const confirmed = await this.confirmConflictFileDeletion(mod, filePath);
 
     if (!confirmed) return;
+    const trashState: { permanent?: boolean } = {};
 
-    const result = await window.electronAPI.deleteConflictFile(
-      mod.path,
-      filePath,
-    );
+    const result = await this.trashConflictFile(mod.path, filePath, trashState);
 
     if (!result.success) {
       window.toastManager?.error('toasts.failedToDeleteConflictFile', 5000, {
@@ -332,11 +353,13 @@ export class ConflictModalManager {
     );
 
     if (!confirmed) return;
+    const trashState: { permanent?: boolean } = {};
 
     for (const mod of uniqueMods) {
-      const result = await window.electronAPI.deleteConflictFile(
+      const result = await this.trashConflictFile(
         mod.path,
         filePath,
+        trashState,
       );
 
       if (!result.success) {
@@ -410,11 +433,13 @@ export class ConflictModalManager {
       await this.confirmSelectedConflictFilesDeletion(selectedItems);
 
     if (!confirmed) return;
+    const trashState: { permanent?: boolean } = {};
 
     for (const item of selectedItems) {
-      const result = await window.electronAPI.deleteConflictFile(
+      const result = await this.trashConflictFile(
         item.mod.path,
         item.filePath,
+        trashState,
       );
 
       if (!result.success) {

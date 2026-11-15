@@ -1,4 +1,4 @@
-import { dialog, IpcMain, BrowserWindow, shell } from 'electron';
+import { dialog, IpcMain, BrowserWindow } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -23,6 +23,7 @@ import { ConfigMode, SlotChanger } from '../../mod-utils/slot-changer';
 import { SoundAssigner } from '../../mod-utils/sound-assigner';
 import { resolveModWarning } from '../../mod-utils/mod-warnings';
 import { PATHS } from '../../config';
+import { moveToTrash } from '../../utils/trash';
 import PluginUpdateChecker, {
   ModUpdateResult,
   ModUpdateWatch,
@@ -530,6 +531,9 @@ const ModHandlers = {
         );
       }
       await renameModFolderWithRetry(modPath, newPath);
+      await SlotChanger.renameBackup(modPath, newPath).catch((error) =>
+        console.warn('[rename-mod] Failed to rename slot backup:', error),
+      );
       return { success: true, newPath };
     } catch (error) {
       handleError(error, 'rename-mod');
@@ -583,21 +587,10 @@ const ModHandlers = {
         );
       }
 
-      if (!options.permanent) {
-        try {
-          await shell.trashItem(target);
-          return { success: true, permanent: false };
-        } catch (trashError) {
-          console.warn('[delete-mod] Recycle bin unavailable:', trashError);
-          return createErrorResponse(
-            ErrorCodes.TRASH_UNAVAILABLE,
-            'The Recycle Bin is not available for this drive',
-          );
-        }
-      }
-
-      fs.rmSync(target, { recursive: true, force: true });
-      return { success: true, permanent: true };
+      const backupId = SlotChanger.readModId(target);
+      const result = await moveToTrash(target, options.permanent);
+      if (result.success) await SlotChanger.deleteBackup(target, backupId);
+      return result;
     } catch (error) {
       handleError(error, 'delete-mod');
       return createErrorResponse(ErrorCodes.MOD_DELETE_ERROR, error.message);
@@ -631,7 +624,8 @@ const ModHandlers = {
     common: BaseHandlerArg,
     modPath: string,
     conflictFilePath: string,
-  ): HandlerResponse => {
+    options: { permanent?: boolean } = {},
+  ): HandlerResponse<{ permanent: boolean }> => {
     try {
       if (
         !modPath ||
@@ -669,9 +663,7 @@ const ModHandlers = {
         );
       }
 
-      fs.rmSync(targetPath, { recursive: true, force: true });
-
-      return { success: true };
+      return await moveToTrash(targetPath, options.permanent);
     } catch (error) {
       handleError(error, 'delete-conflict-file');
       return createErrorResponse(ErrorCodes.MOD_DELETE_ERROR, error.message);

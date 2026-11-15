@@ -268,7 +268,15 @@ class ModalManager {
   }
 
   confirmModWarning(
-    kind: 'replace' | 'duplicateDisabled' | 'permanentDelete' | 'deleteBackups',
+    kind:
+      | 'replace'
+      | 'duplicateDisabled'
+      | 'permanentDelete'
+      | 'permanentDeleteFile'
+      | 'deleteBackups'
+      | 'deletePluginBackups'
+      | 'restorePlugin'
+      | 'reinstallArcropolis',
     name = '',
   ): Promise<boolean> {
     const t = (key: string) => window.i18n?.t?.(key, { name }) || key;

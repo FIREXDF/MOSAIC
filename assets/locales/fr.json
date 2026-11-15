@@ -1063,7 +1063,11 @@
       "deleteBackupsTitle": "Supprimer les sauvegardes de slots",
       "deleteBackupsMessage": "Supprimer toutes les sauvegardes faites avant un changement de slot ?",
       "deleteBackupsHint": "Tu ne pourras plus restaurer les slots d'origine de tes mods. C'est irréversible.",
-      "deleteBackupsConfirm": "Supprimer les sauvegardes"
+      "deleteBackupsConfirm": "Supprimer les sauvegardes",
+      "permanentDeleteFileTitle": "Corbeille indisponible",
+      "permanentDeleteFileMessage": "La Corbeille ne fonctionne pas sur ce lecteur (souvent le cas des cartes SD).",
+      "permanentDeleteFileHint": "Supprimer maintenant effacera le fichier définitivement. Impossible de revenir en arrière.",
+      "permanentDeleteFileConfirm": "Supprimer définitivement"
     },
     "deletePlugin": {
       "title": "Supprimer le Plugin",
@@ -1143,11 +1147,11 @@
       "deleteFileTitle": "Supprimer le fichier en conflit",
       "deleteFileWarning": "Supprimer ce fichier en conflit de {{modName}} ?",
       "deleteFilePathLabel": "Fichier à supprimer",
-      "deleteFileHint": "Cette action est définitive.",
-      "deleteFileConfirm": "Supprimer ce fichier en conflit de {{modName}} ?\n\n{{filePath}}\n\nCette action est définitive.",
+      "deleteFileHint": "Le fichier sera mis dans la Corbeille.",
+      "deleteFileConfirm": "Supprimer ce fichier en conflit de {{modName}} ?\n\n{{filePath}}\n\nIl sera mis dans la Corbeille.",
       "deleteSelectedFiles": "Supprimer la sélection",
       "deleteSelectedFilesCount": "Supprimer {{count}} sélectionnés",
-      "deleteSelectedConfirm": "Supprimer {{count}} fichiers en conflit sélectionnés ?\n\nCette action est définitive.",
+      "deleteSelectedConfirm": "Supprimer {{count}} fichiers en conflit sélectionnés ?\n\nIls seront mis dans la Corbeille.",
       "deleteSelectedWarning": "Supprimer {{count}} fichiers en conflit sélectionnés ?",
       "deleteSelectedFilesLabel": "Fichiers sélectionnés",
       "deleteMultipleFilesWarning": "Supprimer ce fichier en conflit de {{count}} mods sélectionnés ?",

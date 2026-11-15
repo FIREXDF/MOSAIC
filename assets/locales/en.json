@@ -1086,7 +1086,11 @@
       "deleteBackupsTitle": "Delete slot change backups",
       "deleteBackupsMessage": "Delete every backup made before a slot change?",
       "deleteBackupsHint": "You will no longer be able to restore the original slots of your mods. This cannot be undone.",
-      "deleteBackupsConfirm": "Delete backups"
+      "deleteBackupsConfirm": "Delete backups",
+      "permanentDeleteFileTitle": "Recycle Bin not available",
+      "permanentDeleteFileMessage": "The Recycle Bin does not work on this drive (often the case for SD cards).",
+      "permanentDeleteFileHint": "Deleting now will permanently remove the file. This cannot be undone.",
+      "permanentDeleteFileConfirm": "Delete permanently"
     },
     "deletePlugin": {
       "title": "Delete Plugin",
@@ -1165,11 +1169,11 @@
       "deleteFileTitle": "Delete Conflict File",
       "deleteFileWarning": "Delete this conflicting file from {{modName}}?",
       "deleteFilePathLabel": "File to delete",
-      "deleteFileHint": "This action cannot be undone.",
-      "deleteFileConfirm": "Delete this conflicting file from {{modName}}?\n\n{{filePath}}\n\nThis cannot be undone.",
+      "deleteFileHint": "The file will be moved to the Recycle Bin.",
+      "deleteFileConfirm": "Delete this conflicting file from {{modName}}?\n\n{{filePath}}\n\nIt will be moved to the Recycle Bin.",
       "deleteSelectedFiles": "Delete selected",
       "deleteSelectedFilesCount": "Delete {{count}} selected",
-      "deleteSelectedConfirm": "Delete {{count}} selected conflict files?\n\nThis cannot be undone.",
+      "deleteSelectedConfirm": "Delete {{count}} selected conflict files?\n\nThey will be moved to the Recycle Bin.",
       "deleteSelectedWarning": "Delete {{count}} selected conflict files?",
       "deleteSelectedFilesLabel": "Selected files",
       "deleteMultipleFilesWarning": "Delete this conflicting file from {{count}} selected mods?",
