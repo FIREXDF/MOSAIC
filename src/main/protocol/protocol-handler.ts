@@ -633,13 +633,12 @@ export default class ProtocolHandler {
 
           for (const mod of allMods.activeMods) {
             try {
-              const targetPath = path.join(disabledModsPath, mod.name);
-              try {
-                await fs.promises.access(targetPath);
-              } catch {
-                await fs.promises.rename(mod.path, targetPath);
-                disabledCount++;
+              let targetPath = path.join(disabledModsPath, mod.name);
+              for (let n = 2; fs.existsSync(targetPath); n++) {
+                targetPath = path.join(disabledModsPath, `${mod.name} (${n})`);
               }
+              await fs.promises.rename(mod.path, targetPath);
+              disabledCount++;
             } catch (moveError) {
               console.warn(
                 `[proceedWithInstall] Failed to disable ${mod.name}:`,
