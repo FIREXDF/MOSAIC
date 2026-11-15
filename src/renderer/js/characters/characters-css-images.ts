@@ -41,7 +41,10 @@ class CharactersCssImagesSection {
           window.electronAPI.getCssCharacterImages(),
         ]);
         if (!customImages.success)
-          throw new Error(customImages.error || 'Failed to load custom images');
+          throw new Error(
+            customImages.error ||
+              this.manager.t('characters.cssUnknownError', 'Unknown error'),
+          );
         this.manager.cssCustomImages = new Map(
           Object.entries(customImages.images),
         );
@@ -123,13 +126,19 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
         const result =
           await window.electronAPI.removeCssCharacterImage(characterId);
         if (!result.success)
-          throw new Error(result.error || 'Failed to remove image');
+          throw new Error(
+            result.error ||
+              this.manager.t('characters.cssUnknownError', 'Unknown error'),
+          );
         this.manager.cssCustomImages.delete(key);
       } else {
         const result =
           await window.electronAPI.selectCssCharacterImage(characterId);
         if (!result.success)
-          throw new Error(result.error || 'Failed to import image');
+          throw new Error(
+            result.error ||
+              this.manager.t('characters.cssUnknownError', 'Unknown error'),
+          );
         if (result.canceled || !result.imageUrl) return;
         this.manager.cssCustomImages.set(key, result.imageUrl);
       }
@@ -142,7 +151,9 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
         });
     } catch (error) {
       window.toastManager?.error('characters.customImageFailed', 4000, {
-        error: error.message || 'Unknown error',
+        error:
+          error.message ||
+          this.manager.t('characters.cssUnknownError', 'Unknown error'),
       });
     } finally {
       this.manager.cssCustomImageBusy = false;
@@ -169,7 +180,9 @@ ${custom ? button('remove-custom', 'characters.customImageRemove', 'Remove custo
         [...this.manager.cssUmcImageExclusions],
       );
       if (!result.success)
-        throw new Error('Failed to save UMC image preference');
+        throw new Error(
+          this.manager.t('characters.cssUnknownError', 'Unknown error'),
+        );
       if (
         this.manager.cssEditor.findCssCharacter(character.id) !== character ||
         this.getCssUmcImageKey(character) !== key

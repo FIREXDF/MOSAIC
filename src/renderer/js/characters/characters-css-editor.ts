@@ -5,6 +5,10 @@ class CharactersCssEditorSection {
     this.manager = manager;
   }
 
+  tr(key: string, fallback: string, params: Record<string, string> = {}) {
+    return escapeHtml(this.manager.t(key, fallback, params));
+  }
+
   async openAddMovesetToCssFlow(characterId: string) {
     if (this.manager.cssSaving) {
       return;
@@ -43,7 +47,10 @@ class CharactersCssEditorSection {
       });
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to add moveset to CSS');
+        throw new Error(
+          result.error ||
+            this.manager.t('characters.cssUnknownError', 'Unknown error'),
+        );
       }
 
       this.manager.cssVisibleCharacters = result.visibleCharacters.map(
@@ -71,7 +78,15 @@ class CharactersCssEditorSection {
     } catch (error) {
       console.error('[CharactersManager] Failed to add moveset to CSS:', error);
       window.toastManager?.error(
-        `Failed to add moveset to CSS: ${error.message || 'Unknown error'}`,
+        this.manager.t(
+          'characters.cssAddMovesetFailed',
+          'Failed to add moveset to CSS: {{error}}',
+          {
+            error:
+              error.message ||
+              this.manager.t('characters.cssUnknownError', 'Unknown error'),
+          },
+        ),
         5000,
       );
     } finally {
@@ -459,7 +474,7 @@ class CharactersCssEditorSection {
   async loadCssLayout() {
     const grid = document.querySelector<HTMLElement>('#character-css-grid');
     if (grid) {
-      grid.innerHTML = `<div class="characters-empty-state">Loading CSS layout...</div>`;
+      grid.innerHTML = `<div class="characters-empty-state">${this.tr('characters.cssLoadingLayout', 'Loading CSS layout...')}</div>`;
     }
 
     try {
@@ -474,7 +489,10 @@ class CharactersCssEditorSection {
         result = await window.electronAPI.getCharacterCssLayout();
       }
       if (!result.success) {
-        throw new Error(result.error || 'Failed to load character CSS layout');
+        throw new Error(
+          result.error ||
+            this.manager.t('characters.cssUnknownError', 'Unknown error'),
+        );
       }
 
       this.manager.cssVisibleCharacters = result.visibleCharacters.map(
@@ -499,7 +517,9 @@ class CharactersCssEditorSection {
     } catch (error) {
       console.error('[CharactersManager] Failed to load CSS layout:', error);
       if (grid) {
-        const message = error.message || 'Failed to load CSS layout';
+        const message =
+          error.message ||
+          this.manager.t('characters.cssUnknownError', 'Unknown error');
         grid.replaceChildren();
         this.renderCharacterCssSourceImport();
         window.toastManager?.error('toasts.failedToLoadCharacters', 4000, {
@@ -508,7 +528,9 @@ class CharactersCssEditorSection {
         return;
       }
       window.toastManager?.error('toasts.failedToLoadCharacters', 4000, {
-        error: error.message || 'Unknown error',
+        error:
+          error.message ||
+          this.manager.t('characters.cssUnknownError', 'Unknown error'),
       });
     }
   }
@@ -705,7 +727,8 @@ class CharactersCssEditorSection {
       });
       if (!result.success) {
         throw new Error(
-          result.error || 'Failed to import Character CSS source files',
+          result.error ||
+            this.manager.t('characters.cssUnknownError', 'Unknown error'),
         );
       }
 
@@ -736,7 +759,9 @@ class CharactersCssEditorSection {
       window.toastManager?.success('toasts.characterCssSourceImported', 3000);
     } catch (error) {
       window.toastManager?.error('toasts.failedToLoadCharacters', 4000, {
-        error: error.message || 'Unknown error',
+        error:
+          error.message ||
+          this.manager.t('characters.cssUnknownError', 'Unknown error'),
       });
     } finally {
       this.manager.cssSourceImporting = false;
@@ -801,7 +826,11 @@ class CharactersCssEditorSection {
       visibleCount.textContent = String(this.getCssPreviewCharacters().length);
     }
     if (hiddenCount) {
-      hiddenCount.textContent = `${this.manager.cssHiddenCharacters.length} hidden`;
+      hiddenCount.textContent = this.manager.t(
+        'characters.cssHiddenCount',
+        `${this.manager.cssHiddenCharacters.length} hidden`,
+        { count: String(this.manager.cssHiddenCharacters.length) },
+      );
     }
     if (hiddenButton) {
       hiddenButton.disabled =
@@ -831,8 +860,8 @@ class CharactersCssEditorSection {
       const label = saveButton.querySelector('span');
       if (label) {
         label.textContent = this.manager.cssSaving
-          ? 'Applying...'
-          : 'Apply Layout';
+          ? this.manager.t('characters.cssApplying', 'Applying...')
+          : this.manager.t('characters.cssApplyLayout', 'Apply Layout');
       }
     }
   }
@@ -866,8 +895,8 @@ ${character.imageSource === 'umc' && imageMarkup ? `<span class="character-css-i
 </div>
 <div class="character-css-name">${escapedName}</div>
 ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</span>` : character.number ? `<span class="character-css-number">#${escapeHtml(character.number)}</span>` : ''}
-<button class="character-css-hide-btn" type="button" title="Hide">
-<i class="bi bi-eye-slash"></i>
+<button class="character-css-hide-btn" type="button" title="${escapeHtml(this.manager.t('characters.cssHide', 'Hide'))}" aria-label="${escapeHtml(this.manager.t('characters.cssHideNamed', `Hide ${character.displayName}`, { name: character.displayName }))}">
+<i class="bi bi-eye-slash" aria-hidden="true"></i>
 </button>
 `;
 
@@ -880,6 +909,115 @@ ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</spa
     });
 
     return cell;
+  }
+
+  showCssCellContextMenu(event: MouseEvent, characterId: string) {
+    const character = this.findCssCharacter(characterId);
+    if (!character || this.manager.cssSaving) {
+      return;
+    }
+
+    this.selectCssCharacter(characterId);
+    document.querySelector('#character-css-context-menu')?.remove();
+
+    const label = (key: string, fallback: string) =>
+      escapeHtml(this.manager.t(key, fallback));
+    const item = (action: string, icon: string, text: string, danger = false) =>
+      `<div class="context-menu-item${danger ? ' context-menu-item-danger' : ''}" role="menuitem" data-action="${action}"><i class="bi ${icon}" aria-hidden="true"></i><span>${text}</span></div>`;
+    const separator = '<div class="context-menu-separator"></div>';
+    const hideItem = item(
+      'hide',
+      'bi-eye-slash',
+      label('characters.cssHide', 'Hide'),
+    );
+
+    const menu = document.createElement('div');
+    menu.id = 'character-css-context-menu';
+    menu.className = 'context-menu';
+    menu.setAttribute('role', 'menu');
+    menu.innerHTML = character.isGroup
+      ? item(
+          'open-group',
+          'bi-folder2-open',
+          label('characters.cssManageGroup', 'Manage Group'),
+        ) +
+        separator +
+        hideItem
+      : item(
+          'duplicate',
+          'bi-copy',
+          label('characters.cssDuplicate', 'Duplicate'),
+        ) +
+        (this.manager.cssGroups.size > 0
+          ? item(
+              'move-to-group',
+              'bi-folder-symlink',
+              label('characters.cssMoveToGroup', 'Move to Group'),
+            )
+          : '') +
+        hideItem +
+        separator +
+        item('remove', 'bi-trash3', label('common.remove', 'Remove'), true);
+
+    menu.style.visibility = 'hidden';
+    document.body.appendChild(menu);
+    const { offsetWidth: width, offsetHeight: height } = menu;
+    menu.style.left = `${Math.max(10, Math.min(event.clientX, window.innerWidth - width - 10))}px`;
+    menu.style.top = `${event.clientY + height > window.innerHeight ? Math.max(10, event.clientY - height) : event.clientY}px`;
+    menu.style.visibility = '';
+
+    const close = () => {
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('blur', close);
+      if (document.body.classList.contains('no-animations')) {
+        menu.remove();
+        return;
+      }
+      menu.classList.add('closing');
+      setTimeout(() => menu.remove(), 150);
+    };
+    const onPointerDown = (pointerEvent: PointerEvent) => {
+      if (!menu.contains(pointerEvent.target as Node)) {
+        close();
+      }
+    };
+    const onKeyDown = (keyEvent: KeyboardEvent) => {
+      if (keyEvent.key === 'Escape') {
+        keyEvent.stopPropagation();
+        close();
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('keydown', onKeyDown, true);
+    window.addEventListener('blur', close);
+
+    menu.addEventListener('click', (clickEvent) => {
+      const action = (clickEvent.target as HTMLElement).closest<HTMLElement>(
+        '[data-action]',
+      )?.dataset.action;
+      if (!action) {
+        return;
+      }
+      close();
+      switch (action) {
+        case 'open-group':
+          this.manager.cssSlots.openCssGroupModal(character.id);
+          break;
+        case 'duplicate':
+          void this.manager.cssSlots.duplicateSelectedCssCharacter();
+          break;
+        case 'move-to-group':
+          this.manager.cssSlots.openMoveCssCharacterToGroupModal(character);
+          break;
+        case 'hide':
+          this.manager.cssSlots.hideCssCharacter(character.id);
+          break;
+        case 'remove':
+          void this.manager.cssSlots.removeSelectedCssCharacter();
+          break;
+      }
+    });
   }
 
   selectCssCharacter(characterId: string) {
@@ -1172,13 +1310,13 @@ ${character.isGroup ? `<span class="character-css-group-count">${groupSize}</spa
 
     modal.innerHTML = `
 <div class="character-css-preview-stage is-layout-only">
-<button class="character-css-preview-close" type="button" title="Close">
+<button class="character-css-preview-close" type="button" title="${this.tr('common.close', 'Close')}">
 <i class="bi bi-x-lg"></i>
 </button>
 <div class="character-css-preview-controls">
-  <label>Odd rows <input type="number" min="1" max="64" value="13" data-preview-odd></label>
-  <label>Even rows <input type="number" min="1" max="64" value="13" data-preview-even></label>
-  <button class="input-btn" type="button" data-preview-refresh><i class="bi bi-arrow-clockwise"></i>Refresh</button>
+  <label>${this.tr('characters.cssOddRows', 'Odd rows')} <input type="number" min="1" max="64" value="13" data-preview-odd></label>
+  <label>${this.tr('characters.cssEvenRows', 'Even rows')} <input type="number" min="1" max="64" value="13" data-preview-even></label>
+  <button class="input-btn" type="button" data-preview-refresh><i class="bi bi-arrow-clockwise"></i>${this.tr('characters.cssRefresh', 'Refresh')}</button>
 </div>
 <div class="character-css-preview-grid" data-preview-grid>
 ${this.renderCssPreviewRows(visibleCharacters, 13, 13)}
@@ -1291,7 +1429,10 @@ ${image}
       });
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to save character CSS layout');
+        throw new Error(
+          result.error ||
+            this.manager.t('characters.cssUnknownError', 'Unknown error'),
+        );
       }
 
       const selectedCharacterId = this.manager.cssSelectedCharacterId;
@@ -1306,7 +1447,8 @@ ${image}
           await window.electronAPI.getCharacterCssLayout();
         if (!refreshedLayout.success) {
           throw new Error(
-            refreshedLayout.error || 'Failed to refresh character CSS layout',
+            refreshedLayout.error ||
+              this.manager.t('characters.cssUnknownError', 'Unknown error'),
           );
         }
 
@@ -1352,19 +1494,33 @@ ${image}
       this.manager.cssCharacterUpdates.clear();
       this.manager.cssCreatedGroups.clear();
       window.toastManager?.success?.(
-        'Character CSS Layout saved as .prc.',
+        this.manager.t(
+          'characters.cssSaved',
+          'Character CSS Layout saved as .prc.',
+        ),
         3500,
       );
       if (result.stderr?.includes('MSBT changes')) {
         window.toastManager?.warning?.(
-          'Layout saved, but MSBT names need dotnet to be regenerated.',
+          this.manager.t(
+            'characters.cssSavedMsbtWarning',
+            'Layout saved, but MSBT names need dotnet to be regenerated.',
+          ),
           6000,
         );
       }
     } catch (error) {
       console.error('[CharactersManager] Failed to save CSS layout:', error);
       window.toastManager?.error(
-        `Failed to save Character CSS Layout: ${error.message || 'Unknown error'}`,
+        this.manager.t(
+          'characters.cssSaveFailed',
+          'Failed to save Character CSS Layout: {{error}}',
+          {
+            error:
+              error.message ||
+              this.manager.t('characters.cssUnknownError', 'Unknown error'),
+          },
+        ),
         6000,
       );
     } finally {

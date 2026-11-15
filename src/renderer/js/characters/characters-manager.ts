@@ -1,9 +1,5 @@
 import { Mod } from '../../../main/mod-utils';
-import type {
-  UmcGameBananaMoveset,
-  UmcCompatibilityDto as UmcCompatibilityResult,
-  UmcGroupCompatibilityDto,
-} from '../../../main/ipc/handlers/umc-handlers';
+import type { UmcGroupCompatibilityDto } from '../../../main/ipc/handlers/umc-handlers';
 
 class CharactersManager {
   characters: Map<string, Character>;
@@ -511,18 +507,27 @@ class CharactersManager {
       });
       cssGrid.addEventListener('dragend', () => {
         cssGrid
-          .querySelectorAll('.is-dragging, .is-drop-target')
-          .forEach((node) =>
-            node.classList.remove('is-dragging', 'is-drop-target'),
-          );
+          .querySelectorAll<HTMLElement>('.is-dragging, .is-drop-target')
+          .forEach((node) => {
+            node.classList.remove('is-dragging', 'is-drop-target');
+            delete node.dataset.dropSide;
+          });
         this.cssDraggedCharacterId = null;
       });
       cssGrid.addEventListener('dragover', (event) => {
         const cell = (event.target as HTMLElement | null)?.closest<HTMLElement>(
           '.character-css-cell',
         );
-        if (!cell || !this.cssDraggedCharacterId) return;
+        const targetId = cell?.dataset.characterId;
+        if (!cell || !targetId || !this.cssDraggedCharacterId) return;
+        if (targetId === this.cssDraggedCharacterId) return;
         event.preventDefault();
+        const indexOf = (id: string) =>
+          this.cssVisibleCharacters.findIndex((entry) => entry.id === id);
+        cell.dataset.dropSide =
+          indexOf(this.cssDraggedCharacterId) < indexOf(targetId)
+            ? 'after'
+            : 'before';
         cell.classList.add('is-drop-target');
       });
       cssGrid.addEventListener('dragleave', (event) => {
@@ -532,6 +537,7 @@ class CharactersManager {
         const relatedTarget = event.relatedTarget as Node | null;
         if (cell && (!relatedTarget || !cell.contains(relatedTarget))) {
           cell.classList.remove('is-drop-target');
+          delete cell.dataset.dropSide;
         }
       });
       cssGrid.addEventListener('drop', (event) => {
@@ -551,7 +557,7 @@ class CharactersManager {
         );
         if (!cell?.dataset.characterId) return;
         event.preventDefault();
-        this.cssSlots.hideCssCharacter(cell.dataset.characterId);
+        this.cssEditor.showCssCellContextMenu(event, cell.dataset.characterId);
       });
       cssGrid.addEventListener('click', (event) => {
         const cell = (event.target as HTMLElement | null)?.closest<HTMLElement>(

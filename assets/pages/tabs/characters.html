@@ -225,16 +225,16 @@
       <div class="character-css-toolbar">
         <button class="input-btn" id="character-css-back-btn" type="button">
           <i class="bi bi-arrow-left"></i>
-          Back
+          <span data-i18n="common.back">Back</span>
         </button>
         <div class="character-css-summary">
           <strong id="character-css-visible-count">0</strong>
-          <span>visible characters</span>
+          <span data-i18n="characters.cssVisibleCharacters">visible characters</span>
           <span id="character-css-hidden-count">0 hidden</span>
         </div>
         <button class="input-btn" id="character-css-hidden-btn" type="button">
           <i class="bi bi-eye"></i>
-          Hidden
+          <span data-i18n="characters.cssHidden">Hidden</span>
         </button>
         <button
           class="input-btn"
@@ -250,15 +250,15 @@
           type="button"
         >
           <i class="bi bi-shuffle"></i>
-          Randomize
+          <span data-i18n="characters.cssRandomize">Randomize</span>
         </button>
         <button class="input-btn" id="character-css-preview-btn" type="button">
           <i class="bi bi-eye-fill"></i>
-          Preview
+          <span data-i18n="characters.cssPreview">Preview</span>
         </button>
         <button class="input-btn" id="character-css-slots-btn" type="button">
           <i class="bi bi-table"></i>
-          Used Slots
+          <span data-i18n="characters.cssUsedSlots">Used Slots</span>
         </button>
         <button
           class="input-btn"
@@ -266,7 +266,7 @@
           type="button"
         >
           <i class="bi bi-collection-fill"></i>
-          New Group
+          <span data-i18n="characters.cssNewGroup">New Group</span>
         </button>
         <button
           class="input-btn character-css-save-btn"
@@ -274,30 +274,24 @@
           type="button"
         >
           <i class="bi bi-floppy-fill"></i>
-          Apply Layout
+          <span data-i18n="characters.cssApplyLayout">Apply Layout</span>
         </button>
         <button class="input-btn" id="character-css-echo-btn" type="button">
           <i class="bi bi-person-plus-fill"></i>
-          Echo Slot
+          <span data-i18n="characters.cssEchoSlot">Echo Slot</span>
         </button>
       </div>
 
       <div class="character-css-workspace">
         <div class="character-css-grid-panel">
-          <div class="character-css-grid-panel-header">
-            <div>
-              <strong>Not Hidden</strong>
-              <span>Drag to reorder. Right click or eye icon to hide.</span>
-            </div>
-          </div>
           <div class="character-css-grid" id="character-css-grid"></div>
         </div>
 
         <aside class="character-css-inspector" id="character-css-inspector">
           <div class="character-css-inspector-empty">
             <i class="bi bi-cursor"></i>
-            <strong>Select a character</strong>
-            <span>Edit PRC data, names and slot labels from here.</span>
+            <strong data-i18n="characters.cssSelectCharacter">Select a character</strong>
+            <span data-i18n="characters.cssSelectCharacterHint">Edit PRC data, names and slot labels from here.</span>
           </div>
         </aside>
       </div>

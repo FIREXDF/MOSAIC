@@ -5,6 +5,10 @@ class CharactersCssInspectorSection {
     this.manager = manager;
   }
 
+  tr(key: string, fallback: string, params: Record<string, string> = {}) {
+    return escapeHtml(this.manager.t(key, fallback, params));
+  }
+
   setCssInspectorSaving(saving: boolean) {
     const inspector = document.querySelector<HTMLElement>(
       '#character-css-inspector',
@@ -48,8 +52,8 @@ class CharactersCssInspectorSection {
       inspector.innerHTML = `
 <div class="character-css-inspector-empty">
 <i class="bi bi-cursor"></i>
-<strong>Select a character</strong>
-<span>Edit PRC data, names and slot labels from here.</span>
+<strong>${escapeHtml(this.manager.t('characters.cssSelectCharacter', 'Select a character'))}</strong>
+<span>${escapeHtml(this.manager.t('characters.cssSelectCharacterHint', 'Edit PRC data, names and slot labels from here.'))}</span>
 </div>
 `;
       return;
@@ -82,17 +86,17 @@ ${character.imageUrl ? `<img src="${escapeHtml(character.imageUrl)}" alt="${esca
 <div class="character-css-inspector-actions">
 <button class="input-btn" type="button" data-css-action="duplicate-character">
 <i class="bi bi-copy"></i>
-Duplicate
+${escapeHtml(this.manager.t('characters.cssDuplicate', 'Duplicate'))}
 </button>
-${this.manager.cssGroups.size > 0 ? `<button class="input-btn" type="button" data-css-action="move-to-group"><i class="bi bi-folder-symlink"></i>Move to Group</button>` : ''}
+${this.manager.cssGroups.size > 0 ? `<button class="input-btn" type="button" data-css-action="move-to-group"><i class="bi bi-folder-symlink"></i>${escapeHtml(this.manager.t('characters.cssMoveToGroup', 'Move to Group'))}</button>` : ''}
 <button class="input-btn character-css-danger-btn" type="button" data-css-action="remove-character">
 <i class="bi bi-trash3"></i>
-Remove
+${escapeHtml(this.manager.t('common.remove', 'Remove'))}
 </button>
 </div>
 <div class="character-css-tabs">
-${tabButton('prc', 'PRC Data')}
-${tabButton('msbt', 'MSBT Names')}
+${tabButton('prc', this.tr('characters.cssPrcData', 'PRC Data'))}
+${tabButton('msbt', this.tr('characters.cssMsbtNames', 'MSBT Names'))}
 </div>
 ${this.manager.cssPanelMode === 'prc' ? this.renderCssPrcPanel(character) : this.renderCssMsbtPanel(character, slot)}
 `;
@@ -156,25 +160,25 @@ ${this.manager.cssPanelMode === 'prc' ? this.renderCssPrcPanel(character) : this
 </div>
 <div class="character-css-form">
   <label class="character-css-field">
-    <span>Group Display Name</span>
+    <span>${this.tr('characters.cssGroupDisplayName', 'Group Display Name')}</span>
     <input type="text" data-css-group-name value="${escapeHtml(group.displayName)}">
   </label>
   <label class="character-css-field">
-    <span>Name ID</span>
+    <span>${this.tr('characters.cssNameId', 'Name ID')}</span>
     <input type="text" value="${escapeHtml(group.nameId)}" readonly>
   </label>
   <div class="character-css-group-summary">
     <i class="bi bi-people-fill"></i>
     <strong>${members.length}</strong>
-    <span>character${members.length === 1 ? '' : 's'} in this group</span>
+    <span>${members.length === 1 ? this.tr('characters.cssGroupMemberOne', 'character in this group') : this.tr('characters.cssGroupMemberMany', 'characters in this group')}</span>
   </div>
   <button class="input-btn" type="button" data-css-action="open-group">
     <i class="bi bi-folder2-open"></i>
-    Manage Group
+    ${escapeHtml(this.manager.t('characters.cssManageGroup', 'Manage Group'))}
   </button>
-  <button class="input-btn character-css-danger-btn" type="button" data-css-action="remove-group" ${members.length > 0 ? 'disabled title="Move every member out before deleting this group"' : ''}>
+  <button class="input-btn character-css-danger-btn" type="button" data-css-action="remove-group" ${members.length > 0 ? `disabled title="${this.tr('characters.cssDeleteGroupBlocked', 'Move every member out before deleting this group')}"` : ''}>
     <i class="bi bi-trash3"></i>
-    Delete Empty Group
+    ${this.tr('characters.cssDeleteEmptyGroup', 'Delete Empty Group')}
   </button>
 </div>`;
 
@@ -205,14 +209,23 @@ ${this.manager.cssPanelMode === 'prc' ? this.renderCssPrcPanel(character) : this
   removeCssGroup(group: CharacterCssEntry) {
     if ((this.manager.cssGroups.get(group.id)?.length || 0) > 0) {
       window.toastManager?.warning?.(
-        'Move every member out of the group before deleting it.',
+        this.manager.t(
+          'characters.cssDeleteGroupMembersFirst',
+          'Move every member out of the group before deleting it.',
+        ),
         4000,
       );
       return;
     }
     if (this.manager.cssCreatedGroups.has(group.id)) {
       if (
-        !window.confirm(`Delete the empty CSS group “${group.displayName}”?`)
+        !window.confirm(
+          this.manager.t(
+            'characters.cssDeleteGroupConfirm',
+            'Delete the empty CSS group “{{name}}”?',
+            { name: group.displayName },
+          ),
+        )
       ) {
         return;
       }
@@ -278,7 +291,7 @@ ${options
       'fighter_type_other',
     ];
     const echoOptions = [
-      { value: '', label: 'None' },
+      { value: '', label: this.manager.t('characters.cssNone', 'None') },
       ...this.manager.cssEditor
         .getAllCssCharacters()
         .filter((entry) => !entry.isGroup && entry.id !== character.id)
@@ -290,29 +303,29 @@ ${options
 
     return `
 <div class="character-css-form">
-${field('Character ID', 'uiCharaId', this.manager.cssImages.getCssCharacterLookupId(character))}
-${field('CSS Display Name', 'displayName', character.displayName)}
-${field('Series ID', 'uiSeriesId', character.uiSeriesId)}
-${field('Name ID', 'nameId', character.nameId)}
-${field('Fighter Kind', 'fighterKind', character.fighterKind)}
-${field('Fighter Kind Corps', 'fighterKindCorps', character.fighterKindCorps)}
-${select('Echo Fighter', 'altCharaId', character.altCharaId, echoOptions)}
+${field(this.tr('characters.cssFieldCharacterId', 'Character ID'), 'uiCharaId', this.manager.cssImages.getCssCharacterLookupId(character))}
+${field(this.tr('characters.cssFieldDisplayName', 'CSS Display Name'), 'displayName', character.displayName)}
+${field(this.tr('characters.cssFieldSeriesId', 'Series ID'), 'uiSeriesId', character.uiSeriesId)}
+${field(this.tr('characters.cssNameId', 'Name ID'), 'nameId', character.nameId)}
+${field(this.tr('characters.cssFighterKind', 'Fighter Kind'), 'fighterKind', character.fighterKind)}
+${field(this.tr('characters.cssFieldFighterKindCorps', 'Fighter Kind Corps'), 'fighterKindCorps', character.fighterKindCorps)}
+${select(this.tr('characters.cssFieldEchoFighter', 'Echo Fighter'), 'altCharaId', character.altCharaId, echoOptions)}
 ${select(
-  'Fighter Type',
+  this.tr('characters.cssFieldFighterType', 'Fighter Type'),
   'fighterType',
   character.fighterType,
   fighterTypes.map((value) => ({ value, label: value })),
 )}
 <div class="character-css-form-grid">
-${field('Exhibit Year', 'exhibitYear', character.exhibitYear, 'number')}
-${field('Colors', 'colorNum', character.colorNum, 'number')}
-${field('Color Start', 'colorStartIndex', character.colorStartIndex, 'number')}
+${field(this.tr('characters.cssFieldExhibitYear', 'Exhibit Year'), 'exhibitYear', character.exhibitYear, 'number')}
+${field(this.tr('characters.cssColors', 'Colors'), 'colorNum', character.colorNum, 'number')}
+${field(this.tr('characters.cssFieldColorStart', 'Color Start'), 'colorStartIndex', character.colorStartIndex, 'number')}
 </div>
 <div class="character-css-check-grid">
-${checkbox('Can Select', 'canSelect', character.canSelect)}
-${checkbox('Is Mii', 'isMii', character.isMii)}
-${checkbox('Is Boss', 'isBoss', character.isBoss)}
-${checkbox('Hidden Boss', 'isHiddenBoss', character.isHiddenBoss)}
+${checkbox(this.tr('characters.cssFieldCanSelect', 'Can Select'), 'canSelect', character.canSelect)}
+${checkbox(this.tr('characters.cssFieldIsMii', 'Is Mii'), 'isMii', character.isMii)}
+${checkbox(this.tr('characters.cssFieldIsBoss', 'Is Boss'), 'isBoss', character.isBoss)}
+${checkbox(this.tr('characters.cssFieldHiddenBoss', 'Hidden Boss'), 'isHiddenBoss', character.isHiddenBoss)}
 </div>
 </div>
 `;
@@ -322,7 +335,7 @@ ${checkbox('Hidden Boss', 'isHiddenBoss', character.isHiddenBoss)}
     const slotOptions = character.slots
       .map(
         (entry) =>
-          `<option value="${entry.slotIndex}" ${entry.slotIndex === slot.slotIndex ? 'selected' : ''}>Slot ${entry.slotIndex + 1}</option>`,
+          `<option value="${entry.slotIndex}" ${entry.slotIndex === slot.slotIndex ? 'selected' : ''}>${this.tr('characters.cssSlotNumber', 'Slot {{number}}', { number: String(entry.slotIndex + 1) })}</option>`,
       )
       .join('');
     const field = (
@@ -343,7 +356,7 @@ ${
     return `
 <div class="character-css-form">
 <label class="character-css-field">
-<span>Selected Slot</span>
+<span>${this.tr('characters.cssSelectedSlot', 'Selected Slot')}</span>
 <select data-css-field="selectedSlot">${slotOptions}</select>
 </label>
 <div class="character-css-form-grid">

@@ -5,6 +5,10 @@ class CharactersCssSlotsSection {
     this.manager = manager;
   }
 
+  tr(key: string, fallback: string, params: Record<string, string> = {}) {
+    return escapeHtml(this.manager.t(key, fallback, params));
+  }
+
   async openEchoSlotWizard() {
     if (
       this.manager.cssSaving ||
@@ -37,11 +41,11 @@ class CharactersCssSlotsSection {
     modal.innerHTML = `
 <div class="character-modal character-css-duplicate-modal">
 <div class="character-modal-header">
-<h2>Create Echo Slot</h2>
+<h2>${this.tr('characters.cssCreateEchoSlot', 'Create Echo Slot')}</h2>
 <button class="character-modal-close" type="button"><i class="bi bi-x-lg"></i></button>
 </div>
 <form class="character-modal-body character-css-duplicate-form">
-<label class="character-css-field"><span>Installed mod</span><select name="installedMod"><option value="">Select mod...</option>${[
+<label class="character-css-field"><span>${this.tr('characters.cssInstalledMod', 'Installed mod')}</span><select name="installedMod"><option value="">${this.tr('characters.cssSelectModPlaceholder', 'Select mod...')}</option>${[
       ...installedMods.entries(),
     ]
       .sort(([, left], [, right]) => left.localeCompare(right))
@@ -50,19 +54,19 @@ class CharactersCssSlotsSection {
           `<option value="${escapeHtml(modPath)}">${escapeHtml(modName)}</option>`,
       )
       .join('')}</select></label>
-<button class="input-btn" type="button" data-action="browse">Choose external mod</button>
+<button class="input-btn" type="button" data-action="browse">${this.tr('characters.cssChooseExternalMod', 'Choose external mod')}</button>
 <input name="modPath" type="hidden" required>
-<label class="character-css-field"><span>Base fighter</span><select name="sourceCharacterId">${characters.map((character) => `<option value="${escapeHtml(character.id)}" ${character.id === selected.id ? 'selected' : ''}>${escapeHtml(character.displayName)} (${escapeHtml(character.nameId)})</option>`).join('')}</select></label>
-<div class="character-css-duplicate-error" data-role="detection">Select a mod.</div>
-<label class="character-css-field"><span>New Name ID</span><input name="newNameId" value="${escapeHtml(`${selected.nameId}_echo`)}" autocomplete="off"></label>
-<label class="character-css-field"><span>Display Name</span><input name="newDisplayName" value="${escapeHtml(`${selected.displayName} Echo`)}" autocomplete="off"></label>
+<label class="character-css-field"><span>${this.tr('characters.cssBaseFighter', 'Base fighter')}</span><select name="sourceCharacterId">${characters.map((character) => `<option value="${escapeHtml(character.id)}" ${character.id === selected.id ? 'selected' : ''}>${escapeHtml(character.displayName)} (${escapeHtml(character.nameId)})</option>`).join('')}</select></label>
+<div class="character-css-duplicate-error" data-role="detection">${this.tr('characters.cssSelectAMod', 'Select a mod.')}</div>
+<label class="character-css-field"><span>${this.tr('characters.cssNewNameId', 'New Name ID')}</span><input name="newNameId" value="${escapeHtml(`${selected.nameId}_echo`)}" autocomplete="off"></label>
+<label class="character-css-field"><span>${this.tr('characters.cssDisplayName', 'Display Name')}</span><input name="newDisplayName" value="${escapeHtml(`${selected.displayName} Echo`)}" autocomplete="off"></label>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-<label class="character-css-field"><span>Colors</span><input name="colorCount" type="number" min="1" max="8" value="8"></label>
-<label class="character-css-field"><span>Start</span><input name="colorStartIndex" type="number" min="0" max="255" value="8"></label>
+<label class="character-css-field"><span>${this.tr('characters.cssColors', 'Colors')}</span><input name="colorCount" type="number" min="1" max="8" value="8"></label>
+<label class="character-css-field"><span>${this.tr('characters.cssStart', 'Start')}</span><input name="colorStartIndex" type="number" min="0" max="255" value="8"></label>
 </div>
-<label class="character-css-field"><span>Base model</span><select name="useTwoBaseModels"><option value="false">One model: c00</option><option value="true">Two models: c00 / c01</option></select></label>
+<label class="character-css-field"><span>${this.tr('characters.cssBaseModel', 'Base model')}</span><select name="useTwoBaseModels"><option value="false">${this.tr('characters.cssOneModel', 'One model: c00')}</option><option value="true">${this.tr('characters.cssTwoModels', 'Two models: c00 / c01')}</option></select></label>
 <div class="character-css-duplicate-error" data-role="error" hidden></div>
-<div class="character-css-duplicate-actions"><button class="input-btn" type="button" data-action="cancel">Cancel</button><button class="input-btn character-css-save-btn" type="submit"><i class="bi bi-magic"></i>Create Echo</button></div>
+<div class="character-css-duplicate-actions"><button class="input-btn" type="button" data-action="cancel">${this.tr('characters.cssCancel', 'Cancel')}</button><button class="input-btn character-css-save-btn" type="submit"><i class="bi bi-magic"></i>${this.tr('characters.cssCreateEcho', 'Create Echo')}</button></div>
 </form>
 </div>`;
     document.body.appendChild(modal);
@@ -129,12 +133,29 @@ class CharactersCssSlotsSection {
         }
         detectionEl.textContent =
           detected.length === 1
-            ? `Detected: ${base.displayName} (${base.nameId})`
-            : `Several fighters detected (${detected.map((character) => character.nameId).join(', ')}). Verify base fighter.`;
+            ? this.manager.t(
+                'characters.cssEchoDetected',
+                'Detected: {{name}} ({{nameId}})',
+                { name: base.displayName, nameId: base.nameId },
+              )
+            : this.manager.t(
+                'characters.cssEchoSeveralDetected',
+                'Several fighters detected ({{list}}). Verify base fighter.',
+                {
+                  list: detected
+                    .map((character) => character.nameId)
+                    .join(', '),
+                },
+              );
         detectionEl.hidden = false;
         detectionEl.style.color = 'var(--success-color, #2ea043)';
       } catch (error) {
-        detectionEl.textContent = error.message || 'Mod detection failed.';
+        detectionEl.textContent =
+          error.message ||
+          this.manager.t(
+            'characters.cssModDetectionFailed',
+            'Mod detection failed.',
+          );
         detectionEl.hidden = false;
         detectionEl.style.color = '';
       }
@@ -156,7 +177,10 @@ class CharactersCssSlotsSection {
       const data = new FormData(form);
       const modPath = String(data.get('modPath') || '').trim();
       if (!modPath) {
-        errorEl.textContent = 'Select mod folder.';
+        errorEl.textContent = this.manager.t(
+          'characters.cssSelectModFolder',
+          'Select mod folder.',
+        );
         errorEl.hidden = false;
         return;
       }
@@ -166,7 +190,7 @@ class CharactersCssSlotsSection {
       const createButtonHtml = createButton.innerHTML;
       this.manager.cssSaving = true;
       createButton.disabled = true;
-      createButton.innerHTML = '<i class="bi bi-arrow-repeat"></i> Creating...';
+      createButton.innerHTML = `<i class="bi bi-arrow-repeat"></i> ${this.tr('characters.cssCreating', 'Creating...')}`;
       try {
         const result = await window.electronAPI.createEchoSlot({
           sourceCharacterId: String(data.get('sourceCharacterId')),
@@ -178,16 +202,27 @@ class CharactersCssSlotsSection {
           modPath,
         });
         if (!result.success)
-          throw new Error(result.error || 'Echo creation failed');
+          throw new Error(
+            result.error ||
+              this.manager.t('characters.cssUnknownError', 'Unknown error'),
+          );
         const warnings = Array.isArray(result.warnings) ? result.warnings : [];
         if (warnings.length > 0) {
           window.toastManager?.warning?.(
-            `Echo created. ${warnings.join(' ')}`,
+            this.manager.t(
+              'characters.cssEchoCreatedWarnings',
+              'Echo created. {{warnings}}',
+              { warnings: warnings.join(' ') },
+            ),
             8000,
           );
         } else {
           window.toastManager?.success?.(
-            `Echo ${result.newUiCharaId} created.`,
+            this.manager.t(
+              'characters.cssEchoCreated',
+              'Echo {{id}} created.',
+              { id: result.newUiCharaId },
+            ),
             5000,
           );
         }
@@ -196,7 +231,12 @@ class CharactersCssSlotsSection {
         this.manager.cssSelectedCharacterId = result.newUiCharaId;
         close();
       } catch (error) {
-        errorEl.textContent = error.message || 'Echo creation failed.';
+        errorEl.textContent =
+          error.message ||
+          this.manager.t(
+            'characters.cssEchoCreationFailed',
+            'Echo creation failed.',
+          );
         errorEl.hidden = false;
       } finally {
         this.manager.cssSaving = false;
@@ -240,7 +280,10 @@ class CharactersCssSlotsSection {
       });
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to duplicate character');
+        throw new Error(
+          result.error ||
+            this.manager.t('characters.cssUnknownError', 'Unknown error'),
+        );
       }
 
       this.manager.cssVisibleCharacters = result.visibleCharacters.map(
@@ -259,7 +302,10 @@ class CharactersCssSlotsSection {
       this.manager.cssCharacterUpdates.clear();
       this.manager.cssDirty = true;
       window.toastManager?.success?.(
-        'Character duplicated. Apply Layout to generate the mod.',
+        this.manager.t(
+          'characters.cssDuplicated',
+          'Character duplicated. Apply Layout to generate the mod.',
+        ),
         4000,
       );
     } catch (error) {
@@ -268,7 +314,15 @@ class CharactersCssSlotsSection {
         error,
       );
       window.toastManager?.error(
-        `Failed to duplicate character: ${error.message || 'Unknown error'}`,
+        this.manager.t(
+          'characters.cssDuplicateFailed',
+          'Failed to duplicate character: {{error}}',
+          {
+            error:
+              error.message ||
+              this.manager.t('characters.cssUnknownError', 'Unknown error'),
+          },
+        ),
         5000,
       );
     } finally {
@@ -297,30 +351,30 @@ class CharactersCssSlotsSection {
       modal.innerHTML = `
 <div class="character-modal character-css-duplicate-modal">
 <div class="character-modal-header">
-<h2>Duplicate ${escapeHtml(character.displayName)}</h2>
+<h2>${this.tr('characters.cssDuplicateTitle', 'Duplicate {{name}}', { name: character.displayName })}</h2>
 <button class="character-modal-close" type="button">
 <i class="bi bi-x-lg"></i>
 </button>
 </div>
 <form class="character-modal-body character-css-duplicate-form">
 <label class="character-css-field">
-<span>New Character ID</span>
+<span>${this.tr('characters.cssNewCharacterId', 'New Character ID')}</span>
 <input name="newUiCharaId" value="ui_chara_${escapeHtml(suggestedNameId)}" autocomplete="off">
 </label>
 <label class="character-css-field">
-<span>New Name ID</span>
+<span>${this.tr('characters.cssNewNameId', 'New Name ID')}</span>
 <input name="newNameId" value="${escapeHtml(suggestedNameId)}" autocomplete="off">
 </label>
 <label class="character-css-field">
-<span>Display Name</span>
+<span>${this.tr('characters.cssDisplayName', 'Display Name')}</span>
 <input name="newDisplayName" value="${escapeHtml(`${character.displayName} Copy`)}" autocomplete="off">
 </label>
 <div class="character-css-duplicate-error" hidden></div>
 <div class="character-css-duplicate-actions">
-<button class="input-btn" type="button" data-action="cancel">Cancel</button>
+<button class="input-btn" type="button" data-action="cancel">${this.tr('characters.cssCancel', 'Cancel')}</button>
 <button class="input-btn character-css-save-btn" type="submit">
 <i class="bi bi-copy"></i>
-Duplicate
+${this.tr('characters.cssDuplicate', 'Duplicate')}
 </button>
 </div>
 </form>
@@ -362,13 +416,19 @@ Duplicate
         const newDisplayName = String(data.get('newDisplayName') || '').trim();
 
         if (!newUiCharaId.startsWith('ui_chara_')) {
-          errorEl.textContent = 'Character ID must start with ui_chara_.';
+          errorEl.textContent = this.manager.t(
+            'characters.cssCharacterIdPrefix',
+            'Character ID must start with ui_chara_.',
+          );
           errorEl.hidden = false;
           return;
         }
 
         if (!newNameId) {
-          errorEl.textContent = 'Name ID cannot be empty.';
+          errorEl.textContent = this.manager.t(
+            'characters.cssEmptyNameId',
+            'Name ID cannot be empty.',
+          );
           errorEl.hidden = false;
           return;
         }
@@ -418,7 +478,10 @@ Duplicate
           });
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to remove character');
+        throw new Error(
+          result.error ||
+            this.manager.t('characters.cssUnknownError', 'Unknown error'),
+        );
       }
 
       this.manager.cssVisibleCharacters = result.visibleCharacters.map(
@@ -448,8 +511,14 @@ Duplicate
       } else {
         window.toastManager?.success?.(
           isEcho
-            ? 'Echo removed. Original mod slots and files restored.'
-            : 'Character removed. Apply Layout to generate the mod.',
+            ? this.manager.t(
+                'characters.cssEchoRemoved',
+                'Echo removed. Original mod slots and files restored.',
+              )
+            : this.manager.t(
+                'characters.cssCharacterRemoved',
+                'Character removed. Apply Layout to generate the mod.',
+              ),
           4000,
         );
       }
@@ -459,7 +528,15 @@ Duplicate
         error,
       );
       window.toastManager?.error(
-        `Failed to remove character: ${error.message || 'Unknown error'}`,
+        this.manager.t(
+          'characters.cssRemoveFailed',
+          'Failed to remove character: {{error}}',
+          {
+            error:
+              error.message ||
+              this.manager.t('characters.cssUnknownError', 'Unknown error'),
+          },
+        ),
         5000,
       );
     } finally {
@@ -481,7 +558,7 @@ Duplicate
       modal.innerHTML = `
 <div class="character-modal character-css-remove-modal">
 <div class="character-modal-header">
-<h2>Remove Character</h2>
+<h2>${this.tr('characters.cssRemoveCharacter', 'Remove Character')}</h2>
 <button class="character-modal-close" type="button">
 <i class="bi bi-x-lg"></i>
 </button>
@@ -498,14 +575,20 @@ ${character.imageUrl ? `<img src="${escapeHtml(character.imageUrl)}" alt="${esca
 </div>
 <p>${
         this.manager.cssEditor.isManagedEchoCharacter(character)
-          ? 'This removes the Echo and automatically restores its detected mod files, slots, config, and UI names.'
-          : 'This removes the entry from the generated Character CSS data. Apply Layout after removing to rebuild the mod.'
+          ? this.tr(
+              'characters.cssRemoveEchoHint',
+              'This removes the Echo and automatically restores its detected mod files, slots, config, and UI names.',
+            )
+          : this.tr(
+              'characters.cssRemoveHint',
+              'This removes the entry from the generated Character CSS data. Apply Layout after removing to rebuild the mod.',
+            )
       }</p>
 <div class="character-css-duplicate-actions">
-<button class="input-btn" type="button" data-action="cancel">Cancel</button>
+<button class="input-btn" type="button" data-action="cancel">${this.tr('characters.cssCancel', 'Cancel')}</button>
 <button class="input-btn character-css-danger-btn" type="button" data-action="confirm-remove">
 <i class="bi bi-trash3"></i>
-Remove
+${this.tr('characters.cssRemove', 'Remove')}
 </button>
 </div>
 </div>
@@ -543,17 +626,17 @@ Remove
     modal.innerHTML = `
 <div class="character-modal character-css-duplicate-modal">
   <div class="character-modal-header">
-    <h2>Create CSS Group</h2>
+    <h2>${this.tr('characters.cssCreateGroupTitle', 'Create CSS Group')}</h2>
     <button class="character-modal-close" type="button"><i class="bi bi-x-lg"></i></button>
   </div>
   <form class="character-modal-body character-css-duplicate-form">
-    <label class="character-css-field"><span>Group ID</span><input name="groupId" value="ui_chara_" autocomplete="off"></label>
-    <label class="character-css-field"><span>Name ID</span><input name="nameId" autocomplete="off"></label>
-    <label class="character-css-field"><span>Display Name</span><input name="displayName" autocomplete="off"></label>
+    <label class="character-css-field"><span>${this.tr('characters.cssGroupId', 'Group ID')}</span><input name="groupId" value="ui_chara_" autocomplete="off"></label>
+    <label class="character-css-field"><span>${this.tr('characters.cssNameId', 'Name ID')}</span><input name="nameId" autocomplete="off"></label>
+    <label class="character-css-field"><span>${this.tr('characters.cssDisplayName', 'Display Name')}</span><input name="displayName" autocomplete="off"></label>
     <div class="character-css-duplicate-error" hidden></div>
     <div class="character-css-duplicate-actions">
-      <button class="input-btn" type="button" data-action="cancel">Cancel</button>
-      <button class="input-btn character-css-save-btn" type="submit"><i class="bi bi-collection-fill"></i>Create Group</button>
+      <button class="input-btn" type="button" data-action="cancel">${this.tr('characters.cssCancel', 'Cancel')}</button>
+      <button class="input-btn character-css-save-btn" type="submit"><i class="bi bi-collection-fill"></i>${this.tr('characters.cssCreateGroup', 'Create Group')}</button>
     </div>
   </form>
 </div>`;
@@ -590,11 +673,22 @@ Remove
         );
         let message = '';
         if (id === 'ui_chara_' || !nameId || !displayName) {
-          message = 'All group fields are required.';
+          message = this.manager.t(
+            'characters.cssGroupFieldsRequired',
+            'All group fields are required.',
+          );
         } else if (ids.has(id)) {
-          message = `The ID ${id} already exists.`;
+          message = this.manager.t(
+            'characters.cssIdExists',
+            'The ID {{id}} already exists.',
+            { id },
+          );
         } else if (nameIds.has(nameId)) {
-          message = `The Name ID ${nameId} already exists.`;
+          message = this.manager.t(
+            'characters.cssNameIdExists',
+            'The Name ID {{id}} already exists.',
+            { id: nameId },
+          );
         }
         if (message) {
           if (error) {
@@ -657,7 +751,7 @@ Remove
     modal.className =
       'character-modal-overlay character-css-duplicate-modal-overlay';
     const options = [
-      '<option value="">Root / Displayed</option>',
+      `<option value="">${this.tr('characters.cssRootDisplayed', 'Root / Displayed')}</option>`,
       ...[...this.manager.cssGroups.keys()].map((groupId) => {
         const group = this.manager.cssEditor.findCssCharacter(groupId);
         return `<option value="${escapeHtml(groupId)}" ${character.groupId === groupId ? 'selected' : ''}>${escapeHtml(group?.displayName || groupId)}</option>`;
@@ -666,14 +760,14 @@ Remove
     modal.innerHTML = `
 <div class="character-modal character-css-duplicate-modal">
   <div class="character-modal-header">
-    <h2>Move ${escapeHtml(character.displayName)}</h2>
+    <h2>${this.tr('characters.cssMoveTitle', 'Move {{name}}', { name: character.displayName })}</h2>
     <button class="character-modal-close" type="button"><i class="bi bi-x-lg"></i></button>
   </div>
   <form class="character-modal-body character-css-duplicate-form">
-    <label class="character-css-field"><span>Destination</span><select name="groupId">${options}</select></label>
+    <label class="character-css-field"><span>${this.tr('characters.cssDestination', 'Destination')}</span><select name="groupId">${options}</select></label>
     <div class="character-css-duplicate-actions">
-      <button class="input-btn" type="button" data-action="cancel">Cancel</button>
-      <button class="input-btn character-css-save-btn" type="submit"><i class="bi bi-folder-symlink"></i>Move</button>
+      <button class="input-btn" type="button" data-action="cancel">${this.tr('characters.cssCancel', 'Cancel')}</button>
+      <button class="input-btn character-css-save-btn" type="submit"><i class="bi bi-folder-symlink"></i>${this.tr('characters.cssMove', 'Move')}</button>
     </div>
   </form>
 </div>`;
@@ -755,7 +849,7 @@ Remove
     <button class="character-modal-close" type="button"><i class="bi bi-x-lg"></i></button>
   </div>
   <div class="character-modal-body">
-    <p class="character-css-group-help">Characters inside a group keep their own display order. Use the arrows to reorder or return one to the root list.</p>
+    <p class="character-css-group-help">${this.tr('characters.cssGroupHelp', 'Characters inside a group keep their own display order. Use the arrows to reorder or return one to the root list.')}</p>
     <div class="character-css-hidden-list">
       ${
         members
@@ -767,14 +861,14 @@ Remove
   </div>
   <button class="character-css-group-character" type="button" data-action="select">${escapeHtml(character.displayName)}</button>
   <div class="character-css-group-actions">
-    <button class="input-btn" type="button" data-action="up" ${index === 0 ? 'disabled' : ''} title="Move up"><i class="bi bi-arrow-up"></i></button>
-    <button class="input-btn" type="button" data-action="down" ${index === members.length - 1 ? 'disabled' : ''} title="Move down"><i class="bi bi-arrow-down"></i></button>
-    <button class="input-btn" type="button" data-action="ungroup" title="Move to root"><i class="bi bi-box-arrow-up-right"></i></button>
+    <button class="input-btn" type="button" data-action="up" ${index === 0 ? 'disabled' : ''} title="${this.tr('characters.cssMoveUp', 'Move up')}"><i class="bi bi-arrow-up"></i></button>
+    <button class="input-btn" type="button" data-action="down" ${index === members.length - 1 ? 'disabled' : ''} title="${this.tr('characters.cssMoveDown', 'Move down')}"><i class="bi bi-arrow-down"></i></button>
+    <button class="input-btn" type="button" data-action="ungroup" title="${this.tr('characters.cssMoveToRoot', 'Move to root')}"><i class="bi bi-box-arrow-up-right"></i></button>
   </div>
 </div>`,
           )
           .join('') ||
-        '<div class="characters-empty-state">This group is empty. Select a fighter and use “Move to Group”.</div>'
+        `<div class="characters-empty-state">${this.tr('characters.cssGroupEmpty', 'This group is empty. Select a fighter and use “Move to Group”.')}</div>`
       }
     </div>
   </div>
@@ -912,7 +1006,7 @@ Remove
     modal.innerHTML = `
 <div class="character-modal character-css-hidden-modal">
 <div class="character-modal-header">
-<h2>Hidden CSS Characters</h2>
+<h2>${this.tr('characters.cssHiddenTitle', 'Hidden CSS Characters')}</h2>
 <button class="character-modal-close" type="button">
 <i class="bi bi-x-lg"></i>
 </button>
@@ -931,13 +1025,13 @@ ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(character.dis
 <span>${escapeHtml(character.displayName)}</span>
 <button class="input-btn" type="button" data-action="unhide-character">
 <i class="bi bi-eye"></i>
-Unhide
+${this.tr('characters.cssUnhide', 'Unhide')}
 </button>
 </div>
 `;
     })
     .join('') ||
-  '<div class="characters-empty-state">No hidden characters</div>'
+  `<div class="characters-empty-state">${this.tr('characters.cssNoHidden', 'No hidden characters')}</div>`
 }
 </div>
 </div>
@@ -967,8 +1061,7 @@ Unhide
             hiddenList &&
             !hiddenList.querySelector('.character-css-hidden-row')
           ) {
-            hiddenList.innerHTML =
-              '<div class="characters-empty-state">No hidden characters</div>';
+            hiddenList.innerHTML = `<div class="characters-empty-state">${this.tr('characters.cssNoHidden', 'No hidden characters')}</div>`;
           }
         });
       });
@@ -1032,9 +1125,13 @@ Unhide
             .join('\n');
           const isConflict = characters.length > 1;
           const stateLabel = isConflict
-            ? `${characters.length} characters conflict`
-            : 'Slot used';
-          return `<td class="${isConflict ? 'is-conflict' : 'is-used'}" title="${escapeHtml(names)}" data-character-id="${escapeHtml(characters[0].id)}" role="button" tabindex="0" aria-label="${escapeHtml(`${fighterKind}, slot ${slot}: ${stateLabel}`)}"><span>${isConflict ? characters.length : '<i class="bi bi-check2"></i>'}</span></td>`;
+            ? this.manager.t(
+                'characters.cssSlotConflict',
+                '{{count}} characters conflict',
+                { count: String(characters.length) },
+              )
+            : this.manager.t('characters.cssSlotUsed', 'Slot used');
+          return `<td class="${isConflict ? 'is-conflict' : 'is-used'}" title="${escapeHtml(names)}" data-character-id="${escapeHtml(characters[0].id)}" role="button" tabindex="0" aria-label="${this.tr('characters.cssSlotAria', '{{fighter}}, slot {{slot}}: {{state}}', { fighter: fighterKind, slot: String(slot), state: stateLabel })}"><span>${isConflict ? characters.length : '<i class="bi bi-check2"></i>'}</span></td>`;
         }).join('');
         return `<tr><th class="character-css-slots-fighter" scope="row"><span>${escapeHtml(fighterKind)}</span></th>${cells}</tr>`;
       })
@@ -1045,35 +1142,35 @@ Unhide
     <div class="character-css-slots-heading">
       <span class="character-css-slots-heading-icon"><i class="bi bi-grid-3x3-gap-fill"></i></span>
       <div>
-        <h2>Used Slots</h2>
-        <p>Review fighter slot allocation and resolve overlaps.</p>
+        <h2>${this.tr('characters.cssUsedSlots', 'Used Slots')}</h2>
+        <p>${this.tr('characters.cssUsedSlotsHint', 'Review fighter slot allocation and resolve overlaps.')}</p>
       </div>
     </div>
-    <button class="character-modal-close" type="button" aria-label="Close Used Slots"><i class="bi bi-x-lg"></i></button>
+    <button class="character-modal-close" type="button" aria-label="${this.tr('characters.cssCloseUsedSlots', 'Close Used Slots')}"><i class="bi bi-x-lg"></i></button>
   </div>
   <div class="character-css-slots-summary">
-    <div class="character-css-slots-stats" aria-label="Slot summary">
-      <span><strong>${usage.size}</strong> fighter kinds</span>
-      <span><strong>${usedSlotCount}</strong> used slots</span>
-      <span class="${conflictCount > 0 ? 'has-conflicts' : ''}"><strong>${conflictCount}</strong> conflicts</span>
+    <div class="character-css-slots-stats" aria-label="${this.tr('characters.cssSlotSummary', 'Slot summary')}">
+      <span><strong>${usage.size}</strong> ${this.tr('characters.cssFighterKinds', 'fighter kinds')}</span>
+      <span><strong>${usedSlotCount}</strong> ${this.tr('characters.cssUsedSlotsCount', 'used slots')}</span>
+      <span class="${conflictCount > 0 ? 'has-conflicts' : ''}"><strong>${conflictCount}</strong> ${this.tr('characters.cssConflicts', 'conflicts')}</span>
     </div>
-    <div class="character-css-slots-legend" aria-label="Legend">
-      <span class="is-used"><i></i>Used</span>
-      <span class="is-conflict"><i></i>Conflict</span>
-      <span class="is-empty"><i></i>Available</span>
+    <div class="character-css-slots-legend" aria-label="${this.tr('characters.cssLegend', 'Legend')}">
+      <span class="is-used"><i></i>${this.tr('characters.cssUsed', 'Used')}</span>
+      <span class="is-conflict"><i></i>${this.tr('characters.cssConflict', 'Conflict')}</span>
+      <span class="is-empty"><i></i>${this.tr('characters.cssAvailable', 'Available')}</span>
     </div>
   </div>
   <div class="character-css-slots-scroll">
     ${
       rows
         ? `<table class="character-css-slots-table">
-      <thead><tr><th class="character-css-slots-fighter" scope="col"><span>Fighter Kind</span></th>${header}</tr></thead>
+      <thead><tr><th class="character-css-slots-fighter" scope="col"><span>${this.tr('characters.cssFighterKind', 'Fighter Kind')}</span></th>${header}</tr></thead>
       <tbody>${rows}</tbody>
     </table>`
         : `<div class="character-css-slots-empty">
       <i class="bi bi-grid-3x3-gap"></i>
-      <strong>No fighter slots found</strong>
-      <span>Import a Character CSS source to inspect its slot allocation.</span>
+      <strong>${this.tr('characters.cssNoFighterSlots', 'No fighter slots found')}</strong>
+      <span>${this.tr('characters.cssNoFighterSlotsHint', 'Import a Character CSS source to inspect its slot allocation.')}</span>
     </div>`
     }
   </div>
