@@ -35,6 +35,7 @@
     "gsap": "3.12.5",
     "lottie-web": "5.12.2",
     "node-7z": "^3.0.0",
+    "node-fetch": "file:./shims/node-fetch",
     "posthog-node": "^5.21.2"
   },
   "devDependencies": {
@@ -49,7 +50,7 @@
   },
   "overrides": {
     "brace-expansion": "5.0.9",
-    "node-fetch": "file:./shims/node-fetch"
+    "node-fetch": "$node-fetch"
   },
   "build": {
     "appId": "com.shatteredchaos.mosaic",
