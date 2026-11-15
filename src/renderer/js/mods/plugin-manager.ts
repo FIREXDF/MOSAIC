@@ -6,6 +6,8 @@ export interface Plugin {
   filePath: string;
   enabled?: boolean;
   version?: string | null;
+  backupVersion?: string | null;
+  hasBackup?: boolean;
 }
 
 type RecordedVersionMismatch = {
@@ -357,6 +359,16 @@ ${
 <i class="bi bi-toggle-off"></i>
 </button>`
 }
+${
+  plugin.hasBackup
+    ? `<button class="action-btn-small restore-plugin-btn" data-plugin-id="${plugin.id}" title="${escapeHtml(
+        window.i18n?.t?.('plugins.restorePreviousVersion') ||
+          'Restore previous version',
+      )}">
+<i class="bi bi-arrow-counterclockwise"></i>
+</button>`
+    : ''
+}
 <button class="action-btn-small delete-plugin-btn" data-plugin-id="${
       plugin.id
     }" title="Delete">
@@ -372,6 +384,13 @@ ${
         this.togglePlugin(plugin.id);
       });
     }
+
+    div
+      .querySelector<HTMLElement>('.restore-plugin-btn')
+      ?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.restorePlugin(plugin.id);
+      });
 
     const deleteBtn = div.querySelector<HTMLElement>('.delete-plugin-btn');
     if (deleteBtn) {
@@ -491,6 +510,33 @@ ${
     }
   }
 
+  async restorePlugin(pluginId: string) {
+    const plugin = this.plugins.find((p) => p.id === pluginId);
+    if (!plugin) return;
+
+    const confirmed = await window.modalManager?.confirmModWarning(
+      'restorePlugin',
+      plugin.backupVersion
+        ? `${plugin.name} (v${plugin.backupVersion.replace(/^v/i, '')})`
+        : plugin.name,
+    );
+    if (!confirmed) return;
+
+    const result = await window.electronAPI.restorePluginBackup(
+      plugin.filePath,
+    );
+    if (result.success) {
+      window.toastManager?.success('toasts.pluginRestored', 3000, {
+        name: plugin.name,
+      });
+    } else {
+      window.toastManager?.error('toasts.failedToRestorePlugin', 5000, {
+        error: result.error,
+      });
+    }
+    this.refreshPlugins();
+  }
+
   async executeDeletePlugin(plugin) {
     if (!window.electronAPI || !window.electronAPI.deletePlugin) {
       console.error('Electron API not available');
@@ -505,7 +551,20 @@ ${
     }
 
     try {
-      const result = await window.electronAPI.deletePlugin(plugin.filePath);
+      let result = await window.electronAPI.deletePlugin(plugin.filePath);
+
+      if (
+        !result.success &&
+        result.code === 'TRASH_UNAVAILABLE' &&
+        (await window.modalManager?.confirmModWarning(
+          'permanentDeleteFile',
+          plugin.name,
+        ))
+      ) {
+        result = await window.electronAPI.deletePlugin(plugin.filePath, {
+          permanent: true,
+        });
+      }
 
       if (result.success) {
         setTimeout(() => {
@@ -574,6 +633,19 @@ ${
         .catch(() => null)) || {}) as Record<string, string>;
       const versionOf = (name: string) =>
         versions[name.replace(/\.nro$/i, '')] || null;
+      const backupsResult = await window.electronAPI
+        .listPluginBackups()
+        .catch(() => null);
+      const backups = new Map(
+        (backupsResult?.success ? backupsResult.backups : []).map((backup) => [
+          backup.installedFileName.toLowerCase(),
+          backup,
+        ]),
+      );
+      const backupFields = (name: string) => {
+        const backup = backups.get(name.toLowerCase());
+        return { hasBackup: !!backup, backupVersion: backup?.version ?? null };
+      };
       const allPlugins: Plugin[] = [];
       let idCounter = 1;
 
@@ -585,6 +657,7 @@ ${
           status: 'active',
           filePath: plugin.path,
           version: versionOf(plugin.name),
+          ...backupFields(plugin.name),
         });
       }
 
@@ -596,6 +669,7 @@ ${
           status: 'disabled',
           filePath: plugin.path,
           version: versionOf(plugin.name),
+          ...backupFields(plugin.name),
         });
       }
 
@@ -1026,7 +1100,13 @@ ${
     }
   }
 
-  async updatePlugin(pluginName, downloadUrl, pluginPath, targetVersion) {
+  async updatePlugin(
+    pluginName,
+    downloadUrl,
+    pluginPath,
+    targetVersion,
+    reinstallAll = false,
+  ) {
     if (!window.electronAPI || !window.electronAPI.updatePlugin) {
       console.error('Electron API not available');
       return false;
@@ -1042,6 +1122,7 @@ ${
         downloadUrl,
         pluginPath,
         targetVersion,
+        reinstallAll,
       );
 
       if (result.success) {

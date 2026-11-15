@@ -127,6 +127,43 @@ class SettingsMaintenanceSection {
       deleteSlotBackupsBtn.dataset.listenerAttached = 'true';
     }
 
+    const deletePluginBackupsBtn = document.querySelector<HTMLButtonElement>(
+      '#delete-plugin-backups-btn',
+    );
+    if (
+      deletePluginBackupsBtn &&
+      !deletePluginBackupsBtn.dataset.listenerAttached
+    ) {
+      deletePluginBackupsBtn.addEventListener('click', async () => {
+        if (deletePluginBackupsBtn.disabled) return;
+        if (
+          !(await window.modalManager?.confirmModWarning('deletePluginBackups'))
+        ) {
+          return;
+        }
+
+        deletePluginBackupsBtn.disabled = true;
+        try {
+          const result = await window.electronAPI.deletePluginBackups();
+          if (result.success) {
+            window.toastManager?.success('toasts.pluginBackupsDeleted', 3000, {
+              count: result.count,
+            });
+            window.pluginManager?.refreshPlugins();
+          } else {
+            window.toastManager?.error(
+              'toasts.failedToDeletePluginBackups',
+              3000,
+              { error: result.error },
+            );
+          }
+        } finally {
+          deletePluginBackupsBtn.disabled = false;
+        }
+      });
+      deletePluginBackupsBtn.dataset.listenerAttached = 'true';
+    }
+
     const exportDebugReportBtn = document.querySelector<HTMLButtonElement>(
       '#export-debug-report-btn',
     );

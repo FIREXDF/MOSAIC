@@ -145,6 +145,9 @@ const electronAPI = {
     'apply-plugin-recorded-versions',
   ),
   updatePlugin: invokePluginHandler('update-plugin'),
+  listPluginBackups: invokePluginHandler('list-plugin-backups'),
+  restorePluginBackup: invokePluginHandler('restore-plugin-backup'),
+  deletePluginBackups: invokePluginHandler('delete-plugin-backups'),
   inspectCskCollectionArchive: invokePluginHandler(
     'inspect-csk-collection-archive',
   ),

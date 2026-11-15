@@ -270,20 +270,6 @@ export default class PluginUtils {
     }
   }
 
-  static deletePlugin(pluginPath) {
-    try {
-      if (!fs.existsSync(pluginPath)) {
-        return { success: false, error: 'Plugin file does not exist' };
-      }
-
-      fs.unlinkSync(pluginPath);
-      return { success: true };
-    } catch (error) {
-      console.error('Error deleting plugin:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
   static copyPlugin(sourcePath, targetFolder) {
     try {
       targetFolder = resolveVirtualPath(targetFolder);

@@ -487,7 +487,9 @@
     "viewOnGitHub": "Voir sur GitHub",
     "pathNotConfigured": "Chemin des Plugins Non Configuré",
     "pathNotConfiguredDesc": "Veuillez configurer le chemin du dossier plugins dans les Paramètres pour gérer vos plugins. Ceci est requis pour installer et mettre à jour les plugins.",
-    "goToSettings": "Aller aux Paramètres"
+    "goToSettings": "Aller aux Paramètres",
+    "restorePreviousVersion": "Restaurer la version précédente",
+    "reinstallAll": "Tout réinstaller"
   },
   "settings": {
     "socialFeatures": "Fonctionnalités sociales",
@@ -997,7 +999,10 @@
     "spamToasts": "Spam Toasts",
     "spamToastsDesc": "Envoyer 5 toasts rapidement pour tester le stacking",
     "seeConfigJson": "Voir config.json",
-    "seeConfigJsonDesc": "Ouvrir le fichier de configuration dans votre éditeur par défaut"
+    "seeConfigJsonDesc": "Ouvrir le fichier de configuration dans votre éditeur par défaut",
+    "pluginBackups": "Sauvegardes de Plugins",
+    "deletePluginBackups": "Supprimer les sauvegardes de plugins",
+    "deletePluginBackupsDesc": "Supprimer les anciennes versions de plugins gardées après chaque mise à jour"
   },
   "modals": {
     "pluginsPathRequired": {
@@ -1067,12 +1072,24 @@
       "permanentDeleteFileTitle": "Corbeille indisponible",
       "permanentDeleteFileMessage": "La Corbeille ne fonctionne pas sur ce lecteur (souvent le cas des cartes SD).",
       "permanentDeleteFileHint": "Supprimer maintenant effacera le fichier définitivement. Impossible de revenir en arrière.",
-      "permanentDeleteFileConfirm": "Supprimer définitivement"
+      "permanentDeleteFileConfirm": "Supprimer définitivement",
+      "deletePluginBackupsTitle": "Supprimer les sauvegardes de plugins",
+      "deletePluginBackupsMessage": "Supprimer toutes les anciennes versions de plugins gardées après une mise à jour ?",
+      "deletePluginBackupsHint": "Tu ne pourras plus revenir à la version d’avant une mise à jour. Impossible de revenir en arrière.",
+      "deletePluginBackupsConfirm": "Supprimer les sauvegardes",
+      "restorePluginTitle": "Restaurer la version précédente",
+      "restorePluginMessage": "Revenir à la version de {{name}} d’avant la dernière mise à jour ?",
+      "restorePluginHint": "La version actuelle sera remplacée. Tu pourras refaire la mise à jour plus tard.",
+      "restorePluginConfirm": "Restaurer",
+      "reinstallArcropolisTitle": "Réinstaller ARCropolis",
+      "reinstallArcropolisMessage": "Réinstaller tous les fichiers d’ARCropolis, pas seulement le plugin ?",
+      "reinstallArcropolisHint": "Tes réglages ARCropolis dans ultimate/arcropolis seront remplacés par ceux par défaut.",
+      "reinstallArcropolisConfirm": "Tout réinstaller"
     },
     "deletePlugin": {
       "title": "Supprimer le Plugin",
       "warning": "Êtes-vous sûr de vouloir supprimer",
-      "hint": "Cette action ne peut pas être annulée. Le fichier du plugin sera supprimé définitivement."
+      "hint": "Le fichier du plugin sera mis dans la Corbeille."
     },
     "alert": {
       "title": "Message"
@@ -1846,7 +1863,11 @@
     "soundAssignedNotDisabled": "Sons assignés, mais le mod son n'a pas pu être désactivé : {{error}}",
     "failedToAssignSound": "Échec de l'assignation des sons : {{error}}",
     "noModelForSound": "Aucun mod modèle trouvé pour {{fighter}}",
-    "failedToRestoreSlotBackup": "Échec de la restauration : {{error}}"
+    "failedToRestoreSlotBackup": "Échec de la restauration : {{error}}",
+    "pluginBackupsDeleted": "{{count}} sauvegarde(s) de plugins supprimée(s)",
+    "failedToDeletePluginBackups": "Échec de la suppression des sauvegardes de plugins : {{error}}",
+    "pluginRestored": "Version précédente de {{name}} restaurée",
+    "failedToRestorePlugin": "Échec de la restauration de la version précédente : {{error}}"
   },
   "statusBar": {
     "ready": "Prêt",

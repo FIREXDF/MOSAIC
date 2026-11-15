@@ -488,7 +488,9 @@
     "viewOnGitHub": "View on GitHub",
     "pathNotConfigured": "Plugins Path Not Configured",
     "pathNotConfiguredDesc": "Please configure the plugins folder path in Settings to manage your plugins. This is required to install and update plugins.",
-    "goToSettings": "Go to Settings"
+    "goToSettings": "Go to Settings",
+    "restorePreviousVersion": "Restore previous version",
+    "reinstallAll": "Reinstall all"
   },
   "settings": {
     "socialFeatures": "Social features",
@@ -998,7 +1000,10 @@
     "spamToasts": "Spam Toasts",
     "spamToastsDesc": "Send 5 toasts rapidly to test stacking",
     "seeConfigJson": "See config.json",
-    "seeConfigJsonDesc": "Open the configuration file in your default editor"
+    "seeConfigJsonDesc": "Open the configuration file in your default editor",
+    "pluginBackups": "Plugin Backups",
+    "deletePluginBackups": "Delete Plugin Backups",
+    "deletePluginBackupsDesc": "Remove the previous plugin versions kept after each update"
   },
   "modals": {
     "pluginsPathRequired": {
@@ -1090,12 +1095,24 @@
       "permanentDeleteFileTitle": "Recycle Bin not available",
       "permanentDeleteFileMessage": "The Recycle Bin does not work on this drive (often the case for SD cards).",
       "permanentDeleteFileHint": "Deleting now will permanently remove the file. This cannot be undone.",
-      "permanentDeleteFileConfirm": "Delete permanently"
+      "permanentDeleteFileConfirm": "Delete permanently",
+      "deletePluginBackupsTitle": "Delete plugin backups",
+      "deletePluginBackupsMessage": "Delete every previous plugin version kept after an update?",
+      "deletePluginBackupsHint": "You will no longer be able to go back to the version you had before an update. This cannot be undone.",
+      "deletePluginBackupsConfirm": "Delete backups",
+      "restorePluginTitle": "Restore previous version",
+      "restorePluginMessage": "Go back to the version of {{name}} you had before the last update?",
+      "restorePluginHint": "The current version will be replaced. You can update again later.",
+      "restorePluginConfirm": "Restore",
+      "reinstallArcropolisTitle": "Reinstall ARCropolis",
+      "reinstallArcropolisMessage": "Reinstall every ARCropolis file, not just the plugin?",
+      "reinstallArcropolisHint": "Your ARCropolis settings in ultimate/arcropolis will be replaced by the default ones.",
+      "reinstallArcropolisConfirm": "Reinstall all"
     },
     "deletePlugin": {
       "title": "Delete Plugin",
       "warning": "Are you sure you want to delete",
-      "hint": "This action cannot be undone. The plugin file will be permanently removed."
+      "hint": "The plugin file will be moved to the Recycle Bin."
     },
     "alert": {
       "title": "Message"
@@ -1846,7 +1863,11 @@
     "soundAssignedNotDisabled": "Sounds assigned, but the sound mod could not be disabled: {{error}}",
     "failedToAssignSound": "Failed to assign sounds: {{error}}",
     "noModelForSound": "No model mod found for {{fighter}}",
-    "failedToRestoreSlotBackup": "Failed to restore backup: {{error}}"
+    "failedToRestoreSlotBackup": "Failed to restore backup: {{error}}",
+    "pluginBackupsDeleted": "{{count}} plugin backup(s) deleted",
+    "failedToDeletePluginBackups": "Failed to delete plugin backups: {{error}}",
+    "pluginRestored": "Previous version of {{name}} restored",
+    "failedToRestorePlugin": "Failed to restore the previous version: {{error}}"
   },
   "statusBar": {
     "ready": "Ready",

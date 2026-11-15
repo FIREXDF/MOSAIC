@@ -7,6 +7,7 @@ import {
   findBundledArcropolisDirectory,
   getArcropolisDirectoryForLibrary,
 } from '../utils/arcropolis-installer';
+import { isNroFile, savePluginBackup } from './plugin-backups';
 
 export type PluginInstallResult =
   | {
@@ -112,6 +113,7 @@ export default class PluginUpdateInstaller {
     downloadUrl: string,
     pluginPath: string,
     modsPath?: string | null,
+    options: { reinstallAll?: boolean; previousVersion?: string | null } = {},
   ): Promise<PluginInstallResult> {
     let tempRoot: string | null = null;
     try {
@@ -184,12 +186,22 @@ export default class PluginUpdateInstaller {
         };
       }
 
+      if (!isNroFile(nroFilePath)) {
+        return {
+          success: false,
+          error: 'The downloaded file is not a valid .nro plugin',
+        };
+      }
+
       const pluginDir = path.dirname(pluginPath);
       const finalPluginPath = path.join(pluginDir, actualFileName);
 
       if (!fs.existsSync(pluginDir)) {
         fs.mkdirSync(pluginDir, { recursive: true });
       }
+
+      const isFirstInstall =
+        !fs.existsSync(pluginPath) && !fs.existsSync(finalPluginPath);
 
       if (extractDir && actualFileName.toLowerCase() === 'libarcropolis.nro') {
         const arcropolisSource = findBundledArcropolisDirectory(
@@ -201,11 +213,30 @@ export default class PluginUpdateInstaller {
             pluginDir,
             modsPath,
           );
-          fs.cpSync(arcropolisSource, arcropolisTarget, { recursive: true });
+          fs.cpSync(arcropolisSource, arcropolisTarget, {
+            recursive: true,
+            force: options.reinstallAll || isFirstInstall,
+          });
         }
       }
 
+      if (fs.existsSync(pluginPath)) {
+        savePluginBackup(
+          pluginPath,
+          actualFileName,
+          options.previousVersion ?? null,
+        );
+      }
+
       fs.copyFileSync(nroFilePath, finalPluginPath);
+
+      if (
+        fs.existsSync(pluginPath) &&
+        path.resolve(pluginPath).toLowerCase() !==
+          path.resolve(finalPluginPath).toLowerCase()
+      ) {
+        fs.rmSync(pluginPath, { force: true });
+      }
 
       return {
         success: true,

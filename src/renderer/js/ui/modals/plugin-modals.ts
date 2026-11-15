@@ -43,6 +43,17 @@ export {};
                   data-latest-version="${update.latestVersion || ''}">
             Update
           </button>
+          ${
+            /arcropolis/i.test(update.pluginName) && pluginPath
+              ? `<button class="modal-btn modal-btn-secondary reinstall-plugin-btn"
+                  data-plugin-name="${escapeHtml(update.pluginName)}"
+                  data-download-url="${escapeHtml(update.downloadUrl || '')}"
+                  data-plugin-path="${escapeHtml(pluginPath)}"
+                  data-latest-version="${escapeHtml(update.latestVersion || '')}">
+                  ${escapeHtml(window.i18n?.t?.('plugins.reinstallAll') || 'Reinstall all')}
+                </button>`
+              : ''
+          }
         </div>
       `;
       })
@@ -145,6 +156,38 @@ export {};
         }
       }, 1000);
     });
+
+    modal
+      .querySelectorAll<HTMLButtonElement>('.reinstall-plugin-btn')
+      .forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const { pluginName, downloadUrl, pluginPath, latestVersion } =
+            btn.dataset;
+          if (!downloadUrl || !pluginPath) return;
+          if (
+            !(await this.confirmModWarning('reinstallArcropolis', pluginName))
+          ) {
+            return;
+          }
+
+          btn.disabled = true;
+          const updated = await window.pluginManager?.updatePlugin(
+            pluginName,
+            downloadUrl,
+            pluginPath,
+            latestVersion,
+            true,
+          );
+          btn.disabled = updated === true;
+          if (updated) {
+            modal
+              .querySelector<HTMLButtonElement>(
+                `.update-plugin-btn[data-plugin-path="${CSS.escape(pluginPath)}"]`,
+              )
+              ?.setAttribute('disabled', 'true');
+          }
+        });
+      });
 
     const updateButtons =
       modal.querySelectorAll<HTMLButtonElement>('.update-plugin-btn');
@@ -701,6 +744,15 @@ export {};
                 <i class="bi bi-clock-history"></i>
                 <span data-i18n="plugins.chooseVersion">Choose version</span>
               </button>
+              ${
+                isInstalled && plugin.specialInstaller === 'arcropolis'
+                  ? `<button type="button" role="menuitem" class="marketplace-version-menu-item"
+                      data-reinstall-all="true">
+                <i class="bi bi-arrow-repeat"></i>
+                <span data-i18n="plugins.reinstallAll">Reinstall all</span>
+              </button>`
+                  : ''
+              }
             </div>`
             }
           </div>
@@ -934,6 +986,43 @@ export {};
       });
     });
 
+    const reinstallArcropolisFromCard = async (plugin: any) => {
+      if (!(await this.confirmModWarning('reinstallArcropolis', plugin.name))) {
+        return;
+      }
+      const ssbuVersion =
+        await window.pluginMarketplace.getConfiguredSsbuVersion();
+      const recordedVersion = ((await window.electronAPI.store
+        .get('pluginVersions')
+        .catch(() => null)) || {})['libarcropolis'] as string | undefined;
+      const tag =
+        ssbuVersion === '13.0.4'
+          ? 'v4.0.8'
+          : ssbuVersion === '13.0.5' || !recordedVersion
+            ? 'v4.1.1'
+            : `v${recordedVersion.replace(/^v/i, '')}`;
+      try {
+        const release = await window.electronAPI.getGithubRelease(
+          plugin.repo,
+          tag,
+        );
+        if (!release.success) {
+          throw new Error(release.error || 'ARCropolis release unavailable');
+        }
+        await window.pluginMarketplace.downloadAndInstallPlugin(
+          plugin.name,
+          plugin.repo,
+          { url: release.downloadUrl, version: release.version },
+          undefined,
+          true,
+        );
+      } catch (error) {
+        window.toastManager?.error(
+          `Failed to reinstall ${plugin.name}: ${error.message}`,
+        );
+      }
+    };
+
     const closeVersionMenus = () => {
       container
         .querySelectorAll<HTMLElement>('.marketplace-version-menu')
@@ -986,6 +1075,10 @@ export {};
               const repo =
                 menuItem.dataset.versionRepo || toggle.dataset.pluginRepo;
               const plugin = plugins.find((item) => item.repo === repo);
+              if (menuItem.dataset.reinstallAll && plugin) {
+                void reinstallArcropolisFromCard(plugin);
+                return;
+              }
               const marketplaceModal = toggle.closest<HTMLElement>(
                 '#plugin-marketplace-modal',
               );

@@ -13,6 +13,12 @@ import PluginUpdateChecker, {
   PluginUpdateResult,
 } from '../../plugins/plugin-update-checker';
 import PluginUpdateInstaller from '../../plugins/plugin-update-installer';
+import {
+  deletePluginBackups,
+  listPluginBackups,
+  PluginBackup,
+  restorePluginBackup,
+} from '../../plugins/plugin-backups';
 import store from '../../store/store';
 import {
   handleError,
@@ -23,6 +29,7 @@ import { resolveVirtualPath } from '../../utils/virtual-paths';
 import { HandlerResponse } from '../../types/common';
 import { BaseHandlerArg, GenericHandler } from '../../types/common';
 import { FileExtractor } from '../../utils/file-extractor';
+import { moveToTrash } from '../../utils/trash';
 
 export type PluginHandlers = typeof PluginHandlers;
 
@@ -324,11 +331,67 @@ const PluginHandlers = {
     }
   },
 
-  ['delete-plugin']: async (common: BaseHandlerArg, pluginPath: string) => {
+  ['delete-plugin']: async (
+    common: BaseHandlerArg,
+    pluginPath: string,
+    options: { permanent?: boolean } = {},
+  ) => {
     try {
-      return PluginUtils.deletePlugin(pluginPath);
+      if (!fs.existsSync(pluginPath)) {
+        return createErrorResponse(
+          ErrorCodes.PLUGIN_NOT_FOUND,
+          'Plugin file does not exist',
+        );
+      }
+      return await moveToTrash(pluginPath, options.permanent);
     } catch (error) {
       handleError(error, 'delete-plugin');
+      return createErrorResponse(ErrorCodes.PLUGIN_READ_ERROR, error.message);
+    }
+  },
+
+  ['list-plugin-backups']: async (): HandlerResponse<{
+    backups: PluginBackup[];
+  }> => {
+    try {
+      return { success: true, backups: listPluginBackups() };
+    } catch (error) {
+      handleError(error, 'list-plugin-backups');
+      return createErrorResponse(ErrorCodes.PLUGIN_READ_ERROR, error.message);
+    }
+  },
+
+  ['restore-plugin-backup']: async (
+    common: BaseHandlerArg,
+    pluginPath: string,
+  ): HandlerResponse => {
+    try {
+      const currentPath = resolveVirtualPath(pluginPath);
+      const backup = restorePluginBackup(currentPath);
+      const versions = (store.get('pluginVersions') || {}) as Record<
+        string,
+        string
+      >;
+      delete versions[path.basename(currentPath).replace(/\.nro$/i, '')];
+      const restoredName = backup.fileName.replace(/\.nro$/i, '');
+      if (backup.version) versions[restoredName] = backup.version;
+      else delete versions[restoredName];
+      store.set('pluginVersions', versions);
+      return { success: true };
+    } catch (error) {
+      handleError(error, 'restore-plugin-backup');
+      return createErrorResponse(
+        ErrorCodes.PLUGIN_UPDATE_FAILED,
+        error.message,
+      );
+    }
+  },
+
+  ['delete-plugin-backups']: async (): HandlerResponse<{ count: number }> => {
+    try {
+      return { success: true, count: deletePluginBackups() };
+    } catch (error) {
+      handleError(error, 'delete-plugin-backups');
       return createErrorResponse(ErrorCodes.PLUGIN_READ_ERROR, error.message);
     }
   },
@@ -540,12 +603,25 @@ const PluginHandlers = {
     downloadUrl: string,
     pluginPath: string,
     targetVersion: string | null,
+    reinstallAll = false,
   ) => {
     try {
+      const resolvedPluginPath = resolveVirtualPath(pluginPath);
+      const previousVersions = (store.get('pluginVersions') || {}) as Record<
+        string,
+        string
+      >;
       const result = await PluginUpdateInstaller.installUpdate(
         downloadUrl,
-        resolveVirtualPath(pluginPath),
+        resolvedPluginPath,
         store.get('modsPath') as string | null | undefined,
+        {
+          reinstallAll,
+          previousVersion:
+            previousVersions[
+              path.basename(resolvedPluginPath).replace(/\.nro$/i, '')
+            ] ?? null,
+        },
       );
 
       if (result.success) {

@@ -153,6 +153,7 @@ class PluginMarketplace {
     repo: string,
     downloadInfo: string | { url: string; version: string },
     actualFileName?: string,
+    reinstallAll = false,
   ) {
     if (!window.electronAPI || !window.electronAPI.updatePlugin) {
       console.error('Electron API not available');
@@ -198,6 +199,7 @@ class PluginMarketplace {
         downloadUrl,
         pluginPath,
         targetVersion,
+        reinstallAll,
       );
 
       if (result.success) {

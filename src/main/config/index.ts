@@ -27,6 +27,7 @@ export const PATHS = {
   localesDir: () => path.join(app.getAppPath(), 'assets', 'locales'),
   dataDir: () => path.join(app.getAppPath(), 'assets', 'data'),
   slotBackupsDir: () => path.join(app.getPath('userData'), 'slot-backups'),
+  pluginBackupsDir: () => path.join(app.getPath('userData'), 'plugin-backups'),
 };
 
 export const ENV = {

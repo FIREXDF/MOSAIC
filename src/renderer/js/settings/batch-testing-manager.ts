@@ -1391,7 +1391,16 @@ class BatchTestingManager {
         'success',
       );
     } else {
-      const result = await window.electronAPI.deletePlugin(suspectPath);
+      let result = await window.electronAPI.deletePlugin(suspectPath);
+      if (
+        !result.success &&
+        result.code === 'TRASH_UNAVAILABLE' &&
+        (await window.modalManager?.confirmModWarning('permanentDeleteFile'))
+      ) {
+        result = await window.electronAPI.deletePlugin(suspectPath, {
+          permanent: true,
+        });
+      }
       if (!result.success) {
         throw new Error(result.error || 'Failed to delete plugin');
       }
