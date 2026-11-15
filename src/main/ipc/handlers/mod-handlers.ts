@@ -1,4 +1,4 @@
-import { dialog, IpcMain, BrowserWindow } from 'electron';
+import { dialog, IpcMain, BrowserWindow, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -21,6 +21,8 @@ import {
 } from '../../mod-utils/mod-scanner';
 import { ConfigMode, SlotChanger } from '../../mod-utils/slot-changer';
 import { SoundAssigner } from '../../mod-utils/sound-assigner';
+import { resolveModWarning } from '../../mod-utils/mod-warnings';
+import { PATHS } from '../../config';
 import PluginUpdateChecker, {
   ModUpdateResult,
   ModUpdateWatch,
@@ -544,7 +546,8 @@ const ModHandlers = {
   ['delete-mod']: async (
     common: BaseHandlerArg,
     modPath: string,
-  ): HandlerResponse => {
+    options: { permanent?: boolean } = {},
+  ): HandlerResponse<{ permanent: boolean }> => {
     try {
       if (!fs.existsSync(modPath)) {
         return createErrorResponse(
@@ -552,12 +555,76 @@ const ModHandlers = {
           'Mod folder does not exist',
         );
       }
-      fs.rmSync(modPath, { recursive: true, force: true });
-      return { success: true };
+      const configuredModsPath = store.get('modsPath') as string | null;
+      if (!configuredModsPath) {
+        return createErrorResponse(
+          ErrorCodes.FOLDER_NOT_FOUND,
+          'Mods folder not configured. Please set it in Settings.',
+        );
+      }
+
+      const modsRoot = path.resolve(resolveVirtualPath(configuredModsPath));
+      const allowedRoots = [
+        modsRoot,
+        path.join(path.dirname(modsRoot), '{disabled_mod}'),
+      ];
+      const target = path.resolve(modPath);
+      const isInsideModsFolder = allowedRoots.some((root) => {
+        const relative = path.relative(root, target);
+        return (
+          !!relative && !relative.startsWith('..') && !path.isAbsolute(relative)
+        );
+      });
+
+      if (!isInsideModsFolder) {
+        return createErrorResponse(
+          ErrorCodes.MOD_DELETE_ERROR,
+          'Mod path is outside the mods folder',
+        );
+      }
+
+      if (!options.permanent) {
+        try {
+          await shell.trashItem(target);
+          return { success: true, permanent: false };
+        } catch (trashError) {
+          console.warn('[delete-mod] Recycle bin unavailable:', trashError);
+          return createErrorResponse(
+            ErrorCodes.TRASH_UNAVAILABLE,
+            'The Recycle Bin is not available for this drive',
+          );
+        }
+      }
+
+      fs.rmSync(target, { recursive: true, force: true });
+      return { success: true, permanent: true };
     } catch (error) {
       handleError(error, 'delete-mod');
       return createErrorResponse(ErrorCodes.MOD_DELETE_ERROR, error.message);
     }
+  },
+
+  ['delete-slot-backups']: async (): HandlerResponse<{ count: number }> => {
+    try {
+      const backupsDir = PATHS.slotBackupsDir();
+      const count = fs.existsSync(backupsDir)
+        ? fs.readdirSync(backupsDir).length
+        : 0;
+      fs.rmSync(backupsDir, { recursive: true, force: true });
+      return { success: true, count };
+    } catch (error) {
+      handleError(error, 'delete-slot-backups');
+      return createErrorResponse(ErrorCodes.MOD_DELETE_ERROR, error.message);
+    }
+  },
+
+  ['respond-mod-warning']: async (
+    common: BaseHandlerArg,
+    requestId: string,
+    accepted: boolean,
+  ): HandlerResponse => {
+    resolveModWarning(requestId, accepted === true);
+    return { success: true };
   },
 
   ['delete-conflict-file']: async (

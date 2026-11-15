@@ -537,8 +537,12 @@ export class SlotChanger {
 
   static async backupMod(modPath: string) {
     const backupPath = this.getBackupPath(modPath);
-    await fse.remove(backupPath);
-    await fse.copy(modPath, backupPath);
+    if (await fse.pathExists(backupPath)) return;
+
+    const pendingPath = `${backupPath}.fp-pending`;
+    await fse.remove(pendingPath);
+    await fse.copy(modPath, pendingPath);
+    await fse.move(pendingPath, backupPath);
   }
 
   static async hasBackup(modPath: string): Promise<boolean> {

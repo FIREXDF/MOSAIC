@@ -299,11 +299,10 @@ class DownloadManager {
     const elapsedSeconds = (now - download.lastSpeedSampleTime) / 1000;
     const receivedDelta = receivedBytes - download.lastSpeedSampleBytes;
 
-    if (
-      download.status === 'downloading' &&
-      elapsedSeconds > 0 &&
-      receivedDelta >= 0
-    ) {
+    if (receivedDelta < 0) {
+      download.lastSpeedSampleBytes = receivedBytes;
+      download.lastSpeedSampleTime = now;
+    } else if (download.status === 'downloading' && elapsedSeconds >= 1) {
       const currentSpeed = receivedDelta / elapsedSeconds;
       download.speedBytesPerSecond = download.speedBytesPerSecond
         ? download.speedBytesPerSecond * 0.7 + currentSpeed * 0.3

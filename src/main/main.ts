@@ -10,6 +10,7 @@ import DiscordRPCManager from './discord-rpc';
 import { registerAllHandlers } from './ipc';
 import { PATHS } from './config';
 import autoUpdater from './auto-updater';
+import { setModWarningWindow } from './mod-utils/mod-warnings';
 import {
   initPosthog,
   identifyUser,
@@ -300,6 +301,7 @@ function createWindow(options: CreateWindowOptions = {}) {
 
   autoUpdater.setMainWindow(mainWindow);
   autoUpdater.checkForUpdatesOnStartup();
+  setModWarningWindow(mainWindow);
 
   const fppArg = process.argv.find((arg) => arg.endsWith('.fpp'));
   if (fppArg && fs.existsSync(fppArg)) {

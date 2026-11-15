@@ -267,6 +267,47 @@ class ModalManager {
     });
   }
 
+  confirmModWarning(
+    kind: 'replace' | 'duplicateDisabled' | 'permanentDelete' | 'deleteBackups',
+    name = '',
+  ): Promise<boolean> {
+    const t = (key: string) => window.i18n?.t?.(key, { name }) || key;
+    const copy = (part: string) => t(`modals.modWarning.${kind}${part}`);
+
+    const body = document.createElement('div');
+    const message = document.createElement('p');
+    message.className = 'modal-warning';
+    message.textContent = copy('Message');
+    const hint = document.createElement('p');
+    hint.className = 'modal-hint';
+    hint.textContent = copy('Hint');
+    body.append(message, hint);
+
+    return new Promise((resolve) => {
+      let accepted = false;
+
+      this.showCustomModal({
+        title: copy('Title'),
+        body,
+        clickOverlayToClose: false,
+        buttons:
+          kind === 'duplicateDisabled'
+            ? [{ text: t('common.ok'), type: 'primary' }]
+            : [
+                { text: t('common.cancel'), type: 'cancel' },
+                {
+                  text: copy('Confirm'),
+                  type: 'danger',
+                  onClick: () => {
+                    accepted = true;
+                  },
+                },
+              ],
+        onClose: () => resolve(accepted),
+      });
+    });
+  }
+
   openDeletePluginModal(_plugin, _callback) {}
   closeDeletePluginModal() {}
   confirmDeletePlugin() {}
@@ -456,6 +497,14 @@ class ModalManager {
 if (typeof window !== 'undefined') {
   window.ModalManagerClass = ModalManager;
   const modalManager = (window.modalManager = new ModalManager());
+
+  window.electronAPI?.onModWarningRequest?.(async (request) => {
+    const accepted = await modalManager.confirmModWarning(
+      request.kind,
+      request.modName,
+    );
+    window.electronAPI.respondModWarning(request.requestId, accepted);
+  });
 
   document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.querySelector<HTMLElement>('#modal-overlay');

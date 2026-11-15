@@ -388,8 +388,10 @@ class ProtocolListener {
         window.downloadManager.failDownload(rendererId, data.error);
       }
 
-      if (window.toastManager) {
-        window.toastManager.error('toasts.installationFailed', 3000, {
+      if (data.error === 'Installation cancelled') {
+        window.toastManager?.info('toasts.installationCancelled');
+      } else {
+        window.toastManager?.error('toasts.installationFailed', 3000, {
           error: data.error,
         });
       }

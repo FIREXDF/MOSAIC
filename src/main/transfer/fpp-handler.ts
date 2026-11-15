@@ -380,13 +380,19 @@ export default class FppHandler {
             const sourcePath = path.join(embeddedModsDir, entry.name);
             const destPath = path.join(modsPath, entry.name);
 
-            if (fs.existsSync(destPath)) {
-              fs.rmSync(destPath, { recursive: true, force: true });
+            current++;
+
+            if (
+              fs.existsSync(destPath) &&
+              !(await ModUtils.confirmReplaceMod(entry.name))
+            ) {
+              continue;
             }
 
-            FppHandler.copyDirSync(sourcePath, destPath);
+            await ModUtils.writeModFolder(destPath, async (stagingPath) =>
+              FppHandler.copyDirSync(sourcePath, stagingPath),
+            );
             installedMods.push(entry.name);
-            current++;
 
             sendInstallProgress('installing', 50 + (current / total) * 35, {
               modName: entry.name,

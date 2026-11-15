@@ -1,4 +1,4 @@
-import { app, dialog } from 'electron';
+import { app } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as https from 'https';
@@ -453,7 +453,6 @@ export default class ProtocolHandler {
       console.error('Error handling deep link:', error);
       const cleanUrl = url.replace(PROTOCOL_URL_PREFIX, '');
       this.processingUrls.delete(cleanUrl);
-      this.showError(`Installation failed: ${error.message}`);
       this.sendToRenderer('mod-install-error', { error: error.message });
     }
   }
@@ -601,7 +600,6 @@ export default class ProtocolHandler {
     const _handleSaveError = (error: Error) => {
       console.error('Error during installation:', error);
 
-      this.showError(`Installation failed: ${error.message}`);
       this.sendToRenderer('mod-install-error', {
         downloadId,
         error: error.message,
@@ -692,6 +690,7 @@ export default class ProtocolHandler {
           },
           isCancelled: () =>
             this.activeDownloads.get(downloadId)?.cancelled === true,
+          deleteSource: true,
         },
       );
 
@@ -1478,8 +1477,8 @@ export default class ProtocolHandler {
     }
   }
 
-  showError(message) {
-    dialog.showErrorBox('MOSAIC Protocol Error', message);
+  showError(message: string) {
+    this.sendToRenderer('mod-install-error', { error: message });
   }
 
   async handleFppBatchDownload(
@@ -1579,6 +1578,7 @@ export default class ProtocolHandler {
               fileProgresses[i] = percent;
               updateGlobalProgress();
             },
+            deleteSource: true,
           },
         );
 

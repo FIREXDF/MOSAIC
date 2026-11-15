@@ -25,6 +25,7 @@ import { WindowHandlers } from './ipc/handlers/window-handlers';
 import { DiscordHandlers } from './ipc/handlers/discord-handlers';
 import { AnalyticsHandlers } from './ipc/handlers/analytics-handlers';
 import { ProtocolHandlerEvents } from './protocol/protocol-handler';
+import type { ModWarningRequest } from './mod-utils/mod-warnings';
 import { MainEvents } from './main';
 import { AnimationEvents } from './animations/animation-handler';
 import { UpdateEvents } from './auto-updater';
@@ -121,6 +122,10 @@ const electronAPI = {
   renameMod: invokeModHandler('rename-mod'),
   deleteMod: invokeModHandler('delete-mod'),
   deleteConflictFile: invokeModHandler('delete-conflict-file'),
+  deleteSlotBackups: invokeModHandler('delete-slot-backups'),
+  respondModWarning: invokeModHandler('respond-mod-warning'),
+  onModWarningRequest: (callback: (data: ModWarningRequest) => void) =>
+    ipcRenderer.on('mod-warning-request', (event, data) => callback(data)),
   toggleMod: invokeModHandler('toggle-mod'),
   applyModBatchState: invokeModHandler('apply-mod-batch-state'),
   ensureModsFolderAvailable: invokeModHandler('ensure-mods-folder-available'),

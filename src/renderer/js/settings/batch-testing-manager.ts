@@ -1373,7 +1373,16 @@ class BatchTestingManager {
     }
 
     if (category === 'mods') {
-      const result = await window.electronAPI.deleteMod(suspectPath);
+      let result = await window.electronAPI.deleteMod(suspectPath);
+      if (
+        !result.success &&
+        result.code === 'TRASH_UNAVAILABLE' &&
+        (await window.modalManager?.confirmModWarning('permanentDelete'))
+      ) {
+        result = await window.electronAPI.deleteMod(suspectPath, {
+          permanent: true,
+        });
+      }
       if (!result.success) {
         throw new Error(result.error || 'Failed to delete mod');
       }

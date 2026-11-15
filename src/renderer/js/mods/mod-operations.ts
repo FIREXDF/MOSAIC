@@ -21,6 +21,7 @@ class ModOperations {
   async deleteMods(mods: Mod[]) {
     const failedMods: Array<{ mod: Mod; error: string }> = [];
     let successCount = 0;
+    let permanentDeleteAllowed: boolean | null = null;
 
     for (const mod of mods) {
       if (!mod.path) {
@@ -39,7 +40,19 @@ class ModOperations {
         continue;
       }
 
-      const result = await window.electronAPI.deleteMod(mod.path);
+      let result = await window.electronAPI.deleteMod(mod.path);
+
+      if (!result.success && result.code === 'TRASH_UNAVAILABLE') {
+        permanentDeleteAllowed ??=
+          (await window.modalManager?.confirmModWarning('permanentDelete')) ??
+          false;
+
+        if (permanentDeleteAllowed) {
+          result = await window.electronAPI.deleteMod(mod.path, {
+            permanent: true,
+          });
+        }
+      }
 
       if (result.success) {
         successCount++;

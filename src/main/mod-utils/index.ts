@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as fsPromises from 'fs/promises';
 import * as crypto from 'crypto';
-import { app } from 'electron';
+import { app, shell } from 'electron';
 
 import { ModInstallResult } from '../plugins/plugin-update-installer';
 import { FileExtractor } from '../utils/file-extractor';
@@ -11,6 +11,7 @@ import { CONFLICT_WHITELIST_PATTERNS, PATHS } from '../config';
 import sharedStore from '../store/store';
 import { prcXmlContentsConflict } from './prcxml-conflicts';
 import { SlotChanger } from './slot-changer';
+import { requestModWarning } from './mod-warnings';
 import {
   FIGHTER_SLOT_PATTERN,
   UI_CHARA_DB_PRCXML,
@@ -27,6 +28,7 @@ interface ModInstallOptions {
     file?: string;
   }) => void;
   isCancelled?: () => boolean;
+  deleteSource?: boolean;
 }
 
 interface ModInfo {
@@ -1263,6 +1265,58 @@ export default class ModUtils {
     return textFiles.sort((a, b) => a.localeCompare(b));
   }
 
+  static confirmReplaceMod(modName: string): Promise<boolean> {
+    return requestModWarning('replace', modName);
+  }
+
+  static async writeModFolder(
+    modPath: string,
+    fill: (stagingPath: string) => Promise<void>,
+  ) {
+    const parentDir = path.dirname(modPath);
+    const modName = path.basename(modPath);
+    const stagingPath = path.join(parentDir, `.${modName}.fp-installing`);
+    const oldPath = path.join(parentDir, `.${modName}.fp-old`);
+
+    await fsPromises.rm(stagingPath, { recursive: true, force: true });
+
+    try {
+      await fill(stagingPath);
+
+      await fsPromises.rm(oldPath, { recursive: true, force: true });
+      const hadOld = fs.existsSync(modPath);
+      if (hadOld) {
+        await fsPromises.rename(modPath, oldPath);
+      }
+
+      try {
+        await fsPromises.rename(stagingPath, modPath);
+      } catch (error) {
+        if (hadOld) {
+          await fsPromises.rename(oldPath, modPath);
+        }
+        throw error;
+      }
+
+      if (hadOld) {
+        try {
+          await shell.trashItem(oldPath);
+        } catch {
+          await fsPromises
+            .rm(oldPath, { recursive: true, force: true })
+            .catch((err) =>
+              console.warn('[writeModFolder] Failed to remove old mod:', err),
+            );
+        }
+      }
+    } catch (error) {
+      await fsPromises
+        .rm(stagingPath, { recursive: true, force: true })
+        .catch(() => {});
+      throw error;
+    }
+  }
+
   static async installFromArchive(
     sourceArchivePath: string,
     modsPath: string,
@@ -1415,6 +1469,8 @@ export default class ModUtils {
       dirsWithModFiles = this._gatherDirsWithModFiles(tempExtractDir);
     }
 
+    let declinedCount = 0;
+
     async function _prepareModPath(modDirectory: string) {
       if (options.isCancelled?.()) {
         throw new Error('Installation cancelled');
@@ -1423,81 +1479,89 @@ export default class ModUtils {
       const modName = path.basename(modDirectory);
       const modPath = path.join(modsPath, modName);
 
+      if (
+        fs.existsSync(modPath) &&
+        !(await ModUtils.confirmReplaceMod(modName))
+      ) {
+        declinedCount++;
+        return null;
+      }
+
       resultingMods.push({
         modPath,
         modName,
       });
 
-      try {
-        await fsPromises.access(modPath);
-        await fsPromises.rm(modPath, { recursive: true, force: true });
-      } catch {}
-
       return modPath;
     }
 
     if (!dirsWithModFiles.length && !archiveUltimateRoot) {
-      await this.copyRecursive(
-        tempExtractDir,
-        await _prepareModPath(tempExtractDir),
-        options.isCancelled,
-      );
+      const modPath = await _prepareModPath(tempExtractDir);
+      if (modPath) {
+        await this.writeModFolder(modPath, (stagingPath) =>
+          this.copyRecursive(tempExtractDir, stagingPath, options.isCancelled),
+        );
+      }
     } else {
       for (const dir of dirsWithModFiles) {
         if (options.isCancelled?.()) {
           throw new Error('Installation cancelled');
         }
 
-        const modPath = await _prepareModPath(dir);
-        await this.copyRecursive(dir, modPath, options.isCancelled);
+        const finalModPath = await _prepareModPath(dir);
+        if (!finalModPath) continue;
 
-        if (dir !== topLevelModDir) {
-          const infoTomlSource = path.join(topLevelModDir, 'info.toml');
-          const infoTomlDest = path.join(modPath, 'info.toml');
+        await this.writeModFolder(finalModPath, async (modPath) => {
+          await this.copyRecursive(dir, modPath, options.isCancelled);
 
-          try {
-            await fsPromises.access(infoTomlSource);
-            try {
-              await fsPromises.access(infoTomlDest);
-            } catch {
-              await fsPromises.copyFile(infoTomlSource, infoTomlDest);
-            }
-          } catch {}
-
-          const topLevelTextFiles = (
-            await fsPromises.readdir(topLevelModDir, { withFileTypes: true })
-          ).filter(
-            (entry) =>
-              entry.isFile() &&
-              path.extname(entry.name).toLowerCase() === '.txt',
-          );
-
-          for (const textFile of topLevelTextFiles) {
-            const textFileSource = path.join(topLevelModDir, textFile.name);
-            const textFileDest = path.join(modPath, textFile.name);
+          if (dir !== topLevelModDir) {
+            const infoTomlSource = path.join(topLevelModDir, 'info.toml');
+            const infoTomlDest = path.join(modPath, 'info.toml');
 
             try {
-              await fsPromises.access(textFileDest);
-            } catch {
-              await fsPromises.copyFile(textFileSource, textFileDest);
-            }
-          }
-
-          for (const extension of ['webp', 'jpg', 'jpeg', 'png']) {
-            const previewName = `preview.${extension}`;
-            const previewSource = path.join(topLevelModDir, previewName);
-            const previewDest = path.join(modPath, previewName);
-            try {
-              await fsPromises.access(previewSource);
-              await fsPromises.copyFile(
-                previewSource,
-                previewDest,
-                fs.constants.COPYFILE_EXCL,
-              );
-              break;
+              await fsPromises.access(infoTomlSource);
+              try {
+                await fsPromises.access(infoTomlDest);
+              } catch {
+                await fsPromises.copyFile(infoTomlSource, infoTomlDest);
+              }
             } catch {}
+
+            const topLevelTextFiles = (
+              await fsPromises.readdir(topLevelModDir, { withFileTypes: true })
+            ).filter(
+              (entry) =>
+                entry.isFile() &&
+                path.extname(entry.name).toLowerCase() === '.txt',
+            );
+
+            for (const textFile of topLevelTextFiles) {
+              const textFileSource = path.join(topLevelModDir, textFile.name);
+              const textFileDest = path.join(modPath, textFile.name);
+
+              try {
+                await fsPromises.access(textFileDest);
+              } catch {
+                await fsPromises.copyFile(textFileSource, textFileDest);
+              }
+            }
+
+            for (const extension of ['webp', 'jpg', 'jpeg', 'png']) {
+              const previewName = `preview.${extension}`;
+              const previewSource = path.join(topLevelModDir, previewName);
+              const previewDest = path.join(modPath, previewName);
+              try {
+                await fsPromises.access(previewSource);
+                await fsPromises.copyFile(
+                  previewSource,
+                  previewDest,
+                  fs.constants.COPYFILE_EXCL,
+                );
+                break;
+              } catch {}
+            }
           }
-        }
+        });
       }
     }
 
@@ -1512,13 +1576,19 @@ export default class ModUtils {
       }
     }
 
-    try {
-      await fsPromises.unlink(sourceArchivePath);
-    } catch (err) {
-      console.warn(
-        '[installFromArchive] Failed to delete original archive:',
-        err.message,
-      );
+    if (options.deleteSource) {
+      try {
+        await fsPromises.unlink(sourceArchivePath);
+      } catch (err) {
+        console.warn(
+          '[installFromArchive] Failed to delete original archive:',
+          err.message,
+        );
+      }
+    }
+
+    if (!resultingMods.length && declinedCount > 0) {
+      throw new Error('Installation cancelled');
     }
 
     return resultingMods;
@@ -1527,14 +1597,19 @@ export default class ModUtils {
   static async installFromDirectory(sourceDirPath: string, modsPath: string) {
     modsPath = resolveVirtualPath(modsPath);
     const modName = path.basename(sourceDirPath);
+    const modPath = path.join(modsPath, modName);
 
-    let modPath = path.join(modsPath, modName);
-
-    if (fs.existsSync(modPath)) {
-      fs.rmSync(modPath, { recursive: true, force: true });
+    if (path.resolve(sourceDirPath) === path.resolve(modPath)) {
+      throw new Error('This folder is already in the mods folder');
     }
 
-    fs.renameSync(sourceDirPath, modPath);
+    if (fs.existsSync(modPath) && !(await this.confirmReplaceMod(modName))) {
+      throw new Error('Installation cancelled');
+    }
+
+    await this.writeModFolder(modPath, (stagingPath) =>
+      this.copyRecursive(sourceDirPath, stagingPath),
+    );
 
     return { modPath, modName };
   }
@@ -1643,6 +1718,7 @@ export default class ModUtils {
               console.warn(
                 `[AutoDisable] Cannot move ${modName}, target already exists`,
               );
+              await requestModWarning('duplicateDisabled', modName);
             }
           } catch (disableError) {
             console.error('[AutoDisable] Failed to disable mod:', disableError);

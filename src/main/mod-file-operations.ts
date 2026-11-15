@@ -34,14 +34,26 @@ export class ModFileOperations {
     return arrayOfFiles;
   }
 
+  static resolveInMod(modPath: string, relativePath: string): string {
+    const modRoot = path.resolve(modPath);
+    const fullPath = path.resolve(modRoot, relativePath);
+    const relative = path.relative(modRoot, fullPath);
+
+    if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
+      throw new Error(`Path is outside the mod folder: ${relativePath}`);
+    }
+
+    return fullPath;
+  }
+
   static async renameModFile(
     modPath: string,
     oldPath: string,
     newPath: string,
   ): Promise<boolean> {
     try {
-      const fullOldPath = path.join(modPath, oldPath);
-      const fullNewPath = path.join(modPath, newPath);
+      const fullOldPath = ModFileOperations.resolveInMod(modPath, oldPath);
+      const fullNewPath = ModFileOperations.resolveInMod(modPath, newPath);
 
       await fsp.mkdir(path.dirname(fullNewPath), { recursive: true });
 
@@ -49,7 +61,15 @@ export class ModFileOperations {
         await fsp.rename(fullOldPath, fullNewPath);
       } catch (error: any) {
         if (error.code === 'EPERM') {
-          await fse.copy(fullOldPath, fullNewPath);
+          const targetExisted = await fse.pathExists(fullNewPath);
+          try {
+            await fse.copy(fullOldPath, fullNewPath);
+          } catch (copyError) {
+            if (!targetExisted) {
+              await fse.remove(fullNewPath).catch(() => {});
+            }
+            throw copyError;
+          }
           await fse.remove(fullOldPath);
         } else {
           throw error;
@@ -67,7 +87,7 @@ export class ModFileOperations {
     modPath: string,
     filePath: string,
   ): Promise<boolean> {
-    const fullPath = path.join(modPath, filePath);
+    const fullPath = ModFileOperations.resolveInMod(modPath, filePath);
     try {
       const stat = await fsp.stat(fullPath);
 
