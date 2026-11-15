@@ -91,6 +91,28 @@ export default class FTPClient {
     return copiedCount;
   }
 
+  async removeStaleEntries(localPath: string, remotePath: string) {
+    const remoteEntries = await this.client.list(remotePath);
+
+    for (const entry of remoteEntries) {
+      if (entry.name === '.' || entry.name === '..') continue;
+
+      const localEntryPath = path.join(localPath, entry.name);
+      const remoteEntryPath = `${remotePath}/${entry.name}`;
+      const localStat = await fs.stat(localEntryPath).catch(() => null);
+
+      if (entry.isDirectory) {
+        if (localStat?.isDirectory()) {
+          await this.removeStaleEntries(localEntryPath, remoteEntryPath);
+        } else {
+          await this.client.removeDir(remoteEntryPath);
+        }
+      } else if (!localStat?.isFile()) {
+        await this.client.remove(remoteEntryPath);
+      }
+    }
+  }
+
   async uploadFile(
     localPath: string,
     remotePath: string,

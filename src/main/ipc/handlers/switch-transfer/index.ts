@@ -297,6 +297,12 @@ const SwitchTransferHandlers = {
               remoteItemPath,
               uploadOptions,
             );
+            if (item.remoteBasePath === remoteModsPath) {
+              await ftpClient.removeStaleEntries(
+                item.localPath,
+                remoteItemPath,
+              );
+            }
           } else {
             await ftpClient.uploadFile(
               item.localPath,

@@ -20,6 +20,28 @@ interface DriveTransferFile {
 interface DriveTransferItem {
   itemName: string;
   files: DriveTransferFile[];
+  mirror?: { sourceDirectory: string; destinationDirectory: string };
+}
+
+async function removeStaleEntries(
+  sourceDirectory: string,
+  destinationDirectory: string,
+) {
+  const entries = await fs
+    .readdir(destinationDirectory, { withFileTypes: true })
+    .catch(() => []);
+
+  for (const entry of entries) {
+    const sourcePath = path.join(sourceDirectory, entry.name);
+    const destinationPath = path.join(destinationDirectory, entry.name);
+    const sourceStat = await fs.stat(sourcePath).catch(() => null);
+
+    if (entry.isDirectory() && sourceStat?.isDirectory()) {
+      await removeStaleEntries(sourcePath, destinationPath);
+    } else if (entry.isDirectory() || !sourceStat?.isFile()) {
+      await fs.rm(destinationPath, { recursive: true, force: true });
+    }
+  }
 }
 
 type ProgressCallback = (payload: SwitchTransferProgressPayload) => void;
@@ -193,6 +215,10 @@ async function collectDriveTransferItems(
       items.push({
         itemName: entry.name,
         files: await collectDirectoryFiles(sourcePath, destinationPath),
+        mirror: {
+          sourceDirectory: sourcePath,
+          destinationDirectory: destinationPath,
+        },
       });
     }
   }
@@ -337,6 +363,13 @@ export async function sendModsToDrive(
           currentModName: item.itemName,
           currentFileName: path.basename(file.sourcePath),
         });
+      }
+
+      if (item.mirror) {
+        await removeStaleEntries(
+          item.mirror.sourceDirectory,
+          item.mirror.destinationDirectory,
+        );
       }
     }
 
