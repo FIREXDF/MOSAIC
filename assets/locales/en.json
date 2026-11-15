@@ -1552,7 +1552,7 @@
     "supportersMessage": "Thank you to everyone who supports MOSAIC and helps the project grow.",
     "kofiMember": "Ko-fi Member",
     "becomeMember": "Become a member",
-    "joinDiscord": "Join the MOSAIC Discord",
+    "joinDiscord": "Join the Compages Works Discord",
     "testers": "Testers",
     "oldTesters": "Old Testers",
     "showOldTesters": "See old testers",
@@ -1573,7 +1573,27 @@
     "oldContributor": "Old Contributor of FightPlanner 3",
     "documentation": "Documentation",
     "translation": "Translation",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "aiDisclosure": {
+      "button": "AI Usage Disclosure",
+      "title": "AI Usage Disclosure",
+      "lastUpdated": "Last updated: October 29, 2026",
+      "intro": "The Lead Developer uses AI tools for part of the development work. Contributors may use them too (see below).",
+      "whereTitle": "Where the Lead Developer uses AI",
+      "tools": "The tools used are Claude Opus 5.5 and Claude Sonnet 5.5. Contributors may use other tools.",
+      "use1": "Finding, investigating and fixing bugs",
+      "use2": "Researching ways to implement specific features",
+      "use3": "Writing, debugging and improving code for some features",
+      "use4": "Exploring solutions to technical problems",
+      "use5": "Translating and localizing the application",
+      "use6": "Writing and refining some of the text shown in the app",
+      "leadTitle": "What the Lead Developer does",
+      "leadWork": "The Lead Developer writes the application’s code. That includes designing and building new features, and developing and maintaining the core systems and architecture. They also diagnose and fix bugs, design the UI, and work on usability and accessibility. They test features and check for regressions, prepare and publish releases, and maintain and review the codebase.",
+      "leadResponsibility": "AI tools assist this work but do not replace it. The Lead Developer makes the final decisions and is responsible for integrating, testing and releasing all code.",
+      "contributorsTitle": "Contributors",
+      "contributorsUse": "Contributors may use AI tools, including tools other than the ones listed above, and they may use them for more than the tasks in that list. Every contribution is reviewed, whether or not AI was involved, and that includes the Lead Developer’s own AI-assisted changes.",
+      "contributorsPr": "When opening a pull request, contributors must state whether they used AI and how."
+    }
   },
   "tutorial": {
     "welcomeTitle": "Welcome to MOSAIC 4",

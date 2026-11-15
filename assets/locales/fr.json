@@ -1552,7 +1552,7 @@
     "supportersMessage": "Merci à toutes les personnes qui soutiennent MOSAIC et contribuent à faire grandir le projet.",
     "kofiMember": "Membre Ko-fi",
     "becomeMember": "Devenir membre",
-    "joinDiscord": "Rejoindre le Discord de MOSAIC",
+    "joinDiscord": "Rejoindre le Discord de Compages Works",
     "testers": "Testeurs",
     "oldTesters": "Anciens testeurs",
     "showOldTesters": "Voir les anciens testeurs",
@@ -1573,7 +1573,27 @@
     "oldContributor": "Ancien contributeur de FightPlanner 3",
     "documentation": "Documentation",
     "translation": "Traduction",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "aiDisclosure": {
+      "button": "Déclaration d’utilisation de l’IA",
+      "title": "Déclaration d’utilisation de l’IA",
+      "lastUpdated": "Dernière mise à jour : 29 octobre 2026",
+      "intro": "Le développeur principal utilise des outils d’IA pour une partie du travail de développement. Les contributeurs peuvent aussi en utiliser (voir plus bas).",
+      "whereTitle": "Où le développeur principal utilise l’IA",
+      "tools": "Les outils utilisés sont Claude Opus 5.5 et Claude Sonnet 5.5. Les contributeurs peuvent utiliser d’autres outils.",
+      "use1": "Trouver, analyser et corriger des bugs",
+      "use2": "Rechercher des façons d’implémenter certaines fonctionnalités",
+      "use3": "Écrire, déboguer et améliorer le code de certaines fonctionnalités",
+      "use4": "Explorer des solutions à des problèmes techniques",
+      "use5": "Traduire et localiser l’application",
+      "use6": "Rédiger et améliorer une partie des textes affichés dans l’application",
+      "leadTitle": "Ce que fait le développeur principal",
+      "leadWork": "Le développeur principal écrit le code de l’application. Cela comprend la conception et la création de nouvelles fonctionnalités, ainsi que le développement et la maintenance des systèmes principaux et de l’architecture. Il diagnostique et corrige aussi les bugs, conçoit l’interface et travaille sur l’ergonomie et l’accessibilité. Il teste les fonctionnalités et vérifie les régressions, prépare et publie les versions, et maintient et relit le code.",
+      "leadResponsibility": "Les outils d’IA assistent ce travail mais ne le remplacent pas. Le développeur principal prend les décisions finales et est responsable de l’intégration, des tests et de la publication de tout le code.",
+      "contributorsTitle": "Contributeurs",
+      "contributorsUse": "Les contributeurs peuvent utiliser des outils d’IA, y compris d’autres que ceux listés ci-dessus, et pour plus de tâches que celles de cette liste. Chaque contribution est relue, que l’IA ait été utilisée ou non, y compris les changements du développeur principal faits avec l’IA.",
+      "contributorsPr": "En ouvrant une pull request, les contributeurs doivent indiquer s’ils ont utilisé l’IA et comment."
+    }
   },
   "tutorial": {
     "welcomeTitle": "Bienvenue dans MOSAIC 4",

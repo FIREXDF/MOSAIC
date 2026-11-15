@@ -1806,6 +1806,41 @@ body.no-animations .credits-logo-hint {
   color: var(--text-secondary);
 }
 
+.credits-header .credits-toggle-old-testers {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin: 14px auto 0;
+}
+
+.ai-disclosure-body h4 {
+  margin: 18px 0 8px;
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.ai-disclosure-body p,
+.ai-disclosure-body li {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.ai-disclosure-body p {
+  margin: 0 0 10px;
+}
+
+.ai-disclosure-body p:first-child {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.ai-disclosure-body ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
 .credits-section-old-testers {
   padding: 20px;
   background: linear-gradient(

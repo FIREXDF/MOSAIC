@@ -36,12 +36,25 @@
       type="button"
       class="credits-become-member-btn"
       onclick="window.electronAPI.openUrl('https://discord.gg/KVjvEeAeXz')"
-      aria-label="Join the MOSAIC Discord"
+      aria-label="Join the Compages Works Discord"
       data-i18n-aria-label
       data-i18n="fightplanner.joinDiscord"
     >
       <i class="bi bi-discord" aria-hidden="true"></i>
-      <span data-i18n="fightplanner.joinDiscord">Join the MOSAIC Discord</span>
+      <span data-i18n="fightplanner.joinDiscord"
+        >Join the Compages Works Discord</span
+      >
+    </button>
+    <button
+      type="button"
+      class="credits-toggle-old-testers"
+      onclick="window.fightPlannerManager.showAiDisclosure()"
+      aria-haspopup="dialog"
+    >
+      <i class="bi bi-robot" aria-hidden="true"></i>
+      <span data-i18n="fightplanner.aiDisclosure.button"
+        >AI Usage Disclosure</span
+      >
     </button>
   </div>
 

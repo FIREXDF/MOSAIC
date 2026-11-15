@@ -233,6 +233,7 @@ class FightPlannerManager {
         '#app-version-display',
       );
       if (headerVersion && versionInfo.version) {
+        headerVersion.removeAttribute('data-i18n');
         headerVersion.textContent = versionInfo.version;
       } else {
         console.warn('Header version element not found or no version');
@@ -473,6 +474,89 @@ class FightPlannerManager {
       'aria-hidden',
       String(!this.oldTestersExpanded),
     );
+  }
+
+  showAiDisclosure() {
+    const t = (key: string, fallback: string) =>
+      window.i18n?.t?.(`fightplanner.aiDisclosure.${key}`) || fallback;
+
+    const body = document.createElement('div');
+    body.className = 'ai-disclosure-body';
+
+    const addText = (tag: string, key: string, fallback: string) => {
+      const el = document.createElement(tag);
+      el.textContent = t(key, fallback);
+      body.appendChild(el);
+    };
+
+    addText('p', 'lastUpdated', 'Last updated: October 29, 2026');
+    addText(
+      'p',
+      'intro',
+      'The Lead Developer uses AI tools for part of the development work. Contributors may use them too (see below).',
+    );
+
+    addText('h4', 'whereTitle', 'Where the Lead Developer uses AI');
+    addText(
+      'p',
+      'tools',
+      'The tools used are Claude Opus 5.5 and Claude Sonnet 5.5. Contributors may use other tools.',
+    );
+    const uses = document.createElement('ul');
+    [
+      'Finding, investigating and fixing bugs',
+      'Researching ways to implement specific features',
+      'Writing, debugging and improving code for some features',
+      'Exploring solutions to technical problems',
+      'Translating and localizing the application',
+      'Writing and refining some of the text shown in the app',
+    ].forEach((fallback, index) => {
+      const item = document.createElement('li');
+      item.textContent = t(`use${index + 1}`, fallback);
+      uses.appendChild(item);
+    });
+    body.appendChild(uses);
+
+    addText('h4', 'leadTitle', 'What the Lead Developer does');
+    addText(
+      'p',
+      'leadWork',
+      'The Lead Developer writes the application’s code. That includes designing and building new features, and developing and maintaining the core systems and architecture. They also diagnose and fix bugs, design the UI, and work on usability and accessibility. They test features and check for regressions, prepare and publish releases, and maintain and review the codebase.',
+    );
+    addText(
+      'p',
+      'leadResponsibility',
+      'AI tools assist this work but do not replace it. The Lead Developer makes the final decisions and is responsible for integrating, testing and releasing all code.',
+    );
+
+    addText('h4', 'contributorsTitle', 'Contributors');
+    addText(
+      'p',
+      'contributorsUse',
+      'Contributors may use AI tools, including tools other than the ones listed above, and they may use them for more than the tasks in that list. Every contribution is reviewed, whether or not AI was involved, and that includes the Lead Developer’s own AI-assisted changes.',
+    );
+    addText(
+      'p',
+      'contributorsPr',
+      'When opening a pull request, contributors must state whether they used AI and how.',
+    );
+
+    const modal = window.modalManager.showCustomModal({
+      id: 'ai-disclosure',
+      title: t('title', 'AI Usage Disclosure'),
+      body,
+      size: 'large',
+      buttons: [
+        {
+          text: window.i18n?.t?.('common.close') || 'Close',
+          type: 'primary',
+        },
+      ],
+    });
+
+    const icon = document.createElement('i');
+    icon.className = 'bi bi-robot';
+    modal.querySelector<HTMLElement>('.modal-header h3')?.prepend(icon);
   }
 
   async reinitialize() {
