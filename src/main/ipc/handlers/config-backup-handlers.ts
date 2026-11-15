@@ -112,15 +112,15 @@ function validateBackup(value: unknown): FightPlannerConfigBackup {
 }
 
 function restoreDataFiles(files: BackedUpFile[]) {
-  const userDataDir = app.getPath('userData');
   const dataDir = getUserDataPath(DATA_DIR_NAME);
-  if (fs.existsSync(dataDir)) {
-    for (const entry of fs.readdirSync(dataDir, { withFileTypes: true })) {
-      if (entry.isFile()) {
-        fs.unlinkSync(path.join(dataDir, entry.name));
-      }
-    }
-  }
+  const stagingDir = `${dataDir}.fp-restore`;
+  const previousDir = `${dataDir}.fp-previous`;
+
+  fs.rmSync(stagingDir, { recursive: true, force: true });
+  fs.rmSync(previousDir, { recursive: true, force: true });
+  ensureDirectory(stagingDir);
+  ensureDirectory(previousDir);
+  ensureDirectory(dataDir);
 
   for (const file of files) {
     const relativePath = file.relativePath.replace(/\\/g, '/');
@@ -132,13 +132,39 @@ function restoreDataFiles(files: BackedUpFile[]) {
       relativeSegments.length !== 2 ||
       relativeSegments.some((segment) => !segment || segment === '..')
     ) {
+      fs.rmSync(stagingDir, { recursive: true, force: true });
       throw new Error(`Unsafe backup path: ${file.relativePath}`);
     }
 
-    const targetPath = path.join(userDataDir, ...relativeSegments);
-    ensureDirectory(path.dirname(targetPath));
-    fs.writeFileSync(targetPath, file.content, 'utf8');
+    fs.writeFileSync(
+      path.join(stagingDir, relativeSegments[1]),
+      file.content,
+      'utf8',
+    );
   }
+
+  const previousFiles = fs
+    .readdirSync(dataDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name);
+
+  try {
+    for (const name of previousFiles) {
+      fs.renameSync(path.join(dataDir, name), path.join(previousDir, name));
+    }
+    for (const name of fs.readdirSync(stagingDir)) {
+      fs.renameSync(path.join(stagingDir, name), path.join(dataDir, name));
+    }
+  } catch (error) {
+    for (const name of fs.readdirSync(previousDir)) {
+      fs.renameSync(path.join(previousDir, name), path.join(dataDir, name));
+    }
+    throw error;
+  } finally {
+    fs.rmSync(stagingDir, { recursive: true, force: true });
+  }
+
+  fs.rmSync(previousDir, { recursive: true, force: true });
 }
 
 function restoreCustomFiles(files: BackedUpCustomFile[]) {
@@ -257,12 +283,13 @@ const ConfigBackupHandlers = {
         }
       }
 
+      restoreDataFiles(backup.dataFiles);
+
       store.clear();
       Object.entries(backup.store).forEach(([key, value]) => {
         store.set(key, value);
       });
 
-      restoreDataFiles(backup.dataFiles);
       const customResult = restoreCustomFiles(backup.customFiles);
       store.set('configRestore.completedAt', new Date().toISOString());
 
