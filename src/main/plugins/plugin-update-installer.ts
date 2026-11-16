@@ -177,6 +177,20 @@ export default class PluginUpdateInstaller {
         downloadedFilePath = path.join(tempRoot, 'plugin.nro');
         await this.downloadFile(downloadUrl, downloadedFilePath);
         nroFilePath = downloadedFilePath;
+
+        if (fs.existsSync(downloadedFilePath) && !isNroFile(downloadedFilePath)) {
+          extractDir = path.join(tempRoot, 'extracted');
+          await FileExtractor.extractArchive(downloadedFilePath, extractDir);
+          nroFilePath = this.findNroFile(extractDir);
+
+          if (!nroFilePath) {
+            return {
+              success: false,
+              error: 'No .nro file found in the downloaded archive',
+            };
+          }
+          actualFileName = path.basename(nroFilePath);
+        }
       }
 
       if (!fs.existsSync(nroFilePath)) {

@@ -12,8 +12,11 @@ import {
 import PluginUpdateChecker, {
   PluginUpdateResult,
 } from '../../plugins/plugin-update-checker';
-import PluginUpdateInstaller from '../../plugins/plugin-update-installer';
+import PluginUpdateInstaller, {
+  PluginInstallResult,
+} from '../../plugins/plugin-update-installer';
 import {
+  savePluginBackup,
   deletePluginBackups,
   listPluginBackups,
   PluginBackup,
@@ -165,6 +168,57 @@ async function downloadAndExtractCskArchive(downloadUrl: string) {
   await FileExtractor.extractArchive(archivePath, extractDir);
 
   return { tempRoot, archivePath, extractDir };
+}
+
+async function updateCskCollection(
+  downloadUrl: string,
+  pluginPath: string,
+  previousVersion: string | null,
+): Promise<PluginInstallResult> {
+  const extracted = await downloadAndExtractCskArchive(downloadUrl);
+  try {
+    const pluginSourcePath = findFileByRelativePath(
+      extracted.extractDir,
+      CSK_PLUGIN_RELATIVE_PATH,
+    );
+    if (!pluginSourcePath) {
+      return {
+        success: false,
+        error: 'CSK Collection plugin file was not found in the archive',
+      };
+    }
+
+    const actualFileName = path.basename(pluginSourcePath);
+    const finalPluginPath = path.join(path.dirname(pluginPath), actualFileName);
+    if (fs.existsSync(pluginPath)) {
+      savePluginBackup(pluginPath, actualFileName, previousVersion);
+    }
+    fs.copyFileSync(pluginSourcePath, finalPluginPath);
+
+    const modsPath = store.get('modsPath') as string | null | undefined;
+    const cskModsRoot = findCskModsRoot(extracted.extractDir);
+    if (modsPath && cskModsRoot) {
+      const resolvedModsPath = resolveVirtualPath(modsPath);
+      const disabledModsPath = path.join(
+        path.dirname(resolvedModsPath),
+        '{disabled_mod}',
+      );
+      for (const modName of listCskModFolders(extracted.extractDir)) {
+        for (const destRoot of [resolvedModsPath, disabledModsPath]) {
+          const destPath = path.join(destRoot, modName);
+          if (!fs.existsSync(destPath)) continue;
+          fs.rmSync(destPath, { recursive: true, force: true });
+          fs.cpSync(path.join(cskModsRoot, modName), destPath, {
+            recursive: true,
+          });
+        }
+      }
+    }
+
+    return { success: true, pluginPath: finalPluginPath, actualFileName };
+  } finally {
+    cleanupTempDir(extracted.tempRoot);
+  }
 }
 
 function cleanupTempDir(tempRoot: string) {
@@ -611,18 +665,24 @@ const PluginHandlers = {
         string,
         string
       >;
-      const result = await PluginUpdateInstaller.installUpdate(
-        downloadUrl,
-        resolvedPluginPath,
-        store.get('modsPath') as string | null | undefined,
-        {
-          reinstallAll,
-          previousVersion:
-            previousVersions[
-              path.basename(resolvedPluginPath).replace(/\.nro$/i, '')
-            ] ?? null,
-        },
-      );
+      const previousVersion =
+        previousVersions[
+          path.basename(resolvedPluginPath).replace(/\.nro$/i, '')
+        ] ?? null;
+      const result =
+        path.basename(resolvedPluginPath).toLowerCase() ===
+        path.basename(CSK_PLUGIN_RELATIVE_PATH)
+          ? await updateCskCollection(
+              downloadUrl,
+              resolvedPluginPath,
+              previousVersion,
+            )
+          : await PluginUpdateInstaller.installUpdate(
+              downloadUrl,
+              resolvedPluginPath,
+              store.get('modsPath') as string | null | undefined,
+              { reinstallAll, previousVersion },
+            );
 
       if (result.success) {
         const actualFileName =
