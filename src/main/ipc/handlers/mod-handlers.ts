@@ -587,9 +587,9 @@ const ModHandlers = {
         );
       }
 
-      const backupId = SlotChanger.readModId(target);
+      const ownsBackup = await SlotChanger.hasBackup(target);
       const result = await moveToTrash(target, options.permanent);
-      if (result.success) await SlotChanger.deleteBackup(target, backupId);
+      if (result.success && ownsBackup) await SlotChanger.deleteBackup(target);
       return result;
     } catch (error) {
       handleError(error, 'delete-mod');

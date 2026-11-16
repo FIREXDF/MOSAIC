@@ -6,9 +6,9 @@ import { PathData, PathDataEntry } from './mod-scanner';
 import { ModFileOperations } from '../mod-file-operations';
 import { ConfigGenerator } from './config-generator';
 import { PATHS } from '../config';
-import { randomUUID } from 'crypto';
 
-const MOD_ID_FILE = '.fp-id';
+const LEGACY_ID_FILE = '.fp-id';
+const OWNER_FILE = '.fp-owner';
 
 interface CustomData {
   cspName?: string;
@@ -538,12 +538,32 @@ export class SlotChanger {
     return path.join(PATHS.slotBackupsDir(), path.basename(modPath));
   }
 
-  static readModId(modPath: string): string | null {
+  private static readText(filePath: string): string | null {
     try {
-      return fse.readFileSync(path.join(modPath, MOD_ID_FILE), 'utf8').trim();
+      return fse.readFileSync(filePath, 'utf8').trim();
     } catch {
       return null;
     }
+  }
+
+  private static readModId(modPath: string): string | null {
+    try {
+      return String(fse.statSync(modPath).birthtimeMs);
+    } catch {
+      return null;
+    }
+  }
+
+  private static async migrateLegacyId(modPath: string, backupPath: string) {
+    const legacyBackupId = this.readText(path.join(backupPath, LEGACY_ID_FILE));
+    const legacyModId = this.readText(path.join(modPath, LEGACY_ID_FILE));
+    const modId = this.readModId(modPath);
+    if (!modId) return;
+    if (legacyBackupId && legacyBackupId === legacyModId) {
+      await fse.writeFile(path.join(backupPath, OWNER_FILE), modId, 'utf8');
+    }
+    if (legacyBackupId) await fse.remove(path.join(backupPath, LEGACY_ID_FILE));
+    await fse.remove(path.join(modPath, LEGACY_ID_FILE));
   }
 
   static async backupBelongsTo(
@@ -551,26 +571,28 @@ export class SlotChanger {
     modId = this.readModId(modPath),
   ) {
     const backupPath = this.getBackupPath(modPath);
+    if (!(await fse.pathExists(backupPath))) {
+      await fse.remove(path.join(modPath, LEGACY_ID_FILE));
+      return false;
+    }
+    await this.migrateLegacyId(modPath, backupPath);
     return (
-      (await fse.pathExists(backupPath)) && this.readModId(backupPath) === modId
+      !!modId && this.readText(path.join(backupPath, OWNER_FILE)) === modId
     );
   }
 
   static async backupMod(modPath: string) {
     if (await this.backupBelongsTo(modPath)) return;
 
-    if (!this.readModId(modPath)) {
-      await fse.writeFile(
-        path.join(modPath, MOD_ID_FILE),
-        randomUUID(),
-        'utf8',
-      );
-    }
-
     const backupPath = this.getBackupPath(modPath);
     const pendingPath = `${backupPath}.fp-pending`;
     await fse.remove(pendingPath);
     await fse.copy(modPath, pendingPath);
+    await fse.writeFile(
+      path.join(pendingPath, OWNER_FILE),
+      this.readModId(modPath) ?? '',
+      'utf8',
+    );
     await fse.remove(backupPath);
     await fse.move(pendingPath, backupPath);
   }
@@ -579,13 +601,15 @@ export class SlotChanger {
     return this.backupBelongsTo(modPath);
   }
 
-  static async deleteBackup(modPath: string, modId: string | null) {
-    if (await this.backupBelongsTo(modPath, modId)) {
-      await fse.remove(this.getBackupPath(modPath));
-    }
+  static async deleteBackup(modPath: string) {
+    await fse.remove(this.getBackupPath(modPath));
   }
 
   static async renameBackup(oldModPath: string, newModPath: string) {
+    const oldBackupPath = this.getBackupPath(oldModPath);
+    if (await fse.pathExists(oldBackupPath)) {
+      await this.migrateLegacyId(newModPath, oldBackupPath);
+    }
     const modId = this.readModId(newModPath);
     if (!(await this.backupBelongsTo(oldModPath, modId))) return;
     if (await fse.pathExists(this.getBackupPath(newModPath))) return;
@@ -605,6 +629,7 @@ export class SlotChanger {
     const restorePath = `${modPath}.fp-restore`;
     await fse.remove(restorePath);
     await fse.copy(backupPath, restorePath);
+    await fse.remove(path.join(restorePath, OWNER_FILE));
     await fse.remove(modPath);
     await fse.move(restorePath, modPath);
     await fse.remove(backupPath);
