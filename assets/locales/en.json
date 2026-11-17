@@ -1271,7 +1271,8 @@
       "message": "The sounds will be copied into the chosen model mod and renamed for its slot. This sound mod will then be disabled.",
       "choose": "Choose a model",
       "backupHint": "Existing sounds in that model mod are replaced. You can undo it with \"Restore backup\" on the model mod.",
-      "confirm": "Assign"
+      "confirm": "Assign",
+      "assigning": "Assigning..."
     },
     "betaNotice": {
       "title": "Beta version",

@@ -1271,7 +1271,8 @@
       "message": "Les sons seront copiés dans le mod modèle choisi et renommés pour son slot. Ce mod son sera ensuite désactivé.",
       "choose": "Choisir un modèle",
       "backupHint": "Les sons déjà présents dans ce mod modèle seront remplacés. Tu peux annuler avec « Restaurer la sauvegarde » sur le mod modèle.",
-      "confirm": "Assigner"
+      "confirm": "Assigner",
+      "assigning": "Assignation..."
     },
     "betaNotice": {
       "title": "Version bêta",

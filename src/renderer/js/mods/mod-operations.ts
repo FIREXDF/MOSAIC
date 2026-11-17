@@ -601,21 +601,31 @@ class ModOperations {
         {
           text: t('modals.assignSound.confirm', 'Assign'),
           type: 'primary',
-          onClick: async (_event, modal) => {
+          onClick: async (event, modal) => {
             const selected = modal.querySelector<HTMLInputElement>(
               'input[name="assign-sound-target"]:checked',
             );
             if (!selected) return false;
 
+            const button = event.currentTarget as HTMLButtonElement;
+            const originalLabel = button.innerHTML;
+            const footerButtons = modal.querySelectorAll<HTMLButtonElement>(
+              '.modal-footer button',
+            );
+            footerButtons.forEach((btn) => (btn.disabled = true));
+            button.setAttribute('aria-busy', 'true');
+            button.innerHTML = `<i class="bi bi-arrow-repeat spin"></i> ${t('modals.assignSound.assigning', 'Assigning...')}`;
+
             const [targetIndex, slot] = selected.value.split(':');
             const target = result.targets[Number(targetIndex)];
-            const assignResult = await window.electronAPI.assignSoundToModel(
-              mod.path,
-              target.path,
-              slot,
-            );
+            const assignResult = await window.electronAPI
+              .assignSoundToModel(mod.path, target.path, slot)
+              .catch((error) => ({ success: false, error: String(error) }));
 
             if (!assignResult.success) {
+              footerButtons.forEach((btn) => (btn.disabled = false));
+              button.removeAttribute('aria-busy');
+              button.innerHTML = originalLabel;
               window.toastManager?.error('toasts.failedToAssignSound', 4000, {
                 error: assignResult.error,
               });
