@@ -8,6 +8,16 @@ on:
       - main
   workflow_dispatch:
     inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - windows
+          - macos
+          - linux
       version_type:
         description: 'Version Type'
         required: true
@@ -35,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: ${{ fromJSON(inputs.platform == 'windows' && '["windows-latest"]' || inputs.platform == 'macos' && '["macos-latest"]' || inputs.platform == 'linux' && '["ubuntu-latest"]' || '["windows-latest","ubuntu-latest","macos-latest"]') }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CI: true
