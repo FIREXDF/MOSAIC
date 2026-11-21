@@ -487,14 +487,56 @@ class CharactersCssEditorSection {
     }
   }
 
-  confirmDiscardCssChanges() {
+  confirmCssModal(
+    title: string,
+    message: string,
+    confirmText: string,
+    danger = false,
+  ) {
+    return new Promise<boolean>((resolve) => {
+      let resolved = false;
+      const finish = (value: boolean) => {
+        if (!resolved) {
+          resolved = true;
+          resolve(value);
+        }
+      };
+
+      const body = document.createElement('p');
+      body.className = 'mod-profile-modal-copy';
+      body.textContent = message;
+
+      window.modalManager.showCustomModal({
+        title,
+        body,
+        onClose: () => finish(false),
+        buttons: [
+          {
+            text: this.manager.t('common.cancel', 'Cancel'),
+            type: 'secondary',
+            onClick: () => finish(false),
+          },
+          {
+            text: confirmText,
+            type: danger ? 'danger' : 'primary',
+            onClick: () => finish(true),
+          },
+        ],
+      });
+    });
+  }
+
+  async confirmDiscardCssChanges() {
     return (
       !this.manager.cssDirty ||
-      window.confirm(
+      this.confirmCssModal(
+        this.manager.t('characters.cssUnsavedTitle', 'Unsaved changes'),
         this.manager.t(
           'characters.cssProfileDiscardConfirm',
           'Unsaved layout changes will be lost. Continue?',
         ),
+        this.manager.t('characters.cssDiscardChanges', 'Discard changes'),
+        true,
       )
     );
   }
@@ -700,7 +742,7 @@ class CharactersCssEditorSection {
               this.manager.t('characters.cssProfileSwitch', 'Switch'),
               'bi-check2-circle',
               async () => {
-                if (!this.confirmDiscardCssChanges()) return;
+                if (!(await this.confirmDiscardCssChanges())) return;
                 closeAndReload(() =>
                   window.electronAPI.switchCharacterCssProfile(profile.id),
                 );
@@ -736,16 +778,22 @@ class CharactersCssEditorSection {
               this.manager.t('characters.cssProfileDelete', 'Delete'),
               'bi-trash',
               async () => {
-                const confirmed = window.confirm(
+                const confirmed = await this.confirmCssModal(
+                  this.manager.t(
+                    'characters.cssProfileDeleteTitle',
+                    'Delete CSS profile',
+                  ),
                   this.manager.t(
                     'characters.cssProfileDeleteConfirm',
                     'Delete profile "{{name}}"? Its layout cannot be recovered.',
                     { name: profile.name },
                   ),
+                  this.manager.t('common.delete', 'Delete'),
+                  true,
                 );
                 if (
                   !confirmed ||
-                  (isActive && !this.confirmDiscardCssChanges())
+                  (isActive && !(await this.confirmDiscardCssChanges()))
                 )
                   return;
                 const deleteProfile = () =>
@@ -784,7 +832,7 @@ class CharactersCssEditorSection {
           closeOnClick: false,
           onClick: () => {
             void (async () => {
-              if (!this.confirmDiscardCssChanges()) return;
+              if (!(await this.confirmDiscardCssChanges())) return;
               const name = await this.promptCssProfileName(
                 this.manager.t('characters.cssProfileNew', 'New profile'),
                 '',
@@ -1008,17 +1056,20 @@ class CharactersCssEditorSection {
     if (createGroupButton) createGroupButton.disabled = true;
   }
 
-  openCharacterCssSourceImport() {
+  async openCharacterCssSourceImport() {
     if (this.manager.cssSaving || this.manager.cssSourceImporting) {
       return;
     }
 
     if (this.manager.cssDirty) {
-      const confirmed = window.confirm(
+      const confirmed = await this.confirmCssModal(
+        this.manager.t('characters.changeCssSource', 'Change source'),
         this.manager.t(
           'characters.changeCssSourceConfirm',
           'Replace the current Character CSS source files? Unsaved layout changes will be lost.',
         ),
+        this.manager.t('characters.cssDiscardChanges', 'Discard changes'),
+        true,
       );
       if (!confirmed) {
         return;

@@ -464,7 +464,7 @@ class CharactersManager {
         changeSourceButton,
       );
       replacement.addEventListener('click', () => {
-        this.cssEditor.openCharacterCssSourceImport();
+        void this.cssEditor.openCharacterCssSourceImport();
       });
     }
 
