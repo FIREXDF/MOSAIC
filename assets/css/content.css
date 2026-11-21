@@ -1915,6 +1915,16 @@ body.no-animations .credits-logo-hint {
   margin: 10px 0;
 }
 
+.credits-footer p a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.credits-footer p a:hover,
+.credits-footer p a:focus-visible {
+  text-decoration: underline;
+}
+
 .credits-footer i {
   color: var(--danger-color);
   animation: heartBeat 1.5s ease-in-out infinite;

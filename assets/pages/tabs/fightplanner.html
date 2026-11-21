@@ -318,7 +318,14 @@
   </div>
 
   <div class="credits-footer">
-    <p data-i18n="fightplanner.madeBy">Made by Compages Works</p>
+    <p>
+      <span data-i18n="fightplanner.madeBy">Made by</span>
+      <a
+        href="https://compagesworks.github.io/"
+        onclick="event.preventDefault(); window.electronAPI.openUrl(this.href)"
+        >Compages Works</a
+      >
+    </p>
     <div class="version-info">
       <div class="version-detail">
         <span class="version-label" data-i18n="fightplanner.appVersion"
