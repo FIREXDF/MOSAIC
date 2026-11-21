@@ -30,6 +30,11 @@
   flex-direction: column;
   overflow: hidden;
   box-sizing: border-box;
+  --text-muted: #a8a8a8;
+}
+
+[data-theme='light'] .modal {
+  --text-muted: #5a5a5a;
 }
 
 /* A modal opened above another modal needs its own visual depth layer. */
