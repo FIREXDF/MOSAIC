@@ -78,8 +78,125 @@ export function ensureDirectory(dirPath: string) {
   }
 }
 
+const PERSISTED_PROFILE_FILES = [
+  PERSISTED_SOURCE_MANIFEST_FILE,
+  PERSISTED_CHARA_JSON_FILE,
+  PERSISTED_LAYOUT_JSON_FILE,
+  PERSISTED_MSG_NAME_JSON_FILE,
+  PERSISTED_MSG_NAME_FILE,
+];
+
+const DEFAULT_CSS_PROFILE_ID = 'default';
+
+export type CharacterCssProfile = { id: string; name: string };
+
+function getCssProfiles(): CharacterCssProfile[] {
+  const saved = store.get('characterCssProfiles') as
+    | CharacterCssProfile[]
+    | undefined;
+  if (
+    Array.isArray(saved) &&
+    saved.some((profile) => profile.id === DEFAULT_CSS_PROFILE_ID)
+  ) {
+    return saved;
+  }
+  return [{ id: DEFAULT_CSS_PROFILE_ID, name: 'Default' }];
+}
+
+function getActiveCssProfileId() {
+  const activeId = store.get('characterCssActiveProfile') as string | undefined;
+  return getCssProfiles().some((profile) => profile.id === activeId)
+    ? (activeId as string)
+    : DEFAULT_CSS_PROFILE_ID;
+}
+
+function getCssProfileDir(profileId: string) {
+  const dataDir = path.join(app.getPath('userData'), 'data');
+  return profileId === DEFAULT_CSS_PROFILE_ID
+    ? dataDir
+    : path.join(dataDir, 'css-profiles', profileId);
+}
+
+function normalizeCssProfileName(name: unknown) {
+  const trimmed = String(name ?? '')
+    .trim()
+    .replace(/\s+/g, ' ');
+  if (!trimmed) {
+    throw new Error('Profile name cannot be empty.');
+  }
+  return trimmed.slice(0, 60);
+}
+
+function requireCssProfile(profileId: string) {
+  const profile = getCssProfiles().find((entry) => entry.id === profileId);
+  if (!profile) {
+    throw new Error(`Unknown CSS profile: ${profileId}`);
+  }
+  return profile;
+}
+
+export function listCharacterCssProfiles() {
+  return {
+    profiles: getCssProfiles(),
+    activeProfileId: getActiveCssProfileId(),
+  };
+}
+
+export function createCharacterCssProfile(name: string) {
+  const profile = {
+    id: `p${Date.now().toString(36)}`,
+    name: normalizeCssProfileName(name),
+  };
+  const sourceDir = getPersistedDataDir();
+  const targetDir = getCssProfileDir(profile.id);
+  ensureDirectory(targetDir);
+  PERSISTED_PROFILE_FILES.forEach((fileName) => {
+    const sourcePath = path.join(sourceDir, fileName);
+    if (fs.existsSync(sourcePath)) {
+      fs.copyFileSync(sourcePath, path.join(targetDir, fileName));
+    }
+  });
+  store.set('characterCssProfiles', [...getCssProfiles(), profile]);
+  store.set('characterCssActiveProfile', profile.id);
+  return listCharacterCssProfiles();
+}
+
+export function renameCharacterCssProfile(profileId: string, name: string) {
+  requireCssProfile(profileId);
+  const nextName = normalizeCssProfileName(name);
+  store.set(
+    'characterCssProfiles',
+    getCssProfiles().map((profile) =>
+      profile.id === profileId ? { ...profile, name: nextName } : profile,
+    ),
+  );
+  return listCharacterCssProfiles();
+}
+
+export function switchCharacterCssProfile(profileId: string) {
+  requireCssProfile(profileId);
+  store.set('characterCssActiveProfile', profileId);
+  return listCharacterCssProfiles();
+}
+
+export function deleteCharacterCssProfile(profileId: string) {
+  requireCssProfile(profileId);
+  if (profileId === DEFAULT_CSS_PROFILE_ID) {
+    throw new Error('The default CSS profile cannot be deleted.');
+  }
+  fs.rmSync(getCssProfileDir(profileId), { recursive: true, force: true });
+  store.set(
+    'characterCssProfiles',
+    getCssProfiles().filter((profile) => profile.id !== profileId),
+  );
+  if (getActiveCssProfileId() === profileId) {
+    store.set('characterCssActiveProfile', DEFAULT_CSS_PROFILE_ID);
+  }
+  return listCharacterCssProfiles();
+}
+
 function getPersistedDataDir() {
-  const dirPath = path.join(app.getPath('userData'), 'data');
+  const dirPath = getCssProfileDir(getActiveCssProfileId());
   ensureDirectory(dirPath);
   return dirPath;
 }
@@ -983,14 +1100,8 @@ function ensureCharacterModMetadata(modRootPath: string) {
 
 /** Collect saved editor data without importing, converting, or rewriting files. */
 export function getCharacterCssDebugReport() {
-  const dataDir = path.join(app.getPath('userData'), 'data');
-  const files = [
-    PERSISTED_SOURCE_MANIFEST_FILE,
-    PERSISTED_CHARA_JSON_FILE,
-    PERSISTED_LAYOUT_JSON_FILE,
-    PERSISTED_MSG_NAME_JSON_FILE,
-    PERSISTED_MSG_NAME_FILE,
-  ].map((name) => {
+  const dataDir = getPersistedDataDir();
+  const files = PERSISTED_PROFILE_FILES.map((name) => {
     const filePath = path.join(dataDir, name);
     const result = {
       name,

@@ -441,6 +441,17 @@ class CharactersManager {
       });
     }
 
+    const profilesButton = document.querySelector<HTMLButtonElement>(
+      '#character-css-profiles-btn',
+    );
+    if (profilesButton) {
+      const replacement = profilesButton.cloneNode(true) as HTMLButtonElement;
+      profilesButton.parentNode?.replaceChild(replacement, profilesButton);
+      replacement.addEventListener('click', () => {
+        void this.cssEditor.openCssProfilesModal();
+      });
+    }
+
     const changeSourceButton = document.querySelector<HTMLButtonElement>(
       '#character-css-change-source-btn',
     );

@@ -249,6 +249,21 @@ const electronAPI = {
   readFpp: (fppPath: string) => ipcRenderer.invoke('read-fpp', fppPath),
   installFpp: invokeFppHandler('install-fpp'),
   selectFppFile: invokeFppHandler('select-fpp-file'),
+  listCharacterCssProfiles: invokeCharacterCssHandler(
+    'list-character-css-profiles',
+  ),
+  createCharacterCssProfile: invokeCharacterCssHandler(
+    'create-character-css-profile',
+  ),
+  renameCharacterCssProfile: invokeCharacterCssHandler(
+    'rename-character-css-profile',
+  ),
+  switchCharacterCssProfile: invokeCharacterCssHandler(
+    'switch-character-css-profile',
+  ),
+  deleteCharacterCssProfile: invokeCharacterCssHandler(
+    'delete-character-css-profile',
+  ),
   getCharacterCssLayout: invokeCharacterCssHandler('get-character-css-layout'),
   getCssCharacterImages: invokeCharacterCssHandler('get-css-character-images'),
   selectCssCharacterImage: invokeCharacterCssHandler(

@@ -450,12 +450,355 @@ class CharactersCssEditorSection {
       'forward',
     );
 
+    void this.refreshCssProfiles();
+
     if (!this.manager.cssLoaded) {
       await this.loadCssLayout();
       return;
     }
 
     this.renderCssEditor();
+  }
+
+  cssProfiles: { id: string; name: string }[] = [];
+
+  cssActiveProfileId = 'default';
+
+  async refreshCssProfiles() {
+    const result = await window.electronAPI.listCharacterCssProfiles();
+    if (result.success) {
+      this.applyCssProfilesState(result);
+    }
+  }
+
+  applyCssProfilesState(state: {
+    profiles: { id: string; name: string }[];
+    activeProfileId: string;
+  }) {
+    this.cssProfiles = state.profiles;
+    this.cssActiveProfileId = state.activeProfileId;
+    const label = document.querySelector<HTMLElement>(
+      '#character-css-profile-label',
+    );
+    if (label) {
+      label.textContent =
+        state.profiles.find((profile) => profile.id === state.activeProfileId)
+          ?.name || '';
+    }
+  }
+
+  confirmDiscardCssChanges() {
+    return (
+      !this.manager.cssDirty ||
+      window.confirm(
+        this.manager.t(
+          'characters.cssProfileDiscardConfirm',
+          'Unsaved layout changes will be lost. Continue?',
+        ),
+      )
+    );
+  }
+
+  async reloadCssLayoutForProfile() {
+    this.manager.cssPrefetchedLayout = null;
+    this.manager.cssLoaded = false;
+    this.manager.cssDirty = false;
+    this.manager.cssSelectedSlotIndex = 0;
+    await this.loadCssLayout();
+  }
+
+  async runCssProfileAction(
+    action: () => Promise<
+      | {
+          success: true;
+          profiles: { id: string; name: string }[];
+          activeProfileId: string;
+        }
+      | { success: false; error?: string }
+    >,
+    reload: boolean,
+  ) {
+    try {
+      const result = await action();
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      this.applyCssProfilesState(result);
+      if (reload) {
+        await this.reloadCssLayoutForProfile();
+      }
+      return true;
+    } catch (error) {
+      window.toastManager?.error(
+        this.manager.t(
+          'characters.cssProfileFailed',
+          'CSS profile action failed: {{error}}',
+          {
+            error:
+              error.message ||
+              this.manager.t('characters.cssUnknownError', 'Unknown error'),
+          },
+        ),
+        5000,
+      );
+      return false;
+    }
+  }
+
+  promptCssProfileName(title: string, initialName: string) {
+    return new Promise<string | null>((resolve) => {
+      let resolved = false;
+      const finish = (value: string | null) => {
+        if (!resolved) {
+          resolved = true;
+          resolve(value);
+        }
+      };
+
+      const form = document.createElement('div');
+      form.className = 'mod-profile-form';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'modal-input';
+      input.maxLength = 60;
+      input.value = initialName;
+      input.setAttribute(
+        'aria-label',
+        this.manager.t('characters.cssProfileName', 'Profile name'),
+      );
+      form.appendChild(input);
+
+      let nameModal: HTMLElement | null = null;
+      const submit = () => {
+        const name = input.value.trim();
+        if (!name) {
+          input.focus();
+          return;
+        }
+        finish(name);
+        if (nameModal) {
+          window.modalManager.closeModal(nameModal, {
+            onModalClosed: () => nameModal?.remove(),
+          });
+        }
+      };
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          submit();
+        }
+      });
+
+      nameModal = window.modalManager.showCustomModal({
+        title,
+        body: form,
+        onClose: () => finish(null),
+        buttons: [
+          {
+            text: this.manager.t('common.cancel', 'Cancel'),
+            type: 'secondary',
+            onClick: () => finish(null),
+          },
+          {
+            text: this.manager.t('common.save', 'Save'),
+            type: 'primary',
+            closeOnClick: false,
+            onClick: () => {
+              submit();
+              return false;
+            },
+          },
+        ],
+      });
+
+      setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 60);
+    });
+  }
+
+  async openCssProfilesModal() {
+    if (this.manager.cssSaving || this.manager.cssSourceImporting) {
+      return;
+    }
+    await this.refreshCssProfiles();
+
+    const body = document.createElement('div');
+    body.className = 'mod-profile-modal';
+
+    let profilesModal: HTMLElement | null = null;
+    const closeAndReload = (
+      action: Parameters<typeof this.runCssProfileAction>[0],
+    ) => {
+      if (profilesModal) {
+        const modal = profilesModal;
+        window.modalManager.closeModal(modal, {
+          onModalClosed: () => modal.remove(),
+        });
+      }
+      void this.runCssProfileAction(action, true);
+    };
+
+    const createButton = (
+      label: string,
+      iconClass: string,
+      handler: () => Promise<void>,
+      danger = false,
+    ) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `modal-btn modal-btn-${danger ? 'danger' : 'secondary'}`;
+      const icon = document.createElement('i');
+      icon.className = `bi ${iconClass}`;
+      button.append(icon, ` ${label}`);
+      button.addEventListener('click', () => {
+        void handler();
+      });
+      return button;
+    };
+
+    const rerender = () => {
+      body.replaceChildren();
+      const copy = document.createElement('p');
+      copy.className = 'mod-profile-modal-copy';
+      copy.textContent = this.manager.t(
+        'characters.cssProfilesCopy',
+        'Each profile keeps its own character layout. Apply Layout writes the current profile to the Character CSS Layout mod.',
+      );
+      body.appendChild(copy);
+
+      const list = document.createElement('div');
+      list.className = 'mod-profile-list';
+      this.cssProfiles.forEach((profile) => {
+        const isActive = profile.id === this.cssActiveProfileId;
+        const card = document.createElement('div');
+        card.className = 'mod-profile-card';
+        card.classList.toggle('is-active', isActive);
+
+        const header = document.createElement('div');
+        header.className = 'mod-profile-card-header';
+        const title = document.createElement('span');
+        title.className = 'mod-profile-card-title';
+        title.textContent = profile.name;
+        header.appendChild(title);
+        if (isActive) {
+          const badge = document.createElement('span');
+          badge.className = 'mod-profile-card-badge';
+          badge.textContent = this.manager.t(
+            'characters.cssProfileCurrent',
+            'Current',
+          );
+          header.appendChild(badge);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'mod-profile-card-actions';
+        if (!isActive) {
+          actions.appendChild(
+            createButton(
+              this.manager.t('characters.cssProfileSwitch', 'Switch'),
+              'bi-check2-circle',
+              async () => {
+                if (!this.confirmDiscardCssChanges()) return;
+                closeAndReload(() =>
+                  window.electronAPI.switchCharacterCssProfile(profile.id),
+                );
+              },
+            ),
+          );
+        }
+        actions.appendChild(
+          createButton(
+            this.manager.t('characters.cssProfileRename', 'Rename'),
+            'bi-pencil',
+            async () => {
+              const name = await this.promptCssProfileName(
+                this.manager.t('characters.cssProfileRename', 'Rename'),
+                profile.name,
+              );
+              if (!name) return;
+              await this.runCssProfileAction(
+                () =>
+                  window.electronAPI.renameCharacterCssProfile(
+                    profile.id,
+                    name,
+                  ),
+                false,
+              );
+              rerender();
+            },
+          ),
+        );
+        if (profile.id !== 'default') {
+          actions.appendChild(
+            createButton(
+              this.manager.t('characters.cssProfileDelete', 'Delete'),
+              'bi-trash',
+              async () => {
+                const confirmed = window.confirm(
+                  this.manager.t(
+                    'characters.cssProfileDeleteConfirm',
+                    'Delete profile "{{name}}"? Its layout cannot be recovered.',
+                    { name: profile.name },
+                  ),
+                );
+                if (
+                  !confirmed ||
+                  (isActive && !this.confirmDiscardCssChanges())
+                )
+                  return;
+                const deleteProfile = () =>
+                  window.electronAPI.deleteCharacterCssProfile(profile.id);
+                if (isActive) {
+                  closeAndReload(deleteProfile);
+                  return;
+                }
+                await this.runCssProfileAction(deleteProfile, false);
+                rerender();
+              },
+              true,
+            ),
+          );
+        }
+
+        card.append(header, actions);
+        list.appendChild(card);
+      });
+      body.appendChild(list);
+    };
+
+    rerender();
+
+    profilesModal = window.modalManager.showCustomModal({
+      title: this.manager.t('characters.cssProfiles', 'CSS Profiles'),
+      body,
+      buttons: [
+        {
+          text: this.manager.t('common.close', 'Close'),
+          type: 'secondary',
+        },
+        {
+          text: this.manager.t('characters.cssProfileNew', 'New profile'),
+          type: 'primary',
+          closeOnClick: false,
+          onClick: () => {
+            void (async () => {
+              if (!this.confirmDiscardCssChanges()) return;
+              const name = await this.promptCssProfileName(
+                this.manager.t('characters.cssProfileNew', 'New profile'),
+                '',
+              );
+              if (!name) return;
+              closeAndReload(() =>
+                window.electronAPI.createCharacterCssProfile(name),
+              );
+            })();
+            return false;
+          },
+        },
+      ],
+    });
   }
 
   closeCssEditor() {
@@ -474,7 +817,21 @@ class CharactersCssEditorSection {
   async loadCssLayout() {
     const grid = document.querySelector<HTMLElement>('#character-css-grid');
     if (grid) {
-      grid.innerHTML = `<div class="characters-empty-state">${this.tr('characters.cssLoadingLayout', 'Loading CSS layout...')}</div>`;
+      grid.innerHTML = `
+<div class="characters-loading" role="status">
+<div class="character-css-loading-video" style="width: 100px; height: 100px;"></div>
+<p>${this.tr('characters.cssLoadingLayout', 'Loading CSS layout...')}</p>
+</div>`;
+      window.mountLoadingVideo(
+        grid.querySelector<HTMLElement>('.character-css-loading-video'),
+      );
+      document
+        .querySelectorAll<HTMLButtonElement>(
+          '.character-css-toolbar button:not(#character-css-back-btn):not(#character-css-echo-btn)',
+        )
+        .forEach((button) => {
+          button.disabled = true;
+        });
     }
 
     try {
@@ -838,6 +1195,13 @@ class CharactersCssEditorSection {
     }
     if (changeSourceButton) {
       changeSourceButton.disabled =
+        this.manager.cssSaving || this.manager.cssSourceImporting;
+    }
+    const profilesButton = document.querySelector<HTMLButtonElement>(
+      '#character-css-profiles-btn',
+    );
+    if (profilesButton) {
+      profilesButton.disabled =
         this.manager.cssSaving || this.manager.cssSourceImporting;
     }
     if (randomizeButton) {

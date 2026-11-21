@@ -6,6 +6,11 @@ import {
   HandlerResponse,
 } from '../../types/common';
 import {
+  createCharacterCssProfile,
+  deleteCharacterCssProfile,
+  listCharacterCssProfiles,
+  renameCharacterCssProfile,
+  switchCharacterCssProfile,
   duplicateCharacterCssEntry,
   getCharacterCssLayoutData,
   importCharacterCssSourceFiles,
@@ -85,6 +90,63 @@ const CharacterCssHandlers = {
       await removeCssCharacterImage(characterId);
       return { success: true };
     } catch (error) {
+      return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
+    }
+  },
+
+  ['list-character-css-profiles']: async (
+    _common: BaseHandlerArg,
+  ): HandlerResponse<ReturnType<typeof listCharacterCssProfiles>> => {
+    try {
+      return { success: true, ...listCharacterCssProfiles() };
+    } catch (error) {
+      return createErrorResponse(ErrorCodes.FILE_READ_ERROR, error.message);
+    }
+  },
+
+  ['create-character-css-profile']: async (
+    _common: BaseHandlerArg,
+    name: string,
+  ): HandlerResponse<ReturnType<typeof listCharacterCssProfiles>> => {
+    try {
+      return { success: true, ...createCharacterCssProfile(name) };
+    } catch (error) {
+      handleError(error, 'create-character-css-profile');
+      return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
+    }
+  },
+
+  ['rename-character-css-profile']: async (
+    _common: BaseHandlerArg,
+    profileId: string,
+    name: string,
+  ): HandlerResponse<ReturnType<typeof listCharacterCssProfiles>> => {
+    try {
+      return { success: true, ...renameCharacterCssProfile(profileId, name) };
+    } catch (error) {
+      return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
+    }
+  },
+
+  ['switch-character-css-profile']: async (
+    _common: BaseHandlerArg,
+    profileId: string,
+  ): HandlerResponse<ReturnType<typeof listCharacterCssProfiles>> => {
+    try {
+      return { success: true, ...switchCharacterCssProfile(profileId) };
+    } catch (error) {
+      return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
+    }
+  },
+
+  ['delete-character-css-profile']: async (
+    _common: BaseHandlerArg,
+    profileId: string,
+  ): HandlerResponse<ReturnType<typeof listCharacterCssProfiles>> => {
+    try {
+      return { success: true, ...deleteCharacterCssProfile(profileId) };
+    } catch (error) {
+      handleError(error, 'delete-character-css-profile');
       return createErrorResponse(ErrorCodes.MOD_SAVE_ERROR, error.message);
     }
   },
