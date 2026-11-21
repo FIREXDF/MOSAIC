@@ -3,7 +3,8 @@
     "title": "MOSAIC",
     "version": "4.0.0",
     "ready": "Ready",
-    "beta": "Beta"
+    "beta": "Beta",
+    "alpha": "Alpha"
   },
   "titlebar": {
     "minimize": "Minimize",
@@ -546,6 +547,12 @@
     "feedbackTypeOther": "Other",
     "feedbackMessage": "Message",
     "feedbackMessagePlaceholder": "Describe the bug, feature, or feedback...",
+    "feedbackScopeTitle": "Only report problems with MOSAIC itself.",
+    "feedbackScopeEmulator": "If the emulator or the game crashes, sending feedback here won't help. Join the Compages Works Discord to get help with that.",
+    "feedbackScopeUpdates": "Don't ask for more betas, updates, or alpha access here.",
+    "feedbackScopeDetails": "Just writing \"I need help\" won't solve anything. Describe what you did, what happened, and what you expected.",
+    "feedbackScopeReply": "You won't get a reply unless you add a contact below.",
+    "feedbackEnglishNotice": "Please write in English if you can.",
     "feedbackContact": "Contact (optional)",
     "feedbackContactPlaceholder": "Discord, email, or GitHub username",
     "feedbackNoContactTitle": "No contact provided",
@@ -1278,6 +1285,12 @@
       "title": "Beta version",
       "message": "You're using MOSAIC {{version}}, a beta version. Expect bugs and unfinished features. Don't hesitate to send us your feedback, it really helps us improve the app!",
       "giveFeedback": "Give feedback"
+    },
+    "alphaNotice": {
+      "title": "Alpha version",
+      "message": "You're using MOSAIC {{version}}, an alpha version. This is an early test build: serious problems can happen, including damage to your mods or your setup. Back up your mods before using it, just in case. Don't hesitate to send us your feedback, it really helps us improve the app!",
+      "giveFeedback": "Give feedback",
+      "backupConfig": "Backup your MOSAIC config"
     }
   },
   "contextMenu": {

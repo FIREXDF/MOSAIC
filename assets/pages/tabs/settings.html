@@ -1468,6 +1468,33 @@
 
       <div class="settings-section">
         <form id="feedback-form" class="feedback-form">
+          <div class="feedback-scope-notice">
+            <p class="feedback-scope-title" data-i18n="settings.feedbackScopeTitle">
+              Only report problems with MOSAIC itself.
+            </p>
+            <ul class="feedback-scope-list">
+              <li data-i18n="settings.feedbackScopeEmulator">
+                If the emulator or the game crashes, sending feedback here won't help. Join the Compages Works Discord to get help with that.
+              </li>
+              <li data-i18n="settings.feedbackScopeUpdates">
+                Don't ask for more betas, updates, or alpha access here.
+              </li>
+              <li data-i18n="settings.feedbackScopeDetails">
+                Just writing "I need help" won't solve anything. Describe what you did, what happened, and what you expected.
+              </li>
+              <li data-i18n="settings.feedbackScopeReply">
+                You won't get a reply unless you add a contact below.
+              </li>
+            </ul>
+            <button
+              type="button"
+              class="settings-btn feedback-scope-discord"
+              onclick="window.electronAPI.openUrl('https://discord.gg/KVjvEeAeXz')"
+            >
+              <i class="bi bi-discord" aria-hidden="true"></i>
+              <span data-i18n="fightplanner.joinDiscord">Join the Compages Works Discord</span>
+            </button>
+          </div>
           <label
             class="settings-label"
             for="feedback-type"
@@ -1495,6 +1522,9 @@
             data-i18n="settings.feedbackMessage"
             >Message</label
           >
+          <p class="feedback-english-notice" data-i18n="settings.feedbackEnglishNotice">
+            Please write in English if you can.
+          </p>
           <textarea
             id="feedback-message"
             class="settings-input feedback-textarea"

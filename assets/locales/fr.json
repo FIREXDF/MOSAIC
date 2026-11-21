@@ -3,7 +3,8 @@
     "title": "MOSAIC",
     "version": "4.0.0",
     "ready": "Prêt",
-    "beta": "Bêta"
+    "beta": "Bêta",
+    "alpha": "Alpha"
   },
   "titlebar": {
     "minimize": "Réduire",
@@ -545,6 +546,12 @@
     "feedbackTypeOther": "Autre",
     "feedbackMessage": "Message",
     "feedbackMessagePlaceholder": "Decris le bug, la fonctionnalite, ou ton retour...",
+    "feedbackScopeTitle": "Signale uniquement les problemes de MOSAIC.",
+    "feedbackScopeEmulator": "Si l'emulateur ou le jeu crash, envoyer un retour ici ne sert a rien. Rejoins le Discord de Compages Works pour obtenir de l'aide.",
+    "feedbackScopeUpdates": "Ne demande pas plus de betas, de mises a jour ou d'acces alpha ici.",
+    "feedbackScopeDetails": "Ecrire juste \"j'ai besoin d'aide\" ne va pas regler ton probleme. Decris ce que tu as fait, ce qui s'est passe et ce que tu attendais.",
+    "feedbackScopeReply": "Aucune reponse ne sera donnee si tu n'ajoutes pas de contact plus bas.",
+    "feedbackEnglishNotice": "Ecris en anglais de preference, si tu peux.",
     "feedbackContact": "Contact (facultatif)",
     "feedbackContactPlaceholder": "Discord, email, ou pseudo GitHub",
     "feedbackNoContactTitle": "Aucun contact renseigne",
@@ -1278,6 +1285,12 @@
       "title": "Version bêta",
       "message": "Tu utilises MOSAIC {{version}}, une version bêta. Attends-toi à des bugs et à des fonctionnalités pas encore finies. N'hésite pas à nous envoyer tes retours, ça nous aide énormément à améliorer l'app !",
       "giveFeedback": "Envoyer un retour"
+    },
+    "alphaNotice": {
+      "title": "Version alpha",
+      "message": "Tu utilises MOSAIC {{version}}, une version alpha. C'est une version de test très précoce : des problèmes sérieux peuvent arriver, y compris sur tes mods ou ta config. Fais une sauvegarde de tes mods avant de l'utiliser, au cas où. N'hésite pas à nous envoyer tes retours, ça nous aide énormément à améliorer l'app !",
+      "giveFeedback": "Envoyer un retour",
+      "backupConfig": "Sauvegarder ta config MOSAIC"
     }
   },
   "contextMenu": {

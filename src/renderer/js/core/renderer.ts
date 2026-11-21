@@ -119,9 +119,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   window.electronAPI
     ?.getAppVersion?.()
     .then((info) => {
-      if (/-beta/i.test(info?.version || '')) {
+      const channel = /-(alpha|beta)/i.exec(info?.version || '')?.[1];
+      if (channel) {
         document
-          .getElementById('titlebar-beta-badge')
+          .getElementById(`titlebar-${channel.toLowerCase()}-badge`)
           ?.removeAttribute('hidden');
       }
     })
@@ -214,18 +215,40 @@ document.addEventListener('keydown', async (e) => {
   }
 });
 
+function openSettingsTab(tab: string, scrollToId?: string) {
+  document
+    .querySelector<HTMLElement>('.sidebar-btn[data-tab="settings"]')
+    ?.click();
+  setTimeout(() => {
+    document
+      .querySelector<HTMLElement>(`.settings-tab-btn[data-settings-tab="${tab}"]`)
+      ?.click();
+    if (scrollToId) {
+      setTimeout(() => {
+        const target = document.getElementById(scrollToId);
+        const area = target?.closest<HTMLElement>('.settings-content-area');
+        if (!target || !area) return;
+        const offset =
+          target.getBoundingClientRect().top -
+          area.getBoundingClientRect().top -
+          (area.clientHeight - target.offsetHeight) / 2;
+        area.scrollBy({ top: offset, behavior: 'smooth' });
+      }, 150);
+    }
+  }, 150);
+}
+
 async function showBetaNoticeOnce() {
   const info = await window.electronAPI?.getAppVersion?.().catch(() => null);
   const version = info?.version;
-  if (
-    !version ||
-    !/-beta/i.test(version) ||
-    !window.modalManager?.showCustomModal
-  ) {
+  const channel = /-(alpha|beta)/i.exec(version || '')?.[1]?.toLowerCase();
+  if (!version || !channel || !window.modalManager?.showCustomModal) {
     return;
   }
 
-  const storageKey = `fightplanner:beta-notice:seen:${version}`;
+  const isAlpha = channel === 'alpha';
+  const noticeKey = isAlpha ? 'alphaNotice' : 'betaNotice';
+  const storageKey = `fightplanner:${channel}-notice:seen:${version}`;
   try {
     if (localStorage.getItem(storageKey) === '1') return;
   } catch {}
@@ -240,38 +263,47 @@ async function showBetaNoticeOnce() {
 
   const body = document.createElement('p');
   body.textContent = t(
-    'modals.betaNotice.message',
-    `You're using MOSAIC ${version}, a beta version. Expect bugs and unfinished features. Don't hesitate to send us feedback, it really helps!`,
+    `modals.${noticeKey}.message`,
+    isAlpha
+      ? `You're using MOSAIC ${version}, an alpha version. This is an early test build: serious problems can happen, including damage to your mods or your setup. Back up your mods before using it, just in case. Don't hesitate to send us feedback, it really helps!`
+      : `You're using MOSAIC ${version}, a beta version. Expect bugs and unfinished features. Don't hesitate to send us feedback, it really helps!`,
     { version },
   );
 
   const modal = window.modalManager.showCustomModal({
-    id: 'beta-notice',
+    id: `${channel}-notice`,
     onClose: markSeen,
-    title: t('modals.betaNotice.title', 'Beta version'),
+    title: t(
+      `modals.${noticeKey}.title`,
+      isAlpha ? 'Alpha version' : 'Beta version',
+    ),
     body,
     buttons: [
       { text: t('common.close', 'Close') },
       {
-        text: t('modals.betaNotice.giveFeedback', 'Give feedback'),
-        type: 'primary',
-        onClick: () => {
-          document
-            .querySelector<HTMLElement>('.sidebar-btn[data-tab="settings"]')
-            ?.click();
-          setTimeout(() => {
-            document
-              .querySelector<HTMLElement>(
-                '.settings-tab-btn[data-settings-tab="feedback"]',
-              )
-              ?.click();
-          }, 150);
-        },
+        text: t(`modals.${noticeKey}.giveFeedback`, 'Give feedback'),
+        type: isAlpha ? undefined : 'primary',
+        onClick: () => openSettingsTab('feedback'),
       },
+      ...(isAlpha
+        ? [
+            {
+              text: t(
+                'modals.alphaNotice.backupConfig',
+                'Backup your MOSAIC config',
+              ),
+              type: 'primary',
+              onClick: () =>
+                openSettingsTab('advanced', 'export-config-backup-btn'),
+            },
+          ]
+        : []),
     ],
   });
 
   const icon = document.createElement('i');
-  icon.className = 'bi bi-exclamation-triangle';
+  icon.className = isAlpha
+    ? 'bi bi-exclamation-octagon'
+    : 'bi bi-exclamation-triangle';
   modal.querySelector<HTMLElement>('.modal-header h3')?.prepend(icon);
 }
