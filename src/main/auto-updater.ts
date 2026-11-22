@@ -352,9 +352,9 @@ class AutoUpdater {
     return this.disableUpdateSignatureCheck;
   }
 
-  simulateUpdate() {
+  simulateUpdate(version?: string) {
     const dummyUpdateInfo: UpdateInfo = {
-      version: '9.9.9-simulator',
+      version: version || '9.9.9-simulator',
       releaseNotes:
         '<h2>Simulation Update</h2><p>This is a simulated update to test the UI.</p><ul><li>Feature 1</li><li>Feature 2</li></ul>',
       releaseDate: new Date().toISOString(),

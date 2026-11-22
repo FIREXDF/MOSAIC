@@ -96,7 +96,11 @@ class SettingsDeveloperSection {
       if (simulateUpdateBtn) {
         simulateUpdateBtn.addEventListener('click', async () => {
           if (window.electronAPI && window.electronAPI.simulateUpdate) {
-            await window.electronAPI.simulateUpdate();
+            await window.electronAPI.simulateUpdate(
+              document
+                .querySelector<HTMLInputElement>('#simulate-update-version')
+                ?.value.trim(),
+            );
             this.manager.showToast('Update simulation started', 'success');
           }
         });

@@ -693,6 +693,8 @@
     "emulatorTypeRyujinx": "Ryujinx",
     "emulatorTypeHint": "Select which emulator you want to use",
     "simulateUpdate": "Simulate Update",
+    "simulateUpdateVersion": "Simulated Update Version",
+    "simulateUpdateVersionHint": "Version shown by Simulate Update. The update window loads its banner from the Compages Works changelog.",
     "resetStoreTitle": "Reset Application Data",
     "resetStoreHint": "This will reset all application settings and data stored in Electron Store. The application will restart after reset.",
     "resetStore": "Reset Electron Store",

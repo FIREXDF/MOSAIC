@@ -52,8 +52,8 @@ const UpdateHandlers = {
     return autoUpdater.getForceUpdateAvailable();
   },
 
-  ['simulate-update']: async (common: BaseHandlerArg) => {
-    return autoUpdater.simulateUpdate();
+  ['simulate-update']: async (common: BaseHandlerArg, version?: string) => {
+    return autoUpdater.simulateUpdate(version);
   },
 } as const;
 

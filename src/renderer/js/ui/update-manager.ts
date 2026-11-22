@@ -72,6 +72,13 @@ class UpdateManager {
 
     versionNumber!.textContent = data.version;
 
+    const banner = document.querySelector<HTMLImageElement>('#update-banner');
+    if (banner) {
+      banner.hidden = true;
+      banner.onload = () => (banner.hidden = false);
+      banner.src = `https://compagesworks.github.io/projects/mosaic/changelog/v${encodeURIComponent(String(data.version).replace(/^v/, ''))}/cover.webp`;
+    }
+
     if (data.releaseNotes) {
       if (typeof data.releaseNotes === 'string') {
         releaseNotesContent!.innerHTML = this.formatReleaseNotes(

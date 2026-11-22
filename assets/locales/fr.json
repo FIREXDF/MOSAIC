@@ -586,6 +586,8 @@
     "forceUpdateAvailableHint": "Forcer le système à signaler une mise à jour disponible, même si vous êtes sur la dernière version.",
     "reset": "Réinitialiser",
     "simulateUpdate": "Simuler Mise à Jour",
+    "simulateUpdateVersion": "Version de la mise à jour simulée",
+    "simulateUpdateVersionHint": "Version affichée par Simuler Mise à Jour. La fenêtre de mise à jour charge sa bannière depuis le changelog de Compages Works.",
     "testHardwareOverlay": "Tester l'overlay Hardware",
     "testNroLimitModal": "Tester la modale limite .nro",
     "testSlotCountModal": "Tester la modale slots cachés",

@@ -19,6 +19,19 @@
   font-size: 1.2rem;
 }
 
+.update-banner {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.update-banner[hidden] {
+  display: none;
+}
+
 .update-release-notes {
   background: var(--bg-transparent-05);
   border-radius: 8px;
