@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import store from './store/store';
+import { PATHS } from './config';
 
 let tutorialWindow: BrowserWindow | null = null;
 
@@ -37,6 +38,7 @@ export function createTutorialWindow(parentWindow?: BrowserWindow | null) {
     // Once the intro ends it is no longer always-on-top, so hiding it from the
     // taskbar would leave first-time users with no reliable way to restore it.
     skipTaskbar: false,
+    icon: PATHS.appIcon(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,

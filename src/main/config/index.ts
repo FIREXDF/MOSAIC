@@ -28,6 +28,7 @@ export const PATHS = {
   dataDir: () => path.join(app.getAppPath(), 'assets', 'data'),
   slotBackupsDir: () => path.join(app.getPath('userData'), 'slot-backups'),
   pluginBackupsDir: () => path.join(app.getPath('userData'), 'plugin-backups'),
+  appIcon: () => path.join(app.getAppPath(), 'assets', 'app-icons', ['alpha', 'beta'].find((name) => app.getVersion().includes(name)) ?? '', 'icon.png'),
 };
 
 export const ENV = {
