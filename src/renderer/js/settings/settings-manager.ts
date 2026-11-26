@@ -1,5 +1,7 @@
 type SettingsSoundName = import('../ui/app-sound-manager').AppSoundName;
 
+const MOSAIC_DISCORD_URL = 'https://discord.gg/2zT5Rg46bG';
+
 class SettingsManager {
   settings: any;
   initialized: boolean;
@@ -359,6 +361,25 @@ class SettingsManager {
       .querySelector('#feedback-logs-clear-btn')
       ?.addEventListener('click', () => setAttachedLogs([]));
 
+    const contactLabel = document.querySelector<HTMLLabelElement>(
+      'label[for="feedback-contact"]',
+    );
+    const isContactRequired = () =>
+      ['bug', 'feature'].includes(typeInput?.value || '');
+    const updateContactRequirement = () => {
+      const required = isContactRequired();
+      contactInput?.setAttribute('aria-required', String(required));
+      if (contactLabel) {
+        const key = required
+          ? 'settings.feedbackContactRequired'
+          : 'settings.feedbackContact';
+        contactLabel.dataset.i18n = key;
+        contactLabel.textContent = this.translate(key);
+      }
+    };
+    typeInput?.addEventListener('change', updateContactRequirement);
+    updateContactRequirement();
+
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
 
@@ -368,6 +389,15 @@ class SettingsManager {
           this.translate('toasts.feedbackMessageTooShort'),
           'error',
         );
+        return;
+      }
+
+      if (isContactRequired() && !contactInput?.value.trim()) {
+        this.showToast(
+          this.translate('toasts.feedbackContactRequired'),
+          'error',
+        );
+        contactInput?.focus();
         return;
       }
 
@@ -393,22 +423,42 @@ class SettingsManager {
 
       try {
         const appInfo = await window.electronAPI?.getAppVersion?.();
-        const result = await window.electronAPI?.submitFeedback?.({
-          type: (typeInput?.value || 'feedback') as
-            | 'bug'
-            | 'feature'
-            | 'feedback'
-            | 'other',
-          message,
-          contact: contactInput?.value.trim() || null,
-          appVersion: appInfo?.version || null,
-          locale: window.i18n?.currentLocale || document.documentElement.lang,
-          platform: navigator.platform,
-          logFilePaths: attachedLogs.map((log) => log.filePath),
-        });
+        const sendFeedback = (force: boolean) =>
+          window.electronAPI?.submitFeedback?.({
+            type: (typeInput?.value || 'feedback') as
+              | 'bug'
+              | 'feature'
+              | 'feedback'
+              | 'other',
+            message,
+            contact: contactInput?.value.trim() || null,
+            appVersion: appInfo?.version || null,
+            locale: window.i18n?.currentLocale || document.documentElement.lang,
+            platform: navigator.platform,
+            logFilePaths: attachedLogs.map((log) => log.filePath),
+            force,
+          });
+
+        let result = await sendFeedback(false);
+
+        if (
+          result &&
+          'needsConfirmation' in result &&
+          result.needsConfirmation
+        ) {
+          const choice = await this.askFeedbackRelevance(
+            result.warning ||
+              this.translate('settings.feedbackNotRelevantMessage'),
+          );
+          if (choice !== 'send') {
+            return;
+          }
+          result = await sendFeedback(true);
+        }
 
         if (result?.success) {
           form.reset();
+          updateContactRequirement();
           setAttachedLogs([]);
           this.showToast(this.translate('toasts.feedbackSent'), 'success');
         } else {
@@ -2686,6 +2736,70 @@ class SettingsManager {
     } catch (error) {
       console.error('Failed to load install confirm setting:', error);
     }
+  }
+
+  async askFeedbackRelevance(
+    message: string,
+  ): Promise<'discord' | 'send' | 'cancel'> {
+    const firstChoice = await this.showFeedbackDiscordModal(
+      'feedback-not-relevant-modal',
+      this.translate('settings.feedbackNotRelevantTitle'),
+      `<p>${escapeHtml(message)}</p>`,
+      'secondary',
+    );
+    if (firstChoice !== 'send') {
+      return firstChoice;
+    }
+
+    return this.showFeedbackDiscordModal(
+      'feedback-send-anyway-confirm-modal',
+      this.translate('settings.feedbackSendAnywayConfirmTitle'),
+      `
+        <p><strong>${escapeHtml(
+          this.translate('settings.feedbackSendAnywayConfirmWarning'),
+        )}</strong></p>
+        <p>${escapeHtml(
+          this.translate('settings.feedbackSendAnywayConfirmMessage'),
+        )}</p>
+      `,
+      'danger',
+    );
+  }
+
+  showFeedbackDiscordModal(
+    id: string,
+    title: string,
+    body: string,
+    sendType: 'secondary' | 'danger',
+  ): Promise<'discord' | 'send' | 'cancel'> {
+    return new Promise((resolve) => {
+      let choice: 'discord' | 'send' | 'cancel' = 'cancel';
+
+      window.modalManager.showCustomModal({
+        id,
+        title,
+        body,
+        clickOverlayToClose: false,
+        buttons: [
+          {
+            text: this.translate('settings.feedbackSendAnyway'),
+            type: sendType,
+            onClick: () => {
+              choice = 'send';
+            },
+          },
+          {
+            text: this.translate('settings.feedbackJoinDiscord'),
+            type: 'primary',
+            onClick: () => {
+              choice = 'discord';
+              window.electronAPI?.openUrl?.(MOSAIC_DISCORD_URL);
+            },
+          },
+        ],
+        onClose: () => resolve(choice),
+      });
+    });
   }
 
   confirmWithModal(

@@ -13,6 +13,7 @@ export type FeedbackPayload = {
   locale?: string | null;
   platform?: string | null;
   logFilePaths?: string[];
+  force?: boolean;
 };
 
 export type FeedbackHandlers = typeof FeedbackHandlers;
@@ -111,6 +112,16 @@ const FeedbackHandlers = {
       };
     }
 
+    if (
+      ['bug', 'feature'].includes(type) &&
+      !sanitizeText(payload.contact, MAX_CONTACT_LENGTH)
+    ) {
+      return {
+        success: false,
+        error: 'A contact is required for bug reports and feature requests',
+      };
+    }
+
     try {
       const logs = readLogAttachments(payload.logFilePaths);
       const body = new FormData();
@@ -124,6 +135,7 @@ const FeedbackHandlers = {
           locale: sanitizeText(payload.locale, 20) || null,
           platform: sanitizeText(payload.platform, 40) || process.platform,
           sentAt: new Date().toISOString(),
+          force: payload.force === true,
         }),
       );
       logs.forEach((log) => {
@@ -144,6 +156,18 @@ const FeedbackHandlers = {
           success: false,
           error:
             result?.error || `Feedback service returned ${response.status}`,
+        };
+      }
+
+      const result = (await response.json().catch(() => null)) as {
+        needsConfirmation?: boolean;
+        warning?: string;
+      } | null;
+      if (result?.needsConfirmation) {
+        return {
+          success: false,
+          needsConfirmation: true,
+          warning: sanitizeText(result.warning, 500) || null,
         };
       }
 
