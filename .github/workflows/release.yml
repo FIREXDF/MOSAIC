@@ -42,6 +42,8 @@ jobs:
   build-and-release:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     strategy:
       fail-fast: false
       matrix:
@@ -84,6 +86,10 @@ jobs:
           else
             node scripts/bump-version.js "$VERSION_TYPE" "$BASE_VERSION"
           fi
+      - name: Read final version
+        id: version
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Sign MSBTEditorCLI hosts (macOS)
         if: matrix.os == 'macos-latest'
@@ -118,3 +124,19 @@ jobs:
             dist/*.yaml
           if-no-files-found: ignore
           retention-days: 3
+  release-downloads:
+    name: Add download links to the release
+    needs: build-and-release
+    if: always() && github.event_name != 'pull_request' && needs.build-and-release.outputs.version != ''
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Write the download grid
+        run: node scripts/release-downloads.js "v${{ needs.build-and-release.outputs.version }}"
