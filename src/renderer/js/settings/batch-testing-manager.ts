@@ -43,7 +43,7 @@ type DiagnosisProgress = {
   suspects: string[];
   granularity: number;
   foundPassingChunk: boolean;
-  step: number;
+  baselineChecked?: boolean;
   currentChunkIndex: number;
   status: 'pending' | 'single' | 'group' | 'inconclusive';
 };
@@ -52,7 +52,16 @@ type PendingPrompt = {
   category: BatchCategory;
   chunk: string[];
   suspectCount: number;
-  step: number;
+  testNumber: number;
+  estimatedTotal: number;
+  isBaseline?: boolean;
+};
+
+type SessionHistoryEntry = {
+  currentCategoryIndex: number;
+  diagnosis: Partial<Record<BatchCategory, DiagnosisProgress>>;
+  pendingPrompt: PendingPrompt;
+  testCount: number;
 };
 
 type BatchTestingSession = {
@@ -64,6 +73,8 @@ type BatchTestingSession = {
   pendingPrompt: PendingPrompt | null;
   result: DiagnosisResult | null;
   noCauseFound: boolean;
+  testCount?: number;
+  history?: SessionHistoryEntry[];
 };
 
 type SessionUiSummary = {
@@ -729,12 +740,157 @@ class BatchTestingManager {
       return;
     }
 
+    if (await this.stopIfFoldersChanged()) {
+      return;
+    }
+
     if (this.session.pendingPrompt) {
       this.renderPrompt(this.session.pendingPrompt);
       return;
     }
 
     await this.continueSession();
+  }
+
+  async stopIfFoldersChanged() {
+    const changedLabels: string[] = [];
+
+    try {
+      for (const category of ['mods', 'plugins'] as BatchCategory[]) {
+        const snapshot = this.session?.snapshots[category];
+        if (!snapshot?.basePath) {
+          continue;
+        }
+
+        const state = await this.state.readCategoryState(
+          category,
+          snapshot.basePath,
+        );
+        const currentNames = [...state.active, ...state.disabled]
+          .map((entry) => entry.name)
+          .sort();
+        const originalNames = [
+          ...snapshot.originalActiveNames,
+          ...snapshot.originalDisabledNames,
+        ].sort();
+
+        if (currentNames.join('\n') !== originalNames.join('\n')) {
+          changedLabels.push(snapshot.label);
+        }
+      }
+    } catch (error) {
+      this.showToast(
+        error instanceof Error
+          ? error.message
+          : String(error || 'Unknown error'),
+        'warning',
+      );
+      return true;
+    }
+
+    if (changedLabels.length === 0) {
+      return false;
+    }
+
+    this.renderModal(
+      this.t(
+        'settings.batchTestingFolderChangedTitle',
+        'Mods or plugins changed',
+      ),
+      `
+        <div class="batch-stack">
+          <p class="batch-text">
+            ${escapeHtml(
+              this.t(
+                'settings.batchTestingFolderChangedDesc',
+                'Items were added or removed in {{categories}} since this diagnostic started, so its results would be wrong. Put the folder back as it was to continue, or restore the original state and start a new diagnostic.',
+                { categories: changedLabels.join(', ') },
+              ),
+            )}
+          </p>
+        </div>
+      `,
+      [
+        {
+          label: this.t('common.close', 'Close'),
+          type: 'secondary',
+          onClick: () => this.hideModal(),
+        },
+        {
+          label: this.t(
+            'settings.batchTestingRestoreAll',
+            'Restore Original State',
+          ),
+          type: 'primary',
+          onClick: async () => {
+            await this.cancelSession();
+          },
+        },
+      ],
+    );
+    return true;
+  }
+
+  async undoLastAnswer() {
+    const history = this.session?.history ?? [];
+    const previous = history[history.length - 1];
+    if (!this.session || !previous) {
+      return;
+    }
+
+    const prompt = previous.pendingPrompt;
+
+    try {
+      for (const category of ['mods', 'plugins'] as BatchCategory[]) {
+        const snapshot = this.session.snapshots[category];
+        if (!snapshot.basePath) {
+          continue;
+        }
+
+        await this.state.applyState(
+          snapshot,
+          category === prompt.category
+            ? snapshot.originalActiveNames.filter(
+                (name) => !prompt.chunk.includes(name),
+              )
+            : snapshot.originalActiveNames,
+        );
+      }
+    } catch (error) {
+      this.showToast(
+        error instanceof Error
+          ? error.message
+          : String(error || 'Unknown error'),
+        'warning',
+      );
+      return;
+    }
+
+    this.session.history!.pop();
+    this.session.currentCategoryIndex = previous.currentCategoryIndex;
+    this.session.diagnosis = previous.diagnosis;
+    this.session.pendingPrompt = prompt;
+    this.session.testCount = previous.testCount;
+    this.session.result = null;
+    this.session.noCauseFound = false;
+    await this.persistSession();
+    this.renderPrompt(prompt);
+  }
+
+  getUndoActions(): ModalAction[] {
+    if (!this.session?.history?.length) {
+      return [];
+    }
+
+    return [
+      {
+        label: this.t('settings.batchTestingUndoButton', 'Undo last answer'),
+        type: 'secondary',
+        onClick: async () => {
+          await this.undoLastAnswer();
+        },
+      },
+    ];
   }
 
   async cancelSession() {
@@ -782,7 +938,7 @@ class BatchTestingManager {
             suspects: [...snapshot.originalActiveNames],
             granularity: 2,
             foundPassingChunk: false,
-            step: 1,
+            baselineChecked: false,
             currentChunkIndex: 0,
             status: 'pending',
           };
@@ -834,6 +990,10 @@ class BatchTestingManager {
     snapshot: CategorySnapshot,
     progress: DiagnosisProgress,
   ) {
+    if (!progress.baselineChecked) {
+      return this.askAboutChunk(snapshot, progress, progress.suspects, true);
+    }
+
     while (progress.suspects.length > 1) {
       const chunks = this.splitIntoChunks(
         progress.suspects,
@@ -850,35 +1010,54 @@ class BatchTestingManager {
           progress.granularity * 2,
         );
         progress.currentChunkIndex = 0;
-        progress.step += 1;
         await this.persistSession();
         continue;
       }
 
-      const chunk = chunks[progress.currentChunkIndex];
-      const enabledNames = snapshot.originalActiveNames.filter(
-        (name) => !chunk.includes(name),
+      return this.askAboutChunk(
+        snapshot,
+        progress,
+        chunks[progress.currentChunkIndex],
+        false,
       );
-
-      await this.state.applyState(snapshot, enabledNames);
-
-      if (!this.session) {
-        return true;
-      }
-
-      this.session.pendingPrompt = {
-        category: snapshot.category,
-        chunk: [...chunk],
-        suspectCount: progress.suspects.length,
-        step: progress.step,
-      };
-      await this.persistSession();
-      this.renderPrompt(this.session.pendingPrompt);
-      return true;
     }
 
     await this.finalizeCurrentCategory(snapshot, progress);
     return !!this.session?.result;
+  }
+
+  async askAboutChunk(
+    snapshot: CategorySnapshot,
+    progress: DiagnosisProgress,
+    chunk: string[],
+    isBaseline: boolean,
+  ) {
+    const enabledNames = snapshot.originalActiveNames.filter(
+      (name) => !chunk.includes(name),
+    );
+
+    await this.state.applyState(snapshot, enabledNames);
+
+    if (!this.session) {
+      return true;
+    }
+
+    const testNumber = (this.session.testCount ?? 0) + 1;
+    const remainingTests =
+      (isBaseline ? 1 : 0) +
+      Math.ceil(Math.log2(Math.max(progress.suspects.length, 1)));
+
+    this.session.pendingPrompt = {
+      category: snapshot.category,
+      chunk: [...chunk],
+      suspectCount: progress.suspects.length,
+      testNumber,
+      estimatedTotal: Math.max(testNumber, testNumber - 1 + remainingTests),
+      isBaseline,
+    };
+    await this.persistSession();
+    this.renderPrompt(this.session.pendingPrompt);
+    return true;
   }
 
   async finalizeCurrentCategory(
@@ -941,31 +1120,34 @@ class BatchTestingManager {
       return;
     }
 
-    if (snapshot?.basePath) {
-      try {
-        await this.state.ensureCategoryAvailable(
-          prompt.category,
-          snapshot.basePath,
-        );
-      } catch (error) {
-        this.showToast(
-          error instanceof Error
-            ? error.message
-            : String(error || 'Unknown error'),
-          'warning',
-        );
-        return;
-      }
+    if (!snapshot?.basePath || (await this.stopIfFoldersChanged())) {
+      return;
     }
 
+    this.session.history = [
+      ...(this.session.history ?? []),
+      structuredClone({
+        currentCategoryIndex: this.session.currentCategoryIndex,
+        diagnosis: this.session.diagnosis,
+        pendingPrompt: prompt,
+        testCount: this.session.testCount ?? 0,
+      }),
+    ];
+    this.session.testCount = (this.session.testCount ?? 0) + 1;
     this.session.pendingPrompt = null;
 
-    if (answer === 'pass') {
+    if (prompt.isBaseline) {
+      progress.baselineChecked = true;
+      if (answer === 'pass') {
+        progress.foundPassingChunk = true;
+      } else {
+        progress.suspects = [];
+      }
+    } else if (answer === 'pass') {
       progress.suspects = [...prompt.chunk];
       progress.granularity = 2;
       progress.foundPassingChunk = true;
       progress.currentChunkIndex = 0;
-      progress.step += 1;
     } else {
       progress.currentChunkIndex += 1;
     }
@@ -984,9 +1166,11 @@ class BatchTestingManager {
     const chips = prompt.chunk
       .map((name) => this.ui.renderItemTrigger(prompt.category, name, 'chip'))
       .join('');
-    const stepLabel = this.t('settings.batchTestingStep', 'Step {{step}}', {
-      step: prompt.step,
-    });
+    const stepLabel = this.t(
+      'settings.batchTestingTestProgress',
+      'Test {{current}} / ~{{total}}',
+      { current: prompt.testNumber, total: prompt.estimatedTotal },
+    );
 
     const actions: ModalAction[] = [
       {
@@ -999,6 +1183,7 @@ class BatchTestingManager {
           await this.respondToPrompt('cancel');
         },
       },
+      ...this.getUndoActions(),
     ];
 
     actions.push(
@@ -1041,10 +1226,16 @@ class BatchTestingManager {
             </div>
             <div class="batch-text">
               ${escapeHtml(
-                this.t(
-                  'settings.batchTestingPrompt',
-                  'These items are currently disabled. Launch the game, test the issue, then tell MOSAIC whether it works now.',
-                ),
+                prompt.isBaseline
+                  ? this.t(
+                      'settings.batchTestingBaselinePrompt',
+                      'All active {{category}} are disabled. Launch the game: if the issue is gone, the cause is one of them. If not, MOSAIC moves on.',
+                      { category: snapshot.label.toLowerCase() },
+                    )
+                  : this.t(
+                      'settings.batchTestingPrompt',
+                      'These items are currently disabled. Launch the game, test the issue, then tell MOSAIC whether it works now.',
+                    ),
               )}
             </div>
             ${
@@ -1130,6 +1321,7 @@ class BatchTestingManager {
         </div>
       `,
       [
+        ...this.getUndoActions(),
         {
           label: this.t('common.close', 'Close'),
           type: 'primary',
@@ -1137,94 +1329,6 @@ class BatchTestingManager {
         },
       ],
     );
-  }
-
-  async askIfItWorks(
-    snapshot: CategorySnapshot,
-    chunk: string[],
-    suspectCount: number,
-    step: number,
-  ): Promise<BatchPromptResult> {
-    const chips = chunk
-      .map((name) => this.ui.renderItemTrigger(snapshot.category, name, 'chip'))
-      .join('');
-
-    return new Promise((resolve) => {
-      const actions: ModalAction[] = [
-        {
-          label: this.t('common.cancel', 'Cancel'),
-          type: 'secondary',
-          onClick: () => resolve('cancel'),
-        },
-      ];
-
-      if (this.hasConfiguredEmulator()) {
-        actions.push({
-          label: this.t('settings.batchTestingLaunchGame', 'Launch the game'),
-          type: 'secondary',
-          onClick: async () => {
-            await this.launchConfiguredGame();
-          },
-        });
-      }
-
-      actions.push(
-        {
-          label: this.t('common.yes', 'Yes'),
-          type: 'primary',
-          onClick: () => resolve('pass'),
-        },
-        {
-          label: this.t('common.no', 'No'),
-          type: 'danger',
-          onClick: () => resolve('fail'),
-        },
-      );
-
-      this.renderModal(
-        `${this.t('settings.batchTestingTitle', 'Batch Testing')} • ${
-          snapshot.label
-        }`,
-        `
-          <div class="batch-stack">
-            <div class="batch-grid">
-              ${this.ui.renderInfoCard(
-                this.t('settings.batchTestingQuestion', 'Does it work?'),
-                this.t('settings.batchTestingStep', 'Step {{step}}', { step }),
-              )}
-              ${this.ui.renderInfoCard(
-                this.t(
-                  'settings.batchTestingCurrentPool',
-                  'Current suspect pool',
-                ),
-                `${suspectCount}`,
-              )}
-              ${this.ui.renderInfoCard(
-                this.t(
-                  'settings.batchTestingDisabledChunk',
-                  'Disabled for this test',
-                ),
-                `${chunk.length}`,
-              )}
-            </div>
-            <p class="batch-text">
-              ${escapeHtml(
-                this.t(
-                  'settings.batchTestingPrompt',
-                  'These items are currently disabled. Launch the game, test the issue, then tell MOSAIC whether it works now.',
-                ),
-              )}
-            </p>
-            <div class="batch-testing-scroll-panel">
-              <div class="batch-testing-chip-list">
-                ${chips}
-              </div>
-            </div>
-          </div>
-        `,
-        actions,
-      );
-    });
   }
 
   async showSuspectResult(snapshot: CategorySnapshot, result: DiagnosisResult) {
@@ -1254,6 +1358,7 @@ class BatchTestingManager {
           this.closeModal();
         },
       },
+      ...this.getUndoActions(),
     ];
 
     if (isSingle) {
@@ -1434,7 +1539,22 @@ class BatchTestingManager {
           continue;
         }
 
-        await this.state.applyState(snapshot, snapshot.originalActiveNames);
+        const currentState = await this.state.readCategoryState(
+          category,
+          snapshot.basePath,
+        );
+        const originalNames = new Set([
+          ...snapshot.originalActiveNames,
+          ...snapshot.originalDisabledNames,
+        ]);
+        const addedActiveNames = currentState.active
+          .map((entry) => entry.name)
+          .filter((name) => !originalNames.has(name));
+
+        await this.state.applyState(snapshot, [
+          ...snapshot.originalActiveNames,
+          ...addedActiveNames,
+        ]);
       }
     } finally {
       this.isRestoring = false;
@@ -1580,7 +1700,7 @@ class BatchTestingManager {
     const footerEl = this.modal.querySelector<HTMLElement>('.modal-footer');
 
     if (titleEl) {
-      titleEl.textContent = title.split('â€¢').join('-').split('•').join('-');
+      titleEl.textContent = title;
     }
 
     if (bodyEl) {
@@ -1657,6 +1777,11 @@ class BatchTestingManager {
       void window.pluginManager.fetchPlugins();
     }
     void this.persistSession();
+    this.hideModal(modal);
+  }
+
+  hideModal(modal = this.modal) {
+    this.modal = null;
 
     if (!modal) {
       return;

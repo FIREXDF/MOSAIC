@@ -109,9 +109,9 @@ class BatchTestingUiHelpers {
         tone: 'warning',
         title: this.t(
           'settings.batchTestingWaitingTitle',
-          'Step {{step}} - test {{category}}',
+          'Test {{current}} - {{category}}',
           {
-            step: prompt.step,
+            current: prompt.testNumber,
             category: categoryLabel,
           },
         ),
