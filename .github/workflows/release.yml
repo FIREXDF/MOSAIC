@@ -47,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON(inputs.platform == 'windows' && '["windows-latest"]' || inputs.platform == 'macos' && '["macos-latest"]' || inputs.platform == 'linux' && '["ubuntu-latest"]' || '["windows-latest","ubuntu-latest","macos-latest"]') }}
+        os: ${{ fromJSON(inputs.platform == 'windows' && '["windows-latest"]' || inputs.platform == 'macos' && '["macos-latest"]' || inputs.platform == 'linux' && '["ubuntu-24.04"]' || '["windows-latest","ubuntu-24.04","macos-latest"]') }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CI: true
