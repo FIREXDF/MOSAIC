@@ -707,9 +707,15 @@ function createTutorialSwitchSteps(ctx: TutorialStepContext): TutorialStep[] {
                     <p class="tutorial-result-text">ARCropolis is not working.</p>
                     <p class="tutorial-hint-tight">Please join the <a href="https://discord.gg/2zT5Rg46bG" target="_blank">MOSAIC Discord</a> to get help with installation.</p>
                     <p class="tutorial-footnote">You can continue the tutorial, but mods may not work until ARCropolis is properly installed.</p>
-                    <button id="change-answer-btn" class="tutorial-btn-accent">
-                        Change my answer
-                    </button>
+                    <div class="tutorial-error-actions tutorial-error-actions-center">
+                        <button id="change-answer-btn" class="tutorial-btn-accent">
+                            Change my answer
+                        </button>
+                        <button type="button" data-tutorial-debug-export class="tutorial-error-details-btn">
+                            <i class="bi bi-file-earmark-medical"></i> Make a debug file for Discord helpers
+                        </button>
+                    </div>
+                    <p class="tutorial-footnote">Shortcut: Ctrl+Shift+H</p>
                 </div>
             `;
           ctx.setupDiscordLinks(statusDiv!);

@@ -26,6 +26,8 @@ import {
   createDirectory,
 } from '../../utils/arcropolis-installer';
 
+import { buildTutorialDebugReport } from '../../tutorial-debug-report';
+import { anonymizeHomeDirectory } from './app-handlers';
 import { HandlerResponse } from '../../types/common';
 import { BaseHandlerArg, GenericHandler } from '../../types/common';
 
@@ -289,6 +291,33 @@ const TutorialHandlers = {
       return { success: true, path: os.tmpdir() };
     } catch (error) {
       handleError(error, 'get-temp-dir');
+      return createErrorResponse(ErrorCodes.UNKNOWN_ERROR, error.message);
+    }
+  },
+
+  ['export-tutorial-debug-report']: async (
+    common: BaseHandlerArg,
+    context: unknown,
+  ) => {
+    try {
+      const win = BrowserWindow.fromWebContents(common.event.sender);
+      if (!win) return { success: false, error: 'No tutorial window found' };
+      const date = new Date().toISOString().slice(0, 10);
+      const result = await dialog.showSaveDialog(win, {
+        title: 'Save tutorial debug file',
+        defaultPath: `mosaic-tutorial-debug-${date}.json`,
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      });
+      if (result.canceled || !result.filePath) {
+        return { success: false, canceled: true };
+      }
+      const report = anonymizeHomeDirectory(
+        await buildTutorialDebugReport(context),
+      );
+      fs.writeFileSync(result.filePath, JSON.stringify(report, null, 2), 'utf8');
+      return { success: true, filePath: result.filePath };
+    } catch (error) {
+      handleError(error, 'export-tutorial-debug-report');
       return createErrorResponse(ErrorCodes.UNKNOWN_ERROR, error.message);
     }
   },

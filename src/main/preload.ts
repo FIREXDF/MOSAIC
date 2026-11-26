@@ -381,6 +381,7 @@ const tutorialAPI = {
   selectDrive: invokeTutorialHandler('select-drive'),
   joinPath: invokeTutorialHandler('join-path'),
   getTempDir: invokeTutorialHandler('get-temp-dir'),
+  exportDebugReport: invokeTutorialHandler('export-tutorial-debug-report'),
   openUrl: invokeSystemHandler('open-url'),
 
   store: {

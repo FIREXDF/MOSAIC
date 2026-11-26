@@ -75,7 +75,7 @@ const buildDebugReport = async () => {
   };
 };
 
-const anonymizeHomeDirectory = (value: unknown): unknown => {
+export const anonymizeHomeDirectory = (value: unknown): unknown => {
   const homeDirectory = os.homedir();
   if (!homeDirectory) return value;
 

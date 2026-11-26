@@ -2,6 +2,7 @@ const ARCROPOLIS_CONTENTS_PATH = ['atmosphere', 'contents', '01006A800016E000'];
 
 document.addEventListener('DOMContentLoaded', () => {
   let tutorialDevMode = false;
+  let lastInstallError: string | null = null;
   const devOverrides: Record<string, any> = {};
 
   async function warnIfEmulatorExe(
@@ -165,6 +166,10 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     if (!arcropolisExtract.success)
       throw new Error('ARCropolis extraction failed');
+    await window.tutorialAPI.store.set(
+      'arcropolisVersion',
+      arcropolisRelease.version,
+    );
 
     for (const dir of extraDirs) {
       await window.tutorialAPI.createDirectory(
@@ -906,6 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ]
       .filter(Boolean)
       .join('\n\n');
+    lastInstallError = details;
 
     container.innerHTML = `
       <div class="tutorial-box-error">
@@ -913,6 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="tutorial-error-actions">
           <button type="button" data-tutorial-error-details class="tutorial-error-details-btn">View error details</button>
           <button type="button" data-tutorial-install-retry class="tutorial-error-retry-btn"><i class="bi bi-arrow-clockwise"></i> Retry installation</button>
+          <button type="button" data-tutorial-debug-export class="tutorial-error-details-btn"><i class="bi bi-file-earmark-medical"></i> Make a debug file for Discord helpers</button>
         </div>
         <pre data-tutorial-error-output hidden class="tutorial-error-details">${escapeHtml(details)}</pre>
         <p class="tutorial-error-hint">If it continues, share the details with the <a href="https://discord.gg/2zT5Rg46bG" target="_blank">MOSAIC Discord</a>.</p>
@@ -1259,7 +1266,38 @@ ${step.content}
     enf.checked = !!devOverrides['dev.emulatorNotFound'];
   }
 
+  const exportDebugFile = async (
+    trigger: string,
+    button?: HTMLButtonElement,
+  ) => {
+    if (button) button.disabled = true;
+    const result = await window.tutorialAPI.exportDebugReport({
+      trigger,
+      stepTitle: steps[currentStep]?.title ?? null,
+      lastInstallError,
+    });
+    if (!button) return;
+    button.disabled = false;
+    if (result.success) {
+      button.innerHTML = '<i class="bi bi-check-lg"></i> Debug file saved';
+    } else if (!('canceled' in result && result.canceled)) {
+      button.textContent = 'Could not save the debug file';
+    }
+  };
+
+  document.addEventListener('click', (e) => {
+    const button = (e.target as HTMLElement).closest<HTMLButtonElement>(
+      '[data-tutorial-debug-export]',
+    );
+    if (button) void exportDebugFile('button', button);
+  });
+
   document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
+      e.preventDefault();
+      void exportDebugFile('shortcut');
+      return;
+    }
     if (e.ctrlKey && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
       e.preventDefault();
       tutorialDevMode = !tutorialDevMode;
